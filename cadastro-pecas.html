@@ -625,8 +625,6 @@ tr.nv-nao td{color:var(--muted)}
 #form .fq{min-width:min-content}
 #form select{field-sizing:content;min-width:96px;max-width:100%;text-overflow:clip}
 #form .btn,#form .gi{overflow:visible}
-.w-mi,.lv2 .w-mi,.rc-b .w-mi{width:72px;min-width:72px}
-#form .w-mi input{width:100%}
 @media (max-width:900px){.zm .btn{min-width:40px;height:40px}}
 table.t th.nm,table.t td.nm{left:96px;width:44px;text-align:center;font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--muted);padding:0 2px;cursor:e-resize}
 table.t th.nm{cursor:default}
@@ -1919,7 +1917,7 @@ function renderForm(){
   const rowBanhos=`<div class="z-row z-banhos">${cards}<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn" title="Nova letra de banho (ex.: C · Ródio, D · Rosé)">＋ Letra</button>${dica}<span class="z-end">${addBtn}</span></div>`;
 const rowOrig=`<div class="z-row z-orig">${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}<i class="vsep"></i>${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
   const detBanhos=bh.banhos.filter(b=>onF[b.id]).map(b=>{const vz=vzOn(f,bh,b);return `<div class="lb"><b><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</b>
-      ${bruta?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${campoHTML("O",f,{banho:b.id,ph:b.mil,w:"mi",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s"})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
+      ${bruta?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${campoHTML("O",f,{banho:b.id,ph:b.mil,w:"c",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s"})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
 const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   const cadastro=["E","A","B","C","D","K","X","Z","AD","AE"].map(L=>c(L,{w:"s"})).join("");
   const det=!!abertos.det;
@@ -1982,16 +1980,16 @@ function atualizarGera(){
   el.innerHTML=h;
   rows.forEach((r,k)=>{if(!r.banho)return;const cel=celulas(r,ri0+k+2)[LET.indexOf(r.banho.coluna)],sp=document.querySelector(`[data-cb="${CSS.escape(String(r.bid||r.key))}"]`);
     if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(num(r.v.N)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor no banhista"))});
-  rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v):"",dc=ph?"Calculado automaticamente: custos × "+fmt(r.mk)+" (digite aqui para trocar)":"";
-    const kb=r.bid||r.key,i=document.querySelector(kb==="p"?"#f-V":`[data-ph="${kb}-V"]`);if(i&&i.tagName==="INPUT"){i.placeholder=ph;i.title=dc}});
+  rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v)+" (×"+fmt(r.mk)+")":"";
+    const kb=r.bid||r.key,i=document.querySelector(kb==="p"?"#f-V":`[data-ph="${kb}-V"]`);if(i&&i.tagName==="INPUT")i.placeholder=ph});
   // dicas (placeholder) com o que vai entrar quando o campo fica vazio
-  const setPh=(sel,t,dica)=>{const i=document.querySelector(sel);if(i&&i.tagName==="INPUT"){i.placeholder=t;if(dica!=null)i.title=dica}};
+  const setPh=(sel,t)=>{const i=document.querySelector(sel);if(i&&i.tagName==="INPUT")i.placeholder=t};
   if(rows[0])setPh('[data-ph="E"]',rows[0].v.E.replace(/([0-9])[A-Z][A-Z0-9]*$/,"$1"));
   rows.forEach((r,k)=>{
     if(!r.banho)return;const c=celulas({...r,v:{...r.v,[r.banho.coluna]:""},ovs:[]},ri0+k+2),x=c[LET.indexOf(r.banho.coluna)];
-    setPh(`[data-ph="${r.bid||r.key}-${r.banho.coluna}"]`,x?fmt(x.v):"automático",x&&x.f?"Calculado automaticamente: ="+x.f.replace(/N\d+/,"Peso")+" (digite aqui para trocar)":"");
+    setPh(`[data-ph="${r.bid||r.key}-${r.banho.coluna}"]`,x?(x.f?`${fmt(x.v)} (=${x.f.replace(/N\d+/,"Peso")})`:fmt(x.v)):"Peso × valor");
     if(!r.gi)setPh(`[data-ph="${r.key}-F"]`,r.v0.F||"");
-    {const u=calcBanho({...r},"U",ri0+k+2);setPh(`[data-ph="${r.bid||r.key}-U"]`,u?fmt(u.v):(r.verniz==null?"sem verniz":"automático"),u?"Calculado automaticamente: Peso × "+r.verniz+" (digite aqui para trocar)":"")}
+    {const u=calcBanho({...r},"U",ri0+k+2);setPh(`[data-ph="${r.bid||r.key}-U"]`,u?`${fmt(u.v)} (=Peso×${r.verniz})`:(r.verniz==null?"sem verniz":"Peso × verniz"))}
   });
 }
 
@@ -2564,7 +2562,7 @@ function romBodyHTML(r){const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhist
   if(bruta)h+=bh.banhos.filter(b=>r.on&&(b.id in r.on)?r.on[b.id]:f.on[b.id]).map(b=>{const bo=(r.bo||{})[b.id]||{},ai=(k,v)=>`data-auto="${k}:${b.id}" value="${esc(v??"")}" placeholder="—"`;
     return `<div class="rc-r bd"><span class="bd-t"><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></span>
       ${fq("Cor",`<select data-rp="bo" data-k="L" data-b="${b.id}">${opts(C.cores,bo.L||b.cor)}</select>`,"w-s")}
-      ${fq("Milésimos",`<input class="n" data-rp="bo" data-k="O" data-b="${b.id}" value="${esc(bo.O??b.mil??"")}" inputmode="decimal">`,"w-mi")}
+      ${fq("Milésimos",`<input class="n" data-rp="bo" data-k="O" data-b="${b.id}" value="${esc(bo.O??b.mil??"")}" inputmode="decimal">`,"w-n")}
       ${fq("Custo do banho R$",`<input class="n calc" data-rp="bo" data-k="C" data-b="${b.id}" ${ai("C",bo.C)} inputmode="decimal" title="Peso × valor por grama do banhista ${esc(bh.nome)}. Digite para trocar só nesta peça; apague para voltar ao cálculo.">`,"w-c")}
       ${fq("Custo do verniz R$",`<input class="n calc" data-rp="bo" data-k="U" data-b="${b.id}" ${ai("U",bo.U)} inputmode="decimal">`,"w-c")}
       ${fq("Descrição desta linha",`<input data-rp="bo" data-k="F" data-b="${b.id}" ${ai("F",bo.F)}>`,"w-l")}</div>`}).join("");
