@@ -71,7 +71,7 @@ table.t td.ov::after{content:"";position:absolute;top:0;right:0;border-style:sol
 table.t td.miss{background:color-mix(in srgb,var(--warn) 9%,transparent)}
 table.t td[data-c]:hover{box-shadow:inset 0 0 0 1px var(--focus)}
 table.t td.ed{padding:0;overflow:visible;box-shadow:inset 0 0 0 2px var(--focus)}
-table.t td.ed input{height:27px;border:0;border-radius:0;box-shadow:none;padding:0 8px;min-width:150px;background:var(--surface)}
+table.t td.ed input{height:27px;border:0;border-radius:0;box-shadow:none;padding:0 8px;min-width:150px;background:var(--surface)!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink);caret-color:var(--focus);font-size:13px;opacity:1}
 table.t th.k,table.t td.k{position:sticky;left:0;z-index:1;background:var(--surface);padding:0 3px;cursor:default;box-shadow:1px 0 0 var(--line);min-width:0}
 table.t th.k{z-index:3;background:var(--surface-2)}
 .k .in{display:flex;align-items:center}
@@ -1743,7 +1743,7 @@ function renderTopo(){
   renderNum();{const pp=prefDe(S.form.v.I,S.form.v.J),pr=document.getElementById("proxRef");if(pr)pr.textContent=fnum(pp,proxDe(pp));const pb=document.getElementById("proxBig");if(pb)pb.innerHTML=`Próxima referência <b>${esc(pp)}${fnum(pp,proxDe(pp))}</b>`}
 }
 /* ---- edição de célula ---- */
-function abrirCel(ri,L){
+function abrirCel(ri,L,cursorFim){
   if(!document.querySelector(`#sheet tr[data-ri="${ri}"] td[data-c="${L}"]`))return;
   if(celEd)fecharCel(true);
   const td2=document.querySelector(`#sheet tr[data-ri="${ri}"] td[data-c="${L}"]`);if(!td2)return;
@@ -1754,7 +1754,7 @@ function abrirCel(ri,L){
   const ph=formulaVazia?(()=>{const x=calcBanho(row,L,ri+2);return x?(x.f?"="+x.f:String(x.v)):"(vazio)"})():(!row?"digite ou cole (Ctrl+V)":"");
   selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=Math.max(td2.offsetWidth,150);td2.classList.add("ed");
   td2.innerHTML=`<input id="celIn" value="${esc(raw)}" list="dl-cel" ${NUM.has(L)?'class="n"':""} placeholder="${esc(ph)}" aria-label="${esc(NOME[L])}" autocomplete="off">`;
-  const i=document.getElementById("celIn");i.style.width=w+"px";i.focus();i.select();
+  const i=document.getElementById("celIn");i.style.width=w+"px";i.focus();if(cursorFim){const n=i.value.length;try{i.setSelectionRange(n,n)}catch(x){}}else i.select();
 }
 let w=150;
 /* linha colada ou digitada direto na tabela: vira uma peça pronta com os valores dados */
@@ -2691,7 +2691,7 @@ function abrirZoom(src){const lb=document.createElement("div");lb.className="lbo
   document.body.appendChild(lb);const im=lb.querySelector("img"),sc=lb.querySelector(".lbs"),zl=lb.querySelector(".lbz");let k=1;
   const aplica=(nk,cx,cy)=>{const ow=im.offsetWidth||1,fit=Math.min((innerWidth||screen.width||800)*0.92/im.naturalWidth,(innerHeight||screen.height||600)*0.84/im.naturalHeight);k=Math.min(10,Math.max(0.4,nk));
     const rx=(sc.scrollLeft+(cx??sc.clientWidth/2))/ow,ry=(sc.scrollTop+(cy??sc.clientHeight/2))/(im.offsetHeight||1);
-    im.style.width=Math.round(im.naturalWidth*fit*k)+"px";sc.scrollLeft=rx*im.offsetWidth-(cx??sc.clientWidth/2);sc.scrollTop=ry*im.offsetHeight-(cy??sc.clientHeight/2);zl.textContent=Math.round(k*100)+"%"};
+    im.style.width=Math.round(im.naturalWidth*fit*k)+"px";sc.scrollLeft=rx*im.offsetWidth-(cx??sc.clientWidth/2);sc.scrollTop=ry*im.offsetHeight-(cy??sc.clientHeight/2);zl.textContent=Math.round(k*fit*100)+"%"};
   let melh=false;im.onload=()=>{if(!melh){melh=true;aplica(1);melhorarFoto(im,u=>{if(u){const k0=k;im.src=u;im.onload=()=>aplica(k0)}})}else aplica(1)};if(im.complete&&!melh){melh=true;aplica(1);melhorarFoto(im,u=>{if(u){const k0=k;im.src=u;im.onload=()=>aplica(k0)}})}
   lb.addEventListener("click",e=>{const z=e.target.dataset&&e.target.dataset.z;if(z==="x"||e.target===lb||(e.target===sc&&!sc.dataset.m))lb.remove();else if(z==="+")aplica(k*1.5);else if(z==="-")aplica(k/1.5);else if(z==="0")aplica(1)});
   sc.addEventListener("wheel",e=>{e.preventDefault();const r=sc.getBoundingClientRect();aplica(e.deltaY<0?k*1.25:k/1.25,e.clientX-r.left,e.clientY-r.top)},{passive:false});
@@ -3386,7 +3386,11 @@ document.addEventListener("mousedown",e=>{
   if(celEd)fecharCel(true);
 });
 document.addEventListener("mousemove",e=>{if(!arrastando||!selR)return;const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td)return;const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r!==selR.fr||c!==selR.fc){selR.fr=r;selR.fc=c;pintarSel();renderSelBar()}});
-document.addEventListener("mouseup",()=>{arrastando=false});
+document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
+  /* um clique simples numa célula já abre para digitar (sem duplo clique); arrastar ou Shift só seleciona */
+  if(!was||e.shiftKey||e.button||celEd||!selR||selR.ar!==selR.fr||selR.ac!==selR.fc)return;
+  const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td||td.classList.contains("ed"))return;
+  const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r===selR.fr&&c===selR.fc)abrirCel(r,td.dataset.c,true)});
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del"];
 document.addEventListener("click",e=>{
