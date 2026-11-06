@@ -1438,7 +1438,7 @@ function avisos(g){
   ps.forEach(p=>{if(!(ultimo(p)>0)&&!((g.manual||{})[p]>0))out.push({bad:1,t:`Falta a última peça de ${p} no sistema.`})});
   Object.entries(g.manual||{}).forEach(([p,n])=>{if(n>ultimo(p))out.push({t:`${p}${fnum(p,n)} foi digitada à mão (a última do sistema é ${p}${fnum(p,ultimo(p))}): as próximas automáticas continuam em ${p}${fnum(p,n+1)}`})});
   const d=new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E));if(d.size)out.push({bad:1,t:`Referência repetida: ${[...d].join(", ")}`});
-  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!(num(r.v.W)>0):vazio(r.v[L])).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
+  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!(num(r.v.W)>0):(vazio(r.v[L])&&!(L==="V"&&num(r.mk)>0))).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
   const sp=g.linhas.filter(r=>r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo").length;if(sp)out.push({t:`${sp} bruta(s) sem Peso`});
   {const sm=new Set();g.linhas.forEach(r=>{if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))sm.add(r.v.L||r.col||r.banho.coluna)});
    sm.forEach(n=>out.push({t:`Banho “${n}” sem multiplicador: o custo do banho sai vazio — preencha em Banhos e banhistas`}))}
@@ -1980,8 +1980,10 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
 }
 /* tamanhos com letra: P, M, G (ou Pequeno, Médio, Grande) entram na referência com a própria letra; números seguem a sequência de letras */
 const PMG={pequeno:"P",pequena:"P",medio:"M","médio":"M",media:"M","média":"M",grande:"G"};
+function dividirTamanhos(texto){const simples=t=>PMG[t.toLowerCase()]||/^(\d+([.,]\d+)?|(?!cm$|mm$)[A-Za-z]{1,3})$/i.test(t);
+  return String(texto).replace(/(\d),(?=\d)/g,"$1\u0001").split(/[;,\/\n]+/).map(x=>x.replace(/\u0001/g,",").trim()).filter(Boolean).flatMap(x=>{const w=x.split(/\s+/);return w.length>1&&w.every(simples)?w:[x]})}
 function addTamanhos(gr,texto){const ids=[];
-  String(texto).split(/[;,\/\s]+/).map(x=>x.trim()).filter(Boolean).forEach(tk=>{
+  dividirTamanhos(texto).forEach(tk=>{
     const sem=tk.toLowerCase(),letraPMG=PMG[sem]||(/^[A-Za-z]{1,3}$/.test(tk)?tk.toUpperCase():""),nome=PMG[sem]||tk;
     let it=gr.itens.find(x=>String(x.nome).toLowerCase()===nome.toLowerCase());
     if(!it){const letra=letraPMG&&!gr.itens.some(x=>String(x.letra).toUpperCase()===letraPMG)?letraPMG:proxLetra(gr.itens.map(x=>x.letra));it={id:uid(),letra,nome};gr.itens.push(it)}
@@ -2051,7 +2053,7 @@ function conjTotHTML(f){
   return `<span>Peso <b>${fmt(tot.N)} g</b></span><span>Compra <b>R$ ${brl(tot.P)}</b></span><span>Banhos <b>R$ ${brl(tot.R+tot.S+tot.T)}</b></span><span>Verniz <b>R$ ${brl(tot.U)}</b></span>${q?`<span>Insumos <b>R$ ${brl(q)}</b></span>`:""}<span class="cj-g">Custo total <b>R$ ${brl(custo)}</b>${mk?` × ${fmt(mk)} = Varejo <b>R$ ${brl(Math.round(custo*mk*100)/100)}</b>`:` · informe o <b>Fator ×</b> para calcular o Varejo`}</span>`}
 function conjPainel(f){
   const bh=banhistaBy(f.banhista),{lin}=conjCalc(f);
-  return `<div class="conj" id="conj"><div class="conj-h"><b>Peças do conjunto</b><span class="hint">cada peça com seu peso, custo e banho · tudo soma numa só linha da tabela · o Fator × vale para o total</span></div>
+  return `<div class="conj" id="conj"><div class="conj-h"><b>Peças do conjunto</b><span class="hint">cada peça com seu peso, custo e banho · tudo soma numa só linha da tabela · o Fator × vale para o total · conjunto não usa cores</span></div>
   ${(f.comp||[]).map((c,i)=>`<div class="conj-r" data-ci="${i}"><input class="cj-d" data-cp="desc" value="${esc(c.desc||"")}" placeholder="Peça (ex.: Brincos)" aria-label="Peça do conjunto"><input class="n cj-n" data-cp="peso" value="${esc(c.peso||"")}" placeholder="Peso g" inputmode="decimal" aria-label="Peso em gramas"><input class="n cj-n" data-cp="custo" value="${esc(c.custo||"")}" placeholder="Custo compra" inputmode="decimal" aria-label="Custo de compra"><select data-cp="banho" aria-label="Banho"><option value="">sem banho</option>${(bh.banhos||[]).map(b=>`<option value="${esc(b.id)}" ${c.banho===b.id?"selected":""}>${esc(b.letra)} · ${esc(b.nome)}</option>`).join("")}</select><label class="vchk" title="Verniz do banhista nesta peça"><input type="checkbox" data-cp="vz" ${(c.vz==null?(()=>{const b=(bh.banhos||[]).find(x=>x.id===c.banho);return b?vzPad(bh,b):false})():c.vz)?"checked":""} ${c.banho?"":"disabled"}> verniz</label><span class="cj-c" id="cj-c-${i}" title="Custo desta peça: compra + banho + verniz">R$ ${brl((lin[i]||{}).total||0)}</span><button type="button" class="x" data-act="comp-del" data-ci="${i}" aria-label="Tirar esta peça do conjunto" title="Tirar esta peça">×</button></div>`).join("")}
   <div class="conj-b"><button type="button" class="btn sm" data-act="comp-add">＋ peça do conjunto</button></div>
   <div class="conj-t" id="conjTot">${conjTotHTML(f)}</div></div>`}
@@ -2298,8 +2300,9 @@ function romColsR(r){const f=S.form,bh=banhistaBy(f.banhista);
 const romCols=()=>romColsR(null);
 /* monta, para uma peça do romaneio, o mesmo lançamento que o formulário montaria */
 function romForm(r,prev){const snap=S.form,T=romT(),bruta=snap.tipo==="bruta",g=gradeDaCat(r.cat,r.sub),cols=romColsR(r),f=clone(snap);
+  if(snap.conj){delete f.conj;delete f.comp;delete f.fConj}
   f.v={...snap.v,F:r.desc,I:r.cat||snap.v.I,N:r.peso,P:r.custo,M:!vazio(r.obs)?r.obs:(ROM.obs||snap.v.M)};
-  if(r.sub)f.v.J=r.sub;else delete f.v.J;delete f.v.V;delete f.v.W;if(r.cod)f.v.G=r.cod;
+  if(r.sub)f.v.J=r.sub;else delete f.v.J;delete f.v.V;delete f.v.W;if(snap.conj)["R","S","T","U"].forEach(L=>delete f.v[L]);if(r.cod)f.v.G=r.cod;
   Object.keys(r.ex||{}).forEach(L=>{if(!vazio(r.ex[L]))f.v[L]=r.ex[L]});
   if(!bruta){if(!vazio(r.cor))f.v.L=r.cor;if(!vazio(r.vp))f.v.V=r.vp}
   f.ft=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.semGrade=false;f.ov={};f.vinc=false;
@@ -2824,8 +2827,6 @@ async function enviarFoto(l){const key=fotoKey();if(!key)throw new Error("falta 
     catch(e){throw new Error(e&&e.name==="AbortError"?"o imgbb demorou mais de 30 segundos para responder":"não consegui falar com o imgbb (internet ou bloqueio do navegador)")}
     finally{clearTimeout(tm)}};
   await envia("");
-  /* se o imgbb não aceitar a chave no corpo (erro 100), tenta uma vez do jeito antigo, com a chave no endereço */
-  if(!r.ok&&j&&j.error&&j.error.code===100)await envia("?key="+encodeURIComponent(key));
   if(!r.ok||!j||!j.success||!j.data||!j.data.url)throw new Error((j&&j.error&&j.error.message)||"o imgbb recusou a foto ("+r.status+")");
   const u=String(j.data.url);if(!/^https:\/\/[^\s"'<>]+$/.test(u))throw new Error("o imgbb devolveu um link estranho");return u}
 let fotosEnv=false;
@@ -3239,7 +3240,7 @@ function trocarBanhista(f,id){f.banhista=id;marcadosPadrao(f);f.onP={};f.vz={};
 /* o banhista de cada fornecedor (Fornecedores → Banhista) entra sozinho quando a peça é bruta */
 function banhistaDoFornecedor(f){const fo=fornBy(f.v.H);if(f.tipo==="bruta"&&fo&&fo.banhista&&fo.banhista!==f.banhista&&cfg().banhistas.some(b=>b.id===fo.banhista))trocarBanhista(f,fo.banhista)}
 function limparForm(){const cc=cfg().colcfg,f=S.form;f.vz={};LET.forEach(L=>{if(!cc[L].manter)delete f.v[L]});
-  Object.keys(f.ov||{}).forEach(b=>{const o=f.ov[b];if(!o||typeof o!=="object"){delete f.ov[b];return}Object.keys(o).forEach(L=>{if(!cc[L]||!cc[L].manter)delete o[L]});if(!Object.keys(o).length)delete f.ov[b]});if(f.tipo!=="pronta")f.vinc=false}
+  Object.keys(f.ov||{}).forEach(b=>{const o=f.ov[b];if(!o||typeof o!=="object"){delete f.ov[b];return}Object.keys(o).forEach(L=>{if(!cc[L]||!cc[L].manter)delete o[L]});if(!Object.keys(o).length)delete f.ov[b]});if(f.tipo!=="pronta")f.vinc=false;if(f.conj)conjSync(f)}
 const focarPrimeiro=()=>{const el=document.querySelector("#f-F")||document.querySelector("#form .fbody input");if(el){el.focus();try{el.select()}catch(x){}}};
 let addTrava=0;
 /* ===== fotos: escolher, arrastar ou colar (Ctrl+V) ===== */
@@ -3253,7 +3254,7 @@ async function lerFotoArquivo(file){
   const grande=await blobUrl(g),mini=await blobUrl(m);if(!ftOk(mini))throw new Error(`formato de “${file.name}” não suportado`);
   return {mini,grande}}
 async function fotoNaPeca(lid,F){const l=S.lanc.find(x=>x.id===lid);if(!l)return false;
-  l.ft=F.mini;ftSalvas.delete(lid);candFoto.delete(lid);await idbPut("fotos",lid,F.grande);if(editId===lid)S.form.ft=F.mini;return true}
+  l.ft=F.mini;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);candFoto.delete(lid);await idbPut("fotos",lid,F.grande);if(editId===lid)S.form.ft=F.mini;return true}
 const refBase=r=>{const m=/^([A-Za-z]+\d+)/.exec(String(r||""));return m?m[1].toUpperCase():String(r||"").toUpperCase()};
 /* várias fotos de uma vez: o nome do arquivo igual à referência (BR1670.jpg) liga sozinho; as que sobram vão em sequência para as peças sem foto, a partir da peça escolhida */
 async function fotosEmLote(files,lidIni){
@@ -3277,7 +3278,7 @@ async function fotosEmLote(files,lidIni){
 async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){await fotoNaPeca(editId,F);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
 function fotoRemover(lid){
   if(!lid){delete S.form.ft;FT_GRANDE=null;salvar(false);renderForm();return}
-  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid)delete S.form.ft;salvar(false);renderTopo();renderForm();toast("Foto removida.")}
+  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid)delete S.form.ft;salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
   inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=ftAlvo;ftAlvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
     if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
@@ -3304,12 +3305,17 @@ function adicionar(limpar,quiet){
     if(!ck)for(const o of Object.values(f.ov||{})){if(!o||typeof o!=="object")continue;for(const L of VALIDA_NUM){const r=checaCel(L,o[L]);if(r.erro){ck=r.erro;onde=L;break}}if(ck)break}
     if(!ck&&!vazio(f.desconto)){const d=num(f.desconto);if(d==null||d<0||d>100)ck="Desconto precisa ser um número de 0 a 100 (%)."}
     if(ck){erro=ck;atualizarGera();const el=onde&&document.getElementById("f-"+onde);if(el)el.focus();return}}
+  if(f.conj){const cs=Array.isArray(f.comp)?f.comp:[];
+    if(!cs.some(c=>!vazio(c.desc)||(num(c.peso)||0)>0||(num(c.custo)||0)>0)){erro="Coloque pelo menos uma peça no conjunto (nome, peso ou custo).";atualizarGera();return}
+    const mau=cs.findIndex(c=>["peso","custo"].some(k=>!vazio(c[k])&&(num(c[k])==null||num(c[k])<0||num(c[k])>1e7)));
+    if(mau>=0){erro=`Peça ${mau+1} do conjunto: peso e custo precisam ser números de 0 em diante.`;atualizarGera();const el=document.querySelector(`[data-ci="${mau}"] input.cj-n`);if(el)el.focus();return}}
   if(!catBy(val(f,"I"))){erro="Escolha a categoria da peça.";atualizarGera();const ec=document.getElementById("f-I");if(ec)ec.focus();return}
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
-  {const gr=gradeBy(f.grade);if(gr&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
+  {const gr=gradeBy(f.grade);if(gr&&!f.semGrade&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
   if(!vazio(f.v.E))f.v.E=String(f.v.E).replace(/\s+/g,"").toUpperCase();Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object"&&!vazio(o.E))o.E=String(o.E).replace(/\s+/g,"").toUpperCase()});
   const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
+  if(novo.conj)novo.onP={};else{delete novo.comp;delete novo.fConj}
   if(novo.tipo==="pronta"){const bp=bonP(novo);
     if(!bp.length){novo.onP={};if(!novo.conj)novo.banhista="";const ov={};Object.keys(novo.ov||{}).forEach(k=>{if(k==="p"||k.startsWith("p~"))ov[k]=novo.ov[k]});novo.ov=ov;novo.mk=novo.mk&&novo.mk.p?{p:novo.mk.p}:{}}
     if(temGrade(novo)||bp.length)delete novo.v.W;["O","R","S","T","U"].forEach(L=>{if(vazio(novo.v[L]))delete novo.v[L]})}
@@ -3334,7 +3340,7 @@ function desfazer(refazer){
   if(!pilha.length){toast(refazer===true?"Nada para refazer.":"Nada para desfazer.");return}
   const e=pilha.pop();
   outra.push({L:snapL,C:snapC,F:e.F?JSON.stringify(S.form):null,E:!!editId,soCfg:e.soCfg,t:Date.now()});
-  restaurando=true;
+  restaurando=true;const eidAntes=editId||null;
   const idsAntes=S.lanc.map(l=>l.id);
   try{
     S.lanc=JSON.parse(e.L).map(lerLanc);
@@ -3345,6 +3351,7 @@ function desfazer(refazer){
     histIni();
   }finally{restaurando=false}
   salvar(true);render();
+  if(eidAntes&&editId===eidAntes&&S.lanc.some(l=>l.id===eidAntes)){const rs=rascunho;editId=null;if(rs){S.form=rs;rascunho=null}editar(eidAntes)}
   toast(refazer===true?"Refeito.":"Desfeito.",refazer===true?null:(REDO.length?{t:"Refazer",fn:()=>desfazer(true)}:null));
 }
 /* valores digitados direto na tabela (ov) voltam para os campos do formulário, para poder editá-los ali */
@@ -3409,7 +3416,7 @@ async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?awa
 function pendenciasExport(g){
   const cc=cfg().colcfg,pend=[];
   g.linhas.forEach((r,i)=>{const falta=[];
-    LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!(num(r.v.W)>0):vazio(r.v[L])))falta.push(NOME[L])});
+    LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!(num(r.v.W)>0):(vazio(r.v[L])&&!(L==="V"&&num(r.mk)>0))))falta.push(NOME[L])});
     if(r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo"&&!falta.includes(NOME.N))falta.push("Peso (sem ele o custo do banho fica vazio)");
     if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))falta.push("multiplicador do banho (custo do banho fica vazio)");
     if(falta.length)pend.push({i,r,falta})});
@@ -3494,7 +3501,7 @@ function importar(file){
     const hdr=(aoa[0]||[]).map(x=>String(x||"").trim().toLowerCase()),ix=n=>{const k={"referência":"E","fornecedor":"H","categoria":"I","subcategoria":"J","cor":"L","observação":"M"}[n];return (aoa[0]||[]).findIndex(h=>chaveDoCabecalho(h)===k)};
     const iR=ix("referência"),iF=ix("fornecedor"),iC=ix("categoria"),iS=ix("subcategoria"),iCor=ix("cor"),iO=ix("observação");if(iR<0)throw 0;
     const max={},pad={},forn=new Set(),cats={},cores=new Set(),obs=new Set();
-    aoa.slice(1).forEach(r=>{const m=String(r[iR]||"").trim().toUpperCase().match(/^([A-Z]+)(\d+)[A-Z]?$/);if(m&&!(max[m[1]]>=+m[2]))max[m[1]]=+m[2];if(m&&m[2].length>1&&m[2][0]==="0")pad[m[1]]=Math.max(pad[m[1]]||0,m[2].length);
+    aoa.slice(1).forEach(r=>{const m=String(r[iR]||"").trim().toUpperCase().match(/^([A-Z]+)(\d+)[A-Z]*$/);if(m&&!(max[m[1]]>=+m[2]))max[m[1]]=+m[2];if(m&&m[2].length>1&&m[2][0]==="0")pad[m[1]]=Math.max(pad[m[1]]||0,m[2].length);
       if(iF>=0&&r[iF])forn.add(String(r[iF]).trim());if(iC>=0&&r[iC]){const c=String(r[iC]).trim();cats[c]=cats[c]||{subs:new Set(),pref:m?m[1]:null};if(iS>=0&&r[iS])cats[c].subs.add(String(r[iS]).trim())}
       if(iCor>=0&&r[iCor])cores.add(String(r[iCor]).trim());if(iO>=0&&r[iO])obs.add(String(r[iO]).trim())});
     impPend={max,pad,forn,cats,cores,obs};
@@ -3534,6 +3541,7 @@ document.addEventListener("submit",e=>{e.preventDefault();adicionar()});
 /* digitação rápida: ao entrar num campo numérico do lançamento, o conteúdo fica selecionado e o que for digitado substitui */
 document.addEventListener("focusin",e=>{const t=e.target;if(t.tagName==="INPUT"&&t.classList.contains("n")&&t.closest("#form")&&!t.disabled)try{t.select()}catch(x){}});
 document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.open){abertos[d.dataset.open]=d.open;guardarAbertos()}},true);
+let mdTd=null;
 document.addEventListener("mousedown",e=>{
   if(e.target.classList&&e.target.classList.contains("rz")){e.preventDefault();e.stopPropagation();
     const L=e.target.dataset.rz,col=document.querySelector(`#sheet col[data-cw="${L}"]`),tb=document.querySelector("#sheet table"),x0=e.clientX,w0=cw(L),t0=tb.offsetWidth;
@@ -3548,14 +3556,14 @@ document.addEventListener("mousedown",e=>{
   const kc=e.target.closest("#sheet td.k");
   if(kc&&!e.target.closest("input,button")){const r=+kc.closest("tr").dataset.ri;if(isNaN(r))return;e.preventDefault();if(celEd)fecharCel(true);if(e.shiftKey&&selR)selecionar(selR.ar,0,r,LET.length-1);else selecionar(r,0,r,LET.length-1);sh.focus({preventScroll:true});return}
   const td=e.target.closest("#sheet td[data-c]");
-  if(td){e.preventDefault();if(celEd)fecharCel(true);const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(e.shiftKey&&selR)selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);arrastando=true;sh.focus({preventScroll:true});return}
+  if(td){e.preventDefault();if(celEd)fecharCel(true);const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);mdTd=td;if(e.shiftKey&&selR)selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);arrastando=true;sh.focus({preventScroll:true});return}
   if(celEd)fecharCel(true);
 });
 document.addEventListener("mousemove",e=>{if(!arrastando||!selR)return;const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td)return;const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r!==selR.fr||c!==selR.fc){selR.fr=r;selR.fc=c;pintarSel();renderSelBar()}});
 document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
   /* um clique simples numa célula já abre para digitar (sem duplo clique); arrastar ou Shift só seleciona */
   if(!was||e.shiftKey||e.button||celEd||!selR||selR.ar!==selR.fr||selR.ac!==selR.fc)return;
-  const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td||td.classList.contains("ed"))return;
+  const td=mdTd&&mdTd.isConnected?mdTd:(e.target.closest&&e.target.closest("#sheet td[data-c]"));mdTd=null;if(!td||td.classList.contains("ed"))return;
   const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r===selR.fr&&c===selR.fc){
     /* clique numa célula: abre a peça no formulário (se o formulário não tem alterações por salvar) e já deixa a célula pronta para digitar */
     const row=G&&G.linhas[r];if(row&&row.lancId&&row.lancId!==editId&&!formSujo()&&!celular()){const lid=row.lancId;editar(lid);if(G.linhas[r]&&G.linhas[r].lancId===lid)selR={ar:r,ac:c,fr:r,fc:c}}
@@ -3567,7 +3575,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.tipo==="conjunto"){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];
     if(!f.banhista)f.banhista=cfg().banhistas[0].id;if(!editId&&f.v.I!=="Conjuntos"&&catBy("Conjuntos")){f.v.I="Conjuntos";delete f.v.J;sincGrade(f)}
     conjSync(f);salvar(false);renderTopo();renderForm();return}
-  if(t.dataset.tipo){if(S.form.conj){delete S.form.conj;delete S.form.comp;delete S.form.fConj}S.form.tipo=t.dataset.tipo;if(t.dataset.tipo==="bruta"&&!Object.values(S.form.on||{}).some(Boolean))marcadosPadrao(S.form);if(t.dataset.tipo==="bruta"&&!editId)banhistaDoFornecedor(S.form);salvar(false);renderTopo();renderForm();focarPrimeiro();return}
+  if(t.dataset.tipo){if(S.form.conj){delete S.form.conj;delete S.form.fConj}S.form.tipo=t.dataset.tipo;if(t.dataset.tipo==="bruta"&&!Object.values(S.form.on||{}).some(Boolean))marcadosPadrao(S.form);if(t.dataset.tipo==="bruta"&&!editId)banhistaDoFornecedor(S.form);salvar(false);renderTopo();renderForm();focarPrimeiro();return}
   const a=t.dataset.act,C=cfg(),tr=t.closest("tr[data-l],.pc[data-l]");
   const ci=t.closest("[data-cat]")?+t.closest("[data-cat]").dataset.cat:-1,bi=t.closest("[data-bh]")?+t.closest("[data-bh]").dataset.bh:-1;
   const snapCfg=CFG_UNDO.includes(a)?clone(S.config):null;
@@ -3681,9 +3689,9 @@ document.addEventListener("click",e=>{
     case "rom-fechar":romSalvar();ROM=null;renderRom();renderForm();toast("Romaneio guardado — use “Retomar romaneio” quando quiser continuar.");break;
     case "rom-descartar":{romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito);romLimparRascunho();if(sid0&&!jaFeito)romExcluirSalvo(sid0);ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{localStorage.setItem(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null);break}
     case "rom-lote":romLote();break;
-    case "gr-novo-pmg":{const c=catBy(S.form.v.I);if(!c)break;if(!c.grade)c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};const gr=effGrade(c);addTamanhos(gr,"P M G");sincGrade(S.form);S.form.gsel=gr.itens.map(x=>x.id);S.form.semGrade=false;salvar(true,false);renderForm();renderCfg();toast("Tamanhos P, M e G criados: a letra de cada um entra na referência.");break}
+    case "gr-novo-pmg":{const c=catBy(S.form.v.I);if(!c)break;if(!c.grade)c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};const gr=effGrade(c);if(gr.itens.length&&(gr.subs||[]).length&&!(gr.subs||[]).includes(S.form.v.J)){toast(`Os tamanhos desta categoria valem só para: ${gr.subs.join(", ")}. Para usar P M G aqui, tire essa restrição em Cadastros › Categorias.`);break}addTamanhos(gr,"P M G");sincGrade(S.form);S.form.gsel=gr.itens.map(x=>x.id);S.form.semGrade=false;salvar(true,false);renderForm();renderCfg();toast("Tamanhos P, M e G criados: a letra de cada um entra na referência.");break}
     case "gi-pmg":{const gr=gradeBy(S.form.grade);if(gr){const novos=addTamanhos(gr,"P M G");S.form.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(S.form.gsel||[]).includes(id));S.form.semGrade=false;salvar(true,false);renderForm();toast("Tamanhos P, M e G prontos: a letra de cada um entra na referência.")}break}
-    case "comp-add":{const f=S.form;f.comp=f.comp||[];f.comp.push(novaComp());conjSync(f);salvar(false);renderTopo();renderForm();break}
+    case "comp-add":{const f=S.form;f.comp=f.comp||[];if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");break}f.comp.push(novaComp());conjSync(f);salvar(false);renderTopo();renderForm();break}
     case "comp-del":{const f=S.form;f.comp.splice(+t.dataset.ci,1);conjSync(f);salvar(false);renderTopo();renderForm();break}
     case "foto-testar":testarChaveImgbb();break;
     case "foto-add":ftAlvo=t.dataset.lid;document.getElementById("ftIn").click();break;
@@ -3811,18 +3819,19 @@ function onField(t,isChange){
     atualizarGera();salvar(false);return;
   }
   if(t.dataset.mk){f.mk=f.mk||{};
-    if(!vazio(t.value)){const n=num(t.value);if(n==null||n<0){if(isChange){t.value=f.mk[t.dataset.mk]??"";toast("Multiplicador precisa ser um número maior ou igual a 0.")}return}}
+    if(!vazio(t.value)){const n=num(t.value);if(n==null||n<=0||n>1e5){if(isChange){t.value=f.mk[t.dataset.mk]??"";toast("O Fator × precisa ser um número maior que 0 (ex.: 2,5).")}return}}
     if(vazio(t.value))delete f.mk[t.dataset.mk];else f.mk[t.dataset.mk]=t.value;
     /* mudou o fator: o Preço de Varejo digitado à mão sai e volta a ser calculado pelo novo fator */
     {const k=t.dataset.mk,vi=k==="p"?document.getElementById("f-V"):document.querySelector(`[data-bo="${k}"][data-k="V"]`);
       if(k==="p")delete f.v.V;else if(f.ov&&f.ov[k])delete f.ov[k].V;
       if(vi&&vi.value!=="")vi.value=""}
+    if(f.conj)conjSync(f,true);
     atualizarGera();salvar(false);return}
   if(t.dataset.bo){const b=t.dataset.bo,L=t.dataset.k;f.ov=f.ov||{};f.ov[b]=f.ov[b]||{};if(vazio(t.value))delete f.ov[b][L];else f.ov[b][L]=t.value;if(L==="V"&&isChange)fatorDoPreco(b);atualizarGera();salvar(false);return}
   if(t.dataset.f){const k=t.dataset.f;
     if(k==="desconto"&&!vazio(t.value)){const d=num(t.value);if(d==null||d<0||d>100){if(isChange){t.value=f.desconto??"0";toast("Desconto precisa ficar entre 0 e 100 (%).")}return}}
-    f[k]=t.type==="checkbox"?t.checked:t.value;
-    if(k==="banhista"){const bhAntes=banhistaBy(f.banhista);trocarBanhista(f,t.value);if(f.conj&&Array.isArray(f.comp)){const nb=banhistaBy(f.banhista);f.comp.forEach(c=>{const o=(bhAntes.banhos||[]).find(x=>x.id===c.banho);c.banho=((o&&(nb.banhos||[]).find(x=>x.letra===o.letra))||{}).id||"";delete c.vz});conjSync(f)}renderForm();refocar('[data-f="banhista"]')}
+    const idAntes=f[k];f[k]=t.type==="checkbox"?t.checked:t.value;
+    if(k==="banhista"){const bhAntes=banhistaBy(idAntes);trocarBanhista(f,t.value);if(f.conj&&Array.isArray(f.comp)){const nb=banhistaBy(f.banhista);f.comp.forEach(c=>{const o=(bhAntes.banhos||[]).find(x=>x.id===c.banho);c.banho=((o&&(nb.banhos||[]).find(x=>x.letra===o.letra))||{}).id||"";delete c.vz});conjSync(f)}renderForm();refocar('[data-f="banhista"]')}
     else if(k==="semGrade"){if(f.semGrade)f.vinc=false;renderTopo();renderForm();refocar('[data-f="semGrade"]')}
     else atualizarGera();salvar(false);return}
   if(t.dataset.vz){f.vz=f.vz||{};f.vz[t.dataset.vz]=t.checked;atualizarGera();renderTopo();renderFormSoon();salvar(false);return}
@@ -3882,7 +3891,7 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.id==="fileBk"&&t.files[0])return restaurar(t.files[0]);
   if(t.id==="fileBkT"&&t.files[0])return restaurarTotal(t.files[0]);
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
-  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.cf||t.dataset.sp||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
+  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
 document.addEventListener("paste",e=>{if(e.target.id!=="celIn"&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&tx.trim()){e.preventDefault();const b=selBox();colarCel(tx,b?{ri:b.r1,L:LET[b.c1]}:{ri:G.linhas.length,L:"A"})}return}if(e.target.id!=="celIn"||!celEd)return;const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&(tx.includes("\t")||tx.replace(/\n+$/,"").includes("\n"))){e.preventDefault();colarCel(tx)}});
 document.addEventListener("keydown",e=>{
   const t=e.target;
