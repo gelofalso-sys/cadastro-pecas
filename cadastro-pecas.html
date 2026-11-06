@@ -1,6 +1,7 @@
 <title>Cadastro de Peças</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2327466f'/%3E%3Cpath d='M16 7l6 6-6 12-6-12z' fill='%23fff'/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="color-scheme" content="only light"><meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -14,15 +15,16 @@
   --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+@media (prefers-color-scheme: dark){:root[data-theme="dark-off"]{
   --bg:#0f141c; --surface:#171d28; --surface-2:#212938; --line:#2d3649; --ink:#e7ecf4; --muted:#93a1b8;
   --accent:#7fa6e6; --accent-ink:#0c1522; --accent-soft:#1d2b44; --gold:#dcb45c; --silver:#b4bccb; --rhod:#8fa3cc; --sel:#1b2536; --ov:#a58cf0;
   --warn:#e0a24f; --bad:#ec7a70; --bad-soft:#3d2220; --focus:#7fa6e6; color-scheme:dark}}
-:root[data-theme="dark"]{
+:root[data-theme="dark-off"]{
   --bg:#0f141c; --surface:#171d28; --surface-2:#212938; --line:#2d3649; --ink:#e7ecf4; --muted:#93a1b8;
   --accent:#7fa6e6; --accent-ink:#0c1522; --accent-soft:#1d2b44; --gold:#dcb45c; --silver:#b4bccb; --rhod:#8fa3cc; --sel:#1b2536; --ov:#a58cf0;
   --warn:#e0a24f; --bad:#ec7a70; --bad-soft:#3d2220; --focus:#7fa6e6; color-scheme:dark}
 *{box-sizing:border-box}
+:root{color-scheme:light}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:13px;line-height:1.4}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
 .gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -939,8 +941,8 @@ td.mem span{display:inline-block;max-width:260px;overflow:hidden;text-overflow:e
 .nf-sum{display:flex;flex-direction:column;gap:6px;background:var(--accent-soft);border-radius:10px;padding:8px 12px}
 .nf-conf{display:flex;flex-direction:column;gap:2px;font-size:12.5px}
 .nf-ok{color:#1f6b4a}.nf-no{color:var(--warn);font-weight:600}
-:root[data-theme="dark"] .nf-ok{color:#6fd0a2}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .nf-ok{color:#6fd0a2}}
+:root[data-theme="dark-off"] .nf-ok{color:#6fd0a2}
+@media (prefers-color-scheme: dark){:root[data-theme="dark-off"] .nf-ok{color:#6fd0a2}}
 .nf-vai{font-size:13px}
 .nf-bar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
 .nf-list{display:flex;flex-direction:column;gap:8px}
@@ -998,8 +1000,8 @@ table.t th small,.lt,.rsel,em.auto,.bdg,kbd,.fl>span,.fsec h3,.fc>span,.grp h3,.
 input::placeholder{color:color-mix(in srgb,var(--muted) 92%,transparent)}
 /* contraste: etiquetas e verdes */
 .lt.R,.lt.T{color:#111}
-:root[data-theme="dark"] :is(.tt.ok,.soma.ok,.kpi.ok b,.rep-cf.ok,.rc .soma.ok){color:#6fd0a2}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) :is(.tt.ok,.soma.ok,.kpi.ok b,.rep-cf.ok,.rc .soma.ok){color:#6fd0a2}}
+:root[data-theme="dark-off"] :is(.tt.ok,.soma.ok,.kpi.ok b,.rep-cf.ok,.rc .soma.ok){color:#6fd0a2}
+@media (prefers-color-scheme: dark){:root[data-theme="dark-off"] :is(.tt.ok,.soma.ok,.kpi.ok b,.rep-cf.ok,.rc .soma.ok){color:#6fd0a2}}
 /* foco do teclado */
 #sheet:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 select:focus-visible,.btn:focus-visible,.tg:focus-visible,.seg button:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -1051,6 +1053,8 @@ table.cfg td input:not([type=checkbox]){min-width:110px}
 }
 
 .custos{font-size:12px;color:var(--muted);margin:4px 0 2px}.custos summary{cursor:pointer;font-weight:600;color:var(--ink)}.custos summary small{font-weight:400;color:var(--muted)}.custos b{color:var(--ink)}.ck-l{padding:3px 0;border-top:1px dashed var(--line);line-height:1.5}
+.tf{position:relative}.tf .ftr{position:absolute;right:2px;bottom:2px;width:22px!important;height:22px!important;max-width:22px;object-fit:cover;border:2px solid #fff;border-radius:5px;box-shadow:0 0 0 1px var(--line);cursor:zoom-in}
+.ftslot.ftr{position:relative}.ftslot.ftr small{display:block;text-align:center;font-size:10px;color:var(--muted)}
 /* catálogo rápido */
 .cpanel{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px;display:grid;gap:8px;margin:6px 0}
 .cpanel textarea{width:100%;min-height:96px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);box-sizing:border-box}
@@ -1621,6 +1625,7 @@ function lerLanc(l){
     on:{ouro:!(l.tipo==="bruta"&&l.prata&&!(num(l.qtdA)>0)),prata:!!l.prata},q:{ouro:l.qtdA,prata:l.qtdB},dsc:{prata:l.descB||""}};
   l.ov=l.ov||{};
   if(l.ft&&!ftOk(l.ft)){delete l.ft}
+  if(l.ftR&&!ftOk(l.ftR)){delete l.ftR}
   if(l.q){Object.entries(l.q).forEach(([b,q])=>{if(!vazio(q)){l.ov[b]=l.ov[b]||{};if(vazio(l.ov[b].W))l.ov[b].W=q}});delete l.q}
   if(l.dsc){Object.entries(l.dsc).forEach(([b,d])=>{if(!vazio(d)){l.ov[b]=l.ov[b]||{};l.ov[b].F=d}});delete l.dsc}
   return l;
@@ -1722,7 +1727,7 @@ function cartoes(g){
     const c=celulas(row,ri+2),gv=L=>{const x=c[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
     const pv=gv("V"),cu=gv("P"),q=num(row.v.W),pd=pendente(row);
     h+=`<div class="pc${row.dup?" dup":""}${editId===row.lancId?" edl":sel.has(row.lancId)?" on":""}" data-l="${row.lancId}" data-ri="${ri}" data-act="editar" role="button" tabindex="0" aria-label="Editar ${esc(row.v.E)}">
-      <div class="c1">${(()=>{const ft=(S.lanc.find(l=>l.id===row.lancId)||{}).ft;return ft&&ftOk(ft)?`<img class="pc-ft" src="${fs(ft)}" alt="" data-act="tab-foto" data-lid="${row.lancId}">`:`<button type="button" class="pc-ftadd" data-act="foto-add" data-lid="${row.lancId}" aria-label="Adicionar foto" title="Adicionar foto">📷</button>`})()}<b class="mono">${esc(row.v.E)}</b>${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}${pd?`<span class="pd">${esc(pd)}</span>`:""}<span class="q">${q!=null?fmt(q)+" pç":"sem qtd"}</span></div>
+      <div class="c1">${(()=>{const lq=S.lanc.find(l=>l.id===row.lancId)||{},ft=lq.ft||lq.ftR;return ft&&ftOk(ft)?`<img class="pc-ft" src="${fs(ft)}" alt="" data-act="tab-foto" data-lid="${row.lancId}">`:`<button type="button" class="pc-ftadd" data-act="foto-add" data-lid="${row.lancId}" aria-label="Adicionar foto" title="Adicionar foto">📷</button>`})()}<b class="mono">${esc(row.v.E)}</b>${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}${pd?`<span class="pd">${esc(pd)}</span>`:""}<span class="q">${q!=null?fmt(q)+" pç":"sem qtd"}</span></div>
       <div class="c2">${esc(row.v.F||"(sem descrição)")}</div>
       <div class="c3">${[(row.v.I||"")+(row.v.J?" › "+row.v.J:""),row.v.H,row.v.L,row.v.K].filter(x=>!vazio(x)).map(esc).join(" · ")}</div>
       <div class="c4"><span>Custo <b>${cu!=null?"R$ "+brl(cu):"—"}</b></span><span>Varejo <b>${pv!=null?"R$ "+brl(pv):"—"}</b></span>
@@ -1773,13 +1778,13 @@ function renderTopo(){
     +(()=>{const nf=S.lanc.filter(l=>l.ft&&vazio(l.v.B)).length;return nf?`<button class="btn sm" type="button" data-act="fotos-enviar" title="Envia as fotos para o imgbb e põe o link na coluna Foto (os sistemas pedem o link da foto)">↑ Gerar link de ${nf} foto${nf>1?"s":""}</button>`:""})()
     +`<div class="issues">${av.length?av.map(a=>`<span class="${a.bad?"bad":""}">• ${esc(a.t)}</span>`).join(""):!g.linhas.length?`<span class="ok vaz"><b>Comece lançando uma peça abaixo</b> ou importe um romaneio ou nota fiscal. Também dá para colar linhas de outra planilha (clique numa célula e use <kbd>Ctrl</kbd>+<kbd>V</kbd>).</span> <button class="btn sm" type="button" data-act="exemplo">Ver um exemplo</button>`:`<span class="ok">Clique numa célula para editar · <kbd>Enter</kbd> desce · <kbd>Tab</kbd> vai para a direita · pode colar blocos do Excel</span>`}</div>`;
   const cab=`<thead><tr><th class="k"><div class="in"><input type="checkbox" id="selAll" ${S.lanc.length&&S.lanc.every(l=>sel.has(l.id))?"checked":""} aria-label="Selecionar todos"></div></th><th class="k nm" title="Número da linha: ajuda a achar qual peça você está alterando">Nº</th><th class="tfh" title="Foto do romaneio — só referência visual, não vai para a planilha">Imagem</th>${LET.map(L=>`<th data-hc="${L}" title="${esc(NOME[L])} — clique para selecionar a coluna"><small>${L}</small>${esc(nomeTela(L))}<span class="rz" data-rz="${L}" title="Arraste para ajustar a largura · duplo clique volta ao padrão"></span></th>`).join("")}</tr></thead>`;
-  const ftMap={};S.lanc.forEach(l=>{if(l.ft&&ftOk(l.ft))ftMap[l.id]=l.ft});
+  const ftMap={},ftRMap={};S.lanc.forEach(l=>{const a=l.ft&&ftOk(l.ft)?l.ft:"",b=l.ftR&&ftOk(l.ftR)?l.ftR:"";if(a||b)ftMap[l.id]=a||b;if(a&&b&&a!==b)ftRMap[l.id]=b});
   let h=`<table class="t" style="width:${larguraTabela()}px"><colgroup><col style="width:96px"><col style="width:44px"><col style="width:56px">${LET.map(L=>`<col data-cw="${L}" style="width:${cw(L)}px">`).join("")}</colgroup>${cab}<tbody>`;
   const cel=g.linhas.map((row,ri)=>celulas(row,ri+2));   /* uma vez só por desenho (antes eram duas) */
   const trReal=ri=>{const row=g.linhas[ri];let h="";
     const c=cel[ri],id=row.lancId;
     h+=`<tr data-l="${id}" data-ri="${ri}" class="${editId===id?"edl":sel.has(id)?"on":""}"><td class="k"><div class="in"><input type="checkbox" data-sel ${sel.has(id)?"checked":""} aria-label="Selecionar">
-      <button type="button" data-act="editar" title="Abrir a peça no lançamento (todas as linhas dela)">✎</button><button type="button" data-act="dup" title="Duplicar esta linha (mesmo tipo, nova referência)">⧉</button><button type="button" class="del" data-act="del" title="Excluir só esta linha (as outras linhas da mesma peça ficam)">×</button></div></td><td class="k nm" title="Linha ${ri+1}">${ri+1}</td>`+(ftMap[id]?`<td class="tf"><img src="${fs(ftMap[id])}" alt="Foto" data-act="tab-foto" data-lid="${id}" title="Ampliar"></td>`:`<td class="tf"><button type="button" class="ftadd" data-act="foto-add" data-lid="${id}" title="Adicionar foto a esta peça: clique, arraste uma ou várias fotos para a linha (nome do arquivo = referência liga sozinho) ou cole com Ctrl+V">📷 ＋</button></td>`);
+      <button type="button" data-act="editar" title="Abrir a peça no lançamento (todas as linhas dela)">✎</button><button type="button" data-act="dup" title="Duplicar esta linha (mesmo tipo, nova referência)">⧉</button><button type="button" class="del" data-act="del" title="Excluir só esta linha (as outras linhas da mesma peça ficam)">×</button></div></td><td class="k nm" title="Linha ${ri+1}">${ri+1}</td>`+(ftMap[id]?`<td class="tf"><img src="${fs(ftMap[id])}" alt="Foto" data-act="tab-foto" data-lid="${id}" title="Ampliar">${ftRMap[id]?`<img class="ftr" src="${fs(ftRMap[id])}" alt="Foto do romaneio" data-act="tab-foto" title="Foto do romaneio (ampliar)">`:""}</td>`:`<td class="tf"><button type="button" class="ftadd" data-act="foto-add" data-lid="${id}" title="Adicionar foto a esta peça: clique, arraste uma ou várias fotos para a linha (nome do arquivo = referência liga sozinho) ou cole com Ctrl+V">📷 ＋</button></td>`);
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
@@ -1925,7 +1930,7 @@ function renderSelBar(){
 }
 function usarModelo(id){
   const l=S.lanc.find(x=>x.id===id);if(!l)return;if(editId)cancelar();
-  const c=clone(l);delete c.id;delete c.v.E;c.vinc=false;delete c.excl;delete c.ft;if(c.ov)Object.values(c.ov).forEach(o=>{delete o.E;delete o.W});
+  const c=clone(l);delete c.id;delete c.v.E;c.vinc=false;delete c.excl;delete c.ft;delete c.ftR;if(c.ov)Object.values(c.ov).forEach(o=>{delete o.E;delete o.W});
   S.form={...FORM0(),...c};salvar(false);renderTopo();renderForm();document.getElementById("paneBot").scrollTo({top:0});
   const d=document.getElementById("f-F");if(d){d.focus();d.select()}toast("Dados copiados para o lançamento. Ajuste e aperte Adicionar para criar a nova referência.");
 }
@@ -1985,8 +1990,9 @@ function renderForm(){
   const ftSlot=(()=>{const ft=S.form.ft&&ftOk(S.form.ft)?S.form.ft:"";
     return ft?`<div class="ftslot has" title="Foto da peça (clique para ampliar)"><img src="${fs(ft)}" alt="Foto da peça" data-act="tab-foto" ${editId?`data-lid="${editId}"`:""}><button type="button" class="ftt" data-act="foto-form" title="Trocar a foto: escolha um arquivo, arraste para cá ou cole com Ctrl+V">trocar</button><button type="button" class="ftx" data-act="foto-rem" title="Tirar a foto desta peça" aria-label="Tirar a foto">×</button></div>`
       :`<button type="button" class="ftslot" data-act="foto-form" title="Foto da peça: clique para escolher, arraste uma foto para cá ou cole com Ctrl+V"><span class="ftic">📷</span><small>foto</small></button>`})();
-  const rowMain=bruta?`${ftSlot}${c("F",{w:"l"})}${c("N",{w:"n"})}${c("P",{w:"c"})}${bhCampo}`
-    :`${ftSlot}${c("F",{w:"l"})}${c("N",{w:"n",dis:!!f.conj,nome:f.conj?"Peso (soma)":undefined})}${c("P",{w:"c",dis:!!f.conj,nome:f.conj?"Compra (soma)":undefined})}${bhCampo}${simples?`${gIts.length?`<div class="bf gv">${qtdVar("p",false)}</div>`:c("W",{w:"n"})}${c("L",{w:"s",q:"cor"})}<label class="fq w-n" title="Fator do preço: o Preço de Varejo = (Custo de Compra + Insumos + Banhos + Verniz) × este número"><span>Fator ×</span><div class="ip">${mkIn("p")}</div></label>${c("V",{w:"c"})}${vincL}`:""}`;
+  const ftRomHtml=(()=>{const r=S.form.ftR&&ftOk(S.form.ftR)?S.form.ftR:"";if(!r||r===S.form.ft)return "";return `<div class="ftslot has ftr" title="Foto que veio do romaneio (fica guardada; a outra é a que gera o link)"><img src="${fs(r)}" alt="Foto do romaneio" data-act="tab-foto"><small>romaneio</small><button type="button" class="ftx" data-act="foto-rem-rom" title="Tirar a foto do romaneio desta peça" aria-label="Tirar a foto do romaneio">×</button></div>`})();
+  const rowMain=bruta?`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n"})}${c("P",{w:"c"})}${bhCampo}`
+    :`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n",dis:!!f.conj,nome:f.conj?"Peso (soma)":undefined})}${c("P",{w:"c",dis:!!f.conj,nome:f.conj?"Compra (soma)":undefined})}${bhCampo}${simples?`${gIts.length?`<div class="bf gv">${qtdVar("p",false)}</div>`:c("W",{w:"n"})}${c("L",{w:"s",q:"cor"})}<label class="fq w-n" title="Fator do preço: o Preço de Varejo = (Custo de Compra + Insumos + Banhos + Verniz) × este número"><span>Fator ×</span><div class="ip">${mkIn("p")}</div></label>${c("V",{w:"c"})}${vincL}`:""}`;
   const dica=f.conj?`<span class="hint" style="align-self:center">Conjunto: marque os banhos (Ouro, Prata…) e sai uma linha de conjunto em cada um; todas as peças levam esse banho, menos as que você fixar um banho só delas.</span>`:!bruta&&!bpOn?`<span class="hint" style="align-self:center">Peça pronta com banhos: marque um ou mais para gerar uma linha por cor (A ouro, B prata…); sem marcar, use Cor, Quantidade e Preço acima.</span>`:"";
   const rowBanhos=`<div class="z-row z-banhos">${cards}<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn" title="Nova letra de banho (ex.: C · Ródio, D · Rosé)">＋ Letra</button>${dica}<span class="z-end">${addBtn}</span></div>`;
 const rowOrig=`<div class="z-row z-orig">${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}<i class="vsep"></i>${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
@@ -2491,7 +2497,7 @@ function romForm(r,prev){const snap=S.form,T=romT(),bruta=snap.tipo==="bruta",g=
   if(r.sub)f.v.J=r.sub;else delete f.v.J;delete f.v.V;delete f.v.W;if(snap.conj)["R","S","T","U"].forEach(L=>delete f.v[L]);if(r.cod)f.v.G=r.cod;
   Object.keys(r.ex||{}).forEach(L=>{if(!vazio(r.ex[L]))f.v[L]=r.ex[L]});
   if(!bruta){if(!vazio(r.cor))f.v.L=r.cor;if(!vazio(r.vp))f.v.V=r.vp}
-  f.ft=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.semGrade=false;f.ov={};f.vinc=false;
+  f.ft=r.fotoMini||null;f.ftR=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.semGrade=false;f.ov={};f.vinc=false;
   f.mk=clone(snap.mk||{});Object.keys(r.mk||{}).forEach(k=>{if(!vazio(r.mk[k]))f.mk[k]=r.mk[k]});
   f.vz={...(snap.vz||{}),...(r.vz||{})};
   f.desconto=((T.custo==="precod"&&r.precod!=null)||r.nfSemDesc)?"0":snap.desconto;
@@ -3359,13 +3365,13 @@ function renderCfg(){
       <label class="fl" style="width:150px"><span>Custo do Banho de Verniz (R$/g)</span><input class="n" data-bhf="verniz" value="${esc(b.verniz)}" inputmode="decimal"></label>
       <span class="hint" style="align-self:center">Verniz (camada protetora depois do banho): marque na coluna “Verniz” de cada banho abaixo; no lançamento dá para trocar peça a peça</span>
       <span style="margin-left:auto"></span><button class="btn sm" type="button" data-act="bh-dup">Duplicar</button>${C.banhistas.length>1?`<button class="btn sm danger" type="button" data-act="bh-del">Remover</button>`:""}</div>
-      <div class="tw"><table class="cfg bnt"><thead><tr><th>Banho</th><th>Letra</th><th>Cor</th><th>Milésimos de Banho</th><th>Cálculo</th><th>Valor R$</th><th>Coluna</th><th>Texto na Descrição (do banho)</th><th title="Verniz é a camada protetora passada depois do banho; cobra o custo por grama do banhista">Verniz</th><th title="Marcado: este banho já vem marcado ao lançar uma peça">Vem marcado</th><th></th></tr></thead><tbody>
+      <div class="tw"><table class="cfg bnt"><thead><tr><th>Banho</th><th>Letra</th><th>Cor</th><th title="Por grama: o valor por categoria (abaixo) é R$ por grama. Valor fixo: é o mesmo custo para toda peça">Cálculo</th><th>Coluna</th><th>Texto na Descrição (do banho)</th><th title="Verniz é a camada protetora passada depois do banho; cobra o custo por grama do banhista">Verniz</th><th title="Marcado: este banho já vem marcado ao lançar uma peça">Vem marcado</th><th></th></tr></thead><tbody>
       ${b.banhos.map((x,j)=>`<tr data-bn="${j}"><td data-th="Banho"><input data-bnf="nome" value="${esc(x.nome)}" style="width:92px" aria-label="Nome do banho"></td><td data-th="Letra"><input data-bnf="letra" value="${esc(x.letra)}" maxlength="2" style="width:42px" aria-label="Letra do banho ${esc(x.nome)}"></td>
-        <td data-th="Cor"><select data-bnf="cor" style="width:108px" aria-label="Cor do banho ${esc(x.nome)}"${(x.cor&&!C.cores.includes(x.cor))||!x.cor?' class="warn-sel"':""}>${corOpts(C,x)}</select></td><td data-th="Milésimos de Banho"><input class="n" data-bnf="mil" value="${esc(x.mil)}" style="width:64px" aria-label="Milésimos do banho ${esc(x.nome)}"></td>
-        <td data-th="Cálculo"><select data-bnf="modo" style="width:112px" aria-label="Cálculo do banho ${esc(x.nome)}">${opts([["peso","Por grama"],["fixo","Valor fixo"]],x.modo||"peso")}</select></td><td data-th="Valor R$"><input class="n" data-bnf="mult" value="${esc(x.mult)}" style="width:70px" placeholder="defina" aria-label="Valor do banho ${esc(x.nome)}"></td>
+        <td data-th="Cor"><select data-bnf="cor" style="width:108px" aria-label="Cor do banho ${esc(x.nome)}"${(x.cor&&!C.cores.includes(x.cor))||!x.cor?' class="warn-sel"':""}>${corOpts(C,x)}</select></td>
+        <td data-th="Cálculo"><select data-bnf="modo" style="width:112px" aria-label="Cálculo do banho ${esc(x.nome)}">${opts([["peso","Por grama"],["fixo","Valor fixo"]],x.modo||"peso")}</select></td>
         <td data-th="Coluna"><select data-bnf="coluna" style="width:170px" aria-label="Coluna do banho ${esc(x.nome)}">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,`${k} · Custo do Banho de ${n}`]),x.coluna)}</select></td><td data-th="Texto na Descrição (do banho)"><input data-bnf="sufixo" value="${esc(x.sufixo)}" placeholder="(nada)" style="width:124px" aria-label="Texto do banho ${esc(x.nome)} na Descrição"></td>
         <td class="c" data-th="Verniz"><input type="checkbox" data-bnf="vz" ${vzPad(b,x)?"checked":""} title="Este banho leva verniz por padrão" aria-label="Verniz no banho ${esc(x.nome)}"></td><td class="c" data-th="Vem marcado"><input type="checkbox" data-bnf="marcado" ${x.marcado?"checked":""} title="Este banho já vem marcado ao lançar uma peça" aria-label="Banho ${esc(x.nome)} vem marcado"></td><td class="acts" data-th=""><button class="x" type="button" data-act="bn-dup" title="Duplicar esta linha de banho" aria-label="Duplicar o banho ${esc(x.nome)}">⧉</button><button class="x" type="button" data-act="bn-del" title="Remover banho" aria-label="Remover o banho ${esc(x.nome)}">×</button></td></tr>`).join("")}
-      </tbody></table></div>${C.categorias.length&&b.banhos.length?`<details class="gdet" data-open="mc:${esc(b.id)}" ${abertos["mc:"+b.id]?"open":""}><summary><b>Milésimos e valor por categoria</b><span>ex.: Brincos 1 · R$ 1,42; Colares 5 · R$ 4,76 — vazio = usa o da tabela acima</span></summary><div class="gb"><div class="hint">Cada categoria pode ter seus próprios milésimos e valor em R$ (por banho): o primeiro campo é o milésimo, o segundo é o valor do banho. Ao lançar a peça, os valores da categoria entram sozinhos; dentro do item você ainda troca livremente (campos Milésimos e R$/g de cada banho).</div><div class="tw"><table class="cfg bnt"><thead><tr><th>Categoria</th>${b.banhos.map(x=>`<th>${esc(x.nome)} <small>milésimos · R$</small></th>`).join("")}</tr></thead><tbody>${C.categorias.map(c=>`<tr><td data-th="Categoria"><b>${esc(c.nome)}</b></td>${b.banhos.map((x,j)=>`<td data-th="${esc(x.nome)} · milésimos e R$"><input class="n" data-bmc="${j}" data-mcat="${esc(c.nome)}" value="${esc((x.milCat||{})[c.nome]??"")}" placeholder="${esc(x.mil||"")}" title="Milésimos de banho" inputmode="decimal" style="width:64px" aria-label="Milésimos de ${esc(x.nome)} em ${esc(c.nome)}"> <input class="n" data-bmv="${j}" data-mcat="${esc(c.nome)}" value="${esc((x.multCat||{})[c.nome]??"")}" placeholder="${esc(x.mult||"")}" title="Valor do banho em R$ (por grama, ou fixo)" inputmode="decimal" style="width:64px" aria-label="Valor em R$ de ${esc(x.nome)} em ${esc(c.nome)}"></td>`).join("")}</tr>`).join("")}</tbody></table></div></div></details>`:""}${(()=>{const fl=b.banhos.filter(x=>!x.cor||!C.cores.includes(x.cor));return fl.length?`<div class="soft" role="status">${fl.map(x=>x.cor?`O banho “${esc(x.nome)}” usa a cor “${esc(x.cor)}”, que não está mais em Cores.`:`O banho “${esc(x.nome)}” está sem cor.`).join(" ")} Escolha outra na lista ou crie com “+ Nova cor…”.</div>`:""})()}${catUI.corNova&&catUI.corNova.bi===i?`<div class="cpanel"><b>Nova cor</b><div class="row"><input data-ncor placeholder="Nome da cor (ex.: Rosé)" maxlength="40" aria-label="Nome da nova cor" style="max-width:220px"><button type="button" class="btn pri sm" data-act="cor-nova-ok">Criar e usar</button><button type="button" class="btn ghost sm" data-act="cor-nova-no">Cancelar</button></div></div>`:""}
+      </tbody></table></div>${C.categorias.length&&b.banhos.length?`<details class="gdet" data-open="mc:${esc(b.id)}" ${abertos["mc:"+b.id]===false?"":"open"}><summary><b>Milésimos e valor por categoria</b><span>ex.: Brincos 1 · R$ 1,42; Colares 5 · R$ 4,76 — vazio = usa a linha Padrão</span></summary><div class="gb"><div class="hint">Os milésimos e o valor do banho ficam por categoria (por banho): o primeiro campo é o milésimo, o segundo é o valor em R$. A linha Padrão vale para as categorias sem valor próprio. Ao lançar a peça, os valores da categoria entram sozinhos; dentro do item você ainda troca livremente (campos Milésimos e R$/g de cada banho).</div><div class="tw"><table class="cfg bnt"><thead><tr><th>Categoria</th>${b.banhos.map(x=>`<th>${esc(x.nome)} <small>milésimos · R$</small></th>`).join("")}</tr></thead><tbody><tr><td data-th="Categoria"><b>Padrão</b> <small>(categorias sem valor próprio)</small></td>${b.banhos.map((x,j)=>`<td data-th="${esc(x.nome)} · milésimos e R$"><input class="n" data-bmc="${j}" data-mcat="__padrao" value="${esc(x.mil||"")}" placeholder="milésimos" title="Milésimos padrão" inputmode="decimal" style="width:64px" aria-label="Milésimos padrão de ${esc(x.nome)}"> <input class="n" data-bmv="${j}" data-mcat="__padrao" value="${esc(x.mult||"")}" placeholder="R$" title="Valor padrão do banho em R$" inputmode="decimal" style="width:64px" aria-label="Valor padrão em R$ de ${esc(x.nome)}"></td>`).join("")}</tr>${C.categorias.map(c=>`<tr><td data-th="Categoria"><b>${esc(c.nome)}</b></td>${b.banhos.map((x,j)=>`<td data-th="${esc(x.nome)} · milésimos e R$"><input class="n" data-bmc="${j}" data-mcat="${esc(c.nome)}" value="${esc((x.milCat||{})[c.nome]??"")}" placeholder="${esc(x.mil||"")}" title="Milésimos de banho" inputmode="decimal" style="width:64px" aria-label="Milésimos de ${esc(x.nome)} em ${esc(c.nome)}"> <input class="n" data-bmv="${j}" data-mcat="${esc(c.nome)}" value="${esc((x.multCat||{})[c.nome]??"")}" placeholder="${esc(x.mult||"")}" title="Valor do banho em R$ (por grama, ou fixo)" inputmode="decimal" style="width:64px" aria-label="Valor em R$ de ${esc(x.nome)} em ${esc(c.nome)}"></td>`).join("")}</tr>`).join("")}</tbody></table></div></div></details>`:""}${(()=>{const fl=b.banhos.filter(x=>!x.cor||!C.cores.includes(x.cor));return fl.length?`<div class="soft" role="status">${fl.map(x=>x.cor?`O banho “${esc(x.nome)}” usa a cor “${esc(x.cor)}”, que não está mais em Cores.`:`O banho “${esc(x.nome)}” está sem cor.`).join(" ")} Escolha outra na lista ou crie com “+ Nova cor…”.</div>`:""})()}${catUI.corNova&&catUI.corNova.bi===i?`<div class="cpanel"><b>Nova cor</b><div class="row"><input data-ncor placeholder="Nome da cor (ex.: Rosé)" maxlength="40" aria-label="Nome da nova cor" style="max-width:220px"><button type="button" class="btn pri sm" data-act="cor-nova-ok">Criar e usar</button><button type="button" class="btn ghost sm" data-act="cor-nova-no">Cancelar</button></div></div>`:""}
       <div class="row"><span class="hint">Adicionar banho:</span><button class="btn sm" type="button" data-act="bn-pronto" data-tp="ouro" title="Banho de ouro: coluna R, texto “banho ouro”">+ Ouro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="rodio" title="Banho de ródio: coluna S, texto “banho ródio”">+ Ródio</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="prata" title="Banho de prata: coluna T, texto “banho prata”">+ Prata</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="negro" title="Banho de ródio negro: coluna S, texto “banho ródio negro”">+ Ródio negro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="outro" title="Banho em branco para você preencher">+ Outro</button></div></div>`).join("")}
     <div><button class="btn sm" type="button" data-act="bh-add">+ Banhista</button></div>`);
   h+=sec("forn","Fornecedores",C.fornecedores.map(f=>f.nome+(num(f.desconto)?` ${f.desconto}%`:"")).join(" · "),
@@ -3868,7 +3874,7 @@ document.addEventListener("click",e=>{
     case "bn-pronto":{const b=C.banhistas[bi],tp=BANHOS_PRONTOS[t.dataset.tp];if(!b||!tp)break;const L=letraBanhoLivre(b);if(!L){toast("Já existem banhos de A a Z neste banhista — não cabe mais um.");break}
       const nome=nomeBanhoLivre(b,tp.nome);let cor=tp.cor;if(cor){const ach=C.cores.find(c=>semAc(c)===semAc(cor));if(ach)cor=ach;else C.cores.push(cor)}else cor="";
       b.banhos.push({id:uid(),nome,letra:L,cor,mil:"",modo:"peso",mult:"",coluna:tp.coluna,sufixo:tp.sufixo,marcado:false,vz:true});salvar(true,false);render();
-      toast(`Banho “${nome}” (letra ${L}) criado em ${b.nome}. Falta só preencher o valor.`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${bi}"] [data-bn="${b.banhos.length-1}"] [data-bnf="mult"]`);break}
+      toast(`Banho “${nome}” (letra ${L}) criado em ${b.nome}. Preencha milésimos e valor na tabela por categoria, logo abaixo.`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${bi}"] [data-bmv="${b.banhos.length-1}"][data-mcat="__padrao"]`);break}
     case "bn-dup":{const b=C.banhistas[bi],j=+t.closest("[data-bn]").dataset.bn,o=b.banhos[j];const L=letraBanhoLivre(b);if(!L){toast("Já existem banhos de A a Z neste banhista — não cabe mais um.");break}
       const n=clone(o);n.id=uid();n.letra=L;n.marcado=false;n.nome=nomeBanhoLivre(b,o.nome);b.banhos.splice(j+1,0,n);salvar(true,false);render();
       toast(`Banho duplicado como “${n.nome}” (letra ${L}).`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${bi}"] [data-bn="${j+1}"] [data-bnf="nome"]`);break}
@@ -3919,6 +3925,7 @@ document.addEventListener("click",e=>{
     case "foto-add":ftAlvo=t.dataset.lid;document.getElementById("ftIn").click();break;
     case "foto-form":ftAlvo="__form";document.getElementById("ftIn").click();break;
     case "foto-rem":fotoRemover(editId||null);break;
+    case "foto-rem-rom":{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");break}
     case "tab-foto":{const lid=t.dataset.lid,src=t.src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));break}
     case "rom-lista":romListaAbrir();break;
     case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());romAbrirSalvo(t.dataset.id);break}
@@ -4108,7 +4115,8 @@ function onField(t,isChange){
     if(isChange){renderListas();renderTopo();renderForm()}return}
   const be=t.closest("[data-bh]");
   if(be&&(t.dataset.bmc!==undefined||t.dataset.bmv!==undefined)){const eMil=t.dataset.bmc!==undefined,bh=C.banhistas[+be.dataset.bh],b=bh&&bh.banhos[+(eMil?t.dataset.bmc:t.dataset.bmv)],cn=t.dataset.mcat,chave=eMil?"milCat":"multCat";if(!b)return;const v=String(t.value).trim();
-    if(v!==""){const n=num(v);if(n==null||n<0){if(isChange){t.value=(b[chave]||{})[cn]??"";toast((eMil?"Milésimos":"O valor em R$")+" precisa ser um número maior ou igual a 0.")}return}}
+    if(v!==""){const n=num(v);if(n==null||n<0){if(isChange){t.value=cn==="__padrao"?(eMil?b.mil:b.mult)??"":(b[chave]||{})[cn]??"";toast((eMil?"Milésimos":"O valor em R$")+" precisa ser um número maior ou igual a 0.")}return}}
+    if(cn==="__padrao"){b[eMil?"mil":"mult"]=v;salvar(true,false);renderTopo();if(isChange)renderForm();return}
     b[chave]=b[chave]||{};if(v==="")delete b[chave][cn];else b[chave][cn]=v;salvar(true,false);renderTopo();if(isChange)renderForm();return}
   if(be&&t.dataset.bnf==="cor"&&t.value==="__nova"){catUI.corNova={bi:+be.dataset.bh,j:+t.closest("[data-bn]").dataset.bn};renderCfg();refocar("[data-ncor]");return}
   if(be&&(t.dataset.bhf||t.dataset.bnf)){const bh=C.banhistas[+be.dataset.bh];
