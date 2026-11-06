@@ -2747,6 +2747,17 @@ function abrirZoom(src){const lb=document.createElement("div");lb.className="lbo
   lb.addEventListener("mousemove",e=>{if(dr){if(Math.abs(e.clientX-dr.x)+Math.abs(e.clientY-dr.y)>4)sc.dataset.m="1";sc.scrollLeft=dr.l-(e.clientX-dr.x);sc.scrollTop=dr.t-(e.clientY-dr.y)}});lb.addEventListener("mouseup",()=>{dr=null;sc.classList.remove("grab")})}
 /* ===== fotos com link (imgbb): o sistema de destino pede um endereço público da foto ===== */
 const fotoKey=()=>{try{return (localStorage.getItem("cadpecas-imgbb")||"").trim()}catch(e){return ""}};
+/* envio automático: com a chave do imgbb guardada, a foto anexada já sobe e o link entra na coluna Foto (pode ser desligado em Cadastros › Fotos) */
+const fotoAuto=()=>{try{return localStorage.getItem("cadpecas-imgbb-auto")!=="0"}catch(e){return true}};
+const autoEnviar=ids=>{if(fotoKey()&&fotoAuto()&&ids&&ids.length)enviarFotos(ids)};
+/* testa a chave: envia uma imagem de 1 pixel que o imgbb apaga sozinho em 60 segundos */
+async function testarChaveImgbb(){const key=fotoKey();if(!key){toast("Cole a chave do imgbb primeiro.");return}
+  toast("Testando a chave…");
+  try{const c=document.createElement("canvas");c.width=c.height=1;const b=await new Promise(r=>c.toBlob(r,"image/png")),fd=new FormData();fd.append("key",key);fd.append("expiration","60");fd.append("image",b,"teste.png");
+    const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),20000);let r,j;try{r=await fetch("https://api.imgbb.com/1/upload",{method:"POST",body:fd,signal:ac.signal});j=await r.json().catch(()=>null)}finally{clearTimeout(tm)}
+    if(r.ok&&j&&j.success)toast("Chave OK: o envio de fotos para o imgbb está funcionando.");
+    else toast(j&&j.error&&j.error.code===100?"O imgbb não reconheceu essa chave. Copie de novo em api.imgbb.com.":"O imgbb recusou o teste: "+((j&&j.error&&j.error.message)||r.status))}
+  catch(e){toast(e&&e.name==="AbortError"?"O imgbb não respondeu em 20 segundos. Tente de novo.":"Não consegui falar com o imgbb (internet ou bloqueio do navegador).")}}
 async function fotoReduzida(src,max){
   const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error("foto ilegível"));i.src=src});
   const k=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight,1)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.naturalWidth*k));c.height=Math.max(1,Math.round(im.naturalHeight*k));
@@ -2769,9 +2780,9 @@ async function enviarFoto(l){const key=fotoKey();if(!key)throw new Error("falta 
   if(!r.ok||!j||!j.success||!j.data||!j.data.url)throw new Error((j&&j.error&&j.error.message)||"o imgbb recusou a foto ("+r.status+")");
   const u=String(j.data.url);if(!/^https:\/\/[^\s"'<>]+$/.test(u))throw new Error("o imgbb devolveu um link estranho");return u}
 let fotosEnv=false;
-async function enviarFotos(){if(fotosEnv)return;
-  if(!fotoKey()){toast("Cole a chave do imgbb em Cadastros › Fotos (link).");irPara("foto");return}
-  const ls=S.lanc.filter(l=>l.ft&&vazio(l.v.B));if(!ls.length){toast("Nenhuma foto esperando link.");return}
+async function enviarFotos(soIds){if(fotosEnv)return;
+  if(!fotoKey()){if(!Array.isArray(soIds)){toast("Cole a chave do imgbb em Cadastros › Fotos (link).");irPara("foto")}return}
+  const ls=S.lanc.filter(l=>l.ft&&vazio(l.v.B)&&(!Array.isArray(soIds)||soIds.includes(l.id)));if(!ls.length){if(!Array.isArray(soIds))toast("Nenhuma foto esperando link.");return}
   fotosEnv=true;let ok=0,falhas=0,sumiu=0,erro=null,chaveRuim=false;
   try{for(let i=0;i<ls.length;i++){toast(`Enviando foto ${i+1} de ${ls.length}…`);
     try{const u=await enviarFoto(ls[i]);
@@ -3141,6 +3152,8 @@ function renderCfg(){
   h+=sec("foto","Fotos (link)",fotoKey()?"imgbb conectado neste navegador":"sem chave do imgbb ainda",
     `<p class="d">Os sistemas (Jueri, Bling…) não recebem a foto dentro da planilha: eles pedem o <b>link</b> da foto. Aqui o app envia a foto para o <b>imgbb</b> (grátis) e coloca o link na coluna <b>Foto</b> de cada peça. Se você já tem o link, é só digitar ou colar na célula da coluna Foto.</p>
     <div class="row"><label class="fl" style="width:340px"><span>Chave do imgbb</span><input type="password" data-fkey value="${esc(fotoKey())}" placeholder="cole a chave aqui" autocomplete="off" aria-label="Chave do imgbb"></label></div>
+    <div class="row"><button type="button" class="btn sm" data-act="foto-testar" title="Envia uma imagem de 1 pixel (o imgbb apaga sozinho em 1 minuto) para ver se a chave funciona">Testar chave</button><label class="vchk"><input type="checkbox" data-fauto ${fotoAuto()?"checked":""}> Enviar sozinho ao anexar a foto</label></div>
+    <div class="hint">Cada foto sobe reduzida (1200 px). O link do imgbb é público para quem o tiver, mas não aparece em buscas. Limite do imgbb: 32 MB por foto.</div>
     <div class="hint">Como pegar a chave (1 minuto): entre em <b>imgbb.com</b> e crie uma conta grátis › abra <b>api.imgbb.com</b> › clique em <b>Get API key</b> › copie e cole aqui. A chave fica só neste navegador e não entra no backup.</div>
     <div class="hint">Atenção: quem tiver o link vê a foto. As fotos são reduzidas para 1200 px antes de enviar e os links não têm validade; se o imgbb apagar uma imagem um dia, a peça perde a foto no sistema de destino. Para uso grande, o ideal é um armazenamento próprio.</div>`);
   h+=sec("opc","Importar e cópia",C.ordem==="ab"?"todas as A, depois as B":"na ordem de lançamento",
@@ -3210,16 +3223,16 @@ async function fotosEmLote(files,lidIni){
     if(pos>=ordem.length){erros.push(`“${f.name}”: não há mais peça sem foto`);continue}
     try{await fotoNaPeca(ordem[pos],await lerFotoArquivo(f));usados.add(ordem[pos]);nSeq++;pos++}catch(e){erros.push(e.message)}}
   salvar(false);renderTopo();if(editId)renderForm();
-  const tot=nNome+nSeq;toast(`${tot} foto(s) anexada(s)${nNome?` · ${nNome} pelo nome do arquivo`:""}${nSeq?` · ${nSeq} em sequência`:""}${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`);
+  autoEnviar([...usados]);const tot=nNome+nSeq;toast(`${tot} foto(s) anexada(s)${nNome?` · ${nNome} pelo nome do arquivo`:""}${nSeq?` · ${nSeq} em sequência`:""}${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`);
 }
-async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){await fotoNaPeca(editId,F);salvar(false);renderTopo()}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
+async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){await fotoNaPeca(editId,F);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
 function fotoRemover(lid){
   if(!lid){delete S.form.ft;FT_GRANDE=null;salvar(false);renderForm();return}
   const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid)delete S.form.ft;salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
   inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=ftAlvo;ftAlvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
     if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
-    if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}return}
+    if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto anexada.");autoEnviar([al])}catch(e){toast(e.message)}return}
     fotosEmLote(fl,al)});
   const temArq=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
   let hl=null;const limpaHl=()=>{if(hl){hl.classList.remove("ftdrop");hl=null}};
@@ -3231,7 +3244,7 @@ function fotoRemover(lid){
   document.addEventListener("paste",e=>{const fl=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(x=>/^image\//.test(x.type));if(!fl.length)return;
     if(e.target&&e.target.id==="celIn")return;e.preventDefault();
     const row=selR&&G&&G.linhas[selR.fr],lid=editId||(row&&row.lancId);
-    if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.")}catch(x){toast(x.message)}})()}
+    if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
     else fotoDoFormulario(fl[0])},true)})();
 function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
@@ -3255,7 +3268,7 @@ function adicionar(limpar,quiet){
   if(!quiet)addTrava=Date.now()+500;
   if(quiet)delete novo.ft;
   if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
-  else{S.lanc.push(novo);undo={tipo:"add",id:novo.id,form:clone(f)};if(novo.ft&&FT_GRANDE)idbPut("fotos",novo.id,FT_GRANDE);FT_GRANDE=null;delete f.ft;delete f.v.E;if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
+  else{S.lanc.push(novo);undo={tipo:"add",id:novo.id,form:clone(f)};if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(()=>autoEnviar([novo.id]))}FT_GRANDE=null;delete f.ft;delete f.v.E;if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
   salvar(false);if(quiet)return true;renderForm();
   mostrarNoFim(novo.id);
   focarPrimeiro();return true;
@@ -3618,6 +3631,7 @@ document.addEventListener("click",e=>{
     case "rom-lote":romLote();break;
     case "gr-novo-pmg":{const c=catBy(S.form.v.I);if(!c)break;if(!c.grade)c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};const gr=effGrade(c);addTamanhos(gr,"P M G");sincGrade(S.form);S.form.gsel=gr.itens.map(x=>x.id);S.form.semGrade=false;salvar(true,false);renderForm();renderCfg();toast("Tamanhos P, M e G criados: a letra de cada um entra na referência.");break}
     case "gi-pmg":{const gr=gradeBy(S.form.grade);if(gr){const novos=addTamanhos(gr,"P M G");S.form.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(S.form.gsel||[]).includes(id));S.form.semGrade=false;salvar(true,false);renderForm();toast("Tamanhos P, M e G prontos: a letra de cada um entra na referência.")}break}
+    case "foto-testar":testarChaveImgbb();break;
     case "foto-add":ftAlvo=t.dataset.lid;document.getElementById("ftIn").click();break;
     case "foto-form":ftAlvo="__form";document.getElementById("ftIn").click();break;
     case "foto-rem":fotoRemover(editId||null);break;
@@ -3701,6 +3715,7 @@ function trocarPrefixo(c,txt){const C=cfg(),antigo=String(c.prefixo||"").toUpper
   salvar(true,false);render();toast(msg,{t:"Desfazer",fn:desfazer})}
 function onField(t,isChange){
   const C=cfg(),f=S.form;
+  if(t.dataset&&t.dataset.fauto!==undefined){try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0")}catch(e){}return}
   if(t.dataset&&t.dataset.fkey!==undefined){try{localStorage.setItem("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange)aplicaFaixa(t.value);return}
   if(t.dataset&&t.dataset.nv!==undefined){if(!NOVO)return;
