@@ -2619,7 +2619,9 @@ function romCampo(t,fin){if(!ROM)return;const k=t.dataset.rp;if(!k)return;const 
   else if(k==="gi"){const id=t.dataset.id;r.gsel=(r.gsel||[]).filter(x=>x!==id);if(t.checked)r.gsel.push(id);const g=gradeDaCat(r.cat,r.sub);if(g)r.gsel=g.itens.map(x=>x.id).filter(x=>r.gsel.includes(x));renderRom();return}
   else if(k==="bon"){r.on=r.on||{};r.on[t.dataset.b]=t.checked;renderRom();return}
   else if(k==="vz"){r.vz=r.vz||{};r.vz[t.dataset.b]=t.checked}
-  else if(k==="mk"){r.mk=r.mk||{};if(vazio(t.value)||String(t.value)===String((f.mk||{})[t.dataset.b]??""))delete r.mk[t.dataset.b];else r.mk[t.dataset.b]=t.value}
+  else if(k==="mk"){r.mk=r.mk||{};if(vazio(t.value)||String(t.value)===String((f.mk||{})[t.dataset.b]??""))delete r.mk[t.dataset.b];else r.mk[t.dataset.b]=t.value;
+    /* mudou o fator: o Preço de Varejo digitado à mão volta a ser calculado */
+    {const b=t.dataset.b;if(b==="p")r.vp="";else if(r.bo&&r.bo[b])delete r.bo[b].V;const vi=t.closest(".bf")&&t.closest(".bf").querySelector('[data-auto^="V:"]');if(vi){vi.value="";vi.classList.add("isauto")}}}
   else if(k==="bo"){r.bo=r.bo||{};const b=t.dataset.b,kk=t.dataset.k,o=r.bo[b]=r.bo[b]||{},bb=banhistaBy(f.banhista).banhos.find(x=>x.id===b)||{},def=kk==="L"?bb.cor:kk==="O"?bb.mil:null;
     if(vazio(t.value)||(def!=null&&String(t.value)===String(def)))delete o[kk];else o[kk]=t.value;t.classList.toggle("isauto",!o[kk]&&"CUVF".includes(kk))}
   else if(k==="ex"){r.ex=r.ex||{};const L=t.dataset.k,d=padraoDe(r.cat||f.v.I,L);if(vazio(t.value)||String(t.value)===String(d??""))delete r.ex[L];else r.ex[L]=t.value}
@@ -3631,7 +3633,12 @@ function onField(t,isChange){
   }
   if(t.dataset.mk){f.mk=f.mk||{};
     if(!vazio(t.value)){const n=num(t.value);if(n==null||n<0){if(isChange){t.value=f.mk[t.dataset.mk]??"";toast("Multiplicador precisa ser um número maior ou igual a 0.")}return}}
-    if(vazio(t.value))delete f.mk[t.dataset.mk];else f.mk[t.dataset.mk]=t.value;atualizarGera();salvar(false);return}
+    if(vazio(t.value))delete f.mk[t.dataset.mk];else f.mk[t.dataset.mk]=t.value;
+    /* mudou o fator: o Preço de Varejo digitado à mão sai e volta a ser calculado pelo novo fator */
+    {const k=t.dataset.mk,vi=k==="p"?document.getElementById("f-V"):document.querySelector(`[data-bo="${k}"][data-k="V"]`);
+      if(k==="p")delete f.v.V;else if(f.ov&&f.ov[k])delete f.ov[k].V;
+      if(vi&&vi.value!=="")vi.value=""}
+    atualizarGera();salvar(false);return}
   if(t.dataset.bo){const b=t.dataset.bo,L=t.dataset.k;f.ov=f.ov||{};f.ov[b]=f.ov[b]||{};if(vazio(t.value))delete f.ov[b][L];else f.ov[b][L]=t.value;atualizarGera();salvar(false);return}
   if(t.dataset.f){const k=t.dataset.f;
     if(k==="desconto"&&!vazio(t.value)){const d=num(t.value);if(d==null||d<0||d>100){if(isChange){t.value=f.desconto??"0";toast("Desconto precisa ficar entre 0 e 100 (%).")}return}}
