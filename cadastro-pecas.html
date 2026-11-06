@@ -1701,7 +1701,7 @@ function renderTopo(){
   const ps=[...new Set([...S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))),prefDe(S.form.v.I,S.form.v.J)])];
   {const ms=document.getElementById("modSel");if(ms){const C0=cfg(),tem=r=>C0.modelos.some(x=>r.test(String(x.nome||"")));
     ms.innerHTML=opts([...C0.modelos.map(x=>[x.id,x.nome]),...(tem(/bling/i)?[]:[["@bling","＋ Adicionar Bling"]]),...(tem(/jueri/i)?[]:[["@jueri","＋ Adicionar Jueri"]]),["@novo","＋ Outro sistema…"]],C0.modelo)}
-    const bx=document.querySelector('[data-act="xlsx"]');if(bx)bx.textContent=modeloAtual().formato==="csv"?"Baixar .csv":"Baixar .xlsx"}
+    const bx=document.querySelector('[data-act="xlsx"]');if(bx)bx.textContent=(filtroOn()?"Baixar filtro ":"Baixar ")+(modeloAtual().formato==="csv"?".csv":".xlsx");{const bc=document.querySelector('[data-act="copiar"]');if(bc)bc.textContent=filtroOn()?"Copiar filtro para o Excel":"Copiar para o Excel"}}
   document.getElementById("seqs").innerHTML=ps.map(p0=>{const p=esc(p0),u=ultimo(p0),m=(g.manual||{})[p0]||0,i0=Math.max(u,m),f=g.cont[p0];return `<span class="seq">${p}: última <b>${p}${u}</b>${m>u?` · à mão até <b>${p}${m}</b>`:""}${f&&f>i0?` → lista <b>${p}${i0+1}${f>i0+1?"–"+f:""}</b>`:""}<span class="px">próxima <b>${p}${esc(proxDe(p0))}</b></span></span>`}).join("");
   document.getElementById("banner").innerHTML=lastExport?`<div class="banner"><p>Planilha gerada com <b class="mono">${esc(lastExport.faixa)}</b>. Gravar como última peça do sistema?</p>
     <button class="btn pri sm" type="button" data-act="exp-limpar">Gravar e limpar a lista</button><button class="btn sm" type="button" data-act="exp-so">Só gravar o número</button><button class="btn ghost sm" type="button" data-act="exp-nao">Agora não</button></div>`:"";
@@ -1772,15 +1772,24 @@ function gravarCel(ri,L,valor){
   if(String(valor)===base)delete o[L];else o[L]=valor;
   if(!Object.keys(o).length)delete l.ov[row.key];
 }
+/* célula editada na tabela de uma peça que está aberta no formulário: o formulário recebe o valor novo (senão "Salvar" apagaria a edição) */
+function sincFormCelula(id,L){
+  if(editId!==id)return;const l=S.lanc.find(x=>x.id===id);if(!l)return;
+  const f2=clone(l);dobrarOv(f2,id);const f=S.form;f.v=f.v||{};f.ov=f.ov||{};
+  if(vazio(f2.v[L]))delete f.v[L];else f.v[L]=f2.v[L];
+  Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!(f2.ov&&f2.ov[k]&&L in f2.ov[k]))delete f.ov[k][L]});
+  Object.keys(f2.ov||{}).forEach(k=>{if(f2.ov[k]&&typeof f2.ov[k]==="object"&&L in f2.ov[k]){f.ov[k]=f.ov[k]||{};f.ov[k][L]=f2.ov[k][L]}});
+  Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!Object.keys(f.ov[k]).length)delete f.ov[k]});
+}
 function fecharCel(commit,mover){
-  if(!celEd)return;const {ri,L,orig,nova}=celEd,i=document.getElementById("celIn");celEd=null;
+  if(!celEd)return;const {ri,L,orig,nova}=celEd,i=document.getElementById("celIn"),lid=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].lancId:null;celEd=null;
   let v=i?i.value:orig;if(L==="E"&&commit)v=v.replace(/\s+/g,"").toUpperCase();
   const rej=commit&&v!==orig?checaCel(L,v).erro:null;
   if(commit&&v!==orig&&!rej){
     if(nova){if(!vazio(v)){const l=novaLivre({[L]:v});S.lanc.push(l);undo={tipo:"cola",antes:{},ids:[l.id]};salvar(false)}}
     else{const l=S.lanc.find(x=>x.id===G.linhas[ri].lancId);undo={tipo:"multi",antes:{[l.id]:clone(l.ov||{})}};gravarCel(ri,L,v);salvar(false)}
   }
-  renderTopo();if(editId)renderForm();
+  renderTopo();if(editId&&lid===editId&&commit&&v!==orig&&!rej)sincFormCelula(lid,L);if(editId)renderForm();
   if(rej){toast(rej+" (valor não gravado)");marcaRuim(ri,L)}
   if(commit&&L==="E"){const d=[...new Set(G.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(d.length)toast("Referência repetida: "+d.join(", ")+" — corrija antes de baixar a planilha.")}
   if(mover){let nri=ri,nL=L;
@@ -1871,10 +1880,10 @@ function campoHTML(L,f,opt){
   let inp;
   if(!bid&&(L==="H"||L==="I"||L==="J"||L==="AD"||L==="AE")&&!opcoesDe(L).length)inp=`<select id="${id}" ${attr}>${opts(lista,v,ph?`(${ph})`:"—")}</select>`;
   else inp=`<input id="${id}" ${attr} value="${esc(v)}" class="${NUM.has(L)?"n":""}${calc}" ${NUM.has(L)?'inputmode="decimal"':""} ${lista.length?`list="dl-${L}"`:""} placeholder="${esc(ph)}" data-ph="${bid?bid+"-":""}${L}" autocomplete="off" ${opt.dis?"disabled":""}>`;
-  const w=opt.w||(NUM.has(L)?"n":"m"),mais=opt.q?`<button type="button" class="plus" data-act="q" data-q="${opt.q}" title="Cadastrar ${esc(opt.qn||NOME[L])}">＋</button>`:"";
+  const w=opt.w||(NUM.has(L)?"n":"m"),mais=opt.q?`<button type="button" class="plus" data-act="q" data-q="${opt.q}"${opt.qb?` data-qb="${opt.qb}"`:""} title="Cadastrar ${esc(opt.qn||NOME[L])}">＋</button>`:"";
   return `<label class="fq w-${w}${cc.obrig?" req":""}" for="${id}" title="${esc(NOME[L])} (coluna ${L})"><span>${esc(opt.nome||NOME[L])}${opt.extra||""}</span><div class="ip">${inp}${mais}</div></label>`;
 }
-let quick=null;
+let quick=null,quickB=null;
 function painelRapido(){
   const C=cfg(),f=S.form,bh=banhistaBy(f.banhista);if(!quick)return "";
   const cx=(id,rot,w,val,ph)=>`<label class="fq w-${w}"><span>${rot}</span><input id="${id}" value="${esc(val||"")}" placeholder="${esc(ph||"")}" ${w==="n"||w==="c"?'class="n" inputmode="decimal"':""}></label>`;
@@ -1884,7 +1893,8 @@ function painelRapido(){
   if(quick==="forn"){t="Novo fornecedor";corpo=cx("q1","Fornecedor","m")+cx("q2","Código do Fornecedor","s")+cx("q3","Desconto %","n","0")+`<label class="fq w-s"><span>Vende peça</span><select id="q4">${opts([["bruta","Bruta (vai banhar)"],["pronta","Pronta (já banhada)"]],f.tipo)}</select></label>`}
   if(quick==="obs"){t="Nova observação";corpo=cx("q1","Observação","l","","Ex.: Link 212 - Xangai Brutos Banho Scarlat 2026 outubro")}
   if(quick==="multi"){t="Várias peças de uma vez";corpo=`<label class="fq w-l" style="flex:1 1 460px"><span>Uma peça por linha: Descrição; Peso; Custo de compra — o resto vem do formulário (categoria, fornecedor, banhos, tamanhos, quantidades…)</span><textarea id="q1" rows="4" placeholder="Brinco gota; 2,1; 3,60&#10;Argola lisa; 1,7; 3,36" style="width:100%;font:13px var(--mono);border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface);color:var(--ink)"></textarea></label>`}
-  if(quick==="cor"){t="Nova cor";corpo=cx("q1","Cor","m")}
+  if(quick==="cor"){const bb=quickB&&bh.banhos.find(x=>x.id===quickB);t=bb?`Nova cor · banho ${esc(bb.letra)} (${esc(bb.nome)})`:"Nova cor";corpo=cx("q1","Cor","m")}
+  if(quick==="gi"){const gq=gradeBy(f.grade);t=`Novo tamanho${gq?" · "+esc(gq.nome):""}`;corpo=cx("q1","Tamanho (número ou letra)","n","","ex.: 26 ou GG")}
   if(quick==="bn"){const us=bh.banhos.map(x=>x.letra);t=`Nova letra · ${esc(bh.nome)}`;corpo=cx("q1","Banho","s","","ex.: Ródio")+cx("q2","Letra","n",proxLetra(us))+`<label class="fq w-s"><span>Cor</span><select id="q3">${opts(C.cores,"")}</select></label>`+cx("q4","Milésimos","n")+cx("q5","R$ por grama","c")+`<label class="fq w-s"><span>Coluna do custo</span><select id="q6">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,"Banho de "+n]),"S")}</select></label>`+cx("q7","Texto na Descrição","m","","ex.:  banho ródio")}
   if(quick==="bh"){t="Novo banhista";corpo=cx("q1","Banhista","m")+bh.banhos.map((b,i)=>cx("qb"+i,`${esc(b.nome)} R$/g`,"c",b.mult))+cx("qv","Verniz R$/g","c",bh.verniz)}
   return `<div class="nf" data-quick="${quick}"><b>${t}</b>${corpo}<button class="btn pri sm" type="button" data-act="q-salvar">${quick==="multi"?"Adicionar todas":`Salvar <kbd>Enter</kbd>`}</button><button class="btn ghost sm" type="button" data-act="q-fechar">Cancelar</button>${quick==="bh"?'<span class="hint">Os demais dados (letra, cor, milésimos) vêm do banhista atual; ajuste em Banhos e custos.</span>':""}</div>`;
@@ -1897,7 +1907,7 @@ function renderForm(){
   const ultCampo=`<label class="fq w-u" for="ultInp" title="Última peça ${esc(p)} já cadastrada no sistema — a próxima sai com o número seguinte"><span>Última peça ${esc(p)}</span><div class="ub"><input id="ultInp" class="n" inputmode="numeric" value="${esc(C.seqs[p]||"")}"><small title="${inicioDe(p)>ultimo(p)?"Há referência digitada à mão até "+esc(p)+inicioDe(p):""}">próxima ${esc(p)}<b id="proxRef">${proxDe(p)}</b></small></div></label>`;
   const mkIn=k=>`<input class="n" data-mk="${k}" value="${esc(f.mk[k]??"")}" inputmode="decimal" placeholder="×" aria-label="Multiplicador">`;
   f.gsel=f.gsel||[];const gr=gradeBy(f.grade),gIts=gr&&!f.semGrade?gr.itens.filter(x=>f.gsel.includes(x.id)):[];
-  const chips=gr?`<div class="z-row z-var"><b class="gtit">${esc(gr.nome)}</b><div class="gch${f.semGrade?" off":""}" role="group" aria-label="${esc(gr.nome)}">${gr.itens.map(it=>{const on=f.gsel.includes(it.id);return `<label class="gi${on?" on":""}" title="${esc(it.letra)} · ${esc(efetivo(gr,it).texto.trim())}"><input type="checkbox" data-gi="${it.id}" ${on?"checked":""} ${f.semGrade?"disabled":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="gi-todos" ${f.semGrade?"disabled":""}>${gIts.length===gr.itens.length?"nenhum":"todos"}</button></div><input class="faixa" data-faixa placeholder="faixa: 12-16, 20" title="Digite uma faixa e aperte Enter: 12-16 marca de 12 a 16; 12, 18, 20 marca esses; todos marca tudo" aria-label="Faixa de tamanhos" autocomplete="off"><button type="button" class="btn ghost sm" data-act="faixa-salvar" title="Guarda os tamanhos marcados como padrão desta categoria: ao escolhê-la, eles já vêm marcados">★ padrão</button><label class="sg" title="Peça única, sem tamanhos (ex.: anel ajustável)"><input type="checkbox" data-f="semGrade" ${f.semGrade?"checked":""}> sem variação</label><span class="hint">uma linha por opção · mesma numeração · letras em sequência</span></div>`:"";
+  const chips=gr?`<div class="z-row z-var"><b class="gtit">${esc(gr.nome)}</b><div class="gch${f.semGrade?" off":""}" role="group" aria-label="${esc(gr.nome)}">${gr.itens.map(it=>{const on=f.gsel.includes(it.id);return `<label class="gi${on?" on":""}" title="${esc(it.letra)} · ${esc(efetivo(gr,it).texto.trim())}"><input type="checkbox" data-gi="${it.id}" ${on?"checked":""} ${f.semGrade?"disabled":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="gi-todos" ${f.semGrade?"disabled":""}>${gIts.length===gr.itens.length?"nenhum":"todos"}</button><button type="button" class="gi tod" data-act="q" data-q="gi" title="Adicionar um tamanho novo (número ou letra) a esta lista" ${f.semGrade?"disabled":""}>＋ tamanho</button></div><input class="faixa" data-faixa placeholder="faixa: 12-16, 20" title="Digite uma faixa e aperte Enter: 12-16 marca de 12 a 16; 12, 18, 20 marca esses; todos marca tudo" aria-label="Faixa de tamanhos" autocomplete="off"><button type="button" class="btn ghost sm" data-act="faixa-salvar" title="Guarda os tamanhos marcados como padrão desta categoria: ao escolhê-la, eles já vêm marcados">★ padrão</button><label class="sg" title="Peça única, sem tamanhos (ex.: anel ajustável)"><input type="checkbox" data-f="semGrade" ${f.semGrade?"checked":""}> sem variação</label><span class="hint">uma linha por opção · mesma numeração · letras em sequência</span></div>`:"";
   const qtdVar=(k,dis)=>(gIts.length>1?`<label class="fq gq all" title="Mesma quantidade em todos os tamanhos marcados"><span>todos</span><input class="n" data-qall="${k}" placeholder="=" inputmode="numeric" ${dis?"disabled":""} aria-label="Quantidade para todos os tamanhos"></label>`:"")+gIts.map(it=>{const o=f.ov[k+"~"+it.id]||{};return `<label class="fq gq" title="Quantidade ${esc(it.nome||it.letra)}"><span>${esc(it.nome||it.letra)}</span><input class="n" id="f-${k}~${it.id}-W" data-bo="${k}~${it.id}" data-k="W" value="${esc(o.W??"")}" inputmode="numeric" placeholder="0" ${dis?"disabled":""} aria-label="Quantidade ${esc(it.nome)}"></label>`}).join("");
   const addBtn=`<button class="btn pri big" type="submit">${editId?"Salvar":"Adicionar"} <kbd>Enter</kbd></button>${editId?"":`<button class="btn big" type="button" data-act="add-limpar" title="Adiciona a peça e esvazia o formulário para começar outra do zero">Adicionar e limpar</button>`}`;
   const bhCampo=`<label class="fq w-m"><span>${bruta?"Banhista":"Banhos de"}${auto}</span><div class="ip"><select data-f="banhista">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select><button type="button" class="plus" data-act="q" data-q="bh" title="Cadastrar banhista">＋</button></div></label>`;
@@ -1917,7 +1927,7 @@ function renderForm(){
   const rowBanhos=`<div class="z-row z-banhos">${cards}<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn" title="Nova letra de banho (ex.: C · Ródio, D · Rosé)">＋ Letra</button>${dica}<span class="z-end">${addBtn}</span></div>`;
 const rowOrig=`<div class="z-row z-orig">${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}<i class="vsep"></i>${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
   const detBanhos=bh.banhos.filter(b=>onF[b.id]).map(b=>{const vz=vzOn(f,bh,b);return `<div class="lb"><b><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</b>
-      ${bruta?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${campoHTML("O",f,{banho:b.id,ph:b.mil,w:"c",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s"})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
+      ${bruta?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${campoHTML("O",f,{banho:b.id,ph:b.mil,w:"c",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s",q:"cor",qb:b.id,qn:"cor do banho "+b.letra})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
 const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   const cadastro=["E","A","B","C","D","K","X","Z","AD","AE"].map(L=>c(L,{w:"s"})).join("");
   const det=!!abertos.det;
@@ -1960,7 +1970,8 @@ function salvarRapido(){
   if(quick==="forn"){let fo=C.fornecedores.find(x=>lo(x.nome)===lo(n));if(!fo){fo={nome:n,codigo:g("q2"),desconto:g("q3")||"0",tipo:document.getElementById("q4").value};C.fornecedores.push(fo)}
     f.v.H=fo.nome;f.desconto=fo.desconto||"0";if(fo.codigo)f.v.G=fo.codigo;if(!editId)banhistaDoFornecedor(f)}
   if(quick==="obs"){if(!C.observacoes.includes(n))C.observacoes.unshift(n);f.v.M=n}
-  if(quick==="cor"){if(!C.cores.includes(n))C.cores.push(n);f.v.L=n}
+  if(quick==="cor"){if(!C.cores.includes(n))C.cores.push(n);if(quickB){f.ov=f.ov||{};f.ov[quickB]=f.ov[quickB]||{};f.ov[quickB].L=n}else f.v.L=n}
+  if(quick==="gi"){const gr=gradeBy(f.grade);if(gr){let it=gr.itens.find(x=>String(x.nome).toLowerCase()===n.toLowerCase());if(!it){it={id:uid(),letra:proxLetra(gr.itens.map(x=>x.letra)),nome:n};gr.itens.push(it)}f.gsel=gr.itens.map(x=>x.id).filter(id=>id===it.id||(f.gsel||[]).includes(id));f.semGrade=false}}
   if(quick==="bn"){const bh=banhistaBy(f.banhista),L=(g("q2")||proxLetra(bh.banhos.map(x=>x.letra))).toUpperCase(),id=uid();
     bh.banhos.push({id,nome:n,letra:L,cor:document.getElementById("q3").value||n,mil:g("q4"),modo:"peso",mult:g("q5"),coluna:document.getElementById("q6").value,sufixo:document.getElementById("q7").value||(" banho "+n.toLowerCase()),marcado:false,vz:true});f.on[id]=true}
   if(quick==="bh"){const base=banhistaBy(f.banhista),nb=clone(base);nb.id=uid();nb.nome=n;nb.verniz=g("qv")||base.verniz;nb.banhos.forEach((b,i)=>{const v=g("qb"+i);if(v)b.mult=v});
@@ -3217,10 +3228,12 @@ function dobrarOv(f,id){const ov=f.ov||{};
     f.v[L]=com[0].v[L];ks.forEach(k=>{delete ov[k][L]})});
   if(avisa)setTimeout(()=>toast("Valor digitado à mão numa linha agora vale para todas as linhas desta peça (aparece nos campos abaixo)."),50);
   ks.forEach(k=>{if(!Object.keys(ov[k]).length)delete ov[k]})}
+let editSnap=null;
+const formSujo=()=>!!editId&&JSON.stringify(S.form)!==editSnap;
 function editar(id){
   const l=S.lanc.find(x=>x.id===id);if(!l)return;
   if(!editId)rascunho=clone(S.form);editId=id;S.form=clone(l);delete S.form.id;erro="";
-  dobrarOv(S.form,id);
+  dobrarOv(S.form,id);editSnap=JSON.stringify(S.form);
   if(["A","B","C","D","K","X","Z","AD","AE","Y","AA","AB","AC"].some(L=>!vazio(S.form.v[L])))abertos.det=true;
   if(Object.values(S.form.ov||{}).some(o=>o&&Object.keys(o).some(L=>!["W","V"].includes(L))))abertos.det=true;
   salvar(false);renderTopo();renderForm();focarPrimeiro();
@@ -3293,20 +3306,22 @@ function montarCsv(g,cols,mo,slx){
   const sl=slx||saidaLinhas(g,mo);
   sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{const r=valorCol(c,celCol(c,cs,e));let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
   return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
+/* com filtro ativo, baixar e copiar levam só as linhas que o filtro está mostrando */
+function gerarExport(){const g0=gerar(),fil=filtroOn();return {g0,fil,g:fil?{...g0,linhas:g0.linhas.filter(casa)}:g0}}
 async function baixar(forcar){
-  const g=gerar();if(!g.linhas.length){toast("A lista está vazia.");return}
+  const GE=gerarExport(),g=GE.g;if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de baixar.");return}
   const cols=colunasExport(),mo=modeloAtual(),csv=mo.formato==="csv";
   if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
   if(!forcar&&abrirConferencia(g,cols,{tipo:"xlsx"}))return;
   if(!csv&&typeof XLSX==="undefined"){toast("A biblioteca de planilha não carregou. Use Copiar para o Excel ou um modelo em CSV.");return}
-  const sl=saidaLinhas(g,mo),partes=dividirLotes(sl,Math.trunc(num(mo.lote)||0)),faixa=faixaRefs(g)||"lista",dl=await obterDL(),ext=csv?"csv":"xlsx";
+  const sl=saidaLinhas(g,mo),partes=dividirLotes(sl,Math.trunc(num(mo.lote)||0)),faixa=(faixaRefs(g)||"lista")+(GE.fil?" (filtro)":""),dl=await obterDL(),ext=csv?"csv":"xlsx";
   const nomeBase=`Cadastro de peças ${faixa.replace(/[^\w\- ,]/g,"-")}`;let feitas=0;
   for(let p=0;p<partes.length;p++){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){lastExport={cont:contFinal(g),faixa};renderTopo();
+  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa};renderTopo();if(GE.fil)toast(`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -3320,7 +3335,7 @@ function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,abaNome(mo));
   return new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])}
 async function copiar(ids,forcar){
-  const g0=gerar(),g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:g0;if(!g.linhas.length){toast("Nada para copiar.");return}
+  const GE=gerarExport(),g0=GE.g0,g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de copiar.");return}
   const cols=colunasExport();if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
   if(!forcar&&abrirConferencia(g,cols,{tipo:"copiar",ids:ids||null}))return;
@@ -3332,7 +3347,7 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols);if(tf)return "="+tf}
     const s=txtSaida(x,c,",").replace(/[\t\r\n]+/g," ");
     return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids){lastExport={cont:contFinal(g),faixa:faixaRefs(g)};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?` do filtro, de ${g0.linhas.length}`:""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g)};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
 function gravarExport(limpar){
@@ -3411,7 +3426,10 @@ document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
   /* um clique simples numa célula já abre para digitar (sem duplo clique); arrastar ou Shift só seleciona */
   if(!was||e.shiftKey||e.button||celEd||!selR||selR.ar!==selR.fr||selR.ac!==selR.fc)return;
   const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td||td.classList.contains("ed"))return;
-  const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r===selR.fr&&c===selR.fc)abrirCel(r,td.dataset.c,true)});
+  const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r===selR.fr&&c===selR.fc){
+    /* clique numa célula: abre a peça no formulário (se o formulário não tem alterações por salvar) e já deixa a célula pronta para digitar */
+    const row=G&&G.linhas[r];if(row&&row.lancId&&row.lancId!==editId&&!formSujo()&&!celular()){const lid=row.lancId;editar(lid);if(G.linhas[r]&&G.linhas[r].lancId===lid)selR={ar:r,ac:c,fr:r,fc:c}}
+    abrirCel(r,td.dataset.c,true)}});
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del"];
 document.addEventListener("click",e=>{
@@ -3478,7 +3496,7 @@ document.addEventListener("click",e=>{
     case "add-limpar":adicionar(true);break;
     case "tg-min":abertos.min=!abertos.min;guardarAbertos();renderForm();break;
     case "tg-det":abertos.det=!abertos.det;guardarAbertos();renderForm();break;
-    case "q":quick=quick===t.dataset.q?null:t.dataset.q;renderForm();break;
+    case "q":quick=quick===t.dataset.q&&(t.dataset.qb||null)===quickB?null:t.dataset.q;quickB=quick?(t.dataset.qb||null):null;renderForm();break;
     case "q-salvar":salvarRapido();break;
     case "q-fechar":quick=null;renderForm();break;
     case "ir":irPara(t.dataset.sec);break;
