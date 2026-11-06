@@ -1968,6 +1968,20 @@ function salvarRapido(){
   const nome=n;quick=null;salvar(true);renderListas();renderTopo();renderForm();renderCfg();toast(`“${nome}” cadastrado.`);refocar("#f-F");
 }
 function previsao(){const fake={...clone(S.form),id:editId||"__p"},list=editId?S.lanc.map(l=>l.id===editId?fake:l):[...S.lanc,fake];return gerar(list)}
+/* digitou o Preço de Varejo à mão: o Fator × passa a ser o que dá esse preço (preço ÷ soma dos custos) */
+function fatorDoPreco(k){
+  const f=S.form,pronta=k==="p",id=editId||"__p";f.mk=f.mk||{};f.ov=f.ov||{};
+  const vOld=pronta?f.v.V:(f.ov[k]||{}).V;if(vazio(vOld))return;const alvo=num(vOld);if(alvo==null||alvo<0)return;
+  const mkOld=f.mk[k];let base=null;
+  try{if(pronta)delete f.v.V;else delete f.ov[k].V;f.mk[k]="1";
+    const g=previsao(),ri=g.linhas.findIndex(r=>r.lancId===id&&(r.bid||r.key)===k);
+    if(ri>=0){const x=celulas(g.linhas[ri],ri+2)[LET.indexOf("V")];if(x&&typeof x.v==="number")base=x.v}}
+  finally{if(mkOld==null)delete f.mk[k];else f.mk[k]=mkOld;if(pronta)f.v.V=vOld;else f.ov[k].V=vOld}
+  if(!(base>0)){toast("Para o fator ser calculado, informe antes o peso e os custos.");return}
+  const fator=Math.round(alvo/base*10000)/10000,txt=String(fator).replace(".",",");
+  f.mk[k]=txt;const mi=document.querySelector(`#form [data-mk="${k}"]`);if(mi)mi.value=txt;
+  atualizarGera();salvar(false);
+}
 function atualizarGera(){
   const el=document.getElementById("gera");if(!el)return;const f=S.form,g=previsao(),id=editId||"__p";
   const rows=g.linhas.filter(r=>r.lancId===id),ri0=g.linhas.findIndex(r=>r.lancId===id);let h="";
@@ -3629,6 +3643,7 @@ function onField(t,isChange){
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
     if(L==="I"&&isChange){const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
+    if(L==="V"&&isChange)fatorDoPreco("p");
     atualizarGera();salvar(false);return;
   }
   if(t.dataset.mk){f.mk=f.mk||{};
@@ -3639,7 +3654,7 @@ function onField(t,isChange){
       if(k==="p")delete f.v.V;else if(f.ov&&f.ov[k])delete f.ov[k].V;
       if(vi&&vi.value!=="")vi.value=""}
     atualizarGera();salvar(false);return}
-  if(t.dataset.bo){const b=t.dataset.bo,L=t.dataset.k;f.ov=f.ov||{};f.ov[b]=f.ov[b]||{};if(vazio(t.value))delete f.ov[b][L];else f.ov[b][L]=t.value;atualizarGera();salvar(false);return}
+  if(t.dataset.bo){const b=t.dataset.bo,L=t.dataset.k;f.ov=f.ov||{};f.ov[b]=f.ov[b]||{};if(vazio(t.value))delete f.ov[b][L];else f.ov[b][L]=t.value;if(L==="V"&&isChange)fatorDoPreco(b);atualizarGera();salvar(false);return}
   if(t.dataset.f){const k=t.dataset.f;
     if(k==="desconto"&&!vazio(t.value)){const d=num(t.value);if(d==null||d<0||d>100){if(isChange){t.value=f.desconto??"0";toast("Desconto precisa ficar entre 0 e 100 (%).")}return}}
     f[k]=t.type==="checkbox"?t.checked:t.value;
@@ -3696,6 +3711,7 @@ function onField(t,isChange){
 document.addEventListener("input",e=>{const t=e.target;
   if(t.id==="catBusca"){const q=semAc(t.value);document.querySelectorAll("#cfg .cards>.card[data-cat]").forEach(c=>{const n=c.querySelector('[data-cf="nome"]');c.hidden=!!q&&!semAc(n?n.value:"").includes(q)});return}if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.type==="file")return;onField(t,false)});
 document.addEventListener("change",e=>{const t=e.target;
+  if(t.closest&&t.closest("#form")&&((t.dataset.bo&&t.dataset.k==="V")||t.id==="f-V")){fatorDoPreco(t.dataset.bo||"p")}
   if(t.id==="fileImp"&&t.files[0])return importar(t.files[0]);
   if(t.id==="fileNovo"&&t.files[0]){const fl=t.files[0];t.value="";return lerNovo(fl)}
   if(t.id==="fileModJ"&&t.files[0]){const fl=t.files[0];t.value="";return modeloDeJson(fl)}
