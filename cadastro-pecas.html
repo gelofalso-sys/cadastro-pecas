@@ -3471,6 +3471,10 @@ function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.
   ws["!ref"]="A1:"+letraN(Math.max(cols.length,1)-1)+(sl.length+1);ws["!cols"]=cols.map(c=>({wch:COLW[LET.indexOf(c.k)]||14}));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,abaNome(mo));
   return new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])}
+/* Excel e Google Sheets leem a fórmula colada no idioma da conta: em português é ARRED(…;…) com vírgula decimal, em inglês ROUND(…,…) com ponto.
+   Idiomas com vírgula decimal que não sejam o português (nomes de função diferentes) recebem só o valor calculado, que funciona em qualquer planilha. */
+const LOC=(()=>{let l="pt-br",dec=",";try{l=String(navigator.language||"pt-br").toLowerCase();dec=(1.1).toLocaleString(navigator.language||"pt-BR").includes(",")?",":"."}catch(e){}return {dec,pt:l.startsWith("pt")}})();
+const fLocal=f=>LOC.dec==="."?f:LOC.pt?f.replace(/,/g,";").replace(/(\d)\.(\d)/g,"$1,$2").replace(/\bROUND\(/g,"ARRED("):null;
 async function copiar(ids,forcar){
   const GE=gerarExport(),g0=GE.g0,g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de copiar.");return}
@@ -3481,8 +3485,8 @@ async function copiar(ids,forcar){
   /* célula do Excel colado: TAB/quebras viram espaço; aspas obrigam a envolver a célula em aspas (dobradas) */
   const cel=s=>{s=String(s).replace(/[\t\r\n]+/g," ");return s.includes('"')?'"'+s.split('"').join('""')+'"':s};
   const txt=[cols.map(c=>cel(protegeTxt(String(c.h==null?"":c.h).replace(/[\t\r\n]+/g," ")))).join(TAB),...sl.map((e,i)=>{const cs=celulas(e.row,i+2);return cols.map(c=>{const x=valorCol(c,celCol(c,cs,e));if(!x)return "";
-    if(x.f){const tf=traduzF(x.f,cols);if(tf)return "="+tf}
-    const s=txtSaida(x,c,",").replace(/[\t\r\n]+/g," ");
+    if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
+    const s=txtSaida(x,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
   try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?` do filtro, de ${g0.linhas.length}`:""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g)};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
