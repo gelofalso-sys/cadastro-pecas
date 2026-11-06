@@ -629,6 +629,10 @@ tr.nv-nao td{color:var(--muted)}
 table.t th.nm,table.t td.nm{left:96px;width:44px;text-align:center;font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--muted);padding:0 2px;cursor:e-resize}
 table.t th.nm{cursor:default}
 .mfh{display:none}
+table.t td.tf .ftadd{opacity:.4;border:1px dashed var(--line);background:none;border-radius:6px;width:30px;height:28px;cursor:pointer;font-size:14px;padding:0;color:inherit}
+table.t tr:hover td.tf .ftadd,table.t td.tf .ftadd:focus-visible{opacity:1}
+tr.ftdrop td,form.ftdrop{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--focus)}
+.ftbox{display:inline-flex;align-items:center;gap:6px}.ftbox .pc-ft{cursor:zoom-in}
 /* celular: formulário em gaveta embaixo + tabela sempre visível em cima */
 @media (max-width:900px){
   body.fopen{padding-bottom:var(--msh,60dvh)}
@@ -1719,7 +1723,7 @@ function renderTopo(){
   const trReal=ri=>{const row=g.linhas[ri];let h="";
     const c=cel[ri],id=row.lancId;
     h+=`<tr data-l="${id}" data-ri="${ri}" class="${editId===id?"edl":sel.has(id)?"on":""}"><td class="k"><div class="in"><input type="checkbox" data-sel ${sel.has(id)?"checked":""} aria-label="Selecionar">
-      <button type="button" data-act="editar" title="Abrir a peça no lançamento (todas as linhas dela)">✎</button><button type="button" data-act="dup" title="Duplicar esta linha (mesmo tipo, nova referência)">⧉</button><button type="button" class="del" data-act="del" title="Excluir só esta linha (as outras linhas da mesma peça ficam)">×</button></div></td><td class="k nm" title="Linha ${ri+1}">${ri+1}</td>`+(ftMap[id]?`<td class="tf"><img src="${fs(ftMap[id])}" alt="Foto" data-act="tab-foto" data-lid="${id}" title="Ampliar"></td>`:`<td class="tf"></td>`);
+      <button type="button" data-act="editar" title="Abrir a peça no lançamento (todas as linhas dela)">✎</button><button type="button" data-act="dup" title="Duplicar esta linha (mesmo tipo, nova referência)">⧉</button><button type="button" class="del" data-act="del" title="Excluir só esta linha (as outras linhas da mesma peça ficam)">×</button></div></td><td class="k nm" title="Linha ${ri+1}">${ri+1}</td>`+(ftMap[id]?`<td class="tf"><img src="${fs(ftMap[id])}" alt="Foto" data-act="tab-foto" data-lid="${id}" title="Ampliar"></td>`:`<td class="tf"><button type="button" class="ftadd" data-act="foto-add" data-lid="${id}" title="Adicionar foto: clique aqui, arraste uma ou várias fotos para a tabela (nome do arquivo = referência liga sozinho) ou cole com Ctrl+V">📷</button></td>`);
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
@@ -1894,8 +1898,8 @@ function painelRapido(){
   if(quick==="obs"){t="Nova observação";corpo=cx("q1","Observação","l","","Ex.: Link 212 - Xangai Brutos Banho Scarlat 2026 outubro")}
   if(quick==="multi"){t="Várias peças de uma vez";corpo=`<label class="fq w-l" style="flex:1 1 460px"><span>Uma peça por linha: Descrição; Peso; Custo de compra — o resto vem do formulário (categoria, fornecedor, banhos, tamanhos, quantidades…)</span><textarea id="q1" rows="4" placeholder="Brinco gota; 2,1; 3,60&#10;Argola lisa; 1,7; 3,36" style="width:100%;font:13px var(--mono);border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface);color:var(--ink)"></textarea></label>`}
   if(quick==="cor"){const bb=quickB&&bh.banhos.find(x=>x.id===quickB);t=bb?`Nova cor · banho ${esc(bb.letra)} (${esc(bb.nome)})`:"Nova cor";corpo=cx("q1","Cor","m")}
-  if(quick==="gi"){const gq=gradeBy(f.grade);t=`Novo tamanho${gq?" · "+esc(gq.nome):""}`;corpo=cx("q1","Tamanho (número ou letra)","n","","ex.: 26 ou GG")}
-  if(quick==="bn"){const us=bh.banhos.map(x=>x.letra);t=`Nova letra · ${esc(bh.nome)}`;corpo=cx("q1","Banho","s","","ex.: Ródio")+cx("q2","Letra","n",proxLetra(us))+`<label class="fq w-s"><span>Cor</span><select id="q3">${opts(C.cores,"")}</select></label>`+cx("q4","Milésimos","n")+cx("q5","R$ por grama","c")+`<label class="fq w-s"><span>Coluna do custo</span><select id="q6">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,"Banho de "+n]),"S")}</select></label>`+cx("q7","Texto na Descrição","m","","ex.:  banho ródio")}
+  if(quick==="gi"){const gq=gradeBy(f.grade);t=`Novo tamanho${gq?" · "+esc(gq.nome):""}`;corpo=cx("q1","Tamanho (número ou letras)","m","","ex.: 26 · GG · P M G")}
+  if(quick==="bn"){const us=bh.banhos.map(x=>x.letra);t=`Nova letra · ${esc(bh.nome)}`;corpo=cx("q1","Banho","s","","ex.: Ródio")+cx("q2","Letra","n",proxLetra(us.concat(letrasDeTamanho())))+`<label class="fq w-s"><span>Cor</span><select id="q3">${opts(C.cores,"")}</select></label>`+cx("q4","Milésimos","n")+cx("q5","R$ por grama","c")+`<label class="fq w-s"><span>Coluna do custo</span><select id="q6">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,"Banho de "+n]),"S")}</select></label>`+cx("q7","Texto na Descrição","m","","ex.:  banho ródio")}
   if(quick==="bh"){t="Novo banhista";corpo=cx("q1","Banhista","m")+bh.banhos.map((b,i)=>cx("qb"+i,`${esc(b.nome)} R$/g`,"c",b.mult))+cx("qv","Verniz R$/g","c",bh.verniz)}
   return `<div class="nf" data-quick="${quick}"><b>${t}</b>${corpo}<button class="btn pri sm" type="button" data-act="q-salvar">${quick==="multi"?"Adicionar todas":`Salvar <kbd>Enter</kbd>`}</button><button class="btn ghost sm" type="button" data-act="q-fechar">Cancelar</button>${quick==="bh"?'<span class="hint">Os demais dados (letra, cor, milésimos) vêm do banhista atual; ajuste em Banhos e custos.</span>':""}</div>`;
 }
@@ -1907,7 +1911,7 @@ function renderForm(){
   const ultCampo=`<label class="fq w-u" for="ultInp" title="Última peça ${esc(p)} já cadastrada no sistema — a próxima sai com o número seguinte"><span>Última peça ${esc(p)}</span><div class="ub"><input id="ultInp" class="n" inputmode="numeric" value="${esc(C.seqs[p]||"")}"><small title="${inicioDe(p)>ultimo(p)?"Há referência digitada à mão até "+esc(p)+inicioDe(p):""}">próxima ${esc(p)}<b id="proxRef">${proxDe(p)}</b></small></div></label>`;
   const mkIn=k=>`<input class="n" data-mk="${k}" value="${esc(f.mk[k]??"")}" inputmode="decimal" placeholder="×" aria-label="Multiplicador">`;
   f.gsel=f.gsel||[];const gr=gradeBy(f.grade),gIts=gr&&!f.semGrade?gr.itens.filter(x=>f.gsel.includes(x.id)):[];
-  const chips=gr?`<div class="z-row z-var"><b class="gtit">${esc(gr.nome)}</b><div class="gch${f.semGrade?" off":""}" role="group" aria-label="${esc(gr.nome)}">${gr.itens.map(it=>{const on=f.gsel.includes(it.id);return `<label class="gi${on?" on":""}" title="${esc(it.letra)} · ${esc(efetivo(gr,it).texto.trim())}"><input type="checkbox" data-gi="${it.id}" ${on?"checked":""} ${f.semGrade?"disabled":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="gi-todos" ${f.semGrade?"disabled":""}>${gIts.length===gr.itens.length?"nenhum":"todos"}</button><button type="button" class="gi tod" data-act="q" data-q="gi" title="Adicionar um tamanho novo (número ou letra) a esta lista" ${f.semGrade?"disabled":""}>＋ tamanho</button></div><input class="faixa" data-faixa placeholder="faixa: 12-16, 20" title="Digite uma faixa e aperte Enter: 12-16 marca de 12 a 16; 12, 18, 20 marca esses; todos marca tudo" aria-label="Faixa de tamanhos" autocomplete="off"><button type="button" class="btn ghost sm" data-act="faixa-salvar" title="Guarda os tamanhos marcados como padrão desta categoria: ao escolhê-la, eles já vêm marcados">★ padrão</button><label class="sg" title="Peça única, sem tamanhos (ex.: anel ajustável)"><input type="checkbox" data-f="semGrade" ${f.semGrade?"checked":""}> sem variação</label><span class="hint">uma linha por opção · mesma numeração · letras em sequência</span></div>`:"";
+  const chips=gr?`<div class="z-row z-var"><b class="gtit">${esc(gr.nome)}</b><div class="gch${f.semGrade?" off":""}" role="group" aria-label="${esc(gr.nome)}">${gr.itens.map(it=>{const on=f.gsel.includes(it.id);return `<label class="gi${on?" on":""}" title="${esc(it.letra)} · ${esc(efetivo(gr,it).texto.trim())}"><input type="checkbox" data-gi="${it.id}" ${on?"checked":""} ${f.semGrade?"disabled":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="gi-todos" ${f.semGrade?"disabled":""}>${gIts.length===gr.itens.length?"nenhum":"todos"}</button><button type="button" class="gi tod" data-act="q" data-q="gi" title="Adicionar tamanho novo (número ou letras como P M G) a esta lista" ${f.semGrade?"disabled":""}>＋ tamanho</button><button type="button" class="gi tod" data-act="gi-pmg" title="Cria os tamanhos P, M e G (pequeno, médio, grande): a letra do tamanho entra na referência" ${f.semGrade?"disabled":""}>＋ P M G</button></div><input class="faixa" data-faixa placeholder="faixa: 12-16, 20" title="Digite uma faixa e aperte Enter: 12-16 marca de 12 a 16; 12, 18, 20 marca esses; todos marca tudo" aria-label="Faixa de tamanhos" autocomplete="off"><button type="button" class="btn ghost sm" data-act="faixa-salvar" title="Guarda os tamanhos marcados como padrão desta categoria: ao escolhê-la, eles já vêm marcados">★ padrão</button><label class="sg" title="Peça única, sem tamanhos (ex.: anel ajustável)"><input type="checkbox" data-f="semGrade" ${f.semGrade?"checked":""}> sem variação</label><span class="hint">uma linha por opção · mesma numeração · letras em sequência</span></div>`:(catBy(f.v.I)&&!f.semGrade?`<div class="z-row z-var"><button type="button" class="gi tod" data-act="gr-novo-pmg" title="Cria tamanhos P, M e G para ${esc(f.v.I)}: a letra do tamanho entra na referência (ex.: BR1670P, BR1670M)">＋ Tamanhos P M G em ${esc(f.v.I)}</button></div>`:"");
   const qtdVar=(k,dis)=>(gIts.length>1?`<label class="fq gq all" title="Mesma quantidade em todos os tamanhos marcados"><span>todos</span><input class="n" data-qall="${k}" placeholder="=" inputmode="numeric" ${dis?"disabled":""} aria-label="Quantidade para todos os tamanhos"></label>`:"")+gIts.map(it=>{const o=f.ov[k+"~"+it.id]||{};return `<label class="fq gq" title="Quantidade ${esc(it.nome||it.letra)}"><span>${esc(it.nome||it.letra)}</span><input class="n" id="f-${k}~${it.id}-W" data-bo="${k}~${it.id}" data-k="W" value="${esc(o.W??"")}" inputmode="numeric" placeholder="0" ${dis?"disabled":""} aria-label="Quantidade ${esc(it.nome)}"></label>`}).join("");
   const addBtn=`<button class="btn pri big" type="submit">${editId?"Salvar":"Adicionar"} <kbd>Enter</kbd></button>${editId?"":`<button class="btn big" type="button" data-act="add-limpar" title="Adiciona a peça e esvazia o formulário para começar outra do zero">Adicionar e limpar</button>`}`;
   const bhCampo=`<label class="fq w-m"><span>${bruta?"Banhista":"Banhos de"}${auto}</span><div class="ip"><select data-f="banhista">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select><button type="button" class="plus" data-act="q" data-q="bh" title="Cadastrar banhista">＋</button></div></label>`;
@@ -1938,6 +1942,7 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
     <div class="seg" role="group" aria-label="Tipo de peça"><button type="button" data-tipo="bruta" aria-pressed="${bruta}" title="Peça ainda sem banho: vai para o banhista antes de ser vendida">Bruta (vai banhar)</button><button type="button" data-tipo="pronta" aria-pressed="${!bruta}">Pronta</button></div>
     <div class="gera" id="gera"></div>
     ${editId?`<button class="btn sm" type="button" data-act="cancel">Cancelar <kbd>Esc</kbd></button>`:`<button class="btn sm" type="button" data-act="repetir" title="Copia a última peça lançada para o formulário (nova referência ao adicionar)">Repetir última</button><button class="btn sm" type="button" data-act="q" data-q="multi" title="Colar ou digitar várias peças, uma por linha">Várias linhas</button><button class="btn sm" type="button" data-act="rom-abrir" title="Colar a lista (romaneio) do fornecedor: o sistema lê as peças e você só digita peso e divisão">${romTem?"Retomar romaneio"+(romInfo?` (${esc(romInfo)})`:""):"Colar romaneio"}</button><label class="btn sm" style="cursor:pointer" title="Para quem não usa romaneio: escolha ou arraste o PDF (DANFE) ou o XML da nota fiscal. O sistema lê os itens e você confere antes de lançar.">Importar nota fiscal (PDF/XML)<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" hidden></label>${ROMS.length?`<button class="btn sm" type="button" data-act="rom-lista" title="Todos os romaneios já colados, com fotos e quantidades: abra para lançar o que faltou ou corrigir">Romaneios salvos (${ROMS.length})</button>`:""}${relTem?`<button class="btn sm" type="button" data-act="rel-abrir" title="Abre o relatório do último romaneio lançado">Último relatório</button>`:""}<button class="btn sm" type="button" data-act="limpar" title="Esvazia Descrição, Peso, Custo e quantidades (o que está marcado como “Fica guardado” em Colunas continua)">Limpar campos</button>`}
+    ${(()=>{const ft=S.form.ft&&ftOk(S.form.ft)?S.form.ft:"";return `<span class="ftbox" title="Foto da peça: clique, arraste uma foto para o formulário ou cole com Ctrl+V">${ft?`<img class="pc-ft" src="${fs(ft)}" alt="Foto da peça" data-act="tab-foto" ${editId?`data-lid="${editId}"`:""}><button type="button" class="btn sm" data-act="foto-rem" title="Tirar a foto desta peça">× foto</button>`:""}<button type="button" class="btn sm" data-act="foto-form">📷 ${ft?"Trocar":"Foto"}</button></span>`})()}
     <span class="zm" role="group" aria-label="Tamanho do formulário"><button type="button" class="btn sm" data-act="zoom" data-z="f" data-d="-1" title="Diminuir o formulário" aria-label="Diminuir o formulário">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="f" data-d="0" id="zvF" title="Voltar ao tamanho normal" aria-label="Tamanho normal do formulário">${Math.round(ZM.f*100)}%</button><button type="button" class="btn sm" data-act="zoom" data-z="f" data-d="1" title="Aumentar o formulário" aria-label="Aumentar o formulário">+</button></span>
     <button type="button" class="tg min" data-act="tg-min"title="${abertos.min?"Mostrar tudo":"Mostrar só o essencial"}">${abertos.min?"▴ Mostrar tudo":"▾ Só o essencial"}</button>
   </div>
@@ -1956,6 +1961,15 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   atualizarGera();{const fm=document.getElementById("form");if(roForm)roForm.observe(fm);fm.classList.toggle("auto-mini",foraDaPlanilha)}ajustarAltura();
   if(quick){const i=document.getElementById("q1");if(i)i.focus()}
 }
+/* tamanhos com letra: P, M, G (ou Pequeno, Médio, Grande) entram na referência com a própria letra; números seguem a sequência de letras */
+const PMG={pequeno:"P",pequena:"P",medio:"M","médio":"M",media:"M","média":"M",grande:"G"};
+function addTamanhos(gr,texto){const ids=[];
+  String(texto).split(/[;,\/\s]+/).map(x=>x.trim()).filter(Boolean).forEach(tk=>{
+    const sem=tk.toLowerCase(),letraPMG=PMG[sem]||(/^[A-Za-z]{1,3}$/.test(tk)?tk.toUpperCase():""),nome=PMG[sem]||tk;
+    let it=gr.itens.find(x=>String(x.nome).toLowerCase()===nome.toLowerCase());
+    if(!it){const letra=letraPMG&&!gr.itens.some(x=>String(x.letra).toUpperCase()===letraPMG)?letraPMG:proxLetra(gr.itens.map(x=>x.letra));it={id:uid(),letra,nome};gr.itens.push(it)}
+    ids.push(it.id)});return ids}
+function letrasDeTamanho(){return todasGrades().flatMap(g=>g.itens.filter(x=>String(x.letra||"").toUpperCase()===String(x.nome||"").toUpperCase()).map(x=>String(x.letra).toUpperCase()))}
 function salvarRapido(){
   const C=cfg(),f=S.form,g=id=>{const e=document.getElementById(id);return e?e.value.trim():""},n=g("q1"),lo=s=>s.toLowerCase();
   if(!n){document.getElementById("q1").focus();return}
@@ -1971,8 +1985,8 @@ function salvarRapido(){
     f.v.H=fo.nome;f.desconto=fo.desconto||"0";if(fo.codigo)f.v.G=fo.codigo;if(!editId)banhistaDoFornecedor(f)}
   if(quick==="obs"){if(!C.observacoes.includes(n))C.observacoes.unshift(n);f.v.M=n}
   if(quick==="cor"){if(!C.cores.includes(n))C.cores.push(n);if(quickB){f.ov=f.ov||{};f.ov[quickB]=f.ov[quickB]||{};f.ov[quickB].L=n}else f.v.L=n}
-  if(quick==="gi"){const gr=gradeBy(f.grade);if(gr){let it=gr.itens.find(x=>String(x.nome).toLowerCase()===n.toLowerCase());if(!it){it={id:uid(),letra:proxLetra(gr.itens.map(x=>x.letra)),nome:n};gr.itens.push(it)}f.gsel=gr.itens.map(x=>x.id).filter(id=>id===it.id||(f.gsel||[]).includes(id));f.semGrade=false}}
-  if(quick==="bn"){const bh=banhistaBy(f.banhista),L=(g("q2")||proxLetra(bh.banhos.map(x=>x.letra))).toUpperCase(),id=uid();
+  if(quick==="gi"){const gr=gradeBy(f.grade);if(gr){const novos=addTamanhos(gr,n);f.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(f.gsel||[]).includes(id));f.semGrade=false}}
+  if(quick==="bn"){const bh=banhistaBy(f.banhista),L=(g("q2")||proxLetra(bh.banhos.map(x=>x.letra).concat(letrasDeTamanho()))).toUpperCase(),id=uid();
     bh.banhos.push({id,nome:n,letra:L,cor:document.getElementById("q3").value||n,mil:g("q4"),modo:"peso",mult:g("q5"),coluna:document.getElementById("q6").value,sufixo:document.getElementById("q7").value||(" banho "+n.toLowerCase()),marcado:false,vz:true});f.on[id]=true}
   if(quick==="bh"){const base=banhistaBy(f.banhista),nb=clone(base);nb.id=uid();nb.nome=n;nb.verniz=g("qv")||base.verniz;nb.banhos.forEach((b,i)=>{const v=g("qb"+i);if(v)b.mult=v});
     C.banhistas.push(nb);f.banhista=nb.id;marcadosPadrao(f);f.ov={}}
@@ -3166,6 +3180,59 @@ function limparForm(){const cc=cfg().colcfg,f=S.form;f.vz={};LET.forEach(L=>{if(
   Object.keys(f.ov||{}).forEach(b=>{const o=f.ov[b];if(!o||typeof o!=="object"){delete f.ov[b];return}Object.keys(o).forEach(L=>{if(!cc[L]||!cc[L].manter)delete o[L]});if(!Object.keys(o).length)delete f.ov[b]});if(f.tipo!=="pronta")f.vinc=false}
 const focarPrimeiro=()=>{const el=document.querySelector("#f-F")||document.querySelector("#form .fbody input");if(el){el.focus();try{el.select()}catch(x){}}};
 let addTrava=0;
+/* ===== fotos: escolher, arrastar ou colar (Ctrl+V) ===== */
+let FT_GRANDE=null,ftAlvo=null;
+const blobUrl=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error("foto ilegível"));r.readAsDataURL(b)});
+async function lerFotoArquivo(file){
+  if(!file||!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type))throw new Error(`“${file&&file.name||"arquivo"}” não é uma foto JPG, PNG ou WebP`);
+  if(file.size>25e6)throw new Error(`“${file.name}” tem mais de 25 MB`);
+  const src=await blobUrl(file),g=await fotoReduzida(src,1200),m=await fotoReduzida(src,240);
+  if(!g||!m)throw new Error(`não consegui ler “${file.name}”`);
+  const grande=await blobUrl(g),mini=await blobUrl(m);if(!ftOk(mini))throw new Error(`formato de “${file.name}” não suportado`);
+  return {mini,grande}}
+async function fotoNaPeca(lid,F){const l=S.lanc.find(x=>x.id===lid);if(!l)return false;
+  l.ft=F.mini;ftSalvas.delete(lid);candFoto.delete(lid);await idbPut("fotos",lid,F.grande);if(editId===lid)S.form.ft=F.mini;return true}
+const refBase=r=>{const m=/^([A-Za-z]+\d+)/.exec(String(r||""));return m?m[1].toUpperCase():String(r||"").toUpperCase()};
+/* várias fotos de uma vez: o nome do arquivo igual à referência (BR1670.jpg) liga sozinho; as que sobram vão em sequência para as peças sem foto, a partir da peça escolhida */
+async function fotosEmLote(files,lidIni){
+  const arqs=[...files].filter(f=>f&&(/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif)$/i.test(f.name)));
+  if(!arqs.length){toast("Nenhuma foto nesses arquivos. Use JPG, PNG ou WebP.");return}
+  const g=gerar(),ordem=[];g.linhas.forEach(r=>{if(!ordem.includes(r.lancId)&&(!filtroOn()||casa(r)))ordem.push(r.lancId)});
+  const porNome=new Map();ordem.forEach(id=>{(g.refs[id]||[]).forEach(r=>{[String(r).toUpperCase(),refBase(r)].forEach(k=>{if(k&&!porNome.has(k))porNome.set(k,id)})})});
+  const usados=new Set(),semNome=[];let nNome=0,nSeq=0;const erros=[];
+  for(const f of arqs){
+    const exato=f.name.replace(/\.[^.]+$/,"").toUpperCase(),base=exato.replace(/[\s_-]*\(?\d+\)?$/,"");
+    const alvo=porNome.get(exato)||porNome.get(base)||null;
+    if(alvo&&!usados.has(alvo)){try{await fotoNaPeca(alvo,await lerFotoArquivo(f));usados.add(alvo);nNome++}catch(e){erros.push(e.message)}}else semNome.push(f)}
+  let pos=Math.max(0,ordem.indexOf(lidIni));
+  for(const f of semNome){
+    while(pos<ordem.length&&(usados.has(ordem[pos])||(arqs.length>1&&((S.lanc.find(l=>l.id===ordem[pos])||{}).ft))))pos++;
+    if(pos>=ordem.length){erros.push(`“${f.name}”: não há mais peça sem foto`);continue}
+    try{await fotoNaPeca(ordem[pos],await lerFotoArquivo(f));usados.add(ordem[pos]);nSeq++;pos++}catch(e){erros.push(e.message)}}
+  salvar(false);renderTopo();if(editId)renderForm();
+  const tot=nNome+nSeq;toast(`${tot} foto(s) anexada(s)${nNome?` · ${nNome} pelo nome do arquivo`:""}${nSeq?` · ${nSeq} em sequência`:""}${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`);
+}
+async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){await fotoNaPeca(editId,F);salvar(false);renderTopo()}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
+function fotoRemover(lid){
+  if(!lid){delete S.form.ft;FT_GRANDE=null;salvar(false);renderForm();return}
+  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid)delete S.form.ft;salvar(false);renderTopo();renderForm();toast("Foto removida.")}
+(function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
+  inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=ftAlvo;ftAlvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
+    if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
+    if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}return}
+    fotosEmLote(fl,al)});
+  const temArq=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
+  let hl=null;const limpaHl=()=>{if(hl){hl.classList.remove("ftdrop");hl=null}};
+  document.addEventListener("dragover",e=>{if(!temArq(e))return;const tr=e.target.closest&&e.target.closest("#sheet tr[data-l]"),fm=e.target.closest&&e.target.closest("#form");if(!tr&&!fm)return;e.preventDefault();const alvo=tr||fm;if(hl!==alvo){limpaHl();hl=alvo;hl.classList.add("ftdrop")}});
+  document.addEventListener("dragleave",e=>{if(!e.relatedTarget)limpaHl()});
+  document.addEventListener("drop",e=>{if(!temArq(e))return;const tr=e.target.closest&&e.target.closest("#sheet tr[data-l]"),fm=e.target.closest&&e.target.closest("#form");limpaHl();if(!tr&&!fm)return;e.preventDefault();e.stopPropagation();
+    const fl=[...e.dataTransfer.files];if(!fl.length)return;
+    if(tr)fotosEmLote(fl,tr.dataset.l);else if(fl.length===1)fotoDoFormulario(fl[0]);else fotosEmLote(fl,editId)});
+  document.addEventListener("paste",e=>{const fl=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(x=>/^image\//.test(x.type));if(!fl.length)return;
+    if(e.target&&e.target.id==="celIn")return;e.preventDefault();
+    const row=selR&&G&&G.linhas[selR.fr],lid=editId||(row&&row.lancId);
+    if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.")}catch(x){toast(x.message)}})()}
+    else fotoDoFormulario(fl[0])},true)})();
 function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";
@@ -3186,8 +3253,9 @@ function adicionar(limpar,quiet){
     if(temGrade(novo)||bp.length)delete novo.v.W;["O","R","S","T","U"].forEach(L=>{if(vazio(novo.v[L]))delete novo.v[L]})}
   else if(novo.mk)delete novo.mk.p;
   if(!quiet)addTrava=Date.now()+500;
-  if(editId){const i=S.lanc.findIndex(l=>l.id===editId);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
-  else{S.lanc.push(novo);undo={tipo:"add",id:novo.id,form:clone(f)};delete f.v.E;if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
+  if(quiet)delete novo.ft;
+  if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
+  else{S.lanc.push(novo);undo={tipo:"add",id:novo.id,form:clone(f)};if(novo.ft&&FT_GRANDE)idbPut("fotos",novo.id,FT_GRANDE);FT_GRANDE=null;delete f.ft;delete f.v.E;if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
   salvar(false);if(quiet)return true;renderForm();
   mostrarNoFim(novo.id);
   focarPrimeiro();return true;
@@ -3548,6 +3616,11 @@ document.addEventListener("click",e=>{
     case "rom-fechar":romSalvar();ROM=null;renderRom();renderForm();toast("Romaneio guardado — use “Retomar romaneio” quando quiser continuar.");break;
     case "rom-descartar":{romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito);romLimparRascunho();if(sid0&&!jaFeito)romExcluirSalvo(sid0);ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{localStorage.setItem(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null);break}
     case "rom-lote":romLote();break;
+    case "gr-novo-pmg":{const c=catBy(S.form.v.I);if(!c)break;if(!c.grade)c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};const gr=effGrade(c);addTamanhos(gr,"P M G");sincGrade(S.form);S.form.gsel=gr.itens.map(x=>x.id);S.form.semGrade=false;salvar(true,false);renderForm();renderCfg();toast("Tamanhos P, M e G criados: a letra de cada um entra na referência.");break}
+    case "gi-pmg":{const gr=gradeBy(S.form.grade);if(gr){const novos=addTamanhos(gr,"P M G");S.form.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(S.form.gsel||[]).includes(id));S.form.semGrade=false;salvar(true,false);renderForm();toast("Tamanhos P, M e G prontos: a letra de cada um entra na referência.")}break}
+    case "foto-add":ftAlvo=t.dataset.lid;document.getElementById("ftIn").click();break;
+    case "foto-form":ftAlvo="__form";document.getElementById("ftIn").click();break;
+    case "foto-rem":fotoRemover(editId||null);break;
     case "tab-foto":{const lid=t.dataset.lid,src=t.src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));break}
     case "rom-lista":romListaAbrir();break;
     case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());romAbrirSalvo(t.dataset.id);break}
