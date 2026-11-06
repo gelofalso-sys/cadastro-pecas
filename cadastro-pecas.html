@@ -1049,6 +1049,34 @@ table.cfg td input:not([type=checkbox]){min-width:110px}
   nav.ir::after,.ctabs::after{content:"›";position:sticky;right:0;flex:0 0 auto;margin-left:auto;padding:0 8px 0 18px;font:700 22px/1 var(--body);color:var(--accent);background:linear-gradient(90deg,transparent,var(--bg) 55%);align-self:stretch;display:flex;align-items:center;pointer-events:none}
   nav.ir.fim::after,.ctabs.fim::after{display:none}
 }
+
+/* catálogo rápido */
+.cpanel{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px;display:grid;gap:8px;margin:6px 0}
+.cpanel textarea{width:100%;min-height:96px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);box-sizing:border-box}
+.cpanel .prev{font-size:12.5px;color:var(--ink)}.cpanel .prev ul{margin:4px 0 0;padding-left:18px}.cpanel .prev .bad{color:var(--bad)}.cpanel .prev .warn{color:var(--warn)}
+.soft{font-size:12px;color:var(--ink);border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--surface));border-radius:8px;padding:5px 8px;margin-top:4px}
+.banner{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}
+.banner span{flex:1 1 240px}
+.mdl{display:inline-block}.mdl summary{list-style:none;cursor:pointer;display:inline-flex}.mdl summary::-webkit-details-marker{display:none}.mdl[open]>.row{margin-top:6px}
+.chip .cn{border:0;background:none;font:inherit;color:inherit;cursor:pointer;padding:0}.chip .cn:hover{text-decoration:underline}
+.chip .cn-in{width:130px;height:24px;font-size:12.5px;border-radius:999px;padding:0 8px}
+.chip .mv{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 2px;font-size:13px;line-height:1}.chip .mv:hover{color:var(--ink)}
+select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
+.cfoot-mv{display:inline-flex;gap:2px}
+@media (max-width:720px){
+ table.bnt,table.bnt tbody{display:block}table.bnt thead{display:none}
+ table.bnt tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 10px;border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px;background:var(--surface)}
+ table.bnt tbody tr:nth-child(even) td{background:none}
+ table.bnt td{display:block;padding:0;border:0;min-width:0;background:none!important}
+ table.bnt td input,table.bnt td select{min-width:0!important}
+ .chip{max-width:100%;flex-wrap:wrap}.chip label.sr{flex-basis:100%}
+ #cfg{padding-bottom:72px}
+ table.bnt td::before{content:attr(data-th);display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+ table.bnt td[data-th=""]::before{display:none}
+ table.bnt td input:not([type=checkbox]),table.bnt td select{width:100%!important;box-sizing:border-box}
+ table.bnt td.c{text-align:left}
+ table.bnt td.acts{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end}
+}
 </style>
 
 <header><div class="gut hin">
@@ -1202,8 +1230,8 @@ const gradeBy=id=>id?(todasGrades().find(g=>g.id===id)||null):null;
 function gradeDaCat(cat,sub){const c=catBy(cat),g=c&&effGrade(c);if(!g||!g.itens||!g.itens.length)return null;const ss=g.subs||[];return !ss.length||ss.includes(sub)?g:null}
 /* ids das opções para uma faixa digitada: 12-16 (de 12 a 16), 12, 18 (esses), todos */
 function selFaixa(gr,txt){const sel=new Set();
-  String(txt||"").split(/[;, ]+/).filter(Boolean).forEach(tk=>{const m=tk.match(/^([0-9]+)-([0-9]+)$/);
-    if(m){const lo=+m[1],hi=+m[2];gr.itens.forEach(it=>{const n=parseFloat(it.nome);if(n>=lo&&n<=hi)sel.add(it.id)})}
+  String(txt||"").replace(/(\d)\s*(?:-|–|—|a|até|ate|ao)\s*(?=\d)/gi,"$1-").split(/[;, ]+/).filter(Boolean).forEach(tk=>{const m=tk.match(/^([0-9]+)-([0-9]+)$/);
+    if(m){const lo=Math.min(+m[1],+m[2]),hi=Math.max(+m[1],+m[2]);gr.itens.forEach(it=>{const n=parseFloat(it.nome);if(n>=lo&&n<=hi)sel.add(it.id)})}
     else if(tk.toLowerCase()==="todos")gr.itens.forEach(it=>sel.add(it.id));
     else gr.itens.forEach(it=>{if(String(it.nome)===tk)sel.add(it.id)})});
   return gr.itens.map(i=>i.id).filter(id=>sel.has(id))}
@@ -2149,26 +2177,122 @@ function irPara(id){
 let SECS=[];
 function sec(id,titulo,resumo,corpo){SECS.push({id,titulo,resumo,corpo});return ""}
 function abaCfg(){return SECS.some(s=>s.id===abertos.tab)?abertos.tab:SECS[0].id}
+/* ===== Catálogo rápido: colar lista, modelos, duplicar seguro, renomear e ordenar ===== */
+let renBusy=false;
+let catUI={colar:false,txt:"",dup:null,ren:null,corNova:null};
+const partir=txt=>{const vistos=new Set(),r=[];String(txt==null?"":txt).split(/[;,\n\r]+/).forEach(x=>{x=x.replace(/\s+/g," ").trim().slice(0,60);const k=semAc(x);if(x&&!vistos.has(k)){vistos.add(k);r.push(x)}});return r};
+const kSub=x=>semAc(x).replace(/(e?s)$/,"");
+const addUnicos=(lista,itens)=>{let n=0;itens.forEach(x=>{if(!lista.some(y=>kSub(y)===kSub(x))){lista.push(x);n++}});return n};
+function acharCat(C,nome){const k=semAc(nome);const c=C.categorias.find(x=>semAc(x.nome)===k);if(c)return c;const j=JUERI_CATS.find(x=>(x.alias||[]).some(a=>semAc(a)===k));return j?(C.categorias.find(x=>x.nome===j.nome)||null):null}
+function prefixoNovo(C,nome){const L=semAc(nome).toUpperCase().replace(/[^A-Z]/g,"");if(L.length<2)return null;const cand=[L.slice(0,2),L.slice(0,3),L.slice(0,4)];for(let j=2;j<L.length;j++)cand.push(L[0]+L[j]);const livre=cand.find(c=>!prefixoEmUso(C,c,null));return livre?{p:livre,rep:false}:{p:L.slice(0,2),rep:true}}
+function nomeCatErro(C,v,exceto){if(!v)return "Digite o nome da categoria.";if(v.length>40)return "O nome da categoria é longo demais (máximo 40 letras).";if(semAc(v).replace(/[^a-z]/g,"").length<2)return "O nome da categoria precisa ter pelo menos 2 letras (o prefixo da referência sai delas). Ex.: Anéis.";if(C.categorias.some(x=>x!==exceto&&semAc(x.nome)===semAc(v)))return `Já existe a categoria “${v}” (acento e maiúscula não diferenciam).`;return ""}
+function nomeCatLivre(C,base){let n=base,k=2;while(C.categorias.some(x=>semAc(x.nome)===semAc(n)))n=base+" "+(k++);return n}
+const MODELOS_CAT=[
+ {id:"aneis",nome:"Anéis (com tamanhos)",linha:"Anéis",grade:true},
+ {id:"colares",nome:"Colares",linha:"Colares: Corrente; Gargantilha; Choker; Longo; Pingente"},
+ {id:"brincos",nome:"Brincos",linha:"Brincos: Argola; Ear cuff; Pequeno; Médio; Grande"},
+ {id:"pulseiras",nome:"Pulseiras",linha:"Pulseiras: Bracelete; Corrente; Riviera; Elos"},
+ {id:"conjuntos",nome:"Conjuntos",linha:"Conjuntos: Colar e brinco; Brinco e anel; Completo"}];
+/* lê "Anéis: Solitário; Aparador" (uma categoria por linha) e diz o que seria criado, sem mexer em nada */
+function planoLista(C,txt){const tmp={categorias:[...C.categorias]},novas=[],extra=[],erros=[];
+  const todas=String(txt||"").split(/\r?\n/);if(todas.length>300)erros.push(`A lista tem ${todas.length} linhas: só as 300 primeiras serão lidas.`);
+  todas.slice(0,300).forEach(ln=>{ln=ln.trim();if(!ln)return;const i=ln.indexOf(":"),nome=(i<0?ln:ln.slice(0,i)).replace(/\s+/g," ").trim(),subs=i<0?[]:partir(ln.slice(i+1));
+    const nv=novas.find(n=>semAc(n.nome)===semAc(nome));if(nv){addUnicos(nv.subs,subs);return}
+    const ex=acharCat(C,nome);
+    if(ex){let e=extra.find(x=>x.c===ex);if(!e)extra.push(e={c:ex,add:[]});subs.forEach(sb=>{if(!ex.subs.some(y=>kSub(y)===kSub(sb))&&!e.add.some(y=>kSub(y)===kSub(sb)))e.add.push(sb)});return}
+    const er=nomeCatErro(tmp,nome,null);if(er){erros.push(`“${nome.slice(0,40)}”: ${er}`);return}
+    const pf=prefixoNovo(tmp,nome);novas.push({nome,prefixo:pf.p,rep:pf.rep,subs:subs.slice()});tmp.categorias.push({nome,prefixo:pf.p,subs:[]})});
+  return{novas,extra:extra.filter(e=>e.add.length),erros}}
+const contaPlano=pl=>[pl.novas.length,pl.novas.reduce((a,n)=>a+n.subs.length,0)+pl.extra.reduce((a,e)=>a+e.add.length,0)];
+function aplicaPlano(C,pl){pl.novas.forEach(n=>{C.categorias.push({nome:n.nome,prefixo:n.prefixo,subs:n.subs.slice()});if(!(n.prefixo in C.seqs))C.seqs[n.prefixo]="0"});pl.extra.forEach(e=>addUnicos(e.c.subs,e.add))}
+function previaInfo(C){const tx=String(catUI.txt||"");
+  if(!tx.trim())return{html:`<span class="hint">Cole ou digite uma categoria por linha. As subcategorias vêm depois dos dois-pontos, separadas por ponto e vírgula.</span>`,ok:false};
+  const pl=planoLista(C,tx),[nc,ns]=contaPlano(pl);let h="";
+  h+=(nc||ns)?`<b>Vai ${nc?`criar ${nc} categoria${nc>1?"s":""}${ns?" e ":"."}`:"acrescentar "}${ns?`${ns} subcategoria${ns>1?"s":""}.`:""}</b>`:`<b>Nada novo para criar</b> — tudo isso já está cadastrado.`;
+  const li=[];pl.novas.forEach(n=>li.push(`<li><b>${esc(n.nome)}</b> <span class="mono">${esc(n.prefixo)}</span>${n.rep?` <span class="warn">prefixo repetido: divide a numeração com outra categoria</span>`:""}${n.subs.length?" — "+esc(n.subs.join(", ")):""}</li>`));
+  pl.extra.forEach(e=>li.push(`<li><b>${esc(e.c.nome)}</b> já existe: entram só ${esc(e.add.join(", "))}</li>`));
+  pl.erros.forEach(m=>li.push(`<li class="bad">${esc(m)}</li>`));
+  if(li.length)h+=`<ul>${li.slice(0,15).join("")}${li.length>15?`<li>…e mais ${li.length-15}</li>`:""}</ul>`;
+  return{html:h,ok:!!(nc||ns)}}
+function atualizaPrevia(){const p=document.getElementById("colarPrev"),b=document.getElementById("colarOk");if(!p)return;const r=previaInfo(cfg());p.innerHTML=r.html;if(b)b.disabled=!r.ok}
+function catTopo(C){
+  const banner=(!abertos.catBanner&&!C.categorias.some(c=>!JUERI_CATS.some(j=>j.nome===c.nome)))?`<div class="banner" role="note"><b>Primeira vez aqui?</b><span>Monte o seu catálogo de uma vez: cole a lista de categorias e subcategorias ou comece por um modelo pronto.</span><button type="button" class="btn pri sm" data-act="colar-abrir">Montar meu catálogo</button><button type="button" class="x" data-act="banner-fechar" aria-label="Fechar esta faixa" title="Fechar">×</button></div>`:"";
+  const mod=`<details class="mdl"><summary class="btn sm" title="Cria categorias e subcategorias comuns de joalheria; só entra o que ainda não existe">Começar com um modelo</summary><div class="row">${MODELOS_CAT.map(m=>`<button type="button" class="btn sm" data-act="modelo-add" data-m="${m.id}">${esc(m.nome)}</button>`).join("")}<button type="button" class="btn sm pri" data-act="modelo-add" data-m="todos">Todos</button></div><div class="hint">Só entra o que ainda não existe — nada do que você já cadastrou muda.</div></details>`;
+  let painel="";
+  if(catUI.colar){const r=previaInfo(C);
+    painel=`<div class="cpanel" id="colarPanel"><b>Colar lista de categorias</b><span class="hint">Uma categoria por linha, assim: <span class="mono">Anéis: Solitário; Aparador; Meia aliança</span>. Se a categoria já existe, só entram as subcategorias que faltam.</span><textarea id="colarTx" data-colar aria-label="Lista de categorias e subcategorias" placeholder="Anéis: Solitário; Aparador; Meia aliança&#10;Colares: Corrente; Choker">${esc(catUI.txt)}</textarea><div id="colarPrev" class="prev" aria-live="polite">${r.html}</div><div class="row"><button type="button" class="btn pri sm" id="colarOk" data-act="colar-ok" ${r.ok?"":"disabled"}>Criar</button><button type="button" class="btn ghost sm" data-act="colar-fechar">Cancelar</button></div></div>`}
+  return banner+`<div class="row"><button type="button" class="btn sm${catUI.colar?" pri":""}" data-act="${catUI.colar?"colar-fechar":"colar-abrir"}" aria-expanded="${catUI.colar?"true":"false"}" title="Cria várias categorias e subcategorias de uma vez a partir de uma lista">Colar lista</button>${mod}</div>`+painel}
+/* duplicar categoria com cuidado: nome, prefixo livre e o que copiar */
+function dupAviso(C,d){const p=String(d.pre||"").toUpperCase();if(!p)return "Escolha um prefixo de 1 a 4 letras.";
+  const com=C.categorias.filter(x=>String(x.prefixo||"").toUpperCase()===p||Object.values(x.subPref||{}).some(v=>String(v).toUpperCase()===p)).map(x=>x.nome);
+  return com.length?`O prefixo ${p} já é de ${com.join(", ")}: a cópia vai dividir a mesma numeração (continua de ${p}${ultimo(p)}). Troque o prefixo se não quiser.`:""}
+function dupPainel(C,c){const d=catUI.dup,av=dupAviso(C,d);
+  return `<div class="cpanel" data-dup><b>Duplicar “${esc(c.nome)}”</b><div class="row"><label class="fl" style="flex:1 1 160px"><span>Nome da nova categoria</span><input data-dup="nome" value="${esc(d.nome)}" maxlength="40"></label><label class="fl" style="width:84px"><span>Prefixo</span><input data-dup="pre" value="${esc(d.pre)}" maxlength="4" style="text-transform:uppercase" title="1 a 4 letras. Sugerido: um prefixo que ninguém usa ainda"></label></div>
+  <label class="vchk"><input type="checkbox" data-dup="subs" ${d.subs?"checked":""}> Copiar as subcategorias</label><label class="vchk"><input type="checkbox" data-dup="grade" ${d.grade?"checked":""}> Copiar a variação (tamanhos, letras…)</label>
+  <div class="hint">Os prefixos próprios das subcategorias não são copiados.</div><div class="soft" id="dupAviso" role="status" ${av?"":"hidden"}>${esc(av)}</div>
+  <div class="row"><button type="button" class="btn pri sm" data-act="cat-dup-ok">Criar cópia</button><button type="button" class="btn ghost sm" data-act="cat-dup-no">Cancelar</button></div></div>`}
+function dupAbrir(ci){const C=cfg(),c=C.categorias[ci];if(!c)return;const nome=nomeCatLivre(C,c.nome.slice(0,30)+" (cópia)"),pf=prefixoNovo(C,nome);
+  catUI.dup={i:ci,nome,pre:pf?pf.p:"",preManual:false,subs:true,grade:true};renderCfg();const el=document.querySelector(`[data-cat="${ci}"] [data-dup="nome"]`);if(el){el.focus();el.select()}}
+function dupCampo(t){const d=catUI.dup;if(!d)return;const k=t.dataset.dup,C=cfg();
+  if(k==="nome"){d.nome=t.value;if(!d.preManual){const pf=prefixoNovo(C,d.nome);d.pre=pf?pf.p:"";const pi=document.querySelector('[data-dup="pre"]');if(pi)pi.value=d.pre}}
+  else if(k==="pre"){d.pre=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);t.value=d.pre;d.preManual=true}
+  else d[k]=t.checked;
+  const a=document.getElementById("dupAviso");if(a){const m=dupAviso(C,d);a.textContent=m;a.hidden=!m}}
+function dupOk(){const C=cfg(),d=catUI.dup;if(!d)return;const c=C.categorias[d.i];if(!c){catUI.dup=null;renderCfg();return}
+  const nome=String(d.nome||"").replace(/\s+/g," ").trim(),er=nomeCatErro(C,nome,null);if(er){toast(er);const el=document.querySelector('[data-dup="nome"]');if(el)el.focus();return}
+  const pre=String(d.pre||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!pre){toast("O prefixo precisa ter de 1 a 4 letras.");const el=document.querySelector('[data-dup="pre"]');if(el)el.focus();return}
+  const av=dupAviso(C,{pre}),n=clone(c);n.nome=nome;n.prefixo=pre;delete n.subPref;
+  if(!d.subs){n.subs=[];delete n.subSoRef}
+  if(!d.grade)delete n.grade;else if(n.grade){n.grade.id=uid();if(Array.isArray(n.grade.itens))n.grade.itens.forEach(x=>{x.id=uid()});if(n.grade.subs&&!d.subs)n.grade.subs=[]}
+  C.categorias.splice(d.i+1,0,n);if(!(pre in C.seqs))C.seqs[pre]="0";catUI.dup=null;salvar(true,false);render();
+  toast(`Categoria “${nome}” criada com o prefixo ${pre}.${av?" "+av:""}`,{t:"Desfazer",fn:desfazer});refocar(`[data-cat="${d.i+1}"] [data-enter="sub"]`)}
+function focoChip(ci,j){const el=document.querySelectorAll(`[data-cat="${ci}"] .chip .cn`)[j];if(el)el.focus()}
+function subRenomear(ci,j,novo){if(renBusy)return;renBusy=true;try{subRenomear0(ci,j,novo)}finally{renBusy=false}}
+function subRenomear0(ci,j,novo){const C=cfg(),c=C.categorias[ci];catUI.ren=null;if(!c||j>=c.subs.length){renderCfg();return}
+  const old=c.subs[j];novo=String(novo||"").replace(/\s+/g," ").trim();
+  if(!novo||novo===old){renderCfg();return}
+  if(novo.length>60){toast("O nome da subcategoria é longo demais (máximo 60 letras).");renderCfg();return}
+  if(c.subs.some((x,k)=>k!==j&&semAc(x)===semAc(novo))){toast(`Já existe a subcategoria “${novo}” em ${c.nome}.`);renderCfg();return}
+  c.subs[j]=novo;
+  const mv=o=>{if(o&&Object.prototype.hasOwnProperty.call(o,old)){o[novo]=o[old];delete o[old]}};mv(c.subPref);mv(c.subSoRef);
+  if(c.grade&&Array.isArray(c.grade.subs))c.grade.subs=c.grade.subs.map(x=>x===old?novo:x);
+  let n=0;S.lanc.forEach(l=>{if(l.v&&l.v.I===c.nome&&l.v.J===old){l.v.J=novo;n++}});
+  if(S.form&&S.form.v&&S.form.v.I===c.nome&&S.form.v.J===old)S.form.v.J=novo;
+  (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;return it.slice(q+1).trim()===c.nome+">"+old?it.slice(0,q+1)+c.nome+">"+novo:it}).join(";")});
+  if(rascunho&&rascunho.v&&rascunho.v.I===c.nome&&rascunho.v.J===old)rascunho.v.J=novo;
+  sincGrade(S.form);salvar(true,n>0);render();
+  toast(`Subcategoria “${old}” agora é “${novo}”.${n?` ${n} peça(s) já lançadas foram atualizadas.`:""}`,{t:"Desfazer",fn:desfazer})}
+/* banhos prontos */
+const BANHOS_PRONTOS={ouro:{nome:"Ouro",cor:"Ouro",coluna:"R",sufixo:" banho ouro"},rodio:{nome:"Ródio",cor:"Ródio",coluna:"S",sufixo:" banho ródio"},prata:{nome:"Prata",cor:"Prata",coluna:"T",sufixo:" banho prata"},negro:{nome:"Ródio negro",cor:"Ródio negro",coluna:"S",sufixo:" banho ródio negro"},outro:{nome:"Novo banho",cor:"",coluna:"S",sufixo:""}};
+function letraBanhoLivre(b){const us=b.banhos.map(x=>String(x.letra||"").trim().toUpperCase());for(let k=0;k<26;k++){const L=String.fromCharCode(65+k);if(!us.includes(L))return L}return ""}
+function nomeBanhoLivre(b,base){const raiz=String(base||"Banho").replace(/\s+\d+$/,"").trim()||"Banho";let n=raiz,k=2;while(b.banhos.some(x=>semAc(x.nome)===semAc(n)))n=raiz+" "+(k++);return n}
+function corOpts(C,x){const falta=x.cor&&!C.cores.includes(x.cor);
+  return (falta?`<option value="${esc(x.cor)}" selected>⚠ ${esc(x.cor)} (não está em Cores)</option>`:"")+(!x.cor?`<option value="" selected>— escolha a cor —</option>`:"")+opts(C.cores,x.cor)+`<option value="__nova">+ Nova cor…</option>`}
+function corNovaOk(){const C=cfg(),cn=catUI.corNova;if(!cn)return;const inp=document.querySelector("[data-ncor]"),nome=String(inp?inp.value:"").replace(/[;,]+/g," ").replace(/\s+/g," ").trim().slice(0,40);
+  if(!nome){toast("Digite o nome da cor.");if(inp)inp.focus();return}
+  const b=C.banhistas[cn.bi],bn=b&&b.banhos[cn.j];if(!bn){catUI.corNova=null;renderCfg();return}
+  let cor=C.cores.find(c=>semAc(c)===semAc(nome));if(!cor){cor=nome;C.cores.push(cor)}
+  bn.cor=cor;catUI.corNova=null;salvar(true,false);render();toast(`Cor “${cor}” pronta e escolhida para o banho ${bn.nome}.`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${cn.bi}"] [data-bn="${cn.j}"] [data-bnf="cor"]`)}
 /* Categorias: cada cartão traz prefixo, última peça, subcategorias, variação (tamanhos/letras) e a exclusão */
-function secCat(C,usoPref){
+function secCat(C,usoPref){const topo=catTopo(C);
   const comGrade=C.categorias.filter(x=>x.grade).map(x=>x.nome);
   const colOpts=g=>opts(LET.filter(L=>!["E","F"].includes(L)).map(L=>[L,NOME[L]]),g.col||"","(nenhuma)");
   const gradeUI=(c,i)=>{const g=c.grade;
-    if(g&&g.usa)return `<div class="row gnone" data-gr="${i}"><span class="hint">Usa os mesmos tamanhos de <b>${esc(g.usa)}</b> — mude lá e vale aqui também.</span><label class="fl" style="flex:1 1 150px"><span>Só nestas subcategorias</span><input data-gf="subs" value="${esc((g.subs||[]).join("; "))}" placeholder="vazio = toda a categoria"></label><button class="btn sm" type="button" data-act="gr-own">Ter tamanhos próprios</button><button class="x" type="button" data-act="gr-del" title="Remover a variação desta categoria">×</button></div>`;
-    if(!g)return `<div class="row gnone"><button class="btn sm" type="button" data-act="gr-add" title="Tamanhos, letras ou qualquer opção que gere uma linha por escolha">＋ Variação (tamanhos, letras…)</button>${comGrade.length?`<select data-gcp aria-label="Usar os mesmos tamanhos de outra categoria" style="width:auto"><option value="">ou usar os mesmos de…</option>${comGrade.map(n=>`<option>${esc(n)}</option>`).join("")}</select>`:""}</div>`;
+    if(g&&g.usa)return `<div class="row gnone" data-gr="${i}"><span class="hint">Usa a mesma variação de <b>${esc(g.usa)}</b> — mude lá e vale aqui também.</span><label class="fl" style="flex:1 1 150px"><span>Só nestas subcategorias</span><input data-gf="subs" value="${esc((g.subs||[]).join("; "))}" placeholder="vazio = toda a categoria"></label><button class="btn sm" type="button" data-act="gr-own">Ter variação própria</button><button class="x" type="button" data-act="gr-del" title="Remover a variação desta categoria" aria-label="Remover a variação desta categoria">×</button></div>`;
+    if(!g)return `<div class="row gnone"><button class="btn sm" type="button" data-act="gr-add" title="Variação: tamanhos, letras ou qualquer opção que gere uma linha por escolha">＋ Variação (tamanhos, letras…)</button>${comGrade.length?`<select data-gcp aria-label="Usar a mesma variação de outra categoria" style="width:auto"><option value="">ou usar a variação de…</option>${comGrade.map(n=>`<option>${esc(n)}</option>`).join("")}</select>`:""}</div>`;
     return `<details class="gdet" data-open="g:${esc(c.nome)}" ${abertos["g:"+c.nome]?"open":""} data-gr="${i}"><summary><b>Variação · ${esc(g.nome)}</b><span>${esc(g.itens.map(x=>x.letra+" "+(x.nome||"")).join(", ")||"sem opções")}${(g.subs||[]).length?` · só em ${esc(g.subs.join(", "))}`:""}</span></summary>
       <div class="gb"><div class="row">
         <label class="fl" style="flex:1 1 120px"><span>Nome da variação</span><input data-gf="nome" value="${esc(g.nome)}"></label>
         <label class="fl" style="width:104px"><span>Texto antes do nome</span><input data-gf="rotulo" value="${esc(g.rotulo||"")}" placeholder="ex.:  aro " title="Ex.: ' aro ' ou ' tamanho ' — vale para todas as opções e também troca o termo já digitado na Descrição"></label>
         <label class="fl" style="width:140px"><span>Coluna do valor</span><select data-gf="col">${colOpts(g)}</select></label>
-        <label class="fl" style="width:130px"><span>Tamanhos que vêm marcados</span><input data-gf="faixa" value="${esc(g.faixa||"")}" placeholder="ex.: 12, 14, 16" title="Ao escolher a categoria no lançamento, estas opções já vêm marcadas. Também aceita faixa: 12-16"></label>
+        <label class="fl" style="width:130px"><span>Opções que vêm marcadas</span><input data-gf="faixa" value="${esc(g.faixa||"")}" placeholder="ex.: 12, 14, 16" title="Ao escolher a categoria no lançamento, estas opções já vêm marcadas. Também aceita faixa: 12-16 ou 12 a 16"></label>
         <label class="fl" style="width:150px"><span>Na referência usar</span><select data-gf="modoRef" title="Letra: AN6AA, AN6BA (banho + letra da opção). Nome: AN6A12 (banho + nome da opção)">${opts([["letra","Letra (AA, BA…)"],["nome","Nome (A12…)"]],g.modoRef||"letra")}</select></label>
         <label class="fl" style="flex:1 1 150px"><span>Só nestas subcategorias</span><input data-gf="subs" value="${esc((g.subs||[]).join("; "))}" placeholder="vazio = toda a categoria" title="Separe por ; — ex.: Anéis"></label>
-        <button class="x" type="button" data-act="gr-del" title="Remover a variação desta categoria">×</button></div>
-      <div class="tw"><table class="cfg"><thead><tr><th>Letra</th><th>Nome no lançamento</th><th>Texto na Descrição</th><th>Coluna</th><th>Valor</th><th></th></tr></thead><tbody>
-      ${g.itens.map((x,j)=>`<tr data-gii="${j}"><td><input data-gif="letra" value="${esc(x.letra)}" maxlength="2" style="width:42px;text-transform:uppercase"></td><td><input data-gif="nome" value="${esc(x.nome||"")}" style="width:100px"></td>
-        <td><input data-gif="texto" value="${esc(x.texto||"")}" placeholder="${esc(efetivo(g,x).texto)}" style="width:130px" title="Vazio = segue a variação: ${esc(efetivo(g,x).texto)}"></td><td><select data-gif="col" style="width:140px">${opts(LET.filter(L=>!["E","F"].includes(L)).map(L=>[L,NOME[L]]),x.col||"","(igual à variação)")}</select></td>
-        <td><input data-gif="valor" value="${esc(x.valor||"")}" placeholder="${esc(efetivo(g,x).valor)}" style="width:80px" title="Vazio = o nome da opção"></td><td><button class="x" type="button" data-act="gi-del" title="Remover opção">×</button></td></tr>`).join("")}
+        <button class="x" type="button" data-act="gr-del" title="Remover a variação desta categoria" aria-label="Remover a variação desta categoria">×</button></div>
+      <div class="tw"><table class="cfg bnt"><thead><tr><th>Letra</th><th>Nome no lançamento</th><th>Texto na Descrição (da opção)</th><th>Coluna</th><th>Valor</th><th></th></tr></thead><tbody>
+      ${g.itens.map((x,j)=>`<tr data-gii="${j}"><td data-th="Letra"><input data-gif="letra" value="${esc(x.letra)}" maxlength="2" style="width:42px;text-transform:uppercase" aria-label="Letra da opção ${esc(x.nome||x.letra)}"></td><td data-th="Nome no lançamento"><input data-gif="nome" value="${esc(x.nome||"")}" style="width:100px" aria-label="Nome da opção ${esc(x.nome||x.letra)}"></td>
+        <td data-th="Texto na Descrição (da opção)"><input data-gif="texto" aria-label="Texto na Descrição da opção ${esc(x.nome||x.letra)}" value="${esc(x.texto||"")}" placeholder="${esc(efetivo(g,x).texto)}" style="width:130px" title="Vazio = segue a variação: ${esc(efetivo(g,x).texto)}"></td><td data-th="Coluna"><select data-gif="col" aria-label="Coluna da opção ${esc(x.nome||x.letra)}" style="width:140px">${opts(LET.filter(L=>!["E","F"].includes(L)).map(L=>[L,NOME[L]]),x.col||"","(igual à variação)")}</select></td>
+        <td data-th="Valor"><input data-gif="valor" aria-label="Valor da opção ${esc(x.nome||x.letra)}" value="${esc(x.valor||"")}" placeholder="${esc(efetivo(g,x).valor)}" style="width:80px" title="Vazio = o nome da opção"></td><td class="acts" data-th=""><button class="x" type="button" data-act="gi-del" title="Remover opção" aria-label="Remover a opção ${esc(x.nome||x.letra)}">×</button></td></tr>`).join("")}
       </tbody></table></div>
       <div class="row"><input data-enter="gi" placeholder="+ Opções, Enter (ex.: 24; 26; 28)" style="max-width:260px"><span class="hint">Deixe Texto, Coluna e Valor em branco para seguir a variação: o que mudar em cima muda em todas as opções. A Descrição recebe “${esc(rotG(g))}nome” e a coluna ${esc(g.col?NOME[g.col]:"—")} recebe o nome.</span></div></div></details>`};
   const card=(c,i)=>{const p=(c.prefixo||"").toUpperCase(),outras=(usoPref[p]||[]).filter(n=>n!==c.nome),nUsos=S.lanc.filter(l=>val(l,"I")===c.nome).length;
@@ -2176,16 +2300,16 @@ function secCat(C,usoPref){
     return `<div class="card" data-cat="${i}">
       <div class="row"><label class="fl" style="flex:1 1 120px"><span>Categoria</span><input data-cf="nome" value="${esc(c.nome)}"></label><label class="fl" style="width:60px"><span>Prefixo</span><input data-cf="prefixo" value="${esc(c.prefixo)}" style="text-transform:uppercase"></label>
       <label class="fl" style="width:84px"><span>Última peça</span><input class="n" data-cf="ultimo" value="${esc(C.seqs[p]||"")}" inputmode="numeric"></label>
-      <label class="fl" style="width:120px"><span>Texto na Descrição</span><input data-cf="sufixo" value="${esc(c.sufixo||"")}" placeholder="(nada)"></label>
-      <button class="x" type="button" data-act="cat-dup" title="Duplicar">⧉</button></div>
+      <label class="fl" style="width:210px"><span>Texto da categoria na Descrição</span><input data-cf="sufixo" value="${esc(c.sufixo||"")}" placeholder="(nada)" title="Acrescentado ao fim da descrição de toda peça desta categoria"></label>
+      <button class="x" type="button" data-act="cat-up" ${i===0?"disabled":""} title="Subir esta categoria" aria-label="Subir a categoria ${esc(c.nome)}">↑</button><button class="x" type="button" data-act="cat-down" ${i===C.categorias.length-1?"disabled":""} title="Descer esta categoria" aria-label="Descer a categoria ${esc(c.nome)}">↓</button><button class="x" type="button" data-act="cat-dup" title="Duplicar esta categoria" aria-label="Duplicar a categoria ${esc(c.nome)}">⧉</button></div>${catUI.dup&&catUI.dup.i===i?dupPainel(C,c):""}
       <div class="clbl">Fiscal e insumos <span>vazio = usa o padrão da coluna</span></div><div class="row fisc"><label class="fl" style="width:96px"><span>NCM</span><input data-cf="ncm" value="${esc(c.ncm||"")}" placeholder="${esc(C.colcfg.Y.padrao||"padrão")}"></label><label class="fl" style="width:64px"><span>CFOP</span><input data-cf="cfop" value="${esc(c.cfop||"")}" placeholder="${esc(C.colcfg.AA.padrao||"")}"></label><label class="fl" style="width:56px"><span>FCP</span><input data-cf="fcp" value="${esc(c.fcp||"")}" placeholder="${esc(C.colcfg.AB.padrao||"")}"></label><label class="fl" style="width:84px"><span>Insumos</span><input class="n" data-cf="insumos" value="${esc(c.insumos||"")}" placeholder="${esc(C.colcfg.Q.padrao||"")}" title="Custo de Insumos desta categoria"></label></div>
       <div class="hint">Próxima <b class="mono">${esc(p)}${fnum(p,ultimo(p)+1)}</b>${outras.length?` · sequência dividida com ${esc(outras.join(", "))}`:""}</div>
-      <div class="clbl">Subcategorias <span>a caixinha ao lado do nome é o prefixo próprio</span></div><div class="chips">${c.subs.map((s,j)=>`<span class="chip">${esc(s)}<input class="sp" data-sp="${esc(s)}" value="${esc((c.subPref||{})[s]||"")}" placeholder="${esc(p)}" title="Prefixo próprio desta subcategoria (vazio = ${esc(p)})" aria-label="Prefixo de ${esc(s)}"><label class="sr" title="Marcada: serve só para escolher o prefixo da referência e a Subcategoria não vai para a planilha (a categoria não tem essa subcategoria no Jueri)"><input type="checkbox" data-sr="${esc(s)}" ${(c.subSoRef||{})[s]?"checked":""}>só ref.</label><button type="button" data-act="sub-del" data-j="${j}" aria-label="Remover ${esc(s)}">×</button></span>`).join("")}<input data-enter="sub" placeholder="+ Subcategoria, Enter"></div>
+      <div class="clbl">Subcategorias <span>clique no nome para renomear · a caixinha ao lado é o prefixo próprio</span>${c.subs.length>1?`<button class="btn ghost sm" type="button" data-act="sub-az" title="Ordenar as subcategorias de A a Z">A–Z</button>`:""}</div><div class="chips">${c.subs.map((s,j)=>`<span class="chip">${j>0?`<button type="button" class="mv" data-act="sub-up" data-j="${j}" aria-label="Mover ${esc(s)} para antes" title="Mover para antes">‹</button>`:""}${catUI.ren&&catUI.ren.i===i&&catUI.ren.j===j?`<input class="cn-in" data-subren="${j}" value="${esc(s)}" maxlength="60" aria-label="Novo nome da subcategoria ${esc(s)}">`:`<button type="button" class="cn" data-act="sub-ren" data-j="${j}" title="Clique para renomear" aria-label="Renomear ${esc(s)}">${esc(s)}</button>`}<input class="sp" data-sp="${esc(s)}" value="${esc((c.subPref||{})[s]||"")}" placeholder="${esc(p)}" title="Prefixo próprio desta subcategoria (vazio = ${esc(p)})" aria-label="Prefixo de ${esc(s)}"><label class="sr" title="Marcada: a subcategoria serve só para escolher o prefixo da referência e não vai para a planilha (a categoria não tem essa subcategoria no Jueri)"><input type="checkbox" data-sr="${esc(s)}" ${(c.subSoRef||{})[s]?"checked":""}>só para a referência</label>${j<c.subs.length-1?`<button type="button" class="mv" data-act="sub-down" data-j="${j}" aria-label="Mover ${esc(s)} para depois" title="Mover para depois">›</button>`:""}<button type="button" data-act="sub-del" data-j="${j}" aria-label="Remover ${esc(s)}">×</button></span>`).join("")}<input data-enter="sub" placeholder="+ Subcategoria, Enter (várias: use ;)" aria-label="Nova subcategoria de ${esc(c.nome)}"></div>${c.subs.length?"":`<div class="soft">Esta categoria ainda não tem subcategorias${c.grade?"":" nem variação (tamanhos, letras…)"}. Digite acima e aperte Enter — pode pôr várias de uma vez separadas por ;</div>`}
       ${gradeUI(c,i)}
       <div class="cfoot">${del}</div></div>`};
   const orf=(C.grades||[]).map((g,k)=>`<div class="card" data-gr="o${k}"><div class="row"><b>Variação sem categoria: ${esc(g.nome)}</b><span class="hint">${esc(g.itens.map(x=>x.letra+" "+(x.nome||"")).join(", "))}</span><select data-gmove="${k}" style="width:auto"><option value="">Mover para a categoria…</option>${C.categorias.filter(x=>!x.grade).map(x=>`<option>${esc(x.nome)}</option>`).join("")}</select><button class="x" type="button" data-act="go-del" data-k="${k}" title="Excluir esta variação">×</button></div></div>`).join("");
   return sec("cat","Categorias e variações",C.categorias.slice(0,4).map(c=>`${c.nome} ${(c.prefixo||"").toUpperCase()}${ultimo((c.prefixo||"").toUpperCase())}`).join(" · ")+"…",
-    `<p class="d">A última peça já cadastrada no sistema define de onde a numeração continua. Categorias com o mesmo prefixo dividem a sequência (Brincos e Prata 925 usam BR). Cada subcategoria pode ter prefixo próprio: em Prata 925, Colares sai como CO e Brincos como BR. “Texto na Descrição” é acrescentado ao fim da descrição de toda peça da categoria. A <b>variação</b> (tamanhos de anel, letras…) fica dentro da categoria: ao escolher a categoria no lançamento, as opções aparecem sozinhas, e só nela.</p><div class="row"><input id="catBusca" type="search" placeholder="Filtrar categorias…" aria-label="Filtrar categorias" style="max-width:260px"><span class="hint">${C.categorias.length} categorias</span></div><div class="cards">${C.categorias.map(card).join("")}</div>${orf}
+    `<p class="d">A última peça já cadastrada no sistema define de onde a numeração continua. Categorias com o mesmo prefixo dividem a sequência (Brincos e Prata 925 usam BR). Cada subcategoria pode ter prefixo próprio: em Prata 925, Colares sai como CO e Brincos como BR. “Texto da categoria na Descrição” é acrescentado ao fim da descrição de toda peça da categoria. A <b>variação</b> (tamanhos de anel, letras…) fica dentro da categoria: ao escolher a categoria no lançamento, as opções aparecem sozinhas, e só nela.</p>${topo}<div class="row"><input id="catBusca" type="search" placeholder="Filtrar categorias…" aria-label="Filtrar categorias" style="max-width:260px"><span class="hint">${C.categorias.length} categorias</span><button class="btn ghost sm" type="button" data-act="cat-az" title="Ordenar as categorias de A a Z">Ordenar A–Z</button></div><div class="cards">${C.categorias.map(card).join("")}</div>${orf}
     <div class="row"><input id="novaCat" placeholder="Nova categoria" style="max-width:260px"><button class="btn sm" type="button" data-act="cat-add">Adicionar categoria</button></div>`);
 }
 /* gráfico de rosca (SVG, sem bibliotecas) ao lado do formulário */
@@ -3213,15 +3337,16 @@ function renderCfg(){
     `<p class="d">Cada banhista tem seus custos. <b>Por grama</b>: Custo do Banho = Peso × valor (fica como fórmula na planilha). <b>Valor fixo</b>: o mesmo custo para toda peça. Em qualquer peça você ainda pode digitar outro custo, no lançamento ou direto na célula.</p>${C.banhistas.map((b,i)=>`<div class="card" data-bh="${i}">
       <div class="row"><label class="fl" style="width:190px"><span>Banhista</span><input data-bhf="nome" value="${esc(b.nome)}"></label>
       <label class="fl" style="width:150px"><span>Custo do Banho de Verniz (R$/g)</span><input class="n" data-bhf="verniz" value="${esc(b.verniz)}" inputmode="decimal"></label>
-      <span class="hint" style="align-self:center">Verniz: marque na coluna “Verniz” de cada banho abaixo (no lançamento dá para trocar peça a peça)</span>
+      <span class="hint" style="align-self:center">Verniz (camada protetora depois do banho): marque na coluna “Verniz” de cada banho abaixo; no lançamento dá para trocar peça a peça</span>
       <span style="margin-left:auto"></span><button class="btn sm" type="button" data-act="bh-dup">Duplicar</button>${C.banhistas.length>1?`<button class="btn sm danger" type="button" data-act="bh-del">Remover</button>`:""}</div>
-      <div class="tw"><table class="cfg"><thead><tr><th>Banho</th><th>Letra</th><th>Cor</th><th>Milésimos de Banho</th><th>Cálculo</th><th>Valor R$</th><th>Coluna</th><th>Texto na Descrição</th><th>Verniz</th><th>Já marcado</th><th></th></tr></thead><tbody>
-      ${b.banhos.map((x,j)=>`<tr data-bn="${j}"><td><input data-bnf="nome" value="${esc(x.nome)}" style="width:92px"></td><td><input data-bnf="letra" value="${esc(x.letra)}" maxlength="2" style="width:42px"></td>
-        <td><select data-bnf="cor" style="width:108px">${opts(C.cores,x.cor)}</select></td><td><input class="n" data-bnf="mil" value="${esc(x.mil)}" style="width:64px"></td>
-        <td><select data-bnf="modo" style="width:112px">${opts([["peso","Por grama"],["fixo","Valor fixo"]],x.modo||"peso")}</select></td><td><input class="n" data-bnf="mult" value="${esc(x.mult)}" style="width:70px" placeholder="defina"></td>
-        <td><select data-bnf="coluna" style="width:170px">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,`${k} · Custo do Banho de ${n}`]),x.coluna)}</select></td><td><input data-bnf="sufixo" value="${esc(x.sufixo)}" placeholder="(nada)" style="width:124px"></td>
-        <td class="c"><input type="checkbox" data-bnf="vz" ${vzPad(b,x)?"checked":""} title="Esta variação de banho leva verniz por padrão"></td><td class="c"><input type="checkbox" data-bnf="marcado" ${x.marcado?"checked":""}></td><td><button class="x" type="button" data-act="bn-del" title="Remover banho">×</button></td></tr>`).join("")}
-      </tbody></table></div><div><button class="btn sm" type="button" data-act="bn-add">+ Banho (ex.: Ródio)</button></div></div>`).join("")}
+      <div class="tw"><table class="cfg bnt"><thead><tr><th>Banho</th><th>Letra</th><th>Cor</th><th>Milésimos de Banho</th><th>Cálculo</th><th>Valor R$</th><th>Coluna</th><th>Texto na Descrição (do banho)</th><th title="Verniz é a camada protetora passada depois do banho; cobra o custo por grama do banhista">Verniz</th><th title="Marcado: este banho já vem marcado ao lançar uma peça">Vem marcado</th><th></th></tr></thead><tbody>
+      ${b.banhos.map((x,j)=>`<tr data-bn="${j}"><td data-th="Banho"><input data-bnf="nome" value="${esc(x.nome)}" style="width:92px" aria-label="Nome do banho"></td><td data-th="Letra"><input data-bnf="letra" value="${esc(x.letra)}" maxlength="2" style="width:42px" aria-label="Letra do banho ${esc(x.nome)}"></td>
+        <td data-th="Cor"><select data-bnf="cor" style="width:108px" aria-label="Cor do banho ${esc(x.nome)}"${(x.cor&&!C.cores.includes(x.cor))||!x.cor?' class="warn-sel"':""}>${corOpts(C,x)}</select></td><td data-th="Milésimos de Banho"><input class="n" data-bnf="mil" value="${esc(x.mil)}" style="width:64px" aria-label="Milésimos do banho ${esc(x.nome)}"></td>
+        <td data-th="Cálculo"><select data-bnf="modo" style="width:112px" aria-label="Cálculo do banho ${esc(x.nome)}">${opts([["peso","Por grama"],["fixo","Valor fixo"]],x.modo||"peso")}</select></td><td data-th="Valor R$"><input class="n" data-bnf="mult" value="${esc(x.mult)}" style="width:70px" placeholder="defina" aria-label="Valor do banho ${esc(x.nome)}"></td>
+        <td data-th="Coluna"><select data-bnf="coluna" style="width:170px" aria-label="Coluna do banho ${esc(x.nome)}">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,`${k} · Custo do Banho de ${n}`]),x.coluna)}</select></td><td data-th="Texto na Descrição (do banho)"><input data-bnf="sufixo" value="${esc(x.sufixo)}" placeholder="(nada)" style="width:124px" aria-label="Texto do banho ${esc(x.nome)} na Descrição"></td>
+        <td class="c" data-th="Verniz"><input type="checkbox" data-bnf="vz" ${vzPad(b,x)?"checked":""} title="Este banho leva verniz por padrão" aria-label="Verniz no banho ${esc(x.nome)}"></td><td class="c" data-th="Vem marcado"><input type="checkbox" data-bnf="marcado" ${x.marcado?"checked":""} title="Este banho já vem marcado ao lançar uma peça" aria-label="Banho ${esc(x.nome)} vem marcado"></td><td class="acts" data-th=""><button class="x" type="button" data-act="bn-dup" title="Duplicar esta linha de banho" aria-label="Duplicar o banho ${esc(x.nome)}">⧉</button><button class="x" type="button" data-act="bn-del" title="Remover banho" aria-label="Remover o banho ${esc(x.nome)}">×</button></td></tr>`).join("")}
+      </tbody></table></div>${(()=>{const fl=b.banhos.filter(x=>!x.cor||!C.cores.includes(x.cor));return fl.length?`<div class="soft" role="status">${fl.map(x=>x.cor?`O banho “${esc(x.nome)}” usa a cor “${esc(x.cor)}”, que não está mais em Cores.`:`O banho “${esc(x.nome)}” está sem cor.`).join(" ")} Escolha outra na lista ou crie com “+ Nova cor…”.</div>`:""})()}${catUI.corNova&&catUI.corNova.bi===i?`<div class="cpanel"><b>Nova cor</b><div class="row"><input data-ncor placeholder="Nome da cor (ex.: Rosé)" maxlength="40" aria-label="Nome da nova cor" style="max-width:220px"><button type="button" class="btn pri sm" data-act="cor-nova-ok">Criar e usar</button><button type="button" class="btn ghost sm" data-act="cor-nova-no">Cancelar</button></div></div>`:""}
+      <div class="row"><span class="hint">Adicionar banho:</span><button class="btn sm" type="button" data-act="bn-pronto" data-tp="ouro" title="Banho de ouro: coluna R, texto “banho ouro”">+ Ouro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="rodio" title="Banho de ródio: coluna S, texto “banho ródio”">+ Ródio</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="prata" title="Banho de prata: coluna T, texto “banho prata”">+ Prata</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="negro" title="Banho de ródio negro: coluna S, texto “banho ródio negro”">+ Ródio negro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="outro" title="Banho em branco para você preencher">+ Outro</button></div></div>`).join("")}
     <div><button class="btn sm" type="button" data-act="bh-add">+ Banhista</button></div>`);
   h+=sec("forn","Fornecedores",C.fornecedores.map(f=>f.nome+(num(f.desconto)?` ${f.desconto}%`:"")).join(" · "),
     `<p class="d">Ao escolher o fornecedor no lançamento entram sozinhos o Código do Fornecedor, o desconto, o tipo de peça e, nas brutas, o banhista (com os banhos, verniz e custos dele). Também lembra os banhos marcados e os multiplicadores usados da última vez com ele. Os banhistas ficam em Banhos e custos.</p><div class="tw"><table class="cfg"><thead><tr><th>Fornecedor</th><th>Desconto %</th><th>Código do Fornecedor</th><th>Vende peça</th><th>Banhista (peça bruta)</th><th>Lembra no lançamento</th><th></th></tr></thead><tbody>
@@ -3238,8 +3363,8 @@ function renderCfg(){
       <td>${auto||FORMULA.has(L)?'<span class="hint">automático</span>':`<input data-ccf="padrao" value="${esc(c.padrao)}" style="width:150px" aria-label="Valor padrão">`}</td><td><input data-ccf="opcoes" value="${esc(c.opcoes||"")}" style="min-width:200px" placeholder="opção 1; opção 2" aria-label="Opções"></td></tr>`}).join("")}
     </tbody></table></div><div><button class="btn sm" type="button" data-act="cc-reset">Voltar ao padrão</button></div>`);
   h+=sec("cor","Cores e observações",`${C.cores.length} cores · ${C.observacoes.length} observações`,
-    `<div class="hint">Cor</div><div class="chips">${C.cores.map((c,j)=>`<span class="chip">${esc(c)}<button type="button" data-act="cor-del" data-j="${j}" aria-label="Remover">×</button></span>`).join("")}<input data-enter="cor" placeholder="+ Cor, Enter"></div>
-    <div class="hint">Observação (sugestões)</div><div class="chips">${C.observacoes.map((c,j)=>`<span class="chip">${esc(c)}<button type="button" data-act="obs-del" data-j="${j}" aria-label="Remover">×</button></span>`).join("")}<input data-enter="obs" placeholder="+ Observação, Enter" style="width:240px"></div>`);
+    `<div class="hint">Cor</div><div class="chips">${C.cores.map((c,j)=>`<span class="chip">${esc(c)}<button type="button" data-act="cor-del" data-j="${j}" aria-label="Remover">×</button></span>`).join("")}<input data-enter="cor" placeholder="+ Cor, Enter (várias: use ;)" aria-label="Nova cor"></div>
+    <div class="hint">Observação (sugestões)</div><div class="chips">${C.observacoes.map((c,j)=>`<span class="chip">${esc(c)}<button type="button" data-act="obs-del" data-j="${j}" aria-label="Remover">×</button></span>`).join("")}<input data-enter="obs" placeholder="+ Observação, Enter (várias: use ;)" style="width:260px" aria-label="Nova observação"></div>`);
   h+=secRom(C);h+=secModelo(C);
   h+=sec("foto","Fotos (link)",fotoKey()?"imgbb conectado neste navegador":"sem chave do imgbb ainda",
     `<p class="d">Os sistemas (Jueri, Bling…) não recebem a foto dentro da planilha: eles pedem o <b>link</b> da foto. Aqui o app envia a foto para o <b>imgbb</b> (grátis) e coloca o link na coluna <b>Foto</b> de cada peça. Se você já tem o link, é só digitar ou colar na célula da coluna Foto.</p>
@@ -3256,7 +3381,7 @@ function renderCfg(){
     <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><label class="btn sm" style="cursor:pointer">Restaurar backup completo<input type="file" id="fileBkT" accept=".json" hidden></label></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
   const at=abaCfg(),cur=SECS.find(s=>s.id===at);
   document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
-    <section class="sec tabp" id="sec-${cur.id}" role="tabpanel"><div class="tabres">${cur.resumo}</div><div class="sb">${cur.corpo}${resetBar(cur.id)}</div></section>`;
+    <section class="sec tabp" id="sec-${cur.id}" role="tabpanel"><div class="tabres">${esc(cur.resumo)}</div><div class="sb">${cur.corpo}${resetBar(cur.id)}</div></section>`;
   if(ROM&&document.getElementById("romWrap"))renderRom();
 }
 
@@ -3688,23 +3813,51 @@ document.addEventListener("click",e=>{
     case "q-salvar":salvarRapido();break;
     case "q-fechar":quick=null;renderForm();break;
     case "ir":irPara(t.dataset.sec);break;
-    case "ctab":resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();break;
+    case "ctab":catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();break;
     case "exemplo":S.lanc=exemplo();salvar(false);renderTopo();break;
     case "xlsx":baixar();break;
     case "copiar":copiar();break;
     case "exp-limpar":gravarExport(true);break;case "exp-so":gravarExport(false);break;case "exp-nao":lastExport=null;renderTopo();break;
     case "cat-add":{const inp=document.getElementById("novaCat"),v=inp.value.replace(/\s+/g," ").trim();
-      if(!v){toast("Digite o nome da categoria.");inp.focus();break}
-      if(v.length>40){toast("O nome da categoria é longo demais (máximo 40 letras).");inp.focus();break}
-      const letras=semAc(v).toUpperCase().replace(/[^A-Z]/g,"");
-      if(letras.length<2){toast("O nome da categoria precisa ter pelo menos 2 letras (o prefixo da referência sai delas). Ex.: Anéis.");inp.focus();break}
-      if(C.categorias.some(x=>semAc(x.nome)===semAc(v))){toast(`Já existe a categoria “${v}” (acento e maiúscula não diferenciam).`);inp.focus();break}
-      let p=letras.slice(0,2);const cand=[letras.slice(0,2),letras.slice(0,3),letras.slice(0,4)];for(let j=2;j<letras.length;j++)cand.push(letras[0]+letras[j]);
-      const livre=cand.find(c=>!prefixoEmUso(C,c,null));let aviso="";
-      if(livre)p=livre;else aviso=` O prefixo ${p} já é de outra categoria: as duas vão dividir a mesma numeração. Troque o prefixo se não quiser.`;
-      C.categorias.push({nome:v,prefixo:p,subs:[]});if(!(p in C.seqs))C.seqs[p]="0";salvar(true,false);render();toast(`Categoria “${v}” criada com o prefixo ${p}.${aviso}`);break}
-    case "cat-dup":{const c=clone(C.categorias[ci]);c.nome+=" (cópia)";C.categorias.splice(ci+1,0,c);salvar(true,false);render();break}
-    case "cat-del":delCat=C.categorias[ci].nome;renderCfg();break;
+      const er=nomeCatErro(C,v,null);if(er){toast(er);inp.focus();break}
+      const pf=prefixoNovo(C,v),p=pf.p;
+      C.categorias.push({nome:v,prefixo:p,subs:[]});if(!(p in C.seqs))C.seqs[p]="0";salvar(true,false);render();
+      toast(`Categoria “${v}” criada com o prefixo ${p}.${pf.rep?` O prefixo ${p} já é de outra categoria: as duas vão dividir a mesma numeração. Troque o prefixo se não quiser.`:""} Agora é só digitar as subcategorias.`,{t:"Desfazer",fn:desfazer});
+      refocar(`[data-cat="${C.categorias.length-1}"] [data-enter="sub"]`);break}
+    case "colar-abrir":{catUI.colar=true;if(abertos.tab!=="cat"){abertos.tab="cat";guardarAbertos()}renderCfg();refocar("#colarTx");break}
+    case "colar-fechar":catUI.colar=false;renderCfg();break;
+    case "banner-fechar":abertos.catBanner=true;guardarAbertos();renderCfg();break;
+    case "colar-ok":{const pl=planoLista(C,catUI.txt),[nc,ns]=contaPlano(pl);if(!nc&&!ns){toast("Nada novo para criar.");break}
+      aplicaPlano(C,pl);catUI.colar=false;catUI.txt="";salvar(true,false);render();
+      const rep=pl.novas.filter(n=>n.rep).map(n=>n.nome);
+      refocar('[data-act="colar-abrir"]');toast(`Criei ${nc} categoria(s) e ${ns} subcategoria(s).${rep.length?` Atenção: ${rep.join(", ")} repete o prefixo de outra categoria (dividem a numeração).`:""}`,{t:"Desfazer",fn:desfazer});break}
+    case "modelo-add":{const ms=t.dataset.m==="todos"?MODELOS_CAT:MODELOS_CAT.filter(m=>m.id===t.dataset.m);let nc=0,ns=0,ng=0;
+      ms.forEach(m=>{const pl=planoLista(C,m.linha),[a,b2]=contaPlano(pl);aplicaPlano(C,pl);nc+=a;ns+=b2;
+        if(m.grade){const cat=acharCat(C,"Anéis");if(cat&&!cat.grade){cat.grade=mkGrade([],uid());ng++}}});
+      if(!nc&&!ns&&!ng){toast("Já estava tudo cadastrado — nada foi mudado.");break}
+      salvar(true,false);render();toast(`Modelo aplicado: ${nc} categoria(s) e ${ns} subcategoria(s) novas${ng?", com os tamanhos dos anéis":""}.`,{t:"Desfazer",fn:desfazer});break}
+    case "cat-az":case "cat-up":case "cat-down":{catUI.dup=null;
+      if(a==="cat-az")C.categorias.sort((x,y)=>semAc(x.nome).localeCompare(semAc(y.nome),"pt"));
+      else{const j=a==="cat-up"?ci-1:ci+1;if(j<0||j>=C.categorias.length)break;[C.categorias[ci],C.categorias[j]]=[C.categorias[j],C.categorias[ci]];salvar(true,false);render();refocar(`[data-cat="${j}"] [data-act="${a}"]`);break}
+      salvar(true,false);render();toast("Categorias em ordem de A a Z.",{t:"Desfazer",fn:desfazer});break}
+    case "sub-az":case "sub-up":case "sub-down":{const c=C.categorias[ci],sb=c.subs;
+      if(a==="sub-az"){sb.sort((x,y)=>semAc(x).localeCompare(semAc(y),"pt"));salvar(true,false);render();toast(`Subcategorias de ${c.nome} em ordem de A a Z.`,{t:"Desfazer",fn:desfazer});break}
+      const j0=+t.dataset.j,j=a==="sub-up"?j0-1:j0+1;if(j<0||j>=sb.length)break;[sb[j0],sb[j]]=[sb[j],sb[j0]];salvar(true,false);render();refocar(`[data-cat="${ci}"] [data-act="${a}"][data-j="${j}"]`)||0;break}
+    case "sub-ren":{catUI.ren={i:ci,j:+t.dataset.j};renderCfg();const el=document.querySelector(`[data-cat="${ci}"] [data-subren]`);if(el){el.focus();el.select()}break}
+    case "bn-pronto":{const b=C.banhistas[bi],tp=BANHOS_PRONTOS[t.dataset.tp];if(!b||!tp)break;const L=letraBanhoLivre(b);if(!L){toast("Já existem banhos de A a Z neste banhista — não cabe mais um.");break}
+      const nome=nomeBanhoLivre(b,tp.nome);let cor=tp.cor;if(cor){const ach=C.cores.find(c=>semAc(c)===semAc(cor));if(ach)cor=ach;else C.cores.push(cor)}else cor="";
+      b.banhos.push({id:uid(),nome,letra:L,cor,mil:"",modo:"peso",mult:"",coluna:tp.coluna,sufixo:tp.sufixo,marcado:false,vz:true});salvar(true,false);render();
+      toast(`Banho “${nome}” (letra ${L}) criado em ${b.nome}. Falta só preencher o valor.`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${bi}"] [data-bn="${b.banhos.length-1}"] [data-bnf="mult"]`);break}
+    case "bn-dup":{const b=C.banhistas[bi],j=+t.closest("[data-bn]").dataset.bn,o=b.banhos[j];const L=letraBanhoLivre(b);if(!L){toast("Já existem banhos de A a Z neste banhista — não cabe mais um.");break}
+      const n=clone(o);n.id=uid();n.letra=L;n.marcado=false;n.nome=nomeBanhoLivre(b,o.nome);b.banhos.splice(j+1,0,n);salvar(true,false);render();
+      toast(`Banho duplicado como “${n.nome}” (letra ${L}).`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${bi}"] [data-bn="${j+1}"] [data-bnf="nome"]`);break}
+    case "cor-nova-ok":corNovaOk();break;
+    case "cor-nova-no":{const cn0=catUI.corNova;catUI.corNova=null;renderCfg();if(cn0)refocar(`[data-bh="${cn0.bi}"] [data-bn="${cn0.j}"] [data-bnf="cor"]`);break}
+    case "cat-dup":dupAbrir(ci);break;
+    case "cat-dup-ok":dupOk();break;
+    case "cat-dup-no":{const di=catUI.dup?catUI.dup.i:0;catUI.dup=null;renderCfg();refocar(`[data-cat="${di}"] [data-act="cat-dup"]`);break}
+
+    case "cat-del":catUI.dup=null;delCat=C.categorias[ci].nome;renderCfg();break;
     case "cat-del-no":delCat=null;renderCfg();break;
     case "cat-del-ok":{const nome=C.categorias[ci].nome;C.categorias.splice(ci,1);delCat=null;
       if(S.form.v.I===nome){S.form.v.I=C.categorias.length?C.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}
@@ -3792,6 +3945,7 @@ document.addEventListener("click",e=>{
   }
   if(snapCfg&&JSON.stringify(S.config)!==JSON.stringify(snapCfg))toast("Cadastro alterado.",{t:"Desfazer",fn:()=>{S.config=snapCfg;salvar(true);render()}});
 });
+document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.dataset&&t.dataset.subren!==undefined&&catUI.ren)catUI.ren=null});
 document.addEventListener("dblclick",e=>{if(e.target.classList&&e.target.classList.contains("rz")){delete colW[e.target.dataset.rz];try{localStorage.setItem("cadpecas-colw",JSON.stringify(colW))}catch(x){}renderTopo()}});
 document.addEventListener("mouseover",e=>{const tr=e.target.closest("tr[data-l]");document.querySelectorAll("tr.hl").forEach(x=>{if(!tr||x.dataset.l!==tr.dataset.l)x.classList.remove("hl")});if(tr)document.querySelectorAll(`tr[data-l="${CSS.escape(String(tr.dataset.l))}"]`).forEach(x=>x.classList.add("hl"))});
 /* a variação do elemento (cartão da categoria ou variação sem categoria) */
@@ -3800,6 +3954,9 @@ function aplicaFaixa(txt){const f=S.form,gr=gradeBy(f.grade);if(!gr)return;f.gse
 /* campos do banho/banhista: devolve a mensagem de erro ("" = válido). Letra única e não vazia; milésimos, multiplicador e verniz >= 0 */
 function validaBanho(bh,b,campo,valor){
   const v=String(valor==null?"":valor).trim();
+  if(b&&campo==="nome"){
+    if(!v)return "O nome do banho não pode ficar vazio.";
+    if(bh.banhos.some(x=>x!==b&&semAc(x.nome)===semAc(v)))return `Já existe um banho chamado “${v}” neste banhista — use outro nome (ex.: ${v} 2).`}
   if(b&&campo==="letra"){
     if(!v)return "A letra do banho não pode ficar vazia.";
     if(bh.banhos.some(x=>x!==b&&String(x.letra||"").trim().toLowerCase()===v.toLowerCase()))return `Já existe um banho com a letra “${v}” neste banhista — escolha outra.`}
@@ -3824,6 +3981,12 @@ function trocarPrefixo(c,txt){const C=cfg(),antigo=String(c.prefixo||"").toUpper
   {const re=new RegExp("^"+antigo+"\\d");let nm=0;S.lanc.forEach(l=>{if(val(l,"I")!==c.nome)return;[l.v.E,...Object.values(l.ov||{}).map(o=>o&&typeof o==="object"?o.E:"")].forEach(x=>{if(antigo&&re.test(String(x||"").replace(/\s+/g,"").toUpperCase()))nm++})});if(nm)msg+=` Atenção: ${nm} referência(s) digitada(s) à mão continuam com ${antigo} (não mudam sozinhas) — confira na tabela.`}
   salvar(true,false);render();toast(msg,{t:"Desfazer",fn:desfazer})}
 function onField(t,isChange){
+  if(t.dataset){
+    if(t.dataset.colar!==undefined){catUI.txt=t.value;atualizaPrevia();return}
+    if(t.dataset.ncor!==undefined)return;
+    if(t.dataset.subren!==undefined){if(isChange&&!renBusy){const ce2=t.closest("[data-cat]");if(ce2){const ci2=+ce2.dataset.cat,j2=+t.dataset.subren,c2=cfg().categorias[ci2],velho=c2&&c2.subs[j2],novo=t.value;let feito=false;const go=()=>{if(feito)return;feito=true;document.removeEventListener("click",go,true);setTimeout(()=>{const c3=cfg().categorias[ci2],jj=c3?c3.subs.indexOf(velho):-1;if(jj>=0)subRenomear(ci2,jj,novo)},0)};document.addEventListener("click",go,true);setTimeout(go,700)}}return}
+    if(t.dataset.dup!==undefined&&catUI.dup){dupCampo(t);return}
+  }
   if(t.dataset&&t.dataset.cjpick!==undefined){const f=S.form,l=S.lanc.find(x=>x.id===t.value);t.value="";if(!l||!f.conj)return;f.comp=f.comp||[];if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");return}
     const c=novaComp(String(l.v.F||"").replace(/\s+/g," ").trim().slice(0,60));c.peso=String(l.v.N||"");c.custo=String(l.v.P||"");{const vaz=f.comp.findIndex(x=>!x.desc&&!x.peso&&!x.custo);if(vaz>=0)f.comp[vaz]=c;else f.comp.push(c)}conjSync(f);salvar(false);renderTopo();renderForm();return}
   if(t.dataset&&t.dataset.cp){const f=S.form,i=+(t.closest("[data-ci]")||{dataset:{}}).dataset.ci,c=f.comp&&f.comp[i];if(!c)return;
@@ -3923,6 +4086,7 @@ function onField(t,isChange){
       S.lanc.forEach(l=>{if(l.v.H===old)l.v.H=t.value});if(f.v.H===old)f.v.H=t.value;fo.nome=t.value;salvar(true)}else{fo[k]=t.value;salvar(true,false)}
     if(isChange){renderListas();renderTopo();renderForm()}return}
   const be=t.closest("[data-bh]");
+  if(be&&t.dataset.bnf==="cor"&&t.value==="__nova"){catUI.corNova={bi:+be.dataset.bh,j:+t.closest("[data-bn]").dataset.bn};renderCfg();refocar("[data-ncor]");return}
   if(be&&(t.dataset.bhf||t.dataset.bnf)){const bh=C.banhistas[+be.dataset.bh];
     if(t.dataset.bhf){const m=validaBanho(bh,null,t.dataset.bhf,t.value);if(m){if(isChange){t.value=bh[t.dataset.bhf]??"";toast(m)}return}bh[t.dataset.bhf]=t.type==="checkbox"?t.checked:t.value}
     else{const b=bh.banhos[+t.closest("[data-bn]").dataset.bn],m=validaBanho(bh,b,t.dataset.bnf,t.value);if(m){if(isChange){t.value=b[t.dataset.bnf]??"";toast(m)}return}b[t.dataset.bnf]=t.type==="checkbox"?t.checked:t.value}
@@ -3941,10 +4105,19 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.id==="fileBk"&&t.files[0])return restaurar(t.files[0]);
   if(t.id==="fileBkT"&&t.files[0])return restaurarTotal(t.files[0]);
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
-  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
-document.addEventListener("paste",e=>{if(e.target.id!=="celIn"&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&tx.trim()){e.preventDefault();const b=selBox();colarCel(tx,b?{ri:b.r1,L:LET[b.c1]}:{ri:G.linhas.length,L:"A"})}return}if(e.target.id!=="celIn"||!celEd)return;const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&(tx.includes("\t")||tx.replace(/\n+$/,"").includes("\n"))){e.preventDefault();colarCel(tx)}});
+  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
+document.addEventListener("paste",e=>{const pt=e.target;
+  /* colar várias linhas num campo de uma linha só: as quebras viram ";" (senão o navegador junta tudo num texto só) */
+  if(pt.dataset&&pt.dataset.enter!==undefined&&pt.setRangeText){const tx=(e.clipboardData||window.clipboardData).getData("text");if(/[\r\n]/.test(tx)){e.preventDefault();const j=tx.replace(/\s*[\r\n]+\s*/g,"; ").replace(/^[;\s]+|[;\s]+$/g,"");pt.setRangeText(j,pt.selectionStart,pt.selectionEnd,"end");return}}
+  if(e.target.id!=="celIn"&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&tx.trim()){e.preventDefault();const b=selBox();colarCel(tx,b?{ri:b.r1,L:LET[b.c1]}:{ri:G.linhas.length,L:"A"})}return}if(e.target.id!=="celIn"||!celEd)return;const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&(tx.includes("\t")||tx.replace(/\n+$/,"").includes("\n"))){e.preventDefault();colarCel(tx)}});
 document.addEventListener("keydown",e=>{
   const t=e.target;
+  if(t.dataset&&(t.dataset.subren!==undefined||t.dataset.dup!==undefined||t.dataset.ncor!==undefined||t.dataset.colar!==undefined||t.id==="novaCat")){const k=e.key;
+    if(t.dataset.subren!==undefined){if(k==="Enter"){e.preventDefault();const ce2=t.closest("[data-cat]");{const ci2=ce2?+ce2.dataset.cat:-1,j2=+t.dataset.subren;subRenomear(ci2,j2,t.value);focoChip(ci2,j2)}return}if(k==="Escape"){e.preventDefault();const ce3=t.closest("[data-cat]"),j3=+t.dataset.subren;catUI.ren=null;t.value=t.defaultValue;renBusy=true;try{renderCfg()}finally{renBusy=false}if(ce3)focoChip(+ce3.dataset.cat,j3);return}return}
+    if(t.dataset.dup!==undefined){if(k==="Enter"&&t.type!=="checkbox"){e.preventDefault();dupOk();return}if(k==="Escape"){e.preventDefault();{const di=catUI.dup?catUI.dup.i:0;catUI.dup=null;renderCfg();refocar(`[data-cat="${di}"] [data-act="cat-dup"]`)}return}return}
+    if(t.dataset.ncor!==undefined){if(k==="Enter"){e.preventDefault();corNovaOk();return}if(k==="Escape"){e.preventDefault();const cn0=catUI.corNova;catUI.corNova=null;renderCfg();if(cn0)refocar(`[data-bh="${cn0.bi}"] [data-bn="${cn0.j}"] [data-bnf="cor"]`);return}return}
+    if(t.dataset.colar!==undefined){if(k==="Escape"){e.preventDefault();catUI.colar=false;renderCfg();refocar('[data-act="colar-abrir"]');return}return}
+    if(t.id==="novaCat"&&k==="Enter"){e.preventDefault();const b=document.querySelector('[data-act="cat-add"]');if(b)b.click();return}}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));return}
   if((e.ctrlKey||e.metaKey)&&e.key==="Enter"&&t.closest&&t.closest("#form")){e.preventDefault();adicionar(true);return}
   if(t.id==="celIn"){
@@ -3981,9 +4154,14 @@ document.addEventListener("keydown",e=>{
   if(t.id==="ultInp"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));focarPrimeiro();return}
   if(t.dataset&&t.dataset.enter&&e.key==="Enter"){e.preventDefault();const v=t.value.trim();if(!v)return;const C=cfg(),k=t.dataset.enter;
     const ci=t.closest("[data-cat]")?t.closest("[data-cat]").dataset.cat:null;
-    if(k==="sub"){const c=C.categorias[+ci];if(!c.subs.includes(v))c.subs.push(v)}
+    if(k==="sub"||k==="cor"||k==="obs"){const L=partir(v);if(!L.length){t.value="";return}
+      const alvo=k==="sub"?C.categorias[+ci].subs:k==="cor"?C.cores:C.observacoes,novos=L.filter(x=>!alvo.some(y=>semAc(y)===semAc(x)));
+      if(!novos.length){toast(L.length>1?"Esses itens já existem.":"Esse item já existe.");t.value="";return}
+      if(k==="obs")alvo.unshift(...novos);else alvo.push(...novos);
+      if(L.length>1)toast(`${novos.length} adicionado(s)${novos.length<L.length?`, ${L.length-novos.length} já existia(m)`:""}.`);
+      salvar(true,false);render();refocar(ci!=null?`[data-cat="${ci}"] [data-enter]`:`[data-enter="${k}"]`);return}
     if(k==="gi"){const g=gradeDoEl(t),gk=t.closest("[data-gr]").dataset.gr;v.split(/[;\n]/).map(x=>x.trim()).filter(Boolean).forEach(nm=>{if(g.itens.some(x=>x.nome===nm))return;g.itens.push({id:uid(),letra:proxLetra(g.itens.map(x=>x.letra)),nome:nm})});sincGrade(S.form);salvar(true,false);render();refocar(`[data-gr="${gk}"] [data-enter]`);return}
-    if(k==="cor"&&!C.cores.includes(v))C.cores.push(v);if(k==="obs"&&!C.observacoes.includes(v))C.observacoes.unshift(v);
+    /* (sub, cor e obs são tratados acima) */
     salvar(true,false);render();refocar(ci!=null?`[data-cat="${ci}"] [data-enter]`:`[data-enter="${k}"]`);return}
   if(t.closest&&t.closest("#form")&&e.key==="Enter"&&(t.tagName==="SELECT"||t.type==="checkbox")){e.preventDefault();adicionar()}
 });
