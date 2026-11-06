@@ -1128,6 +1128,7 @@ const NOME=Object.fromEntries(LET.map((l,i)=>[l,HEAD[i]]));
 const COLW=[5.71,57.14,22.29,15.14,11,39.57,10.57,9.71,11.29,7.86,7.43,9,40,7,9,12,10,12,12,12,12,10,9,10,11,10,7,6,8,10,8];
 const NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","Y","AA","AB","AC"]);
 const MONEY=new Set(["P","Q","R","S","T","U","V"]);
+const milDe=(b,cat)=>{const m=b&&b.milCat&&cat!=null?b.milCat[cat]:undefined;return (m!==undefined&&m!==null&&m!=='')?m:(b?b.mil:"")};
 const BANHO_COLS={R:"Ouro",S:"Ródio",T:"Prata"};
 const FORMULA=new Set(["R","S","T","U"]);
 /* colunas que, na peça bruta, são de cada banho (linha A, B…) */
@@ -1322,7 +1323,7 @@ function gerar(list){
             (vars.length?vars:[null]).forEach(it=>{
               if(it&&soComQ&&!qv(b.id+"~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}
               const letra=refParte(b,it);kk++;
-              const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:b.mil,W:""};["R","S","T"].forEach(c=>v[c]="");
+              const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};["R","S","T"].forEach(c=>v[c]="");
               if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;
               const row=aplicaOv({...meta,mk:num(mk[b.id]),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna,v,banho:{coluna:b.coluna,modo:b.modo||"peso",mult:num(b.mult)},verniz:vzOn(l,bh,b)?num(bh.verniz):null},l);
               refs[l.id].push(row.v.E);
@@ -1334,7 +1335,7 @@ function gerar(list){
           if(bp.length){const bh=banhistaBy(l.banhista),qvk=k=>num(((l.ov||{})[k]||{}).W)>0,soComQ=vars.length&&bp.some(b=>vars.some(it=>qvk(b.id+"~"+it.id)));let kk=0;refs[l.id]=[];
             bh.banhos.forEach((b,i)=>{if(!bp.includes(b))return;(vars.length?vars:[null]).forEach(it=>{if(it&&soComQ&&!qvk(b.id+"~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}
               const letra=refParte(b,it);kk++;
-              const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:b.mil,W:""};if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;
+              const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;
               const row=aplicaOv({...meta,mk:num(mk[b.id]),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna,v},l);refs[l.id].push(row.v.E);
               if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row)})});return}
           if(vars.length){refs[l.id]=[];const qv=k=>num(((l.ov||{})[k]||{}).W)>0,soComQ=vars.some(it=>qv("p~"+it.id));vars.forEach(it=>{if(soComQ&&!qv("p~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}const v={...comum,E:base+refParte(null,it),F:descVar(comSufixoCat(comum.F,cat),it),W:""};if(it.col&&!vazio(it.valor))v[it.col]=it.valor;
@@ -1419,7 +1420,9 @@ function saidaLinhas(g,mo){
       c0=celulas(f,2)[LET.indexOf("V")],pv=c0&&typeof c0.v==="number"?String(c0.v):"",
       desc=l?comSufixoCat(val(l,"F"),val(l,"I")):"";
     out.push({row:{...f,banho:null,mk:null,ovs:[],bid:null,gi:null,key:"pai",part:"",verniz:null,v:{...f.v,E:base,F:desc||f.v.F,L:"",K:"",O:"",W:"",P:"",R:"",S:"",T:"",U:"",V:pv}},t:"pai"});
-    grp.forEach(ch=>{const a=[];if(!vazio(ch.v.K))a.push("Tamanho:"+attrVar(ch.v.K));if(!vazio(ch.v.L))a.push("Cor:"+attrVar(ch.v.L));if(!a.length)a.push("Variação:"+attrVar(ch.part||ch.v.E));
+    const chave=ch=>String(ch.v.K||"")+"|"+semAc(ch.v.L||""),cont={};grp.forEach(ch=>{const k=chave(ch);cont[k]=(cont[k]||0)+1});
+    const nomeBanho=ch=>{const bb=l?banhistaBy(l.banhista).banhos.find(x=>x.id===ch.bid):null;return bb?String(bb.nome||""):""};
+    grp.forEach(ch=>{const a=[];if(!vazio(ch.v.K))a.push("Tamanho:"+attrVar(ch.v.K));if(!vazio(ch.v.L)){let cor=String(ch.v.L);if(cont[chave(ch)]>1){const nb=nomeBanho(ch);if(nb)cor=semAc(nb).includes(semAc(cor))?nb:cor+" "+nb}a.push("Cor:"+attrVar(cor))}if(!a.length)a.push("Variação:"+attrVar(ch.part||ch.v.E));
       out.push({row:ch,t:"filho",pai:base,attrs:a.join(";")})})});
   return out}
 /* valor "cru" de uma coluna do modelo para uma linha de saída (colunas @ são automáticas) */
@@ -1486,12 +1489,13 @@ const setStatus=(t,bad)=>{const s=document.getElementById("saveStatus");s.textCo
 let HIST=[],REDO=[],snapL=null,snapC=null,snapF=null,snapE=false,restaurando=false,conflito=false,corrompido=false,rawCorrompido="",ftSalvas=new Set(),avisoMem=0;
 function histIni(){snapL=JSON.stringify(S.lanc);snapC=JSON.stringify(S.config);snapF=JSON.stringify(S.form);snapE=!!editId}
 function histTam(){return HIST.reduce((t,e)=>t+e.L.length+e.C.length,0)}
+let histSep=false;
 function histNota(){
   if(restaurando||snapL===null)return;
   const L=JSON.stringify(S.lanc),C=JSON.stringify(S.config),F=JSON.stringify(S.form);
   if(L!==snapL||C!==snapC){
     const soCfg=L===snapL,agora=Date.now(),topo=HIST[HIST.length-1];
-    const mesmo=topo&&agora-topo.t<80,digitando=soCfg&&topo&&topo.soCfg&&agora-topo.t<1500;
+    const mesmo=topo&&agora-topo.t<80,digitando=!histSep&&soCfg&&topo&&topo.soCfg&&agora-topo.t<1500;
     if(mesmo||digitando){   /* mesma ação (várias gravações seguidas) ou digitação num campo de cadastro: um passo só */
       if(mesmo){topo.soCfg=topo.soCfg&&soCfg;if(F!==snapF&&!topo.F)topo.F=snapF}
       topo.t=agora}
@@ -1981,7 +1985,7 @@ function renderForm(){
   const rowBanhos=`<div class="z-row z-banhos">${cards}<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn" title="Nova letra de banho (ex.: C · Ródio, D · Rosé)">＋ Letra</button>${dica}<span class="z-end">${addBtn}</span></div>`;
 const rowOrig=`<div class="z-row z-orig">${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}<i class="vsep"></i>${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
   const detBanhos=bh.banhos.filter(b=>onF[b.id]).map(b=>{const vz=vzOn(f,bh,b);return `<div class="lb"><b><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</b>
-      ${bruta?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${campoHTML("O",f,{banho:b.id,ph:b.mil,w:"c",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s",q:"cor",qb:b.id,qn:"cor do banho "+b.letra})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
+      ${bruta?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${campoHTML("O",f,{banho:b.id,ph:milDe(b,f.v.I),w:"c",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s",q:"cor",qb:b.id,qn:"cor do banho "+b.letra})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
 const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   const cadastro=["E","A","B","C","D","K","X","Z","AD","AE"].map(L=>c(L,{w:"s"})).join("");
   const det=!!abertos.det;
@@ -2178,7 +2182,7 @@ let SECS=[];
 function sec(id,titulo,resumo,corpo){SECS.push({id,titulo,resumo,corpo});return ""}
 function abaCfg(){return SECS.some(s=>s.id===abertos.tab)?abertos.tab:SECS[0].id}
 /* ===== Catálogo rápido: colar lista, modelos, duplicar seguro, renomear e ordenar ===== */
-let renBusy=false;
+let renBusy=false,faixaBusy=false;
 let catUI={colar:false,txt:"",dup:null,ren:null,corNova:null};
 const partir=txt=>{const vistos=new Set(),r=[];String(txt==null?"":txt).split(/[;,\n\r]+/).forEach(x=>{x=x.replace(/\s+/g," ").trim().slice(0,60);const k=semAc(x);if(x&&!vistos.has(k)){vistos.add(k);r.push(x)}});return r};
 const kSub=x=>semAc(x).replace(/(e?s)$/,"");
@@ -2462,7 +2466,7 @@ function romSetForn(nome){const f=S.form,fo=fornBy(nome);f.v.H=nome;
   salvar(false);renderForm();renderTopo()}
 function romColsR(r){const f=S.form,bh=banhistaBy(f.banhista);
   if(f.tipo!=="bruta")return [{id:"p",nome:"Quantidade",letra:"",cor:"",col:""}];
-  return bh.banhos.filter(b=>r&&r.on&&(b.id in r.on)?r.on[b.id]:f.on[b.id]).map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:b.coluna,mil:b.mil}))}
+  return bh.banhos.filter(b=>r&&r.on&&(b.id in r.on)?r.on[b.id]:f.on[b.id]).map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:b.coluna,mil:milDe(b,(r&&r.cat)||f.v.I)}))}
 const romCols=()=>romColsR(null);
 /* monta, para uma peça do romaneio, o mesmo lançamento que o formulário montaria */
 function romForm(r,prev){const snap=S.form,T=romT(),bruta=snap.tipo==="bruta",g=gradeDaCat(r.cat,r.sub),cols=romColsR(r),f=clone(snap);
@@ -2819,7 +2823,7 @@ function romBodyHTML(r){const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhist
   if(bruta)h+=bh.banhos.filter(b=>r.on&&(b.id in r.on)?r.on[b.id]:f.on[b.id]).map(b=>{const bo=(r.bo||{})[b.id]||{},ai=(k,v)=>`data-auto="${k}:${b.id}" value="${esc(v??"")}" placeholder="—"`;
     return `<div class="rc-r bd"><span class="bd-t"><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></span>
       ${fq("Cor",`<select data-rp="bo" data-k="L" data-b="${b.id}">${opts(C.cores,bo.L||b.cor)}</select>`,"w-s")}
-      ${fq("Milésimos",`<input class="n" data-rp="bo" data-k="O" data-b="${b.id}" value="${esc(bo.O??b.mil??"")}" inputmode="decimal">`,"w-n")}
+      ${fq("Milésimos",`<input class="n" data-rp="bo" data-k="O" data-b="${b.id}" value="${esc(bo.O??milDe(b,r.cat||f.v.I)??"")}" inputmode="decimal">`,"w-n")}
       ${fq("Custo do banho R$",`<input class="n calc" data-rp="bo" data-k="C" data-b="${b.id}" ${ai("C",bo.C)} inputmode="decimal" title="Peso × valor por grama do banhista ${esc(bh.nome)}. Digite para trocar só nesta peça; apague para voltar ao cálculo.">`,"w-c")}
       ${fq("Custo do verniz R$",`<input class="n calc" data-rp="bo" data-k="U" data-b="${b.id}" ${ai("U",bo.U)} inputmode="decimal">`,"w-c")}
       ${fq("Descrição desta linha",`<input data-rp="bo" data-k="F" data-b="${b.id}" ${ai("F",bo.F)}>`,"w-l")}</div>`}).join("");
@@ -2879,7 +2883,7 @@ function romCampo(t,fin){if(!ROM)return;const k=t.dataset.rp;if(!k)return;const 
   else if(k==="mk"){r.mk=r.mk||{};if(vazio(t.value)||String(t.value)===String((f.mk||{})[t.dataset.b]??""))delete r.mk[t.dataset.b];else r.mk[t.dataset.b]=t.value;
     /* mudou o fator: o Preço de Varejo digitado à mão volta a ser calculado */
     {const b=t.dataset.b;if(b==="p")r.vp="";else if(r.bo&&r.bo[b])delete r.bo[b].V;const vi=t.closest(".bf")&&t.closest(".bf").querySelector('[data-auto^="V:"]');if(vi){vi.value="";vi.classList.add("isauto")}}}
-  else if(k==="bo"){r.bo=r.bo||{};const b=t.dataset.b,kk=t.dataset.k,o=r.bo[b]=r.bo[b]||{},bb=banhistaBy(f.banhista).banhos.find(x=>x.id===b)||{},def=kk==="L"?bb.cor:kk==="O"?bb.mil:null;
+  else if(k==="bo"){r.bo=r.bo||{};const b=t.dataset.b,kk=t.dataset.k,o=r.bo[b]=r.bo[b]||{},bb=banhistaBy(f.banhista).banhos.find(x=>x.id===b)||{},def=kk==="L"?bb.cor:kk==="O"?milDe(bb,r.cat||f.v.I):null;
     if(vazio(t.value)||(def!=null&&String(t.value)===String(def)))delete o[kk];else o[kk]=t.value;t.classList.toggle("isauto",!o[kk]&&"CUVF".includes(kk))}
   else if(k==="ex"){r.ex=r.ex||{};const L=t.dataset.k,d=padraoDe(r.cat||f.v.I,L);if(vazio(t.value)||String(t.value)===String(d??""))delete r.ex[L];else r.ex[L]=t.value}
   else if(k==="exk"){r._k=t.value;return}
@@ -3345,7 +3349,7 @@ function renderCfg(){
         <td data-th="Cálculo"><select data-bnf="modo" style="width:112px" aria-label="Cálculo do banho ${esc(x.nome)}">${opts([["peso","Por grama"],["fixo","Valor fixo"]],x.modo||"peso")}</select></td><td data-th="Valor R$"><input class="n" data-bnf="mult" value="${esc(x.mult)}" style="width:70px" placeholder="defina" aria-label="Valor do banho ${esc(x.nome)}"></td>
         <td data-th="Coluna"><select data-bnf="coluna" style="width:170px" aria-label="Coluna do banho ${esc(x.nome)}">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,`${k} · Custo do Banho de ${n}`]),x.coluna)}</select></td><td data-th="Texto na Descrição (do banho)"><input data-bnf="sufixo" value="${esc(x.sufixo)}" placeholder="(nada)" style="width:124px" aria-label="Texto do banho ${esc(x.nome)} na Descrição"></td>
         <td class="c" data-th="Verniz"><input type="checkbox" data-bnf="vz" ${vzPad(b,x)?"checked":""} title="Este banho leva verniz por padrão" aria-label="Verniz no banho ${esc(x.nome)}"></td><td class="c" data-th="Vem marcado"><input type="checkbox" data-bnf="marcado" ${x.marcado?"checked":""} title="Este banho já vem marcado ao lançar uma peça" aria-label="Banho ${esc(x.nome)} vem marcado"></td><td class="acts" data-th=""><button class="x" type="button" data-act="bn-dup" title="Duplicar esta linha de banho" aria-label="Duplicar o banho ${esc(x.nome)}">⧉</button><button class="x" type="button" data-act="bn-del" title="Remover banho" aria-label="Remover o banho ${esc(x.nome)}">×</button></td></tr>`).join("")}
-      </tbody></table></div>${(()=>{const fl=b.banhos.filter(x=>!x.cor||!C.cores.includes(x.cor));return fl.length?`<div class="soft" role="status">${fl.map(x=>x.cor?`O banho “${esc(x.nome)}” usa a cor “${esc(x.cor)}”, que não está mais em Cores.`:`O banho “${esc(x.nome)}” está sem cor.`).join(" ")} Escolha outra na lista ou crie com “+ Nova cor…”.</div>`:""})()}${catUI.corNova&&catUI.corNova.bi===i?`<div class="cpanel"><b>Nova cor</b><div class="row"><input data-ncor placeholder="Nome da cor (ex.: Rosé)" maxlength="40" aria-label="Nome da nova cor" style="max-width:220px"><button type="button" class="btn pri sm" data-act="cor-nova-ok">Criar e usar</button><button type="button" class="btn ghost sm" data-act="cor-nova-no">Cancelar</button></div></div>`:""}
+      </tbody></table></div>${C.categorias.length&&b.banhos.length?`<details class="gdet" data-open="mc:${esc(b.id)}" ${abertos["mc:"+b.id]?"open":""}><summary><b>Milésimos por categoria</b><span>ex.: Brincos 1, Colares 5 — vazio = usa o da tabela acima</span></summary><div class="gb"><div class="hint">Cada categoria pode ter seus próprios milésimos de banho (por banho). Ao lançar a peça, o valor da categoria entra sozinho; você ainda pode trocar peça a peça.</div><div class="tw"><table class="cfg bnt"><thead><tr><th>Categoria</th>${b.banhos.map(x=>`<th>${esc(x.nome)}</th>`).join("")}</tr></thead><tbody>${C.categorias.map(c=>`<tr><td data-th="Categoria"><b>${esc(c.nome)}</b></td>${b.banhos.map((x,j)=>`<td data-th="${esc(x.nome)}"><input class="n" data-bmc="${j}" data-mcat="${esc(c.nome)}" value="${esc((x.milCat||{})[c.nome]??"")}" placeholder="${esc(x.mil||"")}" inputmode="decimal" style="width:70px" aria-label="Milésimos de ${esc(x.nome)} em ${esc(c.nome)}"></td>`).join("")}</tr>`).join("")}</tbody></table></div></div></details>`:""}${(()=>{const fl=b.banhos.filter(x=>!x.cor||!C.cores.includes(x.cor));return fl.length?`<div class="soft" role="status">${fl.map(x=>x.cor?`O banho “${esc(x.nome)}” usa a cor “${esc(x.cor)}”, que não está mais em Cores.`:`O banho “${esc(x.nome)}” está sem cor.`).join(" ")} Escolha outra na lista ou crie com “+ Nova cor…”.</div>`:""})()}${catUI.corNova&&catUI.corNova.bi===i?`<div class="cpanel"><b>Nova cor</b><div class="row"><input data-ncor placeholder="Nome da cor (ex.: Rosé)" maxlength="40" aria-label="Nome da nova cor" style="max-width:220px"><button type="button" class="btn pri sm" data-act="cor-nova-ok">Criar e usar</button><button type="button" class="btn ghost sm" data-act="cor-nova-no">Cancelar</button></div></div>`:""}
       <div class="row"><span class="hint">Adicionar banho:</span><button class="btn sm" type="button" data-act="bn-pronto" data-tp="ouro" title="Banho de ouro: coluna R, texto “banho ouro”">+ Ouro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="rodio" title="Banho de ródio: coluna S, texto “banho ródio”">+ Ródio</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="prata" title="Banho de prata: coluna T, texto “banho prata”">+ Prata</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="negro" title="Banho de ródio negro: coluna S, texto “banho ródio negro”">+ Ródio negro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="outro" title="Banho em branco para você preencher">+ Outro</button></div></div>`).join("")}
     <div><button class="btn sm" type="button" data-act="bh-add">+ Banhista</button></div>`);
   h+=sec("forn","Fornecedores",C.fornecedores.map(f=>f.nome+(num(f.desconto)?` ${f.desconto}%`:"")).join(" · "),
@@ -3612,7 +3616,7 @@ function montarCsv(g,cols,mo,slx){
   sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{const r=valorCol(c,celCol(c,cs,e));let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
   return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
 /* com filtro ativo, baixar e copiar levam só as linhas que o filtro está mostrando */
-function gerarExport(){const g0=gerar(),fil=filtroOn();return {g0,fil,g:fil?{...g0,linhas:g0.linhas.filter(casa)}:g0}}
+function gerarExport(){const g0=gerar(),fil=filtroOn();return {g0,fil,g:fil?(()=>{const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}})():g0}}
 async function baixar(forcar){
   const GE=gerarExport(),g=GE.g;if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de baixar.");return}
@@ -3741,9 +3745,10 @@ document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
     const row=G&&G.linhas[r];if(row&&row.lancId&&row.lancId!==editId&&!formSujo()&&!celular()){const lid=row.lancId;editar(lid);if(G.linhas[r]&&G.linhas[r].lancId===lid)selR={ar:r,ac:c,fr:r,fc:c}}
     abrirCel(r,td.dataset.c,true)}});
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
+function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=cfg().banhistas[0].id;conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del"];
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;
+  const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo==="conjunto"){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];
     if(!f.banhista)f.banhista=cfg().banhistas[0].id;if(!editId&&f.v.I!=="Conjuntos"&&catBy("Conjuntos")){f.v.I="Conjuntos";delete f.v.J;sincGrade(f)}
     conjSync(f);salvar(false);renderTopo();renderForm();refocar('#conj [data-cp="desc"]');return}
@@ -3996,7 +4001,7 @@ function onField(t,isChange){
   const C=cfg(),f=S.form;
   if(t.dataset&&t.dataset.fauto!==undefined){try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0")}catch(e){}return}
   if(t.dataset&&t.dataset.fkey!==undefined){try{localStorage.setItem("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
-  if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange)aplicaFaixa(t.value);return}
+  if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange&&!faixaBusy){faixaBusy=true;try{aplicaFaixa(t.value)}finally{faixaBusy=false}}return}
   if(t.dataset&&t.dataset.nv!==undefined){if(!NOVO)return;
     if(t.dataset.nv==="nome"){NOVO.nome=String(t.value).slice(0,60);return}
     if(t.dataset.nv==="k"&&isChange){const c=NOVO.cols[+t.dataset.i];if(c){c.k=t.value;c.auto=false;if(c.k&&TIPO_PAD[c.k]&&!c.tipo)c.tipo=TIPO_PAD[c.k];const tr=t.closest("tr");if(tr){tr.className=c.k?"":"nv-nao";const h=tr.querySelector(".hint");if(h)h.textContent=c.k?"escolhida por você":"em branco"}}}
@@ -4026,7 +4031,7 @@ function onField(t,isChange){
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
-    if(L==="I"&&isChange){const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange){const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
     if(L==="V"&&isChange)fatorDoPreco("p");
     atualizarGera();salvar(false);return;
@@ -4057,7 +4062,7 @@ function onField(t,isChange){
     if(k==="nome"){const old=c.nome,nv=t.value.trim();
       const dup=C.categorias.some(x=>x!==c&&String(x.nome).trim().toLowerCase()===nv.toLowerCase());
       if(!nv||dup){if(isChange){t.value=old;toast(!nv?"O nome da categoria não pode ficar vazio — voltei ao nome anterior.":`Já existe a categoria “${nv}” — voltei ao nome anterior.`)}return}
-      c.nome=t.value;S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=t.value});if(f.v.I===old)f.v.I=t.value;salvar(true)}
+      c.nome=t.value;C.banhistas.forEach(b=>b.banhos.forEach(x=>{if(x.milCat&&Object.prototype.hasOwnProperty.call(x.milCat,old)){x.milCat[t.value]=x.milCat[old];delete x.milCat[old]}}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=t.value});if(f.v.I===old)f.v.I=t.value;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
     else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){c[k]=t.value;salvar(true,false);if(isChange)renderForm()}
@@ -4086,6 +4091,9 @@ function onField(t,isChange){
       S.lanc.forEach(l=>{if(l.v.H===old)l.v.H=t.value});if(f.v.H===old)f.v.H=t.value;fo.nome=t.value;salvar(true)}else{fo[k]=t.value;salvar(true,false)}
     if(isChange){renderListas();renderTopo();renderForm()}return}
   const be=t.closest("[data-bh]");
+  if(be&&t.dataset.bmc!==undefined){const bh=C.banhistas[+be.dataset.bh],b=bh&&bh.banhos[+t.dataset.bmc],cn=t.dataset.mcat;if(!b)return;const v=String(t.value).trim();
+    if(v!==""){const n=num(v);if(n==null||n<0){if(isChange){t.value=(b.milCat||{})[cn]??"";toast("Milésimos precisa ser um número maior ou igual a 0.")}return}}
+    b.milCat=b.milCat||{};if(v==="")delete b.milCat[cn];else b.milCat[cn]=v;salvar(true,false);renderTopo();if(isChange)renderForm();return}
   if(be&&t.dataset.bnf==="cor"&&t.value==="__nova"){catUI.corNova={bi:+be.dataset.bh,j:+t.closest("[data-bn]").dataset.bn};renderCfg();refocar("[data-ncor]");return}
   if(be&&(t.dataset.bhf||t.dataset.bnf)){const bh=C.banhistas[+be.dataset.bh];
     if(t.dataset.bhf){const m=validaBanho(bh,null,t.dataset.bhf,t.value);if(m){if(isChange){t.value=bh[t.dataset.bhf]??"";toast(m)}return}bh[t.dataset.bhf]=t.type==="checkbox"?t.checked:t.value}
@@ -4105,7 +4113,7 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.id==="fileBk"&&t.files[0])return restaurar(t.files[0]);
   if(t.id==="fileBkT"&&t.files[0])return restaurarTotal(t.files[0]);
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
-  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
+  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.bmc!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
 document.addEventListener("paste",e=>{const pt=e.target;
   /* colar várias linhas num campo de uma linha só: as quebras viram ";" (senão o navegador junta tudo num texto só) */
   if(pt.dataset&&pt.dataset.enter!==undefined&&pt.setRangeText){const tx=(e.clipboardData||window.clipboardData).getData("text");if(/[\r\n]/.test(tx)){e.preventDefault();const j=tx.replace(/\s*[\r\n]+\s*/g,"; ").replace(/^[;\s]+|[;\s]+$/g,"");pt.setRangeText(j,pt.selectionStart,pt.selectionEnd,"end");return}}
