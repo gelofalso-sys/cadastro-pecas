@@ -1,0 +1,8 @@
+CADASTRO DE PECAS - pasta de trabalho
+cadastro-pecas.html  -> VERSAO PRINCIPAL (e a que o Claude edita daqui para frente)
+demo-netlify/        -> demo pronta para arrastar em https://app.netlify.com/drop
+tools/demo.py        -> gera a demo a partir da versao principal:
+   python tools/demo.py cadastro-pecas.html demo-netlify seu-site.netlify.app
+Artefato no claude.ai: https://claude.ai/artifact/AaVYvAUCgbG8uLXb7ykiCJ (publicar a partir deste arquivo, com url)
+
+"Cadastro de Pecas - abrir no Chrome.html" = versao completa (sem limites de demo) para abrir direto no navegador; os dados ficam salvos no proprio navegador e o .xlsx baixa normalmente. Precisa de internet so para a biblioteca de planilha e a leitura de PDF.
