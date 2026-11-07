@@ -1119,7 +1119,7 @@ select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
     <button class="btn pri" type="button" data-act="xlsx">Baixar .xlsx</button>
   </div>
 </div></header>
-<div class="app" id="app">
+<div class="app" id="app" role="main">
   <section class="gut pane-top" id="paneTop" aria-label="Planilha">
     <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
     <div class="sheet" id="sheet" tabindex="0"></div><div class="nf-vaz" id="nfVaz" hidden><span id="nfVazT"></span><button type="button" class="btn sm" id="nfVazB"></button></div>
@@ -3514,7 +3514,7 @@ function renderCfg(){
     <div class="row"><button class="btn sm" type="button" data-act="backup">Baixar cópia dos cadastros</button><label class="btn sm" style="cursor:pointer">Restaurar cópia<input type="file" id="fileBk" accept=".json" hidden></label></div>
     <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><label class="btn sm" style="cursor:pointer">Restaurar backup completo<input type="file" id="fileBkT" accept=".json" hidden></label></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
   const at=abaCfg(),cur=SECS.find(s=>s.id===at);
-  document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
+  document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" tabindex="${s.id===at?0:-1}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
     <section class="sec tabp" id="sec-${cur.id}" role="tabpanel"><div class="tabres">${esc(cur.resumo)}</div><div class="sb">${cur.corpo}${resetBar(cur.id)}</div></section>`;
   if(ROM&&document.getElementById("romWrap"))renderRom();
 }
@@ -3714,6 +3714,7 @@ function excluir(ids){
 
 /* ===== exportar ===== */
 function faixaRefs(g){const c=contFinal(g);return Object.keys(c).filter(p=>c[p]>ultimo(p)).map(p=>{const i=ultimo(p)+1,A=p+fnum(p,i),B=p+fnum(p,c[p]);return i===c[p]?A:`${A}–${B}`}).join(", ")}
+function faixaFiltro(g){const bs=[...new Set(g.linhas.map(r=>refBase(r.v.E)).filter(Boolean))].sort();return bs.length<=4?bs.join(", "):bs[0]+"–"+bs[bs.length-1]}
 function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){const c={t:"n",f:tf};if(typeof x.v==="number")c.v=x.v;return c}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:"="+x.f}}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:String(x.v)}}
 const DLNAV={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};
 async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}return dl||DLNAV}
@@ -3757,7 +3758,7 @@ async function baixar(forcar){
   if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
   if(!forcar&&abrirConferencia(g,cols,{tipo:"xlsx"}))return;
   if(!csv&&typeof XLSX==="undefined"){toast("A biblioteca de planilha não carregou. Use Copiar para o Excel ou um modelo em CSV.");return}
-  const sl=saidaLinhas(g,mo),partes=dividirLotes(sl,Math.trunc(num(mo.lote)||0)),faixa=(faixaRefs(g)||"lista")+(GE.fil?" (filtro)":""),dl=await obterDL(),ext=csv?"csv":"xlsx";
+  const sl=saidaLinhas(g,mo),partes=dividirLotes(sl,Math.trunc(num(mo.lote)||0)),faixa=(GE.fil?faixaFiltro(g):(faixaRefs(g)||"lista"))+(GE.fil?" (filtro)":""),dl=await obterDL(),ext=csv?"csv":"xlsx";
   const nomeBase=`Cadastro de peças ${faixa.replace(/[^\w\- ,]/g,"-")}`;let feitas=0;
   for(let p=0;p<partes.length;p++){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
@@ -4216,7 +4217,7 @@ function onField(t,isChange){
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
     else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){c[k]=t.value;salvar(true,false);if(isChange)renderForm()}
     else{C.seqs[(c.prefixo||"").toUpperCase()]=t.value.replace(/\D/g,"").slice(0,9);salvar(true,false)}
-    renderTopo();if(isChange){renderCfg();renderForm();renderListas()}return}
+    renderTopo();if(isChange){if(k==="nome"||k==="prefixo")renderCfg();renderForm();renderListas()}return}
   if(t.dataset.cvg&&ce){const c=C.categorias[+ce.dataset.cat];c.coresCfg=c.coresCfg||{};const k=t.dataset.cvg;
     if(k==="subs")c.coresCfg.subs=t.value.split(/[;,]/).map(z=>z.trim()).filter(Boolean);
     else if(k==="padrao"){const nm=partir(t.value);c.coresCfg.padrao=(c.cores||[]).filter(x=>nm.some(n=>semAc(n)===semAc(x.nome))).map(x=>x.id)}
@@ -4288,6 +4289,7 @@ document.addEventListener("keydown",e=>{
     if(t.dataset.ncor!==undefined){if(k==="Enter"){e.preventDefault();corNovaOk();return}if(k==="Escape"){e.preventDefault();const cn0=catUI.corNova;catUI.corNova=null;renderCfg();if(cn0)refocar(`[data-bh="${cn0.bi}"] [data-bn="${cn0.j}"] [data-bnf="cor"]`);return}return}
     if(t.dataset.colar!==undefined){if(k==="Escape"){e.preventDefault();catUI.colar=false;renderCfg();refocar('[data-act="colar-abrir"]');return}return}
     if(t.id==="novaCat"&&k==="Enter"){e.preventDefault();const b=document.querySelector('[data-act="cat-add"]');if(b)b.click();return}}
+  if(t.dataset&&t.dataset.act==="ctab"&&(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key==="Home"||e.key==="End")){const bs=[...document.querySelectorAll('#cfg [data-act="ctab"]')],i=bs.indexOf(t);if(i>=0){e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?bs.length-1:(i+(e.key==="ArrowRight"?1:-1)+bs.length)%bs.length,id=bs[j].dataset.id;abertos.tab=id;guardarAbertos();renderCfg();refocar(`#cfg [data-act="ctab"][data-id="${id}"]`);return}}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));return}
   if((e.ctrlKey||e.metaKey)&&e.key==="Enter"&&t.closest&&t.closest("#form")){e.preventDefault();adicionar(true);return}
   if(t.id==="celIn"){
