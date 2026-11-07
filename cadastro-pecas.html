@@ -1119,7 +1119,8 @@ select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
 .vis button{border:1px solid transparent;background:transparent;color:var(--muted);font:600 13px var(--body);padding:0 12px;height:32px;border-radius:8px;cursor:pointer;white-space:nowrap}
 .vis button:hover{background:var(--surface-2);color:var(--ink)}
 .vis button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
-.vis .vrom{margin-left:8px;border-color:var(--line)}
+.vis .vrom,.vis .vpal{margin-left:8px;border-color:var(--line)}
+.vis .vpal{margin-left:4px}
 .vis .vhint{margin-left:auto;font-size:11.5px;color:var(--muted)}
 .vis kbd{font:600 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 4px}
 body[data-vis=planilha] #paneBot,body[data-vis=planilha] #splitter{display:none}
@@ -1155,6 +1156,14 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
 .rcs.compacto .rc.aberto{outline:2px solid var(--accent);outline-offset:-1px}
 .rsel-st{font:600 11px var(--body);padding:1px 7px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
 .rst-ok{background:#e1f3e8;color:#1f6b3b;border-color:#b6dfc5}.rst-warn{background:#fff1d6;color:var(--warn);border-color:#ecd29b}.rst-new{background:var(--accent-soft);color:var(--accent)}
+.pal{position:fixed;inset:0;z-index:100000;background:rgba(14,19,30,.45);display:flex;align-items:flex-start;justify-content:center;padding:max(12vh,env(safe-area-inset-top,0px)) 12px 12px}
+.pal-c{width:min(560px,100%);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.3);overflow:hidden}
+.pal-c input{width:100%;border:0;border-bottom:1px solid var(--line);height:46px;padding:0 14px;font:500 15px var(--body);background:transparent;color:var(--ink);outline:0}
+.pal-l{max-height:50vh;overflow:auto;margin:0;padding:4px;list-style:none}
+.pal-l li{display:flex;gap:8px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:14px}
+.pal-l li small{margin-left:auto;color:var(--muted);font:500 11.5px var(--mono)}
+.pal-l li[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}.pal-l li[aria-selected=true] small{color:inherit}
+.pal-v{padding:14px;color:var(--muted);font-size:13px}
 .rep-busca{margin:6px 0;width:100%;max-width:360px;height:34px}
 </style>
 
@@ -1170,7 +1179,7 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
     <button class="btn pri" type="button" data-act="xlsx">Baixar .xlsx</button>
   </div>
 </div></header>
-<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">📋 Romaneios</button><span class="vhint">Alt+1…4 trocam de visão · <kbd>/</kbd> busca</span></nav>
+<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">📋 Romaneios</button><button type="button" class="vpal" id="vpal" title="Paleta de comandos (Ctrl+K)">⌘ Comandos</button><span class="vhint">Alt+1…4 visões · <kbd>/</kbd> busca · <kbd>Ctrl+K</kbd> comandos</span></nav>
 <div class="app" id="app" role="main">
   <section class="gut pane-top" id="paneTop" aria-label="Planilha">
     <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
@@ -4642,6 +4651,32 @@ document.addEventListener("keydown",e=>{if((e.key==="["||e.key==="]")&&!e.ctrlKe
     if(td)td.insertAdjacentHTML("beforeend",' <span class="rsel-st rst-'+st[1]+'">'+st[0]+'</span>')});
   setTimeout(()=>{if(!celular())i.focus()},0)}catch(e){}return r}}
 
+/* ===== v19: paleta de comandos (Ctrl+K) ===== */
+const PALCMD=[
+ ["Visão: Dividida","Alt+1",()=>visPara("tudo")],["Visão: Planilha","Alt+2",()=>visPara("planilha")],["Visão: Lançar","Alt+3",()=>visPara("lancar")],["Visão: Cadastros","Alt+4",()=>visPara("cad")],
+ ["Novo romaneio / continuar romaneio","",()=>document.querySelector('[data-act="rom-abrir"]')&&document.querySelector('[data-act="rom-abrir"]').click()],
+ ["Romaneios lançados","",()=>document.querySelector('[data-act="rom-lista"]').click()],["Tabelas salvas","",()=>document.querySelector('[data-act="tab-lista"]').click()],
+ ["Baixar .xlsx","",()=>document.querySelector('[data-act="xlsx"]').click()],["Copiar para o Excel","",()=>document.querySelector('[data-act="copiar"]').click()],
+ ["Desfazer","Ctrl+Z",()=>desfazer()],["Refazer","Ctrl+Y",()=>desfazer(true)],
+ ["Cadastros: Categorias e variações","",()=>irPara("cat")],["Cadastros: Banhos e custos","",()=>irPara("banho")],["Cadastros: Fornecedores","",()=>irPara("forn")],["Cadastros: Colunas","",()=>irPara("col")],["Cadastros: Cores e observações","",()=>irPara("cor")],["Cadastros: Modelos de romaneio","",()=>irPara("rom")],["Cadastros: Exportar para (modelo da planilha)","",()=>irPara("mod")],["Cadastros: Fotos (link)","",()=>irPara("foto")],["Cadastros: Importar e backup","",()=>irPara("opc")],
+ ["Buscar na planilha","/",()=>{visPara(celular()?"planilha":"tudo");const f=document.getElementById("fBusca");if(f){f.focus()}}]];
+function palAbrir(){
+  if(document.getElementById("pal"))return;
+  const o=document.createElement("div");o.id="pal";o.className="pal";o.setAttribute("role","dialog");o.setAttribute("aria-modal","true");o.setAttribute("aria-label","Paleta de comandos");
+  o.innerHTML='<div class="pal-c"><input id="palQ" placeholder="Digite um comando… (visão, cadastro, romaneio, baixar)" autocomplete="off" aria-label="Comando"><ul class="pal-l" id="palL" role="listbox"></ul></div>';
+  document.body.appendChild(o);const q=o.querySelector("#palQ"),ul=o.querySelector("#palL");let sel=0,vis=PALCMD;
+  const fecha=()=>{o.remove()},roda=i=>{const c=vis[i];if(!c)return;fecha();setTimeout(()=>{try{c[2]()}catch(e){}},0)};
+  const desenha=()=>{const t=semAc(q.value);vis=PALCMD.filter(c=>!t||t.split(/\s+/).every(w=>semAc(c[0]).includes(w)));sel=Math.min(sel,Math.max(0,vis.length-1));
+    ul.innerHTML=vis.length?vis.map((c,i)=>'<li role="option" data-i="'+i+'" aria-selected="'+(i===sel)+'">'+esc(c[0])+(c[1]?'<small>'+esc(c[1])+'</small>':"")+'</li>').join(""):'<li class="pal-v">Nada encontrado</li>';
+    const a=ul.querySelector('[aria-selected=true]');if(a)a.scrollIntoView({block:"nearest"})};
+  q.addEventListener("input",()=>{sel=0;desenha()});
+  q.addEventListener("keydown",e=>{if(e.key==="ArrowDown"){e.preventDefault();sel=Math.min(vis.length-1,sel+1);desenha()}else if(e.key==="ArrowUp"){e.preventDefault();sel=Math.max(0,sel-1);desenha()}else if(e.key==="Enter"){e.preventDefault();roda(sel)}else if(e.key==="Escape"){e.preventDefault();e.stopPropagation();fecha()}});
+  ul.addEventListener("click",e=>{const l=e.target.closest("li[data-i]");if(l)roda(+l.dataset.i)});
+  o.addEventListener("mousedown",e=>{if(e.target===o)fecha()});
+  desenha();q.focus();
+}
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==="k"){e.preventDefault();palAbrir()}});
+
 /* ===== v19: visões (Dividida · Planilha · Lançar · Cadastros) ===== */
 function visAtual(){const v=document.body.dataset.vis||"tudo";return v}
 function visPara(v,soSeEscondido){
@@ -4653,7 +4688,7 @@ function visPara(v,soSeEscondido){
   if(celular())formAbrir(v==="lancar");
   const pb=document.getElementById("paneBot");if(pb&&v!=="planilha")pb.scrollTo({top:0});
 }
-document.getElementById("vis").addEventListener("click",e=>{const b=e.target.closest("[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
+document.getElementById("vis").addEventListener("click",e=>{if(e.target.closest("#vpal")){palAbrir();return}const b=e.target.closest("[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
 document.addEventListener("keydown",e=>{
   const t=e.target,campo=/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable;
   if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-4]$/.test(e.key)){e.preventDefault();visPara(["tudo","planilha","lancar","cad"][+e.key-1]);return}
