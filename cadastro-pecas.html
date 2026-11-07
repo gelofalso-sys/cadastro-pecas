@@ -1055,7 +1055,7 @@ table.cfg td input:not([type=checkbox]){min-width:110px}
 .custos{font-size:12px;color:var(--muted);margin:4px 0 2px}.custos summary{cursor:pointer;font-weight:600;color:var(--ink)}.custos summary small{font-weight:400;color:var(--muted)}.custos b{color:var(--ink)}.ck-l{padding:3px 0;border-top:1px dashed var(--line);line-height:1.5}
 .tf{position:relative}.tf .ftr{position:absolute;right:2px;bottom:2px;width:22px!important;height:22px!important;max-width:22px;object-fit:cover;border:2px solid #fff;border-radius:5px;box-shadow:0 0 0 1px var(--line);cursor:zoom-in}
 .ftslot.ftr{position:relative}.ftslot.ftr small{display:block;text-align:center;font-size:10px;color:var(--muted)}
-.bfx{flex:1 1 100%;font-size:11.5px;color:var(--muted);line-height:1.4}.bfx b{color:var(--ink)}.bfx-d{opacity:.9}
+.bfx{flex:1 1 100%;font-size:11.5px;color:var(--muted);line-height:1.4}.bfx b{color:var(--ink)}.bfx-w{color:var(--warn);font-weight:600}.bfx-d{opacity:.9}
 /* conjunto */
 .conj-sum{font-size:13px;padding:6px 8px;border-radius:8px;background:var(--surface);border:1px solid var(--line)}.conj-sum .cj-p{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}.conj-sum .cj-m{color:var(--muted)}.cj-e2{color:var(--warn);font-weight:600}
 .cj-i{display:flex;flex-direction:column;gap:2px;padding:4px 0;border-top:1px solid var(--line)}.cj-e{font-size:12px;color:var(--warn);padding-left:30px}.cj-e:empty{display:none}
@@ -2223,8 +2223,8 @@ function atualizarGera(){
     const cs=celulas(r,ri0+k+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):null,U=n("U"),V=n("V"),
       partes=[["compra",P],["insumos",Q],["banho",B],["verniz",U]].filter(x=>x[1]!=null),custo=partes.reduce((a,x)=>a+x[1],0),mk=r.mk||(custo>0&&V!=null?Math.round(V/custo*100)/100:null);
     const sp=document.querySelector(`[data-bf="${CSS.escape(kb)}"]`);
-    if(sp)sp.innerHTML=custo>0?`Base do fator <b>R$ ${brl(custo)}</b> <span class="bfx-d">= ${partes.map(x=>x[0]+" "+brl(x[1])).join(" + ")}</span>${mk&&V!=null?` · × ${fmt(mk)} = <b>R$ ${brl(V)}</b>`:""}`:"";
-    const mi=document.querySelector(`[data-mk="${CSS.escape(kb)}"]`);if(mi&&mi.tagName==="INPUT")mi.placeholder=!r.mk&&mk?fmt(mk):"×"})}
+    const inc=r.banho&&B==null;if(sp)sp.innerHTML=custo>0?`${inc?`<span class="bfx-w">⚠ falta o peso (ou o valor do banho): banho e verniz ainda não entram na base.</span> `:""}Base do fator <b>R$ ${brl(custo)}</b> <span class="bfx-d">= ${partes.map(x=>x[0]+" "+brl(x[1])).join(" + ")}</span>${mk&&V!=null?` · × ${fmt(mk)} = <b>R$ ${brl(V)}</b>`:""}`:"";
+    const mi=document.querySelector(`[data-mk="${CSS.escape(kb)}"]`);if(mi&&mi.tagName==="INPUT")mi.placeholder=!r.mk&&mk&&!inc?fmt(mk):"×"})}
   rows.forEach((r,k)=>{if(!r.banho)return;const cel=celulas(r,ri0+k+2)[LET.indexOf(r.banho.coluna)],sp=document.querySelector(`[data-cb="${CSS.escape(String(r.bid||r.key))}"]`);
     if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(num(r.v.N)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor no banhista"))});
   rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v)+" (×"+fmt(r.mk)+")":"";
