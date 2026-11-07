@@ -2048,7 +2048,8 @@ function campoHTML(L,f,opt){
   const w=opt.w||(NUM.has(L)?"n":"m"),mais=opt.q?`<button type="button" class="plus" data-act="q" data-q="${opt.q}"${opt.qb?` data-qb="${opt.qb}"`:""} title="Cadastrar ${esc(opt.qn||NOME[L])}">＋</button>`:"";
   return `<label class="fq w-${w}${cc.obrig?" req":""}" for="${id}" title="${esc(NOME[L])} (coluna ${L})"><span>${esc(opt.nome||NOME[L])}${opt.extra||""}</span><div class="ip">${inp}${mais}</div></label>`;
 }
-let quick=null,quickB=null;
+let quick=null,quickB=null,romQRow=null,romQ0=null;
+function romQFim(){const f=S.form;if(romQ0){f.v.I=romQ0.I;if(romQ0.J==null)delete f.v.J;else f.v.J=romQ0.J}romQ0=null;romQRow=null}
 function painelRapido(){
   const C=cfg(),f=S.form,bh=banhistaBy(f.banhista);if(!quick)return "";
   const cx=(id,rot,w,val,ph)=>`<label class="fq w-${w}"><span>${rot}</span><input id="${id}" value="${esc(val||"")}" placeholder="${esc(ph||"")}" ${w==="n"||w==="c"?'class="n" inputmode="decimal"':""}></label>`;
@@ -2147,7 +2148,7 @@ function addTamanhos(gr,texto){const ids=[];
 function letrasDeTamanho(){return todasGrades().flatMap(g=>g.itens.filter(x=>String(x.letra||"").toUpperCase()===String(x.nome||"").toUpperCase()).map(x=>String(x.letra).toUpperCase()))}
 function salvarRapido(){
   const C=cfg(),f=S.form,g=id=>{const e=document.getElementById(id);return e?e.value.trim():""},n=g("q1"),lo=s=>s.toLowerCase();
-  if(!n){document.getElementById("q1").focus();return}
+  if(!n){document.getElementById("q1").focus();return}const rq=romQRow;
   if(quick==="multi"){const linhas=n.split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean),F0=f.v.F,N0=f.v.N,P0=f.v.P,antes=S.lanc.length;let add=0;
     linhas.forEach(ln=>{const p=ln.split(/[;	]/).map(x=>x.trim());f.v.F=p[0];if(p[1])f.v.N=p[1];if(p[2])f.v.P=p[2];if(adicionar(false,true))add++});
     f.v.F=F0;if(N0==null)delete f.v.N;else f.v.N=N0;if(P0==null)delete f.v.P;else f.v.P=P0;erro="";
@@ -2168,7 +2169,10 @@ function salvarRapido(){
     bh.banhos.push({id,nome:n,letra:L,cor:document.getElementById("q3").value||n,mil:g("q4"),modo:"peso",mult:g("q5"),coluna:document.getElementById("q6").value,sufixo:document.getElementById("q7").value||(" banho "+n.toLowerCase()),marcado:false,vz:true});f.on[id]=true}
   if(quick==="bh"){const base=banhistaBy(f.banhista),nb=clone(base);nb.id=uid();nb.nome=n;nb.verniz=g("qv")||base.verniz;nb.banhos.forEach((b,i)=>{const v=g("qb"+i);if(v)b.mult=v});
     C.banhistas.push(nb);f.banhista=nb.id;marcadosPadrao(f);f.ov={}}
-  const nome=n;quick=null;salvar(true);renderListas();renderTopo();renderForm();renderCfg();toast(`“${nome}” cadastrado.`);refocar("#f-F");
+  if(ROM){if(rq!=null&&ROM.rows[rq]&&(quick==="cat"||quick==="sub")){const r=ROM.rows[rq];if(quick==="cat"){r.cat=f.v.I;r.sub="";r.catq=false;romNovaCat(r)}else{r.sub=f.v.J||n}}
+    if(quick==="bh")ROM.rows.forEach(r=>{r.on={};r.bo={};r.vz={};r.mk={}})}
+  romQFim();
+  const nome=n;quick=null;salvar(true);renderListas();renderTopo();renderForm();renderCfg();toast(`“${nome}” cadastrado.`);if(ROM)renderRom();else refocar("#f-F");
 }
 function previsao(){const fake={...clone(S.form),id:editId||"__p"},list=editId?S.lanc.map(l=>l.id===editId?fake:l):[...S.lanc,fake];return gerar(list)}
 /* digitou o Preço de Varejo à mão: o Fator × passa a ser o que dá esse preço (preço ÷ soma dos custos) */
@@ -2620,12 +2624,16 @@ function romSetForn(nome){const f=S.form,fo=fornBy(nome);f.v.H=nome;
     if(fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}
     if(f.tipo==="bruta"){banhistaDoFornecedor(f);aplicarMemForn(f,fo)}}
   salvar(false);renderForm();renderTopo()}
-function romColsR(r){const f=S.form,bh=banhistaBy(f.banhista);
-  if(f.tipo!=="bruta")return [{id:"p",nome:"Quantidade",letra:"",cor:"",col:""}];
-  return bh.banhos.filter(b=>r&&r.on&&(b.id in r.on)?r.on[b.id]:f.on[b.id]).map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:b.coluna,mil:milDe(b,(r&&r.cat)||f.v.I)}))}
+const romTipo=r=>(r&&(r.tipo==="bruta"||r.tipo==="pronta"))?r.tipo:S.form.tipo;
+const romBh=r=>banhistaBy((r&&r.bh)||S.form.banhista);
+const romOn=(r,b)=>r&&r.on&&(b.id in r.on)?r.on[b.id]:((r&&r.bh&&r.bh!==S.form.banhista)?!!b.marcado:S.form.on[b.id]);
+function romReset(r){r.on={};r.q={};r.bo={};r.mk={};r.vz={};if(romTipo(r)!=="bruta"&&!romIds(r).length&&!gradeDaCat(r.cat,r.sub))r.q.p=String(r.qtd)}
+function romColsR(r){const f=S.form,bh=romBh(r);
+  if(romTipo(r)!=="bruta")return [{id:"p",nome:"Quantidade",letra:"",cor:"",col:""}];
+  return bh.banhos.filter(b=>romOn(r,b)).map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:b.coluna,mil:milDe(b,(r&&r.cat)||f.v.I)}))}
 const romCols=()=>romColsR(null);
 /* monta, para uma peça do romaneio, o mesmo lançamento que o formulário montaria */
-function romForm(r,prev){const snap=S.form,T=romT(),bruta=snap.tipo==="bruta",g=gradeDaCat(r.cat,r.sub),cols=romColsR(r),f=clone(snap);
+function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g=gradeDaCat(r.cat,r.sub),cols=romColsR(r),f=clone(snap);f.tipo=romTipo(r);f.banhista=romBh(r).id;
   if(snap.conj){delete f.conj;delete f.comp;delete f.fConj}
   f.v={...snap.v,F:r.desc,I:r.cat||snap.v.I,N:r.peso,P:r.custo,M:!vazio(r.obs)?r.obs:(ROM.obs||snap.v.M)};
   if(r.sub)f.v.J=r.sub;else delete f.v.J;delete f.v.V;delete f.v.W;if(snap.conj)["R","S","T","U"].forEach(L=>delete f.v[L]);if(r.cod)f.v.G=r.cod;
@@ -2660,9 +2668,9 @@ function renderRom(){const el=document.getElementById("romWrap");if(!el)return;i
   const fq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
   const exCols=LET.filter(L=>!["E","F","G","H","I","J","L","M","N","O","P","R","S","T","U","V","W"].includes(L));
   let h=`<div class="rom"><div class="rom-h"><b>Colar romaneio</b><label class="mod">Modelo de leitura <select data-rp="tid">${opts(C.romaneios.map(t=>[t.id,t.nome]),ROM.tid)}</select></label><button type="button" class="btn ghost sm" data-act="ir" data-sec="rom">Ajustar modelos</button><button type="button" class="btn ghost sm" data-act="rom-descartar" title="Apaga este romaneio em andamento">Descartar</button><button type="button" class="btn ghost sm" data-act="rom-fechar" style="margin-left:auto" title="Fecha o painel; o romaneio fica guardado para retomar">Guardar e fechar ×</button></div>
-  <div class="rom-cfg">${fq("Fornecedor",`<select data-rp="forn">${opts(C.fornecedores.map(x=>x.nome),f.v.H||"","—")}</select>`,"w-m")}
+  <div class="rom-cfg">${fq("Fornecedor",`<select data-rp="forn">${opts(C.fornecedores.map(x=>x.nome),f.v.H||"","—")}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="forn" title="Cadastrar um fornecedor novo agora" aria-label="Novo fornecedor">＋</button>
     <div class="fq"><span>Tipo de peça</span><div class="seg" role="group" aria-label="Tipo"><button type="button" data-act="rom-tipo" data-v="bruta" aria-pressed="${bruta}" title="Peça ainda sem banho: vai para o banhista antes de ser vendida">Bruta (vai banhar)</button><button type="button" data-act="rom-tipo" data-v="pronta" aria-pressed="${!bruta}">Pronta</button></div></div>
-    ${bruta?`${fq("Banhista",`<select data-rp="bh">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select>`,"w-m")}<div class="fq"><span>Banhos (padrão de todas as peças)</span><div class="rom-bn">${bh.banhos.map(b=>`<label class="gi${f.on[b.id]?" on":""}" title="Custo ${esc(b.nome)} por grama: ${esc(b.mult||"—")}"><input type="checkbox" data-rp="bn" data-b="${b.id}" ${f.on[b.id]?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></label>`).join("")}</div></div><button type="button" class="btn ghost sm" data-act="ir" data-sec="banho" title="Valores por grama, cores e milésimos do banhista">Editar banhista</button>`:""}
+    ${bruta?`${fq("Banhista",`<select data-rp="bh">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="bh" title="Cadastrar um banhista novo agora" aria-label="Novo banhista">＋</button><div class="fq"><span>Banhos (padrão de todas as peças)</span><div class="rom-bn">${bh.banhos.map(b=>`<label class="gi${f.on[b.id]?" on":""}" title="Custo ${esc(b.nome)} por grama: ${esc(b.mult||"—")}"><input type="checkbox" data-rp="bn" data-b="${b.id}" ${f.on[b.id]?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></label>`).join("")}</div></div><button type="button" class="btn ghost sm" data-act="ir" data-sec="banho" title="Valores por grama, cores e milésimos do banhista">Editar banhista</button>`:""}
     ${(bruta?bh.banhos.filter(b=>f.on[b.id]).map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):[{id:"p",nome:"Multiplicador"}]).map(m=>fq(m.nome+" (varejo = custos × este valor)",`<input class="n" data-rp="mkg" data-b="${m.id}" value="${esc((f.mk||{})[m.id]??"")}" placeholder="×" inputmode="decimal">`,"w-c")).join("")}
     <span class="hint">Desconto do fornecedor <b>${esc(f.desconto||"0")}%</b></span></div>
   <div class="rom-t"><textarea data-rp="texto" rows="3" placeholder="Cole aqui o texto da lista do fornecedor, ou use Importar PDF…">${esc(ROM.texto)}</textarea><div class="rom-b"><button type="button" class="btn pri" data-act="rom-ler">Ler lista</button><label class="btn" title="Escolha ou arraste o PDF do romaneio: o sistema lê as peças e recorta as fotos">Importar PDF<input type="file" id="romPdf" accept="application/pdf,.pdf" hidden></label><label class="btn" title="Planilha do fornecedor (.xlsx, .xls ou .csv): você confirma qual coluna é código, descrição, quantidade e valor">Importar planilha<input type="file" id="romXls" accept=".xlsx,.xls,.csv" hidden></label><span class="hint">${esc(ROM.msg||"")}</span></div></div>`;
@@ -2918,7 +2926,7 @@ function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==
     <div class="rc-r">${fq("Peso (g)",`<input class="n" data-rp="rb" data-k="peso" value="${esc(b.peso??"")}" inputmode="decimal">`,"w-n")}
       ${mks.map(m=>fq(esc(m.nome),`<input class="n" data-rp="rb" data-k="mk" data-b="${m.id}" value="${esc((b.mk||{})[m.id]??"")}" inputmode="decimal">`,"w-c")).join("")}
       ${fq("Categoria",`<select data-rp="rb" data-k="cat">${opts(C.categorias.map(c=>c.nome),b.cat||"","(manter)")}</select>`)}
-      ${fq("Subcategoria",`<select data-rp="rb" data-k="sub">${opts(cc?cc.subs:[],b.sub||"","(manter)")}</select>`)}
+      ${fq("Subcategoria",`<select data-rp="rb" data-k="sub">${opts(cc?cc.subs:[],b.sub||"","(manter)")}</select>`)}${fq("Tipo",`<select data-rp="rb" data-k="tipo"><option value="">(manter)</option><option value="bruta" ${b.tipo==="bruta"?"selected":""}>Bruta (vai banhar)</option><option value="pronta" ${b.tipo==="pronta"?"selected":""}>Pronta (já banhada)</option></select>`)}${fq("Banhista",`<select data-rp="rb" data-k="bh">${opts(C.banhistas.map(x=>[x.id,x.nome]),b.bh||"","(manter)")}</select>`)}
       ${fq("Observação",`<input data-rp="rb" data-k="obs" value="${esc(b.obs??"")}" placeholder="(manter)">`,"w-l")}
       <button type="button" class="btn pri" data-act="rom-lote">Aplicar</button></div></div></details>`}
 function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhuma"?false:m==="sempeso"?!(num(r.peso)>0):m.startsWith("cat:")?r.cat===m.slice(4):r.sel});
@@ -2930,6 +2938,7 @@ function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r
     Object.keys(b.mk||{}).forEach(k=>{if(vazio(b.mk[k]))return;r.mk=r.mk||{};if(String(b.mk[k])===String((f.mk||{})[k]??""))delete r.mk[k];else r.mk[k]=b.mk[k];m=true});
     if(!vazio(b.obs)){r.obs=b.obs;m=true}
     if(b.cat){const g0=!!romTemVar(r.cat,r.sub);r.cat=b.cat;r.sub=b.sub||"";m=true;if(g0||romTemVar(r.cat,r.sub))romNovaCat(r)}
+    if(b.tipo||b.bh){if(b.tipo)r.tipo=b.tipo;if(b.bh)r.bh=b.bh;romReset(r);m=true}
     if(m)n++});
   ROM.bulk={...b,aberto:true};renderRom();toast(`Aplicado a ${n} peça(s).`)}
 /* ===== revisão final ===== */
@@ -2954,9 +2963,9 @@ function romRevisar(){const pv=romPreview(),it=[];
     <div class="rev-f"><button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length?"":"disabled"}>${nal?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
   document.body.appendChild(ov)}
 const romFq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
-function romCardHTML(r,i){const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
+function romCardHTML(r,i){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
   const lcor=coresDaCat(r.cat,r.sub),ids=romIds(r),usaVar=(!!g&&!r.semG)||ids.length>0,dupCod=r.cod&&S.lanc.some(l=>String(l.v.G||"")===String(r.cod));
-  const banhoCard=b=>{const on=r.on&&(b.id in r.on)?r.on[b.id]:f.on[b.id],vz=r.vz&&(b.id in r.vz)?r.vz[b.id]:vzOn(f,bh,b),dis=on?"":"disabled";
+  const banhoCard=b=>{const on=romOn(r,b),vz=r.vz&&(b.id in r.vz)?r.vz[b.id]:vzOn(f,bh,b),dis=on?"":"disabled";
     return `<div class="bcard sm${on?"":" off"}"><div class="bh2"><label class="ck"><input type="checkbox" data-rp="bon" data-b="${b.id}" ${on?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</label><label class="ck vz" title="Esta peça leva verniz"><input type="checkbox" data-rp="vz" data-b="${b.id}" ${vz?"checked":""} ${dis}>Verniz</label><small data-cb="${b.id}"></small></div>
       <div class="bf">${usaVar?"":fq("Quantidade",`<input class="n" data-rp="q" data-b="${b.id}" value="${esc(r.q[b.id]??"")}" inputmode="numeric" placeholder="0" ${dis}>`)}${fq("Fator ×",`<input class="n" title="Fator do preço: varejo = custos × este número" data-rp="mk" data-b="${b.id}" value="${esc((r.mk||{})[b.id]??(f.mk||{})[b.id]??"")}" placeholder="×" inputmode="decimal" ${dis}>`)}${fq("Preço de Varejo",`<input class="n calc" data-rp="bo" data-k="V" data-b="${b.id}" data-auto="V:${b.id}" value="${esc(((r.bo||{})[b.id]||{}).V??"")}" placeholder="—" inputmode="decimal" ${dis}>`)}</div></div>`};
   const prontaCard=`<div class="bcard sm"><div class="bh2"><b>Quantidade e preço</b></div><div class="bf">${usaVar?"":fq("Quantidade",`<input class="n" data-rp="q" data-b="p" value="${esc(r.q.p??"")}" inputmode="numeric" placeholder="0">`)}${fq("Fator ×",`<input class="n" title="Fator do preço: varejo = custos × este número" data-rp="mk" data-b="p" value="${esc((r.mk||{}).p??(f.mk||{}).p??"")}" placeholder="×" inputmode="decimal">`)}${fq("Preço de Varejo",`<input class="n calc" data-rp="vp" data-auto="V:p" value="${esc(r.vp??"")}" placeholder="—" inputmode="decimal">`)}</div></div>`;
@@ -2968,13 +2977,13 @@ function romCardHTML(r,i){const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhi
   const tabVar=matriz?tabMx:ids.length?`<table class="szt"><thead><tr><th>Quantidade por ${g&&lcor.length?"tamanho · cor":(lcor.length&&!g?"cor":"tamanho")}</th>${ids.map(id=>`<th>${esc(romNomeId(r.cat,r.sub,id))}</th>`).join("")}</tr></thead><tbody>${rc.map(c=>`<tr><th>${bruta?dotc(c)+esc(c.nome):"Qtd"}</th>${ids.map(id=>`<td><input class="n" data-rp="q" data-b="${c.id}~${id}" value="${esc(r.q[c.id+"~"+id]??"")}" inputmode="numeric" placeholder="0"></td>`).join("")}</tr>`).join("")}</tbody></table>`:(g&&!r.semG?`<span class="hint">Escolha os tamanhos (ou as cores) acima para dividir a quantidade.</span>`:"");
   const grade=(g||lcor.length)?`<div class="rc-gr">${chipsSz}${chipsCr}${tabVar}</div>`:"";
   return `<div class="rc${r.skip?" sk":""}${r.open?" op":""}" data-i="${i}">
-    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}<span class="rsum"><span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span><span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷</button></span></div>
+    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}${(r.bh||r.tipo)?`<span class="rch" title="Esta peça foge do lote (tipo e/ou banhista próprios)">${esc(romTipo(r)==="bruta"?"Bruta":"Pronta")} · ${esc(romBh(r).nome)}</span>`:""}<span class="rsum"><span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span><span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷</button></span></div>
     <div class="rc-top"><label class="rsel" title="Selecionar para edição em lote"><input type="checkbox" data-rp="sel" ${r.sel?"checked":""}><span>lote</span></label><input type="checkbox" data-rp="use" ${r.skip?"":"checked"} aria-label="Criar esta peça" title="Criar esta peça">${r.feito?romBadge(r):""}
       ${r.foto?`<button type="button" class="rc-fb" data-act="rom-foto" title="Ampliar a foto"><img class="rc-ft" src="${fs(r.foto)}" alt="Foto da peça"></button>`:""}
       ${fq("Código do fornecedor",`<input data-rp="cod" value="${esc(r.cod||"")}">`,"w-c")}
       ${fq("Descrição",`<input data-rp="desc" value="${esc(r.desc)}">`,"rc-desc")}
-      ${fq("Categoria",`<select data-rp="cat">${opts(C.categorias.map(c=>c.nome),r.cat)}</select>`,"w-m")}
-      ${fq("Subcategoria",`<select data-rp="sub">${opts(cc?cc.subs:[],r.sub,"—")}</select>`,"w-m")}
+      ${fq("Categoria",`<select data-rp="cat">${opts(C.categorias.map(c=>c.nome),r.cat)}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="cat" data-i="${i}" title="Criar uma categoria nova agora" aria-label="Nova categoria">＋</button>
+      ${fq("Subcategoria",`<select data-rp="sub">${opts(cc?cc.subs:[],r.sub,"—")}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="sub" data-i="${i}" title="Criar uma subcategoria nova agora" aria-label="Nova subcategoria">＋</button>
       ${!bruta?fq("Cor",`<select data-rp="cor">${opts(C.cores,r.cor||"","(padrão)")}</select>`,"w-s"):""}
       ${fq("Custo de Compra",`<input class="n" data-rp="custo" value="${esc(r.custo)}" inputmode="decimal">`,"w-c")}
       ${fq("Peso (g)",`<input class="n" data-rp="peso" value="${esc(r.peso)}" inputmode="decimal" placeholder="0,0">`,"w-n")}
@@ -2982,10 +2991,10 @@ function romCardHTML(r,i){const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhi
     ${r.aviso?`<div class="rc-av">${esc(r.aviso)}</div>`:""}
     <div class="rc-bn">${bruta?bh.banhos.map(banhoCard).join(""):prontaCard}</div>${grade}
     <div class="rc-b" data-body>${r.open?romBodyHTML(r):""}</div></div>`}
-function romBodyHTML(r){const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),fq=romFq;
+function romBodyHTML(r){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),fq=romFq;
   const exL=["E","A","B","C","D","K","Q","X","Y","Z","AA","AB","AC","AD","AE"],nEx=Object.keys(r.ex||{}).length;
-  let h=`<div class="rc-r">${fq("Observação só desta peça",`<input data-rp="obs1" value="${esc(r.obs||"")}" placeholder="(usa a observação de cima)">`,"w-l")}</div>`;
-  if(bruta)h+=bh.banhos.filter(b=>r.on&&(b.id in r.on)?r.on[b.id]:f.on[b.id]).map(b=>{const bo=(r.bo||{})[b.id]||{},ai=(k,v)=>`data-auto="${k}:${b.id}" value="${esc(v??"")}" placeholder="—"`;
+  let h=`<div class="rc-r">${fq("Tipo desta peça",`<select data-rp="tipoI"><option value="">igual ao lote (${f.tipo==="bruta"?"Bruta":"Pronta"})</option><option value="bruta" ${r.tipo==="bruta"?"selected":""}>Bruta (vai banhar)</option><option value="pronta" ${r.tipo==="pronta"?"selected":""}>Pronta (já banhada)</option></select>`,"w-m")}${bruta?fq("Banhista desta peça",`<select data-rp="bhI"><option value="">igual ao lote (${esc(banhistaBy(f.banhista).nome)})</option>${C.banhistas.map(b=>`<option value="${esc(b.id)}" ${r.bh===b.id?"selected":""}>${esc(b.nome)}</option>`).join("")}</select>`,"w-m"):""}</div><div class="rc-r">${fq("Observação só desta peça",`<input data-rp="obs1" value="${esc(r.obs||"")}" placeholder="(usa a observação de cima)">`,"w-l")}</div>`;
+  if(bruta)h+=bh.banhos.filter(b=>romOn(r,b)).map(b=>{const bo=(r.bo||{})[b.id]||{},ai=(k,v)=>`data-auto="${k}:${b.id}" value="${esc(v??"")}" placeholder="—"`;
     return `<div class="rc-r bd"><span class="bd-t"><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></span>
       ${fq("Cor",`<select data-rp="bo" data-k="L" data-b="${b.id}">${opts(C.cores,bo.L||b.cor)}</select>`,"w-s")}
       ${fq("Milésimos",`<input class="n" data-rp="bo" data-k="O" data-b="${b.id}" value="${esc(bo.O??milDe(b,r.cat||f.v.I)??"")}" inputmode="decimal">`,"w-n")}
@@ -3048,6 +3057,7 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
     ROM.bulk[kk]=t.value;if(kk==="cat"){ROM.bulk.sub="";const ss=document.querySelector("#romWrap [data-rp=rb][data-k=sub]"),cc=catBy(t.value);if(ss)ss.innerHTML=opts(cc?cc.subs:[],"","(manter)")}return}
   if(k==="mkg"){f.mk=f.mk||{};const bm=t.dataset.b;if(vazio(t.value))delete f.mk[bm];else f.mk[bm]=t.value;salvar(false);document.querySelectorAll(`#romWrap [data-rp=mk][data-b="${bm}"]`).forEach(e=>{const rr=ROM.rows[+e.closest(".rc").dataset.i];if(rr&&!(rr.mk&&rr.mk[bm]!==undefined))e.value=t.value});romAtualSoon();return}
   const rc=t.closest(".rc");if(!rc)return;const i=+rc.dataset.i,r=ROM.rows[i];if(!r)return;
+  if(k==="tipoI"||k==="bhI"){if(k==="tipoI")r.tipo=t.value||undefined;else r.bh=t.value||undefined;romReset(r);renderRom();return}
   if(k==="sel"){r.sel=t.checked;romSelN();return}
   if(k==="use"){if(r.feito&&r.arq){t.checked=false;toast("Esta peça está na tabela salva “"+r.arq+"”. Restaure a tabela para corrigir.");return}r.skip=!t.checked;if(r.feito){r.refaz=!r.skip;r.aviso=r.skip?"· já lançada":"";renderRom();return}rc.classList.toggle("sk",r.skip);romAtualSoon();return}
   if(k==="desc"){r.desc=t.value;return}
@@ -4023,9 +4033,10 @@ document.addEventListener("click",e=>{
     case "add-limpar":adicionar(true);break;
     case "tg-min":abertos.min=!abertos.min;guardarAbertos();renderForm();break;
     case "tg-det":abertos.det=!abertos.det;guardarAbertos();renderForm();break;
+    case "rom-q":{const f=S.form,i=t.dataset.i!=null?+t.dataset.i:null,r=i!=null&&ROM?ROM.rows[i]:null;romQ0={I:f.v.I,J:f.v.J};romQRow=i;if(t.dataset.q==="sub"&&r&&r.cat)f.v.I=r.cat;quick=t.dataset.q;quickB=null;renderForm();const el=document.querySelector("#formWrap .nf");if(el)el.scrollIntoView({block:"center"});refocar("#q1");break}
     case "q":quick=quick===t.dataset.q&&(t.dataset.qb||null)===quickB?null:t.dataset.q;quickB=quick?(t.dataset.qb||null):null;renderForm();break;
     case "q-salvar":salvarRapido();break;
-    case "q-fechar":quick=null;renderForm();break;
+    case "q-fechar":romQFim();quick=null;renderForm();break;
     case "bk-escolher":{if(typeof showDirectoryPicker!=="function"){toast("Este navegador não deixa escolher pasta. Use o Chrome ou o Edge.");break}
       showDirectoryPicker({mode:"readwrite",id:"cadpecas-bk"}).then(async h=>{await idbPut("pontos","pasta",h);const r=await bkAuto(true,true);toast(typeof r==="string"&&r.startsWith("cadastro")?"Backup automático ligado: "+r:"Pasta escolhida, mas não consegui gravar agora ("+r+").");bkStatus()}).catch(e=>{if(e&&e.name!=="AbortError")toast("Não consegui usar essa pasta.")});break}
     case "bk-agora":{bkAuto(true,true).then(r=>{toast(typeof r==="string"&&r.startsWith("cadastro")?"Backup salvo na pasta: "+r:r===null?"Escolha uma pasta primeiro.":"Não consegui gravar ("+r+").");bkStatus()});break}
