@@ -1523,9 +1523,11 @@ window.addEventListener("beforeunload",flushJa);
 window.addEventListener("beforeunload",e=>{try{const i=document.getElementById("celIn");if(celEd&&i&&i.value!==celEd.orig){e.preventDefault();e.returnValue="";return ""}}catch(x){}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushJa()});
 /* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do localStorage vão sem elas, para não estourar a memória do navegador */
-function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>l.ft&&ftSalvas.has(l.id)?{...l,ft:undefined,ftIdb:1}:l);const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
+const ftRSalvas=new Set();
+function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
   return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
-async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const r=await idbPut("fotos","m:"+l.id,l.ft);if(r!==null)ftSalvas.add(l.id);else ok=false}}return ok}
+async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const r=await idbPut("fotos","m:"+l.id,l.ft);if(r!==null)ftSalvas.add(l.id);else ok=false}
+    if(l.ftR&&!ftRSalvas.has(l.id)){const r=await idbPut("fotos","r:"+l.id,l.ftR);if(r!==null)ftRSalvas.add(l.id);else ok=false}}return ok}
 async function flush(){
   const d={...dirty};dirty={c:false,l:false};
   if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",true);return}
@@ -1546,9 +1548,22 @@ async function flush(){
     return}
   setStatus(db?"Salvo na sua conta":"Salvo neste navegador");
   if(candFoto.size)varrerFotos();
-  if(S.lanc.some(l=>l.ft&&!ftSalvas.has(l.id))){guardarMinis().then(ok=>{if(S.lanc.some(l=>ftSalvas.has(l.id)&&l.ft)){try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){}}})}
+  if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){}}})}
 }
-async function carregarMinis(){const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}if(n){try{renderTopo()}catch(e){}}}
+async function carregarMinis(){const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
+  for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await idbGet("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
+  if(await migrarFotos())n++;
+  if(n){try{renderTopo()}catch(e){}}}
+/* peças lançadas antes da coluna "Foto do romaneio": a foto guardada era a do romaneio (sem original anexado) e passa para a coluna certa; uma vez só */
+async function migrarFotos(){let mexeu=0;
+  for(const l of S.lanc){if(l.ftMig||!l.ft||l.ftR)continue;
+    const big=await idbGet("fotos",l.id);l.ftMig=1;
+    if(typeof big==="string"&&/^data:image\//.test(big))continue;
+    l.ftR=l.ft;ftRSalvas.delete(l.id);
+    if(vazio(l.v&&l.v.B)){delete l.ft;delete l.ftIdb;ftSalvas.delete(l.id);idbDel("fotos","m:"+l.id)}
+    mexeu++}
+  if(mexeu){salvar(true);toast(`${mexeu} foto(s) de peças antigas foram para a coluna “Foto do romaneio”.`,{t:"Desfazer",fn:desfazer})}
+  return mexeu}
 function lerConfig(c){
   const o=clone(DEFAULT_CONFIG);if(!c)return o;
   ["seqs","categorias","cores","observacoes","ordem","grades","modelos","modelo","romaneios"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
@@ -2560,9 +2575,9 @@ function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.
 const candFoto=new Set();
 function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
   if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
-function varrerFotos(){[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);ftSalvas.delete(id)})}
+function varrerFotos(){[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
 async function varrerTudo(){if(!S.lanc.length&&!TABS.length)return;const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
-  for(const k of ks){const id=String(k).replace(/^m:/,"");if(!fotoViva(id,false))await idbDel("fotos",k)}}
+  for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await idbDel("fotos",k)}}
 /* tabelas salvas antes desta versão não guardavam cód.+fornecedor no índice: lê do IndexedDB uma vez */
 async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await idbGet("tabs",t.id);if(rec===null)continue;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou)gravarIdx("cadpecas-tabs",TABS,TABDEL);
   /* se a lista (índice) de tabelas falhou ao ser gravada, as tabelas continuam no IndexedDB: refaz a lista a partir de lá */
