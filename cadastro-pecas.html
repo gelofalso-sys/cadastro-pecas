@@ -592,7 +592,7 @@ input.isauto{color:var(--accent);font-style:italic}
 
 /* ===== v37: coluna Foto e barra de numeração ===== */
 #seqs{display:none}
-table.t th.tfh{text-align:center;min-width:0;padding:4px 2px}
+table.t th.tfh{text-align:center;min-width:0;padding:4px 2px;font-size:10px;line-height:1.15;white-space:normal}
 table.t td.tf{padding:1px 3px;text-align:center;cursor:default;min-width:0}
 table.t td.tf img{width:34px;height:34px;object-fit:cover;border-radius:5px;display:block;margin:auto;cursor:zoom-in;border:1px solid var(--line)}
 table.t tbody tr:has(td.tf img) td{height:38px}
@@ -1673,7 +1673,7 @@ async function carregar(){
 const CW0={A:60,B:70,C:120,D:100,E:118,F:260,G:120,H:110,I:100,J:110,K:80,L:80,M:220,N:66,O:84,P:104,Q:92,R:110,S:110,T:110,U:110,V:96,W:84,X:100,Y:104,Z:110,AA:66,AB:56,AC:70,AD:96,AE:78};
 let colW={};try{colW=JSON.parse(localStorage.getItem("cadpecas-colw")||"{}")}catch(e){}
 const cw=L=>colW[L]||CW0[L]||90;
-const larguraTabela=()=>196+LET.reduce((s,L)=>s+cw(L),0);
+const larguraTabela=()=>252+LET.reduce((s,L)=>s+cw(L),0);
 let FIL={q:"",cat:"",forn:"",ban:"",sit:""},FV=null;
 try{FIL={...FIL,...JSON.parse(localStorage.getItem("cadpecas-filtro")||"{}")}}catch(e){}
 const guardarFil=()=>{try{localStorage.setItem("cadpecas-filtro",JSON.stringify(FIL))}catch(e){}};
@@ -1745,7 +1745,7 @@ function janPos(y){const c=JAN.cum;let lo=0,hi=JAN.lista.length-1;while(lo<hi){c
 function janelaHtml(){
   const J=JAN,sh=document.getElementById("sheet"),n=J.lista.length,vh=sh.clientHeight||800,y=Math.max(0,(sh.scrollTop||0)-J.head);
   let a=Math.max(0,janPos(y)-45),b=Math.min(n,janPos(y+vh)+60);if(a>0&&a%2===0)a--;   /* a ímpar mantém a listra zebrada igual à do desenho completo */
-  J.a=a;J.b=b;const sp=h=>h>0?`<tr class="sp" aria-hidden="true" style="height:${h}px"><td colspan="${LET.length+3}" style="padding:0;border:0"></td></tr>`:"";
+  J.a=a;J.b=b;const sp=h=>h>0?`<tr class="sp" aria-hidden="true" style="height:${h}px"><td colspan="${LET.length+4}" style="padding:0;border:0"></td></tr>`:"";
   return sp(J.cum[a])+J.lista.slice(a,b).map(J.row).join("")+sp(J.total-J.cum[b])}
 function janRepintar(forca){
   const J=JAN;if(!J||celEd)return;const sh=document.getElementById("sheet"),tb=sh&&sh.querySelector("tbody");if(!tb)return;
@@ -1777,14 +1777,14 @@ function renderTopo(){
       <button class="btn ghost sm" type="button" data-act="b-none" title="Limpar seleção">×</button></div>`:"")
     +(()=>{const nf=S.lanc.filter(l=>l.ft&&vazio(l.v.B)).length;return nf?`<button class="btn sm" type="button" data-act="fotos-enviar" title="Envia as fotos para o imgbb e põe o link na coluna Foto (os sistemas pedem o link da foto)">↑ Gerar link de ${nf} foto${nf>1?"s":""}</button>`:""})()
     +`<div class="issues">${av.length?av.map(a=>`<span class="${a.bad?"bad":""}">• ${esc(a.t)}</span>`).join(""):!g.linhas.length?`<span class="ok vaz"><b>Comece lançando uma peça abaixo</b> ou importe um romaneio ou nota fiscal. Também dá para colar linhas de outra planilha (clique numa célula e use <kbd>Ctrl</kbd>+<kbd>V</kbd>).</span> <button class="btn sm" type="button" data-act="exemplo">Ver um exemplo</button>`:`<span class="ok">Clique numa célula para editar · <kbd>Enter</kbd> desce · <kbd>Tab</kbd> vai para a direita · pode colar blocos do Excel</span>`}</div>`;
-  const cab=`<thead><tr><th class="k"><div class="in"><input type="checkbox" id="selAll" ${S.lanc.length&&S.lanc.every(l=>sel.has(l.id))?"checked":""} aria-label="Selecionar todos"></div></th><th class="k nm" title="Número da linha: ajuda a achar qual peça você está alterando">Nº</th><th class="tfh" title="Foto do romaneio — só referência visual, não vai para a planilha">Imagem</th>${LET.map(L=>`<th data-hc="${L}" title="${esc(NOME[L])} — clique para selecionar a coluna"><small>${L}</small>${esc(nomeTela(L))}<span class="rz" data-rz="${L}" title="Arraste para ajustar a largura · duplo clique volta ao padrão"></span></th>`).join("")}</tr></thead>`;
-  const ftMap={},ftRMap={};S.lanc.forEach(l=>{const a=l.ft&&ftOk(l.ft)?l.ft:"",b=l.ftR&&ftOk(l.ftR)?l.ftR:"";if(a||b)ftMap[l.id]=a||b;if(a&&b&&a!==b)ftRMap[l.id]=b});
-  let h=`<table class="t" style="width:${larguraTabela()}px"><colgroup><col style="width:96px"><col style="width:44px"><col style="width:56px">${LET.map(L=>`<col data-cw="${L}" style="width:${cw(L)}px">`).join("")}</colgroup>${cab}<tbody>`;
+  const cab=`<thead><tr><th class="k"><div class="in"><input type="checkbox" id="selAll" ${S.lanc.length&&S.lanc.every(l=>sel.has(l.id))?"checked":""} aria-label="Selecionar todos"></div></th><th class="k nm" title="Número da linha: ajuda a achar qual peça você está alterando">Nº</th><th class="tfh" title="Foto que veio do romaneio — só referência visual, não vai para a planilha">Foto do romaneio</th><th class="tfh" title="Imagem que você anexou: é ela que gera o link da coluna Foto">Imagem (upload)</th>${LET.map(L=>`<th data-hc="${L}" title="${esc(NOME[L])} — clique para selecionar a coluna"><small>${L}</small>${esc(nomeTela(L))}<span class="rz" data-rz="${L}" title="Arraste para ajustar a largura · duplo clique volta ao padrão"></span></th>`).join("")}</tr></thead>`;
+  const ftMap={},ftRMap={},ftUMap={};S.lanc.forEach(l=>{const a=l.ft&&ftOk(l.ft)?l.ft:"",b=l.ftR&&ftOk(l.ftR)?l.ftR:"";if(a||b)ftMap[l.id]=a||b;if(b)ftRMap[l.id]=b;if(a)ftUMap[l.id]=a});
+  let h=`<table class="t" style="width:${larguraTabela()}px"><colgroup><col style="width:96px"><col style="width:44px"><col style="width:56px"><col style="width:56px">${LET.map(L=>`<col data-cw="${L}" style="width:${cw(L)}px">`).join("")}</colgroup>${cab}<tbody>`;
   const cel=g.linhas.map((row,ri)=>celulas(row,ri+2));   /* uma vez só por desenho (antes eram duas) */
   const trReal=ri=>{const row=g.linhas[ri];let h="";
     const c=cel[ri],id=row.lancId;
     h+=`<tr data-l="${id}" data-ri="${ri}" class="${editId===id?"edl":sel.has(id)?"on":""}"><td class="k"><div class="in"><input type="checkbox" data-sel ${sel.has(id)?"checked":""} aria-label="Selecionar">
-      <button type="button" data-act="editar" title="Abrir a peça no lançamento (todas as linhas dela)">✎</button><button type="button" data-act="dup" title="Duplicar esta linha (mesmo tipo, nova referência)">⧉</button><button type="button" class="del" data-act="del" title="Excluir só esta linha (as outras linhas da mesma peça ficam)">×</button></div></td><td class="k nm" title="Linha ${ri+1}">${ri+1}</td>`+(ftMap[id]?`<td class="tf"><img src="${fs(ftMap[id])}" alt="Foto" data-act="tab-foto" data-lid="${id}" title="Ampliar">${ftRMap[id]?`<img class="ftr" src="${fs(ftRMap[id])}" alt="Foto do romaneio" data-act="tab-foto" title="Foto do romaneio (ampliar)">`:""}</td>`:`<td class="tf"><button type="button" class="ftadd" data-act="foto-add" data-lid="${id}" title="Adicionar foto a esta peça: clique, arraste uma ou várias fotos para a linha (nome do arquivo = referência liga sozinho) ou cole com Ctrl+V">📷 ＋</button></td>`);
+      <button type="button" data-act="editar" title="Abrir a peça no lançamento (todas as linhas dela)">✎</button><button type="button" data-act="dup" title="Duplicar esta linha (mesmo tipo, nova referência)">⧉</button><button type="button" class="del" data-act="del" title="Excluir só esta linha (as outras linhas da mesma peça ficam)">×</button></div></td><td class="k nm" title="Linha ${ri+1}">${ri+1}</td>`+`<td class="tf">${ftRMap[id]?`<img src="${fs(ftRMap[id])}" alt="Foto do romaneio" data-act="tab-foto" title="Foto do romaneio (ampliar)">`:""}</td>`+(ftUMap[id]?`<td class="tf"><img src="${fs(ftUMap[id])}" alt="Imagem enviada" data-act="tab-foto" data-lid="${id}" title="Imagem enviada (é ela que gera o link). Ampliar"></td>`:`<td class="tf"><button type="button" class="ftadd" data-act="foto-add" data-lid="${id}" title="Adicionar foto a esta peça: clique, arraste uma ou várias fotos para a linha (nome do arquivo = referência liga sozinho) ou cole com Ctrl+V">📷 ＋</button></td>`);
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
@@ -1792,7 +1792,7 @@ function renderTopo(){
       h+=`<td class="${isN?"n":""}${x.f?" fx":""}${ov}" data-c="${L}" title="${x.f?"="+esc(x.f):esc(x.v)}">${esc(txt)}</td>`});
     h+=`</tr>`;return h};
   const nb=Math.max(6,30-g.linhas.length);
-  const trBlank=ri=>{const k=ri-g.linhas.length;return `<tr class="blank" data-ri="${ri}"><td class="k"><span class="nb">${k===0?"nova":""}</span></td><td class="k nm"></td><td class="tf"></td>${LET.map((L,x)=>`<td data-c="${L}"${k===0&&x===0?' class="ph"':""}></td>`).join("")}</tr>`};
+  const trBlank=ri=>{const k=ri-g.linhas.length;return `<tr class="blank" data-ri="${ri}"><td class="k"><span class="nb">${k===0?"nova":""}</span></td><td class="k nm"></td><td class="tf"></td><td class="tf"></td>${LET.map((L,x)=>`<td data-c="${L}"${k===0&&x===0?' class="ph"':""}></td>`).join("")}</tr>`};
   {const lista=[];g.linhas.forEach((row,ri)=>{if(!FV||FV.has(ri))lista.push(ri)});for(let k=0;k<nb;k++)lista.push(g.linhas.length+k);
    const rowHtml=ri=>ri<g.linhas.length?trReal(ri):trBlank(ri);
    if(vista()!=="lista"&&lista.length>JAN_MIN){JAN={lista,nReais:g.linhas.length,ids:g.linhas.map(r=>r.lancId),ft:ftMap,row:rowHtml,rh:JANM.rh,hFt:JANM.hFt,head:JANM.head,medido:false,a:0,b:0};janAlturas();h+=janelaHtml()}
@@ -1800,7 +1800,7 @@ function renderTopo(){
   const soma=new Array(LET.length).fill(0),ext={},nm=x=>x&&typeof x.v==="number"?x.v:0;
   cel.forEach((cs,ri)=>{if(FV&&!FV.has(ri))return;cs.forEach((x,j)=>{if(x&&typeof x.v==="number")soma[j]+=x.v});const q=nm(cs[LET.indexOf("W")]);ext.W=(ext.W||0)+q;["P","Q","R","S","T","U","V"].forEach(L=>{ext[L]=(ext[L]||0)+nm(cs[LET.indexOf(L)])*q})});
   const somaCols=new Set(["N","P","Q","R","S","T","U","V","W"]);
-  h+=`</tbody><tfoot><tr><td class="k"><span class="nb" title="Soma de cada coluna, como na planilha">Σ colunas</span></td><td class="k nm"></td><td></td>${LET.map((L,j)=>somaCols.has(L)?`<td class="n tot" title="Soma da coluna ${esc(NOME[L])}">${L==="W"?fmt(soma[j]):L==="N"?fmt(soma[j]):brl(soma[j])}</td>`:`<td></td>`).join("")}</tr></tfoot></table>`;
+  h+=`</tbody><tfoot><tr><td class="k"><span class="nb" title="Soma de cada coluna, como na planilha">Σ colunas</span></td><td class="k nm"></td><td></td><td></td>${LET.map((L,j)=>somaCols.has(L)?`<td class="n tot" title="Soma da coluna ${esc(NOME[L])}">${L==="W"?fmt(soma[j]):L==="N"?fmt(soma[j]):brl(soma[j])}</td>`:`<td></td>`).join("")}</tr></tfoot></table>`;
   {const iW2=LET.indexOf("W"),iV=LET.indexOf("V"),D={custo:[["Compra",ext.P||0],["Insumos",ext.Q||0],["Banhos",(ext.R||0)+(ext.S||0)+(ext.T||0)],["Verniz",ext.U||0]],pecas:{},varejo:{},cor:{},forn:{},banho:{},lucro:{}};
     g.linhas.forEach((row,ri)=>{if(FV&&!FV.has(ri))return;const cs=cel[ri],q=nm(cs[iW2]),c=row.v.I||"Sem categoria",cor=row.v.L||"Sem cor";D.pecas[c]=(D.pecas[c]||0)+q;D.varejo[c]=(D.varejo[c]||0)+nm(cs[iV])*q;D.cor[cor]=(D.cor[cor]||0)+q;
       {const fo=row.v.H||"Sem fornecedor",bn=row.banho?(BANHO_COLS[row.col]||"Banho"):"Pronta",cus=["P","Q","R","S","T","U"].reduce((t,L)=>t+nm(cs[LET.indexOf(L)]),0);
