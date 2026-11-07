@@ -1165,8 +1165,42 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
 .pal-l li[aria-selected=true]{background:var(--accent);color:var(--accent-ink)}.pal-l li[aria-selected=true] small{color:inherit}
 .pal-v{padding:14px;color:var(--muted);font-size:13px}
 .rep-busca{margin:6px 0;width:100%;max-width:360px;height:34px}
+/* ===== v19: menu lateral recolhível (só no desktop, desligado por padrão) ===== */
+.side{display:none}
+.vside{margin-left:8px}
+@media (min-width:901px){
+  .side:not([hidden]){display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:var(--sw,224px);z-index:6;background:var(--surface);border-right:1px solid var(--line);overflow:hidden;transition:width .15s}
+  body.side-on{padding-left:var(--sw,224px)}
+  body.side-on .vis [data-vis]{display:none}
+  body.side-on .vis .vside{margin-left:0}
+  .side-t{flex:none;height:36px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font:600 15px var(--body);text-align:right;padding:0 14px}
+  .side-t:hover{background:var(--surface-2);color:var(--ink)}
+  .sn{flex:1 1 auto;overflow:auto;padding:4px 6px 12px;display:flex;flex-direction:column;gap:1px;scrollbar-width:thin}
+  .sn .sg{font:700 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:12px 8px 3px}
+  .sn button{display:flex;align-items:center;gap:10px;width:100%;min-height:34px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:500 13px var(--body);text-align:left;cursor:pointer;white-space:nowrap}
+  .sn button i{flex:none;width:20px;text-align:center;font-style:normal}
+  .sn button:hover{background:var(--surface-2)}
+  .sn button[aria-current=true]{background:var(--accent);color:var(--accent-ink)}
+  .sn small{margin-left:8px;color:inherit;opacity:.7;font:500 11px var(--mono)}
+  body.side-mini{--sw:56px}
+  body.side-mini .sl,body.side-mini .sn .sg{display:none}
+  body.side-mini .sn .sg{display:block;height:1px;padding:0;margin:6px 8px;background:var(--line);font-size:0}
+  body.side-mini .side-t{text-align:center;padding:0}
+  body.side-mini .sn button{justify-content:center;padding:0}
+}
+@media (max-width:900px){.vside{display:none}}
 </style>
 
+<aside class="side" id="side" aria-label="Menu lateral" hidden><button type="button" class="side-t" id="sideT" aria-label="Recolher ou expandir o menu" title="Recolher / expandir (Alt+B)">«</button><nav class="sn">
+<div class="sg">Visões</div>
+<button type="button" data-vis="tudo"><i>▤</i><span class="sl">Dividida</span></button><button type="button" data-vis="planilha"><i>▦</i><span class="sl">Planilha</span></button><button type="button" data-vis="lancar"><i>＋</i><span class="sl">Lançar</span></button><button type="button" data-vis="cad"><i>⚙</i><span class="sl">Cadastros</span></button>
+<div class="sg">Romaneios</div>
+<button type="button" data-go="act:rom-abrir"><i>📝</i><span class="sl">Novo / continuar</span></button><button type="button" data-go="act:rom-lista"><i>📋</i><span class="sl">Lançados</span></button><button type="button" data-go="act:tab-lista"><i>🗂</i><span class="sl">Tabelas salvas</span></button>
+<div class="sg">Cadastros</div>
+<button type="button" data-go="sec:cat"><i>🏷</i><span class="sl">Categorias e variações</span></button><button type="button" data-go="sec:banho"><i>✨</i><span class="sl">Banhos e custos</span></button><button type="button" data-go="sec:forn"><i>🚚</i><span class="sl">Fornecedores</span></button><button type="button" data-go="sec:col"><i>▥</i><span class="sl">Colunas</span></button><button type="button" data-go="sec:cor"><i>🎨</i><span class="sl">Cores e observações</span></button><button type="button" data-go="sec:rom"><i>📄</i><span class="sl">Modelos de romaneio</span></button><button type="button" data-go="sec:mod"><i>⇪</i><span class="sl">Exportar para</span></button><button type="button" data-go="sec:foto"><i>🖼</i><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc"><i>💾</i><span class="sl">Importar e backup</span></button>
+<div class="sg">Ações</div>
+<button type="button" data-go="act:xlsx"><i>⬇</i><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar"><i>⧉</i><span class="sl">Copiar para o Excel</span></button><button type="button" id="sideK"><i>⌘</i><span class="sl">Comandos <small>Ctrl+K</small></span></button>
+</nav></aside>
 <header><div class="gut hin">
   <h1>Cadastro de Peças</h1><span id="saveStatus" class="status">Carregando…</span><span class="udo"><button type="button" class="btn sm" id="btnUndo" data-act="undo-b" title="Desfazer a última alteração (Ctrl+Z)" aria-label="Desfazer" disabled>↶ Desfazer</button><button type="button" class="btn sm" id="btnRedo" data-act="redo-b" title="Refazer (Ctrl+Y)" aria-label="Refazer" disabled>↷ Refazer</button></span>
   <nav class="ir" aria-label="Ir para"><button type="button" data-act="ir" data-sec="lancar">Lançar</button><button type="button" data-act="ir" data-sec="cat">Categorias e variações</button><button type="button" data-act="ir" data-sec="banho">Banhos e custos</button><button type="button" data-act="ir" data-sec="forn">Fornecedores</button><button type="button" data-act="ir" data-sec="col">Colunas</button><button type="button" data-act="ir" data-sec="cor">Cores e observações</button><button type="button" data-act="ir" data-sec="mod">Modelo da planilha</button><button type="button" data-act="ir" data-sec="opc">Importar</button></nav>
@@ -1179,7 +1213,7 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
     <button class="btn pri" type="button" data-act="xlsx">Baixar .xlsx</button>
   </div>
 </div></header>
-<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">📋 Romaneios</button><button type="button" class="vpal" id="vpal" title="Paleta de comandos (Ctrl+K)">⌘ Comandos</button><span class="vhint">Alt+1…4 visões · <kbd>/</kbd> busca · <kbd>Ctrl+K</kbd> comandos</span></nav>
+<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">📋 Romaneios</button><button type="button" class="vside" id="vside" title="Menu lateral (Alt+B)" aria-pressed="false">☰ Menu</button><button type="button" class="vpal" id="vpal" title="Paleta de comandos (Ctrl+K)">⌘ Comandos</button><span class="vhint">Alt+1…4 visões · <kbd>/</kbd> busca · <kbd>Ctrl+K</kbd> comandos</span></nav>
 <div class="app" id="app" role="main">
   <section class="gut pane-top" id="paneTop" aria-label="Planilha">
     <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
@@ -4703,14 +4737,39 @@ function visPara(v,soSeEscondido){
   document.querySelectorAll("#vis [data-vis]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vis===v)));
   if(celular())formAbrir(v==="lancar");
   const pb=document.getElementById("paneBot");if(pb&&v!=="planilha")pb.scrollTo({top:0});
+  if(typeof sideMarcar==="function")sideMarcar();
 }
-document.getElementById("vis").addEventListener("click",e=>{if(e.target.closest("#vpal")){palAbrir();return}const b=e.target.closest("[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
+document.getElementById("vis").addEventListener("click",e=>{if(e.target.closest("#vpal")){palAbrir();return}const b=e.target.closest("button[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
 document.addEventListener("keydown",e=>{
   const t=e.target,campo=/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable;
   if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-4]$/.test(e.key)){e.preventDefault();visPara(["tudo","planilha","lancar","cad"][+e.key-1]);return}
   if(e.key==="/"&&!campo&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const fb=document.getElementById("fBusca");if(fb&&!fb.closest("[hidden]")){e.preventDefault();if(visAtual()==="lancar"||visAtual()==="cad")visPara(celular()?"planilha":"tudo");fb.focus();fb.select()}}
 });
 visPara(abertos.vis&&["tudo","planilha","lancar","cad"].includes(abertos.vis)?(abertos.vis==="lancar"&&celular()?"planilha":abertos.vis):(celular()?"planilha":"tudo"));
+/* ===== v19: menu lateral ===== */
+function sideMarcar(){const sd=document.getElementById("side");if(!sd||sd.hidden)return;const v=document.body.dataset.vis||"tudo";
+  const marca=(b,on)=>{if(on)b.setAttribute("aria-current","true");else b.removeAttribute("aria-current")};
+  sd.querySelectorAll("[data-vis]").forEach(b=>marca(b,b.dataset.vis===v));
+  sd.querySelectorAll("[data-go^=\"sec:\"]").forEach(b=>marca(b,(v==="cad"||v==="tudo")&&b.dataset.go==="sec:"+abertos.tab))}
+function sideAplicar(modo){/* modo: "off" | "open" | "mini" */
+  const sd=document.getElementById("side"),ligado=modo==="open"||modo==="mini";
+  if(celular())return;
+  sd.hidden=!ligado;document.body.classList.toggle("side-on",ligado);document.body.classList.toggle("side-mini",modo==="mini");
+  const vb=document.getElementById("vside");if(vb)vb.setAttribute("aria-pressed",String(ligado));
+  const t=document.getElementById("sideT");if(t)t.textContent=modo==="mini"?"»":"«";
+  abertos.side=modo;guardarAbertos();sideMarcar()}
+document.getElementById("vside").addEventListener("click",()=>sideAplicar(abertos.side==="open"||abertos.side==="mini"?"off":"open"));
+document.getElementById("sideT").addEventListener("click",()=>sideAplicar(abertos.side==="mini"?"open":"mini"));
+document.getElementById("sideK").addEventListener("click",()=>palAbrir());
+document.getElementById("side").addEventListener("click",e=>{
+  const v=e.target.closest("button[data-vis]");if(v){visPara(v.dataset.vis);if(v.dataset.vis==="lancar")refocar("#f-F");return}
+  const g=e.target.closest("[data-go]");if(!g)return;const [k,id]=g.dataset.go.split(":");
+  if(k==="sec"){if(celular())formAbrir(false);irPara(id);return}
+  /* ações: aciona o botão que já existe no app (o menu não tem cópia deles) */
+  const alvo=document.querySelector('header [data-act="'+id+'"],#vis [data-act="'+id+'"],#paneBot [data-act="'+id+'"]');if(alvo)alvo.click()});
+document.addEventListener("click",()=>setTimeout(sideMarcar,0));
+document.addEventListener("keydown",e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&e.key.toLowerCase()==="b"){e.preventDefault();document.getElementById("vside").click()}});
+if(!celular()&&(abertos.side==="open"||abertos.side==="mini"))sideAplicar(abertos.side);
 /* celular: a barra de baixo some o "Lançar peça" quando o formulário já está na tela */
 try{const io=new IntersectionObserver(es=>{document.body.classList.toggle("formvis",!celular()&&es.some(x=>x.isIntersecting))},{threshold:0.1});io.observe(document.getElementById("formWrap"))}catch(e){}
 })();
