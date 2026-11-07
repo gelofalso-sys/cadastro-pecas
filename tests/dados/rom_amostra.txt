@@ -1,0 +1,19 @@
+Fornecedor Exemplo Ltda
+Romaneio do Link 100 - Brutos de exemplo
+Categoria   Descrição   Valor Unitário   Quantidade   Valor Total
+Colar   45+5, [#900001]   R$ 10,90   R$
+9,27   2   R$ 18,54
+Colar   45+5, [#900002]   R$ 5,60   R$
+4,76   1   R$ 4,76
+Brinco   argola lisa, [#900003]   R$ 6,40   R$
+5,44   4   R$ 21,76
+Pulseira   elos, [#900004]   R$ 12,00   R$
+10,20   2   R$ 20,40
+Anel   solitario, [#900005]   R$ 7,00   R$
+5,95   3   R$ 17,85
+Pingente   coracao, [#900006]   R$ 3,50   R$
+2,98   5   R$ 14,90
+Tornozeleira   fina, [#900007]   R$ 8,00   R$
+6,80   1   R$ 6,80
+Choker   perolas, [#900008]   R$ 9,90   R$
+8,42   2   R$ 16,84
