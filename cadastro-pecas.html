@@ -1213,6 +1213,8 @@ function zoomAplicar(grava){
 zoomAplicar(false);
 
 /* ===== utilidades ===== */
+const DENY_ID=/["'<>`=\s&\\]/g;
+const idLimpo=x=>String(x==null?"":x).replace(DENY_ID,"");
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function num(s){if(s==null)return null;if(typeof s==="number")return isFinite(s)?s:null;let t=String(s).replace(/R\$|\s|%/g,"");if(!t)return null;
   /* aceita 1.234,56 (pt-BR) e 1,234.56 (en): o último separador é o decimal; os outros são milhar (grupos de 3). Só "," ou só 1 "." = decimal */
@@ -1535,12 +1537,12 @@ async function flush(){
   let remoto=true;
   try{
     if(db){if(d.c)await db.doc("dados/config").set({v:4,config:S.config});if(d.l)await db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
-  }catch(e){remoto=false;dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Não consegui salvar agora — tento de novo na próxima alteração",true)}
+  }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Não consegui salvar agora — tento de novo na próxima alteração",true)}
   if(!remoto)return;
   let local=true;
   try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){
     local=false;
-    try{if(await guardarMinis()){localStorage.setItem("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false}}
+    try{if(await guardarMinis()){localStorage.setItem("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
   if(!local){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
     setStatus(db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,true);
@@ -1579,6 +1581,10 @@ function lerConfig(c){
   if(!c.v14){const an=o.categorias.find(x=>x.grade&&!x.grade.usa&&/an[eé]l|anéis|aneis/i.test(x.nome||""));
     if(an){const nm=g=>g.itens.map(i=>String(i.nome)).join("|");o.categorias.forEach(x=>{if(x!==an&&x.grade&&!x.grade.usa&&nm(x.grade)===nm(an.grade))x.grade.usa=an.nome})}}o.v14=true;
   if(!c.v13){DEFAULT_CONFIG.cores.forEach(x=>{if(!o.cores.some(y=>semAc(y)===semAc(x)))o.cores.push(x)})}o.v13=true;
+  {const ids=x=>{if(x&&typeof x==="object"&&x.id!=null)x.id=idLimpo(x.id)||uid()};
+    (o.banhistas||[]).forEach(b=>{ids(b);(b.banhos||[]).forEach(ids)});(o.grades||[]).forEach(g=>{ids(g);(g.itens||[]).forEach(ids)});
+    (o.categorias||[]).forEach(c=>{if(c.grade){ids(c.grade);(c.grade.itens||[]).forEach(ids)}});(o.romaneios||[]).forEach(ids);(o.modelos||[]).forEach(ids);
+    if(o.modelo!=null)o.modelo=idLimpo(o.modelo);(o.fornecedores||[]).forEach(f=>{if(f.banhista!=null)f.banhista=idLimpo(f.banhista)})}
   {const us=new Set();o.categorias.forEach(c=>{us.add(String(c.prefixo||"").toUpperCase());Object.values(c.subPref||{}).forEach(v=>us.add(String(v).toUpperCase()))});Object.keys(o.seqs||{}).forEach(p=>{if(!us.has(p)&&!(Math.trunc(num(o.seqs[p])||0)>0))delete o.seqs[p]})}
   return o;
 }
@@ -1638,6 +1644,7 @@ function lerLanc(l){
   if(!l.v)l={id:l.id||uid(),tipo:l.tipo==="pronta"?"pronta":"bruta",desconto:l.desconto||"0",banhista:"scarlat",vinc:!!l.vinc,
     v:{F:l.desc,G:l.codForn,H:l.forn,I:l.cat,J:l.sub,M:l.obs,N:l.peso,P:l.custo,V:l.preco,L:l.cor,W:l.qtd},
     on:{ouro:!(l.tipo==="bruta"&&l.prata&&!(num(l.qtdA)>0)),prata:!!l.prata},q:{ouro:l.qtdA,prata:l.qtdB},dsc:{prata:l.descB||""}};
+  l.id=idLimpo(l.id)||uid();
   l.ov=l.ov||{};
   if(l.ft&&!ftOk(l.ft)){delete l.ft}
   if(l.ftR&&!ftOk(l.ftR)){delete l.ftR}
@@ -1681,7 +1688,7 @@ async function carregar(){
     if(c.exists||l.exists)resolverCorrompido();   /* dados lidos da conta: o bloqueio dos dados locais danificados não vale mais */
     const m1=migrarJueri(),m2=migrarGrades(),mig=m1||m2;sincGrade(S.form);if(mig)salvar(true);
     setStatus(mig?"Cadastros atualizados (variação dentro da categoria)":c.exists?"Cadastros carregados":"Pronto — tudo fica salvo na sua conta");render();histIni();carregarMinis();romSync();
-  }catch(e){clearTimeout(tm);db=null;setStatus("Sem acesso à conta agora; salvando neste navegador",true)}
+  }catch(e){clearTimeout(tm);db=null;console.error("cadastro-pecas: falha ao ler a conta",e);setStatus("Sem acesso à conta agora; salvando neste navegador",true)}
 }
 
 /* ===== planilha ===== */
@@ -2659,13 +2666,14 @@ function romListaAbrir(){document.querySelectorAll(".rep").forEach(x=>x.remove()
   document.body.appendChild(ov)}
 function romBadge(r){const rf=(G&&G.linhas?G.linhas:[]).filter(x=>(r.lancIds||[]).includes(x.lancId)).map(x=>x.v.E);return `<span class="rfeito" title="Marque a caixa ao lado para lançar de novo (corrige a peça já lançada)">✓ já lançada${rf.length?" · "+esc(rf.join(", ")):(r.refs?" · "+esc(r.refs):"")}${r.arq?" · na tabela salva “"+esc(r.arq)+"”":""}${r.refaz?" · será substituída":""}</span>`}
 async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");
-  const rk=(await idbOp("roms","readonly",st=>st.getAllKeys()))||[],roms={};for(const k of rk)roms[k]=await idbGet("roms",k);
-  const tk=(await idbOp("tabs","readonly",st=>st.getAllKeys()))||[],tabs={};for(const k of tk)tabs[k]=await idbGet("tabs",k);
-  const fk=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[],fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));for(const k of fk)if(vivos.has(k))fotos[k]=await idbGet("fotos",k);
+  const falhas=[],chaves=async n=>{const k=await idbOp(n,"readonly",st=>st.getAllKeys());if(k===null){falhas.push(n);return []}return k},valor=async(n,k)=>{const v=await idbGet(n,k);if(v===null)falhas.push(n+":"+k);return v};
+  const rk=await chaves("roms"),roms={};for(const k of rk)roms[k]=await valor("roms",k);
+  const tk=await chaves("tabs"),tabs={};for(const k of tk)tabs[k]=await valor("tabs",k);
+  const fk=await chaves("fotos"),fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));for(const k of fk)if(vivos.has(k))fotos[k]=await valor("fotos",k);
   let rel=null;try{rel=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){}
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};
-  try{await dl.save({filename:"cadastro-pecas-backup-completo-"+hoje+".json",data:new Blob([JSON.stringify(o)],{type:"application/json"})});toast("Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
+  const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
+  try{await dl.save({filename:"cadastro-pecas-backup-completo"+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:new Blob([JSON.stringify(o)],{type:"application/json"})});toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
 /* restaurar backup completo: valida TUDO e monta objetos novos antes de mexer em qualquer coisa. Semântica: SUBSTITUI peças,
    cadastros e formulário atuais pelos do backup (confirmação antes); romaneios, tabelas e fotos do backup são adicionados
    (mesmo id = sobrescreve; o que só existe aqui é mantido). Se algo falhar, nada muda (nem no IndexedDB). */
@@ -3462,7 +3470,8 @@ async function lerFotoArquivo(file){
   const grande=await blobUrl(g),mini=await blobUrl(m);if(!ftOk(mini))throw new Error(`formato de “${file.name}” não suportado`);
   return {mini,grande}}
 async function fotoNaPeca(lid,F){const l=S.lanc.find(x=>x.id===lid);if(!l)return false;
-  l.ft=F.mini;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);candFoto.delete(lid);await idbPut("fotos",lid,F.grande);if(editId===lid)S.form.ft=F.mini;return true}
+  const gr=await idbPut("fotos",lid,F.grande);if(gr===null)throw new Error("Não consegui guardar a foto original (memória do navegador cheia ou bloqueada). A foto desta peça não foi trocada.");
+  l.ft=F.mini;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);candFoto.delete(lid);if(editId===lid)S.form.ft=F.mini;return true}
 const refBase=r=>{const m=/^([A-Za-z]+\d+)/.exec(String(r||""));return m?m[1].toUpperCase():String(r||"").toUpperCase()};
 /* várias fotos de uma vez: o nome do arquivo igual à referência (BR1670.jpg) liga sozinho; as que sobram vão em sequência para as peças sem foto, a partir da peça escolhida */
 async function fotosEmLote(files,lidIni){
@@ -3532,7 +3541,7 @@ function adicionar(limpar,quiet){
   if(!quiet)addTrava=Date.now()+500;
   if(quiet)delete novo.ft;
   if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
-  else{S.lanc.push(novo);undo={tipo:"add",id:novo.id,form:clone(f)};if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(()=>autoEnviar([novo.id]))}FT_GRANDE=null;delete f.ft;delete f.v.E;if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
+  else{S.lanc.push(novo);undo={tipo:"add",id:novo.id,form:clone(f)};if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
   salvar(false);if(quiet)return true;renderForm();
   mostrarNoFim(novo.id);
   focarPrimeiro();return true;
