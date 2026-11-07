@@ -1119,6 +1119,7 @@ select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
 .vis button{border:1px solid transparent;background:transparent;color:var(--muted);font:600 13px var(--body);padding:0 12px;height:32px;border-radius:8px;cursor:pointer;white-space:nowrap}
 .vis button:hover{background:var(--surface-2);color:var(--ink)}
 .vis button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.vis .vrom{margin-left:8px;border-color:var(--line)}
 .vis .vhint{margin-left:auto;font-size:11.5px;color:var(--muted)}
 .vis kbd{font:600 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 4px}
 body[data-vis=planilha] #paneBot,body[data-vis=planilha] #splitter{display:none}
@@ -1152,6 +1153,8 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
 .rcs.compacto .rc:not(.aberto) .rc-bn,.rcs.compacto .rc:not(.aberto) .rc-b,.rcs.compacto .rc:not(.aberto) .rc-av,.rcs.compacto .rc:not(.aberto) [data-act=rom-x]{display:none}
 .rcs.compacto .rc:not(.aberto){cursor:pointer}
 .rcs.compacto .rc.aberto{outline:2px solid var(--accent);outline-offset:-1px}
+.rsel-st{font:600 11px var(--body);padding:1px 7px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.rst-ok{background:#e1f3e8;color:#1f6b3b;border-color:#b6dfc5}.rst-warn{background:#fff1d6;color:var(--warn);border-color:#ecd29b}.rst-new{background:var(--accent-soft);color:var(--accent)}
 .rep-busca{margin:6px 0;width:100%;max-width:360px;height:34px}
 </style>
 
@@ -1167,7 +1170,7 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
     <button class="btn pri" type="button" data-act="xlsx">Baixar .xlsx</button>
   </div>
 </div></header>
-<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><span class="vhint">Alt+1…4 trocam de visão · <kbd>/</kbd> busca</span></nav>
+<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">📋 Romaneios</button><span class="vhint">Alt+1…4 trocam de visão · <kbd>/</kbd> busca</span></nav>
 <div class="app" id="app" role="main">
   <section class="gut pane-top" id="paneTop" aria-label="Planilha">
     <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
@@ -4634,6 +4637,9 @@ document.addEventListener("keydown",e=>{if((e.key==="["||e.key==="]")&&!e.ctrlKe
   const ov=document.querySelector(".rep"),tb=ov&&ov.querySelector(".rep-tb");if(!tb)return r;
   const i=document.createElement("input");i.type="search";i.className="rep-busca";i.placeholder="Buscar por fornecedor, documento, observação ou quem montou…";i.setAttribute("aria-label","Buscar romaneio");
   tb.before(i);i.addEventListener("input",()=>{const q=semAc(i.value);tb.querySelectorAll("tbody tr").forEach(tr=>{tr.style.display=!q||semAc(tr.textContent).includes(q)?"":"none"})});
+  const idx=ROMS.slice();tb.querySelectorAll("tbody tr").forEach((tr,k)=>{const x=idx[k];if(!x)return;
+    const st=x.feitas>=x.n&&x.n?["Lançado","ok"]:x.feitas>0?["Parcial","warn"]:["A lançar","new"],td=tr.children[1];
+    if(td)td.insertAdjacentHTML("beforeend",' <span class="rsel-st rst-'+st[1]+'">'+st[0]+'</span>')});
   setTimeout(()=>{if(!celular())i.focus()},0)}catch(e){}return r}}
 
 /* ===== v19: visões (Dividida · Planilha · Lançar · Cadastros) ===== */
