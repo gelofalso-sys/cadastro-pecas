@@ -1055,6 +1055,14 @@ table.cfg td input:not([type=checkbox]){min-width:110px}
 .custos{font-size:12px;color:var(--muted);margin:4px 0 2px}.custos summary{cursor:pointer;font-weight:600;color:var(--ink)}.custos summary small{font-weight:400;color:var(--muted)}.custos b{color:var(--ink)}.ck-l{padding:3px 0;border-top:1px dashed var(--line);line-height:1.5}
 .tf{position:relative}.tf .ftr{position:absolute;right:2px;bottom:2px;width:22px!important;height:22px!important;max-width:22px;object-fit:cover;border:2px solid #fff;border-radius:5px;box-shadow:0 0 0 1px var(--line);cursor:zoom-in}
 .ftslot.ftr{position:relative}.ftslot.ftr small{display:block;text-align:center;font-size:10px;color:var(--muted)}
+.bfx{flex:1 1 100%;font-size:11.5px;color:var(--muted);line-height:1.4}.bfx b{color:var(--ink)}.bfx-d{opacity:.9}
+/* conjunto */
+.conj-sum{font-size:13px;padding:6px 8px;border-radius:8px;background:var(--surface);border:1px solid var(--line)}.conj-sum .cj-p{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}.conj-sum .cj-m{color:var(--muted)}.cj-e2{color:var(--warn);font-weight:600}
+.cj-i{display:flex;flex-direction:column;gap:2px;padding:4px 0;border-top:1px solid var(--line)}.cj-e{font-size:12px;color:var(--warn);padding-left:30px}.cj-e:empty{display:none}
+.cj-no{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:11.5px;font-weight:600;flex:none}
+.conj-r .cj-act{display:inline-flex;gap:2px;flex:none}.conj-hd{display:none;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.conj input[aria-invalid=true]{border-color:var(--bad);background:var(--bad-soft)}
+@media (min-width:900px){.conj-r{display:grid;grid-template-columns:24px minmax(130px,1.5fr) 78px 92px minmax(120px,1fr) 78px minmax(88px,auto) auto;gap:6px;align-items:center}.conj-r.conj-hd{display:grid;padding-bottom:2px}.conj-r .cj-d,.conj-r .cj-n,.conj-r select{width:100%;min-width:0;flex:none}}
 /* catálogo rápido */
 .cpanel{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px;display:grid;gap:8px;margin:6px 0}
 .cpanel textarea{width:100%;min-height:96px;font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);box-sizing:border-box}
@@ -1189,7 +1197,7 @@ const DEFAULT_CONFIG={
   cores:["Ouro","Prata","Ródio","Prata 925","Ródio negro","Rosé","Azul","Cristal","Branco","Preto","Verde","Vermelho","Rosa","Lilás","Roxo","Amarelo","Laranja","Marrom","Grafite","Champagne","Nude","Turquesa","Pérola","Bege","Cinza","Multicolorido"],
   observacoes:["Link 211 - Xangai Brutos Banho Scarlat 2026 setembro","Link 206 - Argolinhas R$ 1,99 Banho setembro 2026 Scarlat","Link 182 - Xangai Brutos 3 Banho setembro 2026 Scarlat","Compra em setembro 2026 Banho scarlat","Compra em setembro de 2026"]
 };
-const FORM0=()=>({tipo:"bruta",desconto:"0",banhista:"scarlat",v:{H:"xangai",I:"Brincos"},on:{ouro:true,prata:true},ov:{},vz:{},vinc:false,grade:"",gsel:[],semGrade:false});
+const FORM0=()=>({tipo:"bruta",desconto:"0",banhista:"scarlat",v:{H:"xangai",I:"Brincos"},on:{ouro:true,prata:true},ov:{},vz:{},vinc:false,grade:"",gsel:[],csel:[],semGrade:false});
 
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* miniatura de foto só vale se for imagem em data: URL (nada de javascript:, http: ou aspas) */
@@ -1251,7 +1259,7 @@ function sincGrade(f){const g=gradeDaCat(f.v.I,f.v.J),id=g?g.id:"";if(id!==(f.gr
 /* verniz por variação de banho: o que foi marcado nesta peça vale; sem marca, vale o padrão do banho */
 /* banhos marcados: peça bruta usa "on"; peça pronta usa "onP" (só cor, letra e milésimos — sem custo de banho) */
 /* sufixo da referência: letra do banho + letra (AA, BA…) ou nome (A12) da opção, conforme a variação */
-const refParte=(b,it)=>(b?b.letra:"")+(!it?"":(it.g&&it.g.modoRef==="nome"?String(it.nome||it.letra):it.letra));
+const refParte=(b,it)=>(b?b.letra:"")+(!it?"":(it.ref!=null?it.ref:(it.g&&it.g.modoRef==="nome"?String(it.nome||it.letra):it.letra)));
 const onDe=l=>l.tipo==="bruta"?(l.on=l.on||{}):(l.onP=l.onP||{});
 const bonP=l=>l.tipo==="pronta"?banhistaBy(l.banhista).banhos.filter(b=>(l.onP||{})[b.id]):[];
 const vzPad=(bh,b)=>b.vz!=null?!!b.vz:bh.vernizOn!==false;
@@ -1259,10 +1267,13 @@ const vzOn=(l,bh,b)=>l.vz&&b.id in l.vz?!!l.vz[b.id]:vzPad(bh,b);
 /* Texto, coluna e valor de cada opção seguem a variação (rótulo, coluna e nome) até serem digitados à mão: trocar "aro" por "tamanho" ou o nome de uma opção atualiza tudo. */
 const rotG=g=>g.rotulo==null?" ":g.rotulo;
 const efetivo=(g,x)=>({...x,g,texto:!vazio(x.texto)?x.texto:rotG(g)+(x.nome||x.letra),col:!vazio(x.col)?x.col:(g.col||""),valor:!vazio(x.valor)?x.valor:(g.col||!vazio(x.col)?(x.nome||""):"")});
-const itensGrade=l=>{const g=gradeBy(l.grade);if(!g||l.semGrade)return [];const s=l.gsel||[];return g.itens.filter(x=>s.includes(x.id)).map(x=>efetivo(g,x))};
+const coresSel=l=>{const c=catBy(l.v&&l.v.I),lst=(c&&c.cores)||[],s=l.csel||[];return lst.filter(x=>s.includes(x.id)).map(x=>({id:"c_"+x.id,letra:String(x.letra||""),nome:x.nome,ref:String(x.letra||""),texto:x.texto==="-"?"":(!vazio(x.texto)?(/^\s/.test(x.texto)?x.texto:" "+x.texto):" "+x.nome),col:"",valor:""}))};
+const itensGrade=l=>{const g=gradeBy(l.grade),sz=(!g||l.semGrade)?[]:g.itens.filter(x=>(l.gsel||[]).includes(x.id)).map(x=>efetivo(g,x)),cs=coresSel(l);
+  if(!cs.length)return sz;if(!sz.length)return cs;
+  return sz.flatMap(a=>cs.map(c=>({...a,id:a.id+"+"+c.id,letra:a.letra+c.letra,nome:(a.nome||a.letra)+" "+c.nome,ref:(a.g&&a.g.modoRef==="nome"?String(a.nome||a.letra):a.letra)+c.letra,texto:a.texto+c.texto,seq:[a,c]})))};
 const temGrade=l=>itensGrade(l).length>0;
 /* Se a descrição já traz o tamanho ("aro 14" ou o rótulo antigo), ele é trocado pelo da linha em vez de somado ("aro 14 aro 12"). */
-function descVar(d,it){if(!it||!it.texto)return d;d=String(d||"");const g=it.g;
+function descVar(d,it){if(it&&it.seq)return it.seq.reduce((a,x)=>descVar(a,x),d);if(!it||!it.texto)return d;d=String(d||"");const g=it.g;
   if(g){const B=String.fromCharCode(92),ro=s=>String(s).split("").map(c=>"[]{}()|.*+?^$-/".indexOf(c)>=0?B+c:c).join(""),pal=[g.rotulo,...(g.sin||[])].map(x=>String(x||"").trim()).filter(Boolean),nomes=g.itens.map(x=>x.nome).filter(Boolean).map(ro).join("|");
     pal.forEach(w=>{d=d.replace(new RegExp("(^| )"+ro(w)+" *(?:[0-9]+(?:[.,][0-9]+)?"+(nomes?"|"+nomes:"")+")(?= |$)","gi"),"$1")});
     d=d.replace(/ {2,}/g," ").trim()}
@@ -1876,7 +1887,7 @@ function fecharCel(commit,mover){
     if(nova){if(!vazio(v)){const l=novaLivre({[L]:v});S.lanc.push(l);undo={tipo:"cola",antes:{},ids:[l.id]};salvar(false)}}
     else{const l=S.lanc.find(x=>x.id===G.linhas[ri].lancId);undo={tipo:"multi",antes:{[l.id]:clone(l.ov||{})}};gravarCel(ri,L,v);salvar(false)}
   }
-  renderTopo();if(editId&&lid===editId&&commit&&v!==orig&&!rej)sincFormCelula(lid,L);if(editId)renderForm();
+  const sj0=formSujo();renderTopo();if(editId&&lid===editId&&commit&&v!==orig&&!rej)sincFormCelula(lid,L);if(editId)renderForm();if(editId&&!sj0)editSnap=JSON.stringify(S.form);
   if(rej){toast(rej+" (valor não gravado)");marcaRuim(ri,L)}
   if(commit&&L==="E"){const d=[...new Set(G.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(d.length)toast("Referência repetida: "+d.join(", ")+" — corrija antes de baixar a planilha.")}
   if(mover){let nri=ri,nL=L;
@@ -1993,8 +2004,10 @@ function renderForm(){
   const fo=fornBy(f.v.H),auto=bruta&&fo&&fo.banhista===bh.id?` <em class="auto" title="Banhista definido no cadastro do fornecedor ${esc(fo.nome)}">auto</em>`:"";
   const ultCampo=`<label class="fq w-u" for="ultInp" title="Última peça ${esc(p)} já cadastrada no sistema — a próxima sai com o número seguinte"><span>Última peça ${esc(p)}</span><div class="ub"><input id="ultInp" class="n" inputmode="numeric" value="${esc(C.seqs[p]||"")}"><small title="${inicioDe(p)>ultimo(p)?"Há referência digitada à mão até "+esc(p)+inicioDe(p):""}">próxima ${esc(p)}<b id="proxRef">${proxDe(p)}</b></small></div></label>`;
   const mkIn=k=>`<input class="n" data-mk="${k}" value="${esc(f.mk[k]??"")}" inputmode="decimal" placeholder="×" aria-label="Multiplicador">`;
-  f.gsel=f.gsel||[];const gr=gradeBy(f.grade),gIts=gr&&!f.semGrade?gr.itens.filter(x=>f.gsel.includes(x.id)):[];
-  const chips=gr?`<div class="z-row z-var"><b class="gtit">${esc(gr.nome)}</b><div class="gch${f.semGrade?" off":""}" role="group" aria-label="${esc(gr.nome)}">${gr.itens.map(it=>{const on=f.gsel.includes(it.id);return `<label class="gi${on?" on":""}" title="${esc(it.letra)} · ${esc(efetivo(gr,it).texto.trim())}"><input type="checkbox" data-gi="${it.id}" ${on?"checked":""} ${f.semGrade?"disabled":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="gi-todos" ${f.semGrade?"disabled":""}>${gIts.length===gr.itens.length?"nenhum":"todos"}</button><button type="button" class="gi tod" data-act="q" data-q="gi" title="Adicionar tamanho novo (número ou letras como P M G) a esta lista" ${f.semGrade?"disabled":""}>＋ tamanho</button><button type="button" class="gi tod" data-act="gi-pmg" title="Cria os tamanhos P, M e G (pequeno, médio, grande): a letra do tamanho entra na referência" ${f.semGrade?"disabled":""}>＋ P M G</button></div><input class="faixa" data-faixa placeholder="faixa: 12-16, 20" title="Digite uma faixa e aperte Enter: 12-16 marca de 12 a 16; 12, 18, 20 marca esses; todos marca tudo" aria-label="Faixa de tamanhos" autocomplete="off"><button type="button" class="btn ghost sm" data-act="faixa-salvar" title="Guarda os tamanhos marcados como padrão desta categoria: ao escolhê-la, eles já vêm marcados">★ padrão</button><label class="sg" title="Peça única, sem tamanhos (ex.: anel ajustável)"><input type="checkbox" data-f="semGrade" ${f.semGrade?"checked":""}> sem variação</label><span class="hint">uma linha por opção · mesma numeração · letras em sequência</span></div>`:(catBy(f.v.I)&&!f.semGrade?`<div class="z-row z-var"><button type="button" class="gi tod" data-act="gr-novo-pmg" title="Cria tamanhos P, M e G para ${esc(f.v.I)}: a letra do tamanho entra na referência (ex.: BR1670P, BR1670M)">＋ Tamanhos P M G em ${esc(f.v.I)}</button></div>`:"");
+  f.gsel=f.gsel||[];f.csel=f.csel||[];const gr=gradeBy(f.grade),szSel=gr&&!f.semGrade?gr.itens.filter(x=>f.gsel.includes(x.id)):[],gIts=itensGrade(f);
+  const chips=gr?`<div class="z-row z-var"><b class="gtit">${esc(gr.nome)}</b><div class="gch${f.semGrade?" off":""}" role="group" aria-label="${esc(gr.nome)}">${gr.itens.map(it=>{const on=f.gsel.includes(it.id);return `<label class="gi${on?" on":""}" title="${esc(it.letra)} · ${esc(efetivo(gr,it).texto.trim())}"><input type="checkbox" data-gi="${it.id}" ${on?"checked":""} ${f.semGrade?"disabled":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="gi-todos" ${f.semGrade?"disabled":""}>${szSel.length===gr.itens.length?"nenhum":"todos"}</button><button type="button" class="gi tod" data-act="q" data-q="gi" title="Adicionar tamanho novo (número ou letras como P M G) a esta lista" ${f.semGrade?"disabled":""}>＋ tamanho</button><button type="button" class="gi tod" data-act="gi-pmg" title="Cria os tamanhos P, M e G (pequeno, médio, grande): a letra do tamanho entra na referência" ${f.semGrade?"disabled":""}>＋ P M G</button></div><input class="faixa" data-faixa placeholder="faixa: 12-16, 20" title="Digite uma faixa e aperte Enter: 12-16 marca de 12 a 16; 12, 18, 20 marca esses; todos marca tudo" aria-label="Faixa de tamanhos" autocomplete="off"><button type="button" class="btn ghost sm" data-act="faixa-salvar" title="Guarda os tamanhos marcados como padrão desta categoria: ao escolhê-la, eles já vêm marcados">★ padrão</button><label class="sg" title="Peça única, sem tamanhos (ex.: anel ajustável)"><input type="checkbox" data-f="semGrade" ${f.semGrade?"checked":""}> sem variação</label><span class="hint">uma linha por opção · mesma numeração · letras em sequência</span></div>`:(catBy(f.v.I)&&!f.semGrade?`<div class="z-row z-var"><button type="button" class="gi tod" data-act="gr-novo-pmg" title="Cria tamanhos P, M e G para ${esc(f.v.I)}: a letra do tamanho entra na referência (ex.: BR1670P, BR1670M)">＋ Tamanhos P M G em ${esc(f.v.I)}</button></div>`:"");
+  const catF=catBy(f.v.I),lcor=(catF&&catF.cores)||[];
+  const chipsCor=lcor.length?`<div class="z-row z-var"><b class="gtit">Cores</b><div class="gch" role="group" aria-label="Cores">${lcor.map(x=>{const on=f.csel.includes(x.id);return `<label class="gi${on?" on":""}" title="${esc((x.letra?x.letra+" · ":"")+(x.texto==="-"?"(sem palavra)":(x.texto||x.nome).trim()))}"><input type="checkbox" data-cs="${esc(x.id)}" ${on?"checked":""}>${esc(x.nome)}</label>`}).join("")}<button type="button" class="gi tod" data-act="cs-todas">${f.csel.length===lcor.length?"nenhuma":"todas"}</button></div><span class="hint">uma linha por cor · a palavra da cor entra na descrição${lcor.some(x=>x.letra)?" · a letra da cor entra na referência":""}</span></div>`:"";
   const qtdVar=(k,dis)=>(gIts.length>1?`<label class="fq gq all" title="Mesma quantidade em todos os tamanhos marcados"><span>todos</span><input class="n" data-qall="${k}" placeholder="=" inputmode="numeric" ${dis?"disabled":""} aria-label="Quantidade para todos os tamanhos"></label>`:"")+gIts.map(it=>{const o=f.ov[k+"~"+it.id]||{};return `<label class="fq gq" title="Quantidade ${esc(it.nome||it.letra)}"><span>${esc(it.nome||it.letra)}</span><input class="n" id="f-${k}~${it.id}-W" data-bo="${k}~${it.id}" data-k="W" value="${esc(o.W??"")}" inputmode="numeric" placeholder="0" ${dis?"disabled":""} aria-label="Quantidade ${esc(it.nome)}"></label>`}).join("");
   const addBtn=`<button class="btn pri big" type="submit">${editId?"Salvar":"Adicionar"} <kbd>Enter</kbd></button>${editId?"":`<button class="btn big" type="button" data-act="add-limpar" title="Adiciona a peça e esvazia o formulário para começar outra do zero">Adicionar e limpar</button>`}`;
   const bhCampo=`<label class="fq w-m"><span>${bruta?"Banhista":"Banhos de"}${auto}</span><div class="ip"><select data-f="banhista">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select><button type="button" class="plus" data-act="q" data-q="bh" title="Cadastrar banhista">＋</button></div></label>`;
@@ -2005,7 +2018,7 @@ function renderForm(){
       ${gIts.length?`<div class="bf gv">${qtdVar(b.id,!on)}</div>`:""}
       <div class="bf">${gIts.length?"":`<label class="fq" title="Quantidade"><span>Quantidade</span><input class="n" id="f-${b.id}-W" data-bo="${b.id}" data-k="W" value="${esc(o.W??"")}" inputmode="numeric" placeholder="0" ${on?"":"disabled"}></label>`}
         ${bruta?`<label class="fq" title="Valor do banho só desta peça (R$ por grama; ou valor fixo se o banho for assim). Vazio = o valor da categoria ${esc(f.v.I||"")} no banhista"><span>${b.modo==="fixo"?"R$ banho":"R$/g"}</span><input class="n" data-bo="${b.id}" data-k="_m" value="${esc(o._m??"")}" placeholder="${esc(multDe(b,f.v.I)||"")}" inputmode="decimal" ${on?"":"disabled"} aria-label="Valor do banho ${esc(b.nome)} só desta peça"></label>`:""}
-        <label class="fq" title="Preço de Varejo = (Custo de Compra + Insumos + Banho + Verniz) × multiplicador"><span>Fator ×</span>${mkIn(b.id)}</label>
+        <label class="fq" title="Preço de Varejo = (Custo de Compra + Insumos + Banho + Verniz) × multiplicador"><span>Fator ×</span>${mkIn(b.id)}</label><small class="bfx" data-bf="${b.id}" aria-live="polite"></small>
         <label class="fq pv"><span>Preço de Varejo</span><input class="n calc" id="f-${b.id}-V" data-bo="${b.id}" data-k="V" data-ph="${b.id}-V" value="${esc(o.V??"")}" inputmode="decimal" ${on?"":"disabled"}></label></div></div>`}).join("");
   const vincL=gIts.length?"":`<label class="vchk" title="Mesma peça em outra cor ou pedra: mesmo número, próxima letra"><input type="checkbox" data-f="vinc" ${f.vinc?"checked":""}> Variação da anterior</label>`;
   const simples=!bruta&&!bpOn;
@@ -2014,7 +2027,7 @@ function renderForm(){
       :`<button type="button" class="ftslot" data-act="foto-form" title="Foto da peça: clique para escolher, arraste uma foto para cá ou cole com Ctrl+V"><span class="ftic">📷</span><small>foto</small></button>`})();
   const ftRomHtml=(()=>{const r=S.form.ftR&&ftOk(S.form.ftR)?S.form.ftR:"";if(!r||r===S.form.ft)return "";return `<div class="ftslot has ftr" title="Foto que veio do romaneio (fica guardada; a outra é a que gera o link)"><img src="${fs(r)}" alt="Foto do romaneio" data-act="tab-foto"><small>romaneio</small><button type="button" class="ftx" data-act="foto-rem-rom" title="Tirar a foto do romaneio desta peça" aria-label="Tirar a foto do romaneio">×</button></div>`})();
   const rowMain=bruta?`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n"})}${c("P",{w:"c"})}${bhCampo}`
-    :`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n",dis:!!f.conj,nome:f.conj?"Peso (soma)":undefined})}${c("P",{w:"c",dis:!!f.conj,nome:f.conj?"Compra (soma)":undefined})}${bhCampo}${simples?`${gIts.length?`<div class="bf gv">${qtdVar("p",false)}</div>`:c("W",{w:"n"})}${c("L",{w:"s",q:"cor"})}<label class="fq w-n" title="Fator do preço: o Preço de Varejo = (Custo de Compra + Insumos + Banhos + Verniz) × este número"><span>Fator ×</span><div class="ip">${mkIn("p")}</div></label>${c("V",{w:"c"})}${vincL}`:""}`;
+    :`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n",dis:!!f.conj,nome:f.conj?"Peso (soma)":undefined})}${c("P",{w:"c",dis:!!f.conj,nome:f.conj?"Compra (soma)":undefined})}${bhCampo}${simples?`${gIts.length?`<div class="bf gv">${qtdVar("p",false)}</div>`:c("W",{w:"n"})}${c("L",{w:"s",q:"cor"})}<label class="fq w-n" title="Fator do preço: o Preço de Varejo = (Custo de Compra + Insumos + Banhos + Verniz) × este número"><span>Fator ×</span><div class="ip">${mkIn("p")}</div></label>${c("V",{w:"c"})}<small class="bfx" data-bf="p" aria-live="polite"></small>${vincL}`:""}`;
   const dica=f.conj?`<span class="hint" style="align-self:center">Conjunto: marque os banhos (Ouro, Prata…) e sai uma linha de conjunto em cada um; todas as peças levam esse banho, menos as que você fixar um banho só delas.</span>`:!bruta&&!bpOn?`<span class="hint" style="align-self:center">Peça pronta com banhos: marque um ou mais para gerar uma linha por cor (A ouro, B prata…); sem marcar, use Cor, Quantidade e Preço acima.</span>`:"";
   const rowBanhos=`<div class="z-row z-banhos">${cards}<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn" title="Nova letra de banho (ex.: C · Ródio, D · Rosé)">＋ Letra</button>${dica}<span class="z-end">${addBtn}</span></div>`;
 const rowOrig=`<div class="z-row z-orig">${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}<i class="vsep"></i>${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
@@ -2039,7 +2052,7 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   ${painelRapido()}
   <div class="z-row z-main">${rowMain}</div>
   ${f.conj?conjPainel(f):""}
-  ${chips}${rowBanhos}
+  ${chips}${chipsCor}${rowBanhos}
   <div class="z-det"><button type="button" class="tg" data-act="tg-det" aria-expanded="${det}">${det?"▾":"▸"} Detalhes <span class="hint">— ${bruta?"verniz, custo e milésimos de cada banho, ":""}Custo de Insumos, NCM, CFOP, ID, Foto, Código de Barras, Tamanho, Localização…</span></button>
   ${det?`<div class="dets">
     ${(bruta||bpOn)?`<div class="dg wide"><h3>Banhos · ${esc(bh.nome)}${auto}</h3>${detBanhos||'<span class="hint">Marque um banho.</span>'}</div>`:""}
@@ -2101,6 +2114,14 @@ function fatorDoPreco(k){
 }
 /* ===== conjunto: soma de peças individuais (brincos + colar…). Cada peça tem peso, compra e banho (o do conjunto, ou só dela).
    Marcando banhos no conjunto (Ouro, Prata, Ródio…) sai UMA linha de conjunto por banho, igual às peças individuais; sem marcar, sai uma linha só. ===== */
+function conjErro(f,i){const c=(f.comp||[])[i];if(!c)return "";if(vazio(c.desc)&&vazio(c.peso)&&vazio(c.custo))return "";const m=[];
+  if(vazio(c.desc))m.push("falta o nome da peça");
+  if(vazio(c.peso))m.push("falta o peso");else if(num(c.peso)==null||num(c.peso)<=0)m.push("peso inválido");
+  if(vazio(c.custo))m.push("falta o custo de compra");else if(num(c.custo)==null||num(c.custo)<0)m.push("custo inválido");
+  if(!vazio(c.desc)&&f.comp.some((o,q)=>q<i&&semAc(o.desc)===semAc(c.desc)))m.push("nome repetido");
+  return m.join(" · ")}
+function conjResumoHTML(f){const cs=f.comp||[],ok=cs.filter(c=>!vazio(c.desc)||!vazio(c.peso)||!vazio(c.custo)),n=ok.length,peso=ok.reduce((a,c)=>a+(num(c.peso)||0),0),compra=ok.reduce((a,c)=>a+(num(c.custo)||0),0),nErr=cs.filter((c,i)=>{const e=conjErro(f,i);return e&&e!=="nome repetido"}).length,nomes=ok.map(c=>String(c.desc||"").trim()).filter(Boolean);
+  return `<span class="cj-p">Conjunto</span> <b>${esc(nomes.length?nomes.join(" + "):"(sem peças ainda)")}</b> <span class="cj-m">${n} peça${n===1?"":"s"} · ${fmt(peso)} g · compra R$ ${brl(compra)}</span>${nErr?` <span class="cj-e2">⚠ ${nErr} peça${nErr>1?"s":""} com dado faltando</span>`:""}`}
 const novaComp=desc=>({id:uid(),desc:desc||"",peso:"",custo:"",banho:""});
 const r4c=x=>Math.round(x*10000)/10000,txtN=x=>String(r4c(x)).replace(".",",");
 const CJ_NOMES=["Brincos","Colar","Pulseira","Anel","Pingente","Tornozeleira","Gargantilha"],CJ_COL=["R","S","T","U"];
@@ -2135,7 +2156,8 @@ function conjSync(f,dom){
   if(vazio(f.v.F)||f.fConj===f.v.F){if(auto)f.v.F=auto;else delete f.v.F;f.fConj=auto}
   if(dom){["N","P","F"].forEach(L=>{const el=document.getElementById("f-"+L);if(el&&document.activeElement!==el)el.value=f.v[L]??""});
     f.comp.forEach((c,i)=>{const e=document.getElementById("cj-c-"+i);if(e)e.innerHTML=conjLinTxt(R,i,c)});
-    const t=document.getElementById("conjTot");if(t)t.innerHTML=conjTotHTML(f)}
+    const t=document.getElementById("conjTot");if(t)t.innerHTML=conjTotHTML(f);
+    const sm=document.getElementById("conjSum");if(sm)sm.innerHTML=conjResumoHTML(f);f.comp.forEach((c,i)=>{const e=document.getElementById("cj-e-"+i);if(e)e.textContent=conjErro(f,i)})}
 }
 const conjLinTxt=(R,i,c)=>{if(c&&!num(c.peso)&&!num(c.custo))return "";return R.temBanho?R.vars.map(x=>`<span>${esc(x.b.nome)} R$ ${brl((x.lin[i]||{}).total||0)}</span>`).join(" "):`R$ ${brl((R.lin[i]||{}).total||0)}`};
 /* somatória: uma linha por banho marcado, com peso, compra, banho, verniz, insumos, custo, fator e Preço de Varejo */
@@ -2152,9 +2174,11 @@ function conjPainel(f){
   const optB=c=>`<option value="" ${!c.banho?"selected":""}>${nB?"banho do conjunto":"sem banho"}</option>${(bh.banhos||[]).map(b=>`<option value="${esc(b.id)}" ${c.banho===b.id?"selected":""}>${nB?"só ":""}${esc(b.letra)} · ${esc(b.nome)}</option>`).join("")}${nB?`<option value="-" ${c.banho==="-"?"selected":""}>sem banho</option>`:""}`;
   const efe=c=>c.banho==="-"?null:(c.banho?(bh.banhos||[]).find(x=>x.id===c.banho)||null:v0);
   const jaLancadas=S.lanc.filter(l=>!l.conj&&l.id!==editId&&(num(l.v.N)!=null||num(l.v.P)!=null)).slice(-200).reverse();
-  return `<div class="conj" id="conj"><div class="conj-h"><b>Peças do conjunto</b><span class="hint">cada peça com peso e custo · o banho vem do conjunto: marque Ouro, Prata… abaixo e sai uma linha de conjunto para cada · <b>Enter</b> avança, <b>Ctrl+Enter</b> adiciona</span></div>
+  return `<div class="conj" id="conj"><div class="conj-h"><b>Peças do conjunto</b><span class="hint">1) escolha as peças · 2) preencha nome, peso e custo de cada uma · 3) marque os banhos do conjunto abaixo: sai uma linha de conjunto para cada · <b>Enter</b> avança, <b>Ctrl+Enter</b> adiciona</span></div>
+  <div class="conj-sum" id="conjSum">${conjResumoHTML(f)}</div>
   <div class="conj-b cj-q"><span class="hint">Adicionar:</span>${CJ_NOMES.map(n=>`<button type="button" class="gi tod" data-act="comp-add" data-nome="${esc(n)}">＋ ${esc(n)}</button>`).join("")}<button type="button" class="gi tod" data-act="comp-add">＋ outra</button>${jaLancadas.length?`<select class="cj-pick" data-cjpick aria-label="Trazer uma peça já lançada" title="Traz descrição, peso e custo de uma peça que você já lançou"><option value="">＋ trazer peça já lançada…</option>${jaLancadas.map(l=>`<option value="${esc(l.id)}">${esc(((G&&G.refs[l.id])||[])[0]||"")} · ${esc(String(l.v.F||"").slice(0,40))} · ${esc(l.v.N||"?")} g · R$ ${esc(l.v.P||"?")}</option>`).join("")}</select>`:""}</div>
-  ${(f.comp||[]).map((c,i)=>{const e=efe(c);return `<div class="conj-r" data-ci="${i}"><input class="cj-d" data-cp="desc" value="${esc(c.desc||"")}" placeholder="Peça (ex.: Brincos)" aria-label="Peça do conjunto"><input class="n cj-n" data-cp="peso" value="${esc(c.peso||"")}" placeholder="Peso g" inputmode="decimal" aria-label="Peso em gramas"><input class="n cj-n" data-cp="custo" value="${esc(c.custo||"")}" placeholder="Custo compra" inputmode="decimal" aria-label="Custo de compra"><select data-cp="banho" aria-label="Banho desta peça" title="Banho desta peça: o do conjunto (muda em cada linha de banho) ou fixo só para ela">${optB(c)}</select><label class="vchk" title="Verniz do banhista nesta peça"><input type="checkbox" data-cp="vz" ${(c.vz==null?(e?vzPad(bh,e):false):c.vz)?"checked":""} ${e?"":"disabled"}> verniz</label><span class="cj-c" id="cj-c-${i}" title="Custo desta peça: compra + banho + verniz">${conjLinTxt(R,i,c)}</span><button type="button" class="x" data-act="comp-dup" data-ci="${i}" aria-label="Repetir esta peça" title="Repetir esta peça (copia peso, custo e banho)">⧉</button><button type="button" class="x" data-act="comp-del" data-ci="${i}" aria-label="Tirar esta peça do conjunto" title="Tirar esta peça">×</button></div>`}).join("")}
+  <div class="conj-r conj-hd" aria-hidden="true"><span></span><span>Peça</span><span>Peso (g)</span><span>Compra (R$)</span><span>Banho</span><span>Verniz</span><span>Custo da peça</span><span></span></div>
+  ${(f.comp||[]).map((c,i)=>{const e=efe(c),er=conjErro(f,i),iv=ok=>er&&ok?' aria-invalid="true"':"";return `<div class="cj-i"><div class="conj-r" data-ci="${i}"><span class="cj-no" aria-hidden="true">${i+1}</span><input class="cj-d" data-cp="desc" value="${esc(c.desc||"")}" placeholder="Peça (ex.: Brincos)" aria-label="Peça ${i+1} do conjunto: nome"${iv(vazio(c.desc))}><input class="n cj-n" data-cp="peso" value="${esc(c.peso||"")}" placeholder="g" inputmode="decimal" aria-label="Peça ${i+1}: peso em gramas"${iv(vazio(c.peso)||num(c.peso)==null||num(c.peso)<=0)}><input class="n cj-n" data-cp="custo" value="${esc(c.custo||"")}" placeholder="R$" inputmode="decimal" aria-label="Peça ${i+1}: custo de compra"${iv(vazio(c.custo)||num(c.custo)==null||num(c.custo)<0)}><select data-cp="banho" aria-label="Peça ${i+1}: banho" title="Banho desta peça: o do conjunto (muda em cada linha de banho) ou fixo só para ela">${optB(c)}</select><label class="vchk" title="Verniz do banhista nesta peça"><input type="checkbox" data-cp="vz" aria-label="Peça ${i+1}: verniz" ${(c.vz==null?(e?vzPad(bh,e):false):c.vz)?"checked":""} ${e?"":"disabled"}> verniz</label><span class="cj-c" id="cj-c-${i}" title="Custo desta peça: compra + banho + verniz">${conjLinTxt(R,i,c)}</span><span class="cj-act"><button type="button" class="x" data-act="comp-up" data-ci="${i}" ${i===0?"disabled":""} aria-label="Subir a peça ${i+1}" title="Subir (muda a ordem no nome do conjunto)">↑</button><button type="button" class="x" data-act="comp-down" data-ci="${i}" ${i===(f.comp.length-1)?"disabled":""} aria-label="Descer a peça ${i+1}" title="Descer">↓</button><button type="button" class="x" data-act="comp-dup" data-ci="${i}" aria-label="Repetir a peça ${i+1}" title="Repetir esta peça (copia peso, custo e banho)">⧉</button><button type="button" class="x" data-act="comp-del" data-ci="${i}" aria-label="Tirar a peça ${i+1} do conjunto" title="Tirar esta peça">×</button></span></div><div class="cj-e" id="cj-e-${i}" role="status">${esc(er)}</div></div>`}).join("")}
   <div class="conj-t" id="conjTot">${conjTotHTML(f)}</div></div>`}
 /* Enter anda entre os campos da peça do conjunto: descrição → peso → custo → próxima peça (na última, cria outra); Ctrl+Enter adiciona o conjunto */
 document.addEventListener("keydown",e=>{const t=e.target;
@@ -2170,13 +2194,14 @@ function atualizarGera(){
   const el=document.getElementById("gera");if(!el)return;const f=S.form,g=previsao(),id=editId||"__p";
   const rows=g.linhas.filter(r=>r.lancId===id),ri0=g.linhas.findIndex(r=>r.lancId===id);let h="";
   const grf=gradeBy(f.grade);
-  if(grf&&!(f.gsel||[]).length)h=`<span class="warn">Escolha ${esc(grf.nome.toLowerCase())} acima.</span>`;
+  if(grf&&!(f.gsel||[]).length&&!(f.csel||[]).length)h=`<span class="warn">Escolha ${esc(grf.nome.toLowerCase())} acima.</span>`;
   else if(!rows.length)h=`<span class="warn">${f.tipo==="bruta"?"Marque pelo menos um banho.":""}</span>`;
   rows.forEach(r=>{const q=num(r.v.W);h+=`<span class="ch${r.dup?" dupe":""}" title="${esc(r.v.F)}${r.dup?" · referência repetida":""}">${esc(r.v.E)}${q>0?` · ${q}`:""}</span>`});
   if(g.semQ&&g.semQ[id])h+=`<span class="warn" title="Quando só algumas combinações têm quantidade, as sem quantidade não viram linha">⚠ ${g.semQ[id]} combinação(ões) sem quantidade ficam de fora da tabela.</span>`;
   if(erro&&!h.includes(">"+esc(erro)+"<"))h+=`<span class="err">${esc(erro)}</span>`;
   el.innerHTML=h;
   {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):null,U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
+      if(P==null&&B==null&&U==null)return "";
       if(P!=null)pt.push(`Compra <b>${brl(P)}</b>${r.desconto>0?` <small>(com ${fmt(r.desconto)}% de desconto)</small>`:""}`);
       if(Q!=null)pt.push(`Insumos <b>${brl(Q)}</b>`);
       if(r.banho){const how=r.banho.modo==="fixo"?`valor fixo R$ ${fmt(r.banho.mult)}`:(peso!=null&&r.banho.mult!=null?`${fmt(peso)} g × R$ ${fmt(r.banho.mult)}/g`:"falta peso ou valor do banho");pt.push(`Banho <b>${B!=null?brl(B):"—"}</b> <small>(${how})</small>`)}
@@ -2184,7 +2209,13 @@ function atualizarGera(){
       const custo=[P,Q,B,U].reduce((a,x)=>a+(x||0),0),mk=r.mk||(custo>0&&V!=null?Math.round(V/custo*100)/100:null);
       return `<div class="ck-l"><b>${esc(r.v.E)}</b>${r.v.L?` <small>${esc(r.v.L)}</small>`:""}: ${pt.join(" + ")||"<small>sem custos ainda</small>"} = <b>Custo ${brl(custo)}</b>${V!=null?` · ${mk?`× fator <b>${fmt(mk)}</b>${r.mk?"":" <small>(calculado do preço digitado)</small>"} `:""}= Varejo <b>${brl(V)}</b>`:""}</div>`}).join("");
     if(rows.length>8)linhas+=`<div class="ck-l"><small>…e mais ${rows.length-8} linha(s)</small></div>`;
-    el2.innerHTML=linhas?`<details class="custos" data-open="custos" ${abertos.custos===false?"":"open"}><summary>De onde vem o custo <small>(Compra + Insumos + Banho + Verniz = Custo; Custo × fator = Varejo)</small></summary>${linhas}</details>`:""}}
+    el2.innerHTML=linhas.replace(/<div class="ck-l"><small>…e mais[^]*$/,m=>m)&&linhas.indexOf("ck-l")>=0&&/ck-l"><b>/.test(linhas)?`<details class="custos" data-open="custos" ${abertos.custos===false?"":"open"}><summary>De onde vem o custo <small>(Compra + Insumos + Banho + Verniz = Custo; Custo × fator = Varejo)</small></summary>${linhas}</details>`:""}}
+  {const visto=new Set();rows.forEach((r,k)=>{const kb=String(r.bid||r.key);if(visto.has(kb))return;visto.add(kb);
+    const cs=celulas(r,ri0+k+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):null,U=n("U"),V=n("V"),
+      partes=[["compra",P],["insumos",Q],["banho",B],["verniz",U]].filter(x=>x[1]!=null),custo=partes.reduce((a,x)=>a+x[1],0),mk=r.mk||(custo>0&&V!=null?Math.round(V/custo*100)/100:null);
+    const sp=document.querySelector(`[data-bf="${CSS.escape(kb)}"]`);
+    if(sp)sp.innerHTML=custo>0?`Base do fator <b>R$ ${brl(custo)}</b> <span class="bfx-d">= ${partes.map(x=>x[0]+" "+brl(x[1])).join(" + ")}</span>${mk&&V!=null?` · × ${fmt(mk)} = <b>R$ ${brl(V)}</b>`:""}`:"";
+    const mi=document.querySelector(`[data-mk="${CSS.escape(kb)}"]`);if(mi&&mi.tagName==="INPUT")mi.placeholder=!r.mk&&mk?fmt(mk):"×"})}
   rows.forEach((r,k)=>{if(!r.banho)return;const cel=celulas(r,ri0+k+2)[LET.indexOf(r.banho.coluna)],sp=document.querySelector(`[data-cb="${CSS.escape(String(r.bid||r.key))}"]`);
     if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(num(r.v.N)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor no banhista"))});
   rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v)+" (×"+fmt(r.mk)+")":"";
@@ -2343,6 +2374,7 @@ function secCat(C,usoPref){const topo=catTopo(C);
         <td data-th="Valor"><input data-gif="valor" aria-label="Valor da opção ${esc(x.nome||x.letra)}" value="${esc(x.valor||"")}" placeholder="${esc(efetivo(g,x).valor)}" style="width:80px" title="Vazio = o nome da opção"></td><td class="acts" data-th=""><button class="x" type="button" data-act="gi-del" title="Remover opção" aria-label="Remover a opção ${esc(x.nome||x.letra)}">×</button></td></tr>`).join("")}
       </tbody></table></div>
       <div class="row"><input data-enter="gi" placeholder="+ Opções, Enter (ex.: 24; 26; 28)" style="max-width:260px"><span class="hint">Deixe Texto, Coluna e Valor em branco para seguir a variação: o que mudar em cima muda em todas as opções. A Descrição recebe “${esc(rotG(g))}nome” e a coluna ${esc(g.col?NOME[g.col]:"—")} recebe o nome.</span></div></div></details>`};
+  const coresUI=(c,i)=>{const l=c.cores||[];return `<details class="gdet" data-open="cv:${esc(c.nome)}" ${abertos["cv:"+c.nome]?"open":""}><summary><b>Cores · variação por cor</b><span>${l.length?esc(l.map(x=>x.nome+(x.letra?" ("+x.letra+")":"")).join(", ")):"nenhuma — o lançamento não pergunta cores"}</span></summary><div class="gb"><div class="hint">No lançamento você marca as cores e cada uma vira uma linha (junto com os tamanhos e os banhos), com a quantidade de cada. A <b>palavra</b> entra na descrição (escreva <b>-</b> para não escrever palavra); a <b>letra</b> é opcional e entra na referência.</div>${l.length?`<div class="tw"><table class="cfg bnt"><thead><tr><th>Cor</th><th>Palavra na descrição</th><th>Letra na referência</th><th></th></tr></thead><tbody>${l.map((x,j)=>`<tr data-cvi="${j}"><td data-th="Cor"><input data-cvf="nome" value="${esc(x.nome)}" style="width:110px" aria-label="Nome da cor"></td><td data-th="Palavra na descrição"><input data-cvf="texto" value="${esc(x.texto||"")}" placeholder="${esc(" "+x.nome)}" style="width:130px" aria-label="Palavra da cor ${esc(x.nome)} na descrição"></td><td data-th="Letra na referência"><input data-cvf="letra" value="${esc(x.letra||"")}" maxlength="2" style="width:56px;text-transform:uppercase" placeholder="(sem)" aria-label="Letra da cor ${esc(x.nome)} na referência"></td><td class="acts" data-th=""><button class="x" type="button" data-act="cv-del" aria-label="Tirar a cor ${esc(x.nome)}" title="Tirar esta cor">×</button></td></tr>`).join("")}</tbody></table></div>`:""}<div class="row"><input data-enter="cv" placeholder="+ Cor, Enter (várias: use ;)" style="max-width:240px" aria-label="Nova cor de ${esc(c.nome)}"><button class="btn sm" type="button" data-act="cv-todas" title="Traz todas as cores de Cores e observações">＋ todas as cores cadastradas</button></div></div></details>`};
   const card=(c,i)=>{const p=(c.prefixo||"").toUpperCase(),outras=(usoPref[p]||[]).filter(n=>n!==c.nome),nUsos=S.lanc.filter(l=>val(l,"I")===c.nome).length;
     const del=delCat===c.nome?`<span class="cdel">Excluir “${esc(c.nome)}”?${nUsos?` As ${nUsos} peça(s) já lançadas continuam com este nome.`:""} <button class="btn danger sm" type="button" data-act="cat-del-ok">Sim, excluir</button><button class="btn sm" type="button" data-act="cat-del-no">Não</button></span>`:`<button class="btn ghost danger sm" type="button" data-act="cat-del" title="Excluir esta categoria">Excluir categoria</button>`;
     return `<div class="card" data-cat="${i}">
@@ -2353,7 +2385,7 @@ function secCat(C,usoPref){const topo=catTopo(C);
       <div class="clbl">Fiscal e insumos <span>vazio = usa o padrão da coluna</span></div><div class="row fisc"><label class="fl" style="width:96px"><span>NCM</span><input data-cf="ncm" value="${esc(c.ncm||"")}" placeholder="${esc(C.colcfg.Y.padrao||"padrão")}"></label><label class="fl" style="width:64px"><span>CFOP</span><input data-cf="cfop" value="${esc(c.cfop||"")}" placeholder="${esc(C.colcfg.AA.padrao||"")}"></label><label class="fl" style="width:56px"><span>FCP</span><input data-cf="fcp" value="${esc(c.fcp||"")}" placeholder="${esc(C.colcfg.AB.padrao||"")}"></label><label class="fl" style="width:84px"><span>Insumos</span><input class="n" data-cf="insumos" value="${esc(c.insumos||"")}" placeholder="${esc(C.colcfg.Q.padrao||"")}" title="Custo de Insumos desta categoria"></label></div>
       <div class="hint">Próxima <b class="mono">${esc(p)}${fnum(p,ultimo(p)+1)}</b>${outras.length?` · sequência dividida com ${esc(outras.join(", "))}`:""}</div>
       <div class="clbl">Subcategorias <span>clique no nome para renomear · a caixinha ao lado é o prefixo próprio</span>${c.subs.length>1?`<button class="btn ghost sm" type="button" data-act="sub-az" title="Ordenar as subcategorias de A a Z">A–Z</button>`:""}</div><div class="chips">${c.subs.map((s,j)=>`<span class="chip">${j>0?`<button type="button" class="mv" data-act="sub-up" data-j="${j}" aria-label="Mover ${esc(s)} para antes" title="Mover para antes">‹</button>`:""}${catUI.ren&&catUI.ren.i===i&&catUI.ren.j===j?`<input class="cn-in" data-subren="${j}" value="${esc(s)}" maxlength="60" aria-label="Novo nome da subcategoria ${esc(s)}">`:`<button type="button" class="cn" data-act="sub-ren" data-j="${j}" title="Clique para renomear" aria-label="Renomear ${esc(s)}">${esc(s)}</button>`}<input class="sp" data-sp="${esc(s)}" value="${esc((c.subPref||{})[s]||"")}" placeholder="${esc(p)}" title="Prefixo próprio desta subcategoria (vazio = ${esc(p)})" aria-label="Prefixo de ${esc(s)}"><label class="sr" title="Marcada: a subcategoria serve só para escolher o prefixo da referência e não vai para a planilha (a categoria não tem essa subcategoria no Jueri)"><input type="checkbox" data-sr="${esc(s)}" ${(c.subSoRef||{})[s]?"checked":""}>só para a referência</label>${j<c.subs.length-1?`<button type="button" class="mv" data-act="sub-down" data-j="${j}" aria-label="Mover ${esc(s)} para depois" title="Mover para depois">›</button>`:""}<button type="button" data-act="sub-del" data-j="${j}" aria-label="Remover ${esc(s)}">×</button></span>`).join("")}<input data-enter="sub" placeholder="+ Subcategoria, Enter (várias: use ;)" aria-label="Nova subcategoria de ${esc(c.nome)}"></div>${c.subs.length?"":`<div class="soft">Esta categoria ainda não tem subcategorias${c.grade?"":" nem variação (tamanhos, letras…)"}. Digite acima e aperte Enter — pode pôr várias de uma vez separadas por ;</div>`}
-      ${gradeUI(c,i)}
+      ${gradeUI(c,i)}${coresUI(c,i)}
       <div class="cfoot">${del}</div></div>`};
   const orf=(C.grades||[]).map((g,k)=>`<div class="card" data-gr="o${k}"><div class="row"><b>Variação sem categoria: ${esc(g.nome)}</b><span class="hint">${esc(g.itens.map(x=>x.letra+" "+(x.nome||"")).join(", "))}</span><select data-gmove="${k}" style="width:auto"><option value="">Mover para a categoria…</option>${C.categorias.filter(x=>!x.grade).map(x=>`<option>${esc(x.nome)}</option>`).join("")}</select><button class="x" type="button" data-act="go-del" data-k="${k}" title="Excluir esta variação">×</button></div></div>`).join("");
   return sec("cat","Categorias e variações",C.categorias.slice(0,4).map(c=>`${c.nome} ${(c.prefixo||"").toUpperCase()}${ultimo((c.prefixo||"").toUpperCase())}`).join(" · ")+"…",
@@ -3492,10 +3524,10 @@ async function fotosEmLote(files,lidIni){
   salvar(false);renderTopo();if(editId)renderForm();
   autoEnviar([...usados]);const tot=nNome+nSeq;toast(`${tot} foto(s) anexada(s)${nNome?` · ${nNome} pelo nome do arquivo`:""}${nSeq?` · ${nSeq} em sequência`:""}${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`);
 }
-async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){await fotoNaPeca(editId,F);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
+async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){const sj0=formSujo();await fotoNaPeca(editId,F);if(!sj0)editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
 function fotoRemover(lid){
   if(!lid){delete S.form.ft;FT_GRANDE=null;salvar(false);renderForm();return}
-  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid)delete S.form.ft;salvar(false);renderTopo();renderForm();toast("Foto removida.")}
+  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
   inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=ftAlvo;ftAlvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
     if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
@@ -3526,6 +3558,7 @@ function adicionar(limpar,quiet){
     if(!cs.some(c=>!vazio(c.desc)||(num(c.peso)||0)>0||(num(c.custo)||0)>0)){erro="Coloque pelo menos uma peça no conjunto (nome, peso ou custo).";atualizarGera();return}
     const mau=cs.findIndex(c=>["peso","custo"].some(k=>!vazio(c[k])&&(num(c[k])==null||num(c[k])<0||num(c[k])>1e7)));
     if(mau>=0){erro=`Peça ${mau+1} do conjunto: peso e custo precisam ser números de 0 em diante.`;atualizarGera();const el=document.querySelector(`[data-ci="${mau}"] input.cj-n`);if(el)el.focus();return}
+  if(f.conj){const ie=(f.comp||[]).findIndex((c,i)=>{const e=conjErro(f,i);return e&&e!=="nome repetido"});if(ie>=0){erro=`Peça ${ie+1} do conjunto: ${conjErro(f,ie)}.`;atualizarGera();const el=document.querySelector(`#conj [data-ci="${ie}"] [data-cp="${vazio(f.comp[ie].desc)?"desc":vazio(f.comp[ie].peso)?"peso":"custo"}"]`);if(el)el.focus();return}}
     {const R=conjCalc(f);if(R.tot.N<=0&&R.tot.P<=0){erro="Coloque o peso ou o custo de compra nas peças do conjunto.";atualizarGera();return}}}
   if(!catBy(val(f,"I"))){erro="Escolha a categoria da peça.";atualizarGera();const ec=document.getElementById("f-I");if(ec)ec.focus();return}
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
@@ -3591,7 +3624,7 @@ function editar(id){
   dobrarOv(S.form,id);if(S.form.conj)conjSync(S.form);editSnap=JSON.stringify(S.form);
   if(["A","B","C","D","K","X","Z","AD","AE","Y","AA","AB","AC"].some(L=>!vazio(S.form.v[L])))abertos.det=true;
   if(Object.values(S.form.ov||{}).some(o=>o&&Object.keys(o).some(L=>!["W","V"].includes(L))))abertos.det=true;
-  salvar(false);renderTopo();renderForm();focarPrimeiro();
+  salvar(false);renderTopo();renderForm();focarPrimeiro();editSnap=JSON.stringify(S.form);
 }
 function cancelar(){editId=null;if(rascunho)S.form=rascunho;rascunho=null;erro="";salvar(false);renderTopo();renderForm()}
 function duplicar(ids){
@@ -3792,7 +3825,7 @@ document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
     abrirCel(r,td.dataset.c,true)}});
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
 function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=cfg().banhistas[0].id;conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
-const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del"];
+const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del","cv-del","cv-todas"];
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo==="conjunto"){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];
@@ -3926,6 +3959,9 @@ document.addEventListener("click",e=>{
     case "cc-reset":C.colcfg=colcfgPadrao();salvar(true,false);render();break;
     case "cor-del":C.cores.splice(+t.dataset.j,1);salvar(true,false);render();break;
     case "obs-del":C.observacoes.splice(+t.dataset.j,1);salvar(true,false);render();break;
+    case "cs-todas":{const f=S.form,cc=catBy(f.v.I),l=(cc&&cc.cores)||[];f.csel=f.csel&&f.csel.length===l.length?[]:l.map(x=>x.id);renderTopo();renderForm();salvar(false);break}
+    case "cv-del":{const c=C.categorias[ci],j=+t.closest("[data-cvi]").dataset.cvi;c.cores.splice(j,1);abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
+    case "cv-todas":{const c=C.categorias[ci];c.cores=c.cores||[];C.cores.forEach(n=>{if(!c.cores.some(y=>semAc(y.nome)===semAc(n)))c.cores.push({id:uid(),nome:n,texto:"",letra:""})});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
     case "gi-todos":{const f=S.form,gr=gradeBy(f.grade);if(gr){f.gsel=f.gsel&&f.gsel.length===gr.itens.length?[]:gr.itens.map(x=>x.id);renderTopo();renderForm();salvar(false)}break}
     case "gr-add":{const c=C.categorias[ci];c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};abertos["g:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
     case "gr-own":{const c=C.categorias[ci],e=effGrade(c),sb=c.grade.subs,id=c.grade.id;c.grade={...clone(e),id,subs:sb};delete c.grade.usa;salvar(true,false);render();break}
@@ -3944,6 +3980,7 @@ document.addEventListener("click",e=>{
     case "gi-pmg":{const gr=gradeBy(S.form.grade);if(gr){const novos=addTamanhos(gr,"P M G");S.form.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(S.form.gsel||[]).includes(id));S.form.semGrade=false;salvar(true,false);renderForm();toast("Tamanhos P, M e G prontos: a letra de cada um entra na referência.")}break}
     case "comp-add":{const f=S.form;f.comp=f.comp||[];if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");break}const vaz=f.comp.findIndex(x=>!x.desc&&!x.peso&&!x.custo);let n;if(vaz>=0){n=vaz;if(t.dataset.nome)f.comp[vaz].desc=t.dataset.nome}else{n=f.comp.length;f.comp.push(novaComp(t.dataset.nome||""))}conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${n}"] [data-cp="${t.dataset.nome?"peso":"desc"}"]`);break}
     case "comp-dup":{const f=S.form,i=+t.dataset.ci,c=f.comp&&f.comp[i];if(!c)break;if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");break}f.comp.splice(i+1,0,{...clone(c),id:uid()});conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${i+1}"] [data-cp="peso"]`);break}
+    case "comp-up":case "comp-down":{const f=S.form,i=+t.dataset.ci,j=a==="comp-up"?i-1:i+1;if(!f.comp||j<0||j>=f.comp.length)break;[f.comp[i],f.comp[j]]=[f.comp[j],f.comp[i]];conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${j}"] [data-act="${a}"]`);break}
     case "comp-del":{const f=S.form;f.comp.splice(+t.dataset.ci,1);conjSync(f);salvar(false);renderTopo();renderForm();break}
     case "foto-testar":testarChaveImgbb();break;
     case "foto-add":ftAlvo=t.dataset.lid;document.getElementById("ftIn").click();break;
@@ -4078,7 +4115,7 @@ function onField(t,isChange){
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
-    if(L==="I"&&isChange){const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange){f.csel=[];const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
     if(L==="V"&&isChange)fatorDoPreco("p");
     atualizarGera();salvar(false);return;
@@ -4100,6 +4137,7 @@ function onField(t,isChange){
     else if(k==="semGrade"){if(f.semGrade)f.vinc=false;renderTopo();renderForm();refocar('[data-f="semGrade"]')}
     else atualizarGera();salvar(false);return}
   if(t.dataset.vz){f.vz=f.vz||{};f.vz[t.dataset.vz]=t.checked;atualizarGera();renderTopo();renderFormSoon();salvar(false);return}
+  if(t.dataset.cs){f.csel=f.csel||[];const id=t.dataset.cs;f.csel=f.csel.filter(x=>x!==id);if(t.checked)f.csel.push(id);const cc=catBy(f.v.I);if(cc&&cc.cores)f.csel=cc.cores.map(x=>x.id).filter(x=>f.csel.includes(x));erro="";renderTopo();renderForm();refocar(`[data-cs="${id}"]`);salvar(false);return}
   if(t.dataset.gi){f.gsel=f.gsel||[];const id=t.dataset.gi;f.gsel=f.gsel.filter(x=>x!==id);if(t.checked)f.gsel.push(id);const gr=gradeBy(f.grade);if(gr)f.gsel=gr.itens.map(x=>x.id).filter(x=>f.gsel.includes(x));erro="";renderTopo();renderForm();refocar(`[data-gi="${id}"]`);salvar(false);return}
   if(t.dataset.on){onDe(f)[t.dataset.on]=t.checked;if(f.conj)conjSync(f);{const cd=t.closest(".bcard");if(cd)cd.classList.toggle("off",!t.checked)}const qi=document.getElementById(`f-${t.dataset.on}-W`);if(qi)qi.disabled=!t.checked;renderFormSoon();atualizarGera();salvar(false);if(t.checked)refocar(`#f-${t.dataset.on}-W`);return}
   if(t.id==="ultInp"){const p=prefDe(f.v.I,f.v.J);C.seqs[p]=limpaUlt(t.value);if(t.value!==C.seqs[p])t.value=C.seqs[p];salvar(true,false);renderTopo();atualizarGera();document.getElementById("proxRef").textContent=fnum(p,proxDe(p));{const pb=document.getElementById("proxBig");if(pb)pb.innerHTML=`Próxima referência <b>${esc(p)}${fnum(p,proxDe(p))}</b>`}if(isChange)renderCfg();return}
@@ -4115,6 +4153,11 @@ function onField(t,isChange){
     else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){c[k]=t.value;salvar(true,false);if(isChange)renderForm()}
     else{C.seqs[(c.prefixo||"").toUpperCase()]=t.value.replace(/\D/g,"").slice(0,9);salvar(true,false)}
     renderTopo();if(isChange){renderCfg();renderForm();renderListas()}return}
+  if(t.dataset.cvf&&ce){const c=C.categorias[+ce.dataset.cat],j=+t.closest("[data-cvi]").dataset.cvi,x=(c.cores||[])[j],k=t.dataset.cvf;if(!x)return;
+    if(k==="nome"){const nv=t.value.replace(/\s+/g," ").trim();if(!nv||c.cores.some((y,q)=>q!==j&&semAc(y.nome)===semAc(nv))){if(isChange){t.value=x.nome;toast("O nome da cor está vazio ou repetido nesta categoria.")}return}x.nome=nv}
+    else if(k==="letra"){const v=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,2);t.value=v;if(v&&c.cores.some((y,q)=>q!==j&&String(y.letra||"").toUpperCase()===v)){if(isChange){t.value=x.letra||"";toast("Essa letra já é de outra cor desta categoria.")}return}x.letra=v}
+    else x.texto=t.value;
+    salvar(true,false);renderTopo();if(isChange)renderForm();return}
   if(t.dataset.sr&&ce){const c=C.categorias[+ce.dataset.cat];c.subSoRef=c.subSoRef||{};if(t.checked)c.subSoRef[t.dataset.sr]=true;else delete c.subSoRef[t.dataset.sr];salvar(true,false);renderTopo();return}
   if(t.dataset.sp&&ce){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;const c=C.categorias[+ce.dataset.cat],v=t.value.toUpperCase().replace(/[^A-Z]/g,"");c.subPref=c.subPref||{};if(v){c.subPref[t.dataset.sp]=v;if(!(v in C.seqs))C.seqs[v]="0"}else delete c.subPref[t.dataset.sp];salvar(true,false);renderTopo();if(isChange){renderForm()}return}
   const ge=t.closest("[data-gr]");
@@ -4161,7 +4204,7 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.id==="fileBk"&&t.files[0])return restaurar(t.files[0]);
   if(t.id==="fileBkT"&&t.files[0])return restaurarTotal(t.files[0]);
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
-  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
+  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.cvf!==undefined||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
 document.addEventListener("paste",e=>{const pt=e.target;
   /* colar várias linhas num campo de uma linha só: as quebras viram ";" (senão o navegador junta tudo num texto só) */
   if(pt.dataset&&pt.dataset.enter!==undefined&&pt.setRangeText){const tx=(e.clipboardData||window.clipboardData).getData("text");if(/[\r\n]/.test(tx)){e.preventDefault();const j=tx.replace(/\s*[\r\n]+\s*/g,"; ").replace(/^[;\s]+|[;\s]+$/g,"");pt.setRangeText(j,pt.selectionStart,pt.selectionEnd,"end");return}}
@@ -4210,6 +4253,8 @@ document.addEventListener("keydown",e=>{
   if(t.id==="ultInp"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));focarPrimeiro();return}
   if(t.dataset&&t.dataset.enter&&e.key==="Enter"){e.preventDefault();const v=t.value.trim();if(!v)return;const C=cfg(),k=t.dataset.enter;
     const ci=t.closest("[data-cat]")?t.closest("[data-cat]").dataset.cat:null;
+    if(k==="cv"){const L=partir(v),c=C.categorias[+ci];c.cores=c.cores||[];const novos=L.filter(n=>!c.cores.some(y=>semAc(y.nome)===semAc(n)));if(!novos.length){toast("Essas cores já estão na lista.");t.value="";return}
+      novos.forEach(n=>c.cores.push({id:uid(),nome:n,texto:"",letra:""}));abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();refocar(`[data-cat="${ci}"] [data-enter="cv"]`);return}
     if(k==="sub"||k==="cor"||k==="obs"){const L=partir(v);if(!L.length){t.value="";return}
       const alvo=k==="sub"?C.categorias[+ci].subs:k==="cor"?C.cores:C.observacoes,novos=L.filter(x=>!alvo.some(y=>semAc(y)===semAc(x)));
       if(!novos.length){toast(L.length>1?"Esses itens já existem.":"Esse item já existe.");t.value="";return}
