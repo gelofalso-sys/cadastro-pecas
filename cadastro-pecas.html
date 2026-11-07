@@ -1113,6 +1113,43 @@ select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
  table.bnt td.c{text-align:left}
  table.bnt td.acts{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end}
 }
+
+/* ===== v19: visões, cabeçalho compacto no celular ===== */
+.vis{flex:none;display:flex;align-items:center;gap:4px;padding:4px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:7}
+.vis button{border:1px solid transparent;background:transparent;color:var(--muted);font:600 13px var(--body);padding:0 12px;height:32px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.vis button:hover{background:var(--surface-2);color:var(--ink)}
+.vis button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.vis .vhint{margin-left:auto;font-size:11.5px;color:var(--muted)}
+.vis kbd{font:600 11px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+body[data-vis=planilha] #paneBot,body[data-vis=planilha] #splitter{display:none}
+body[data-vis=planilha] .pane-top{flex:1 1 auto}
+body[data-vis=lancar] #cfg,body[data-vis=cad] #numbar,body[data-vis=cad] #nbTog,body[data-vis=cad] #romWrap,body[data-vis=cad] .fwrap{display:none}
+body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad] #paneTop,body[data-vis=cad] #splitter{display:none}
+@media (max-width:900px){
+  .vis{padding:4px 8px;gap:2px;overflow-x:auto;scrollbar-width:none}
+  .vis button{flex:1 1 0;padding:0 6px;height:36px;font-size:13px}
+  .vis .vhint,.vis .vtudo{display:none}
+  /* no celular a lista continua em cima quando se lança (o formulário é uma gaveta) */
+  body[data-vis=lancar] #paneTop{display:flex}
+  body[data-vis=lancar].rom-ativo #paneTop{display:none}
+  .hin{min-height:0;padding-block:4px 2px}
+  .hin .sp{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .hin .sp::-webkit-scrollbar{display:none}
+  .hin .sp .btn,.hin .sp select,.hin .sp input,.udo .btn{min-height:34px!important;height:34px;flex:0 0 auto;white-space:nowrap}
+  .hin .sp .autor{flex:0 0 150px;width:150px}
+  .udo .btn{min-width:38px;padding:0 8px;font-size:0}
+  #btnUndo::before{content:"↶";font-size:17px}#btnRedo::before{content:"↷";font-size:17px}
+  .guia{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+}
+/* v19: pista de rolagem nas tabelas de cadastro */
+.tw{background:linear-gradient(90deg,var(--surface) 30%,transparent) left/24px 100% no-repeat local,linear-gradient(270deg,var(--surface) 30%,transparent) right/24px 100% no-repeat local,linear-gradient(90deg,rgba(0,0,0,.14),transparent) left/10px 100% no-repeat scroll,linear-gradient(270deg,rgba(0,0,0,.14),transparent) right/10px 100% no-repeat scroll}
+/* v19: filtros do romaneio */
+.romf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0}
+.romf input[type=search]{flex:1 1 200px;max-width:320px;height:34px}
+.romf .seg{flex-wrap:wrap;height:auto}
+.romf .seg button{height:32px;font-size:12.5px}
+.romf .hint{margin-left:auto}
+.rep-busca{margin:6px 0;width:100%;max-width:360px;height:34px}
 </style>
 
 <header><div class="gut hin">
@@ -1127,6 +1164,7 @@ select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
     <button class="btn pri" type="button" data-act="xlsx">Baixar .xlsx</button>
   </div>
 </div></header>
+<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><span class="vhint">Alt+1…4 trocam de visão · <kbd>/</kbd> busca</span></nav>
 <div class="app" id="app" role="main">
   <section class="gut pane-top" id="paneTop" aria-label="Planilha">
     <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
@@ -2327,12 +2365,12 @@ let foraDaPlanilha=false;
     document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up)});
   sp.addEventListener("dblclick",()=>{document.documentElement.style.setProperty("--split","48%");try{localStorage.removeItem("cadpecas-split")}catch(x){}});
 })();
-function rolarPane(el){if(!el)return;if(celular()){el.scrollIntoView({block:"start",behavior:"smooth"});return}
+function rolarPane(el){if(!el)return;visPara(el.closest&&el.closest("#cfg")?"cad":"lancar",true);if(celular()&&el.id==="romWrap")formAbrir(false);if(celular()){el.scrollIntoView({block:"start",behavior:"smooth"});return}
   const pb=document.getElementById("paneBot");if(pb)pb.scrollTo({top:pb.scrollTop+el.getBoundingClientRect().top-pb.getBoundingClientRect().top-6,behavior:"smooth"})}
 function irPara(id){
-  if(id==="lancar"&&celular()){formAbrir(true);return}
-  if(id==="lancar"){document.getElementById("paneBot").scrollTo({top:0,behavior:"smooth"});refocar("#f-F");return}
-  abertos.tab=id;guardarAbertos();renderCfg();const d=document.querySelector("#cfg .ctabs");if(d)rolarPane(d);
+  if(id==="lancar"&&celular()){visPara("lancar");formAbrir(true);return}
+  if(id==="lancar"){visPara("lancar");document.getElementById("paneBot").scrollTo({top:0,behavior:"smooth"});refocar("#f-F");return}
+  visPara("cad");abertos.tab=id;guardarAbertos();renderCfg();const d=document.querySelector("#cfg .ctabs");if(d)rolarPane(d);
 }
 /* ===== configurações ===== */
 /* cadastros em abas na horizontal: o nome de cada um fica sempre à vista e o conteúdo abre embaixo */
@@ -4553,6 +4591,57 @@ window.addEventListener("storage",e=>{
   document.getElementById("oaRec").onclick=()=>{dirty={c:false,l:false};location.reload()};
   document.getElementById("oaMan").onclick=()=>{conflito=false;b.remove();salvar(true)};
 });
+
+/* ===== v19: romaneio — busca e filtro por situação (só esconde os cartões; nada é remontado) ===== */
+let ROMF={q:"",m:"todas"};
+function romSit(r){if(r.feito&&!r.refaz)return "lancadas";if(r.skip)return "ignoradas";
+  if(!(num(r.peso)>0)||romSomaDe(r,romColsR(r))!==r.qtd||r.catq)return "pendentes";return "prontas"}
+function romFiltroAplicar(){
+  const w=document.getElementById("romWrap");if(!w||!ROM)return;
+  const q=semAc(ROMF.q),m=ROMF.m;let n=0;
+  ROM.rows.forEach((r,i)=>{const c=w.querySelector('.rc[data-i="'+i+'"]');if(!c)return;
+    const okM=m==="todas"||romSit(r)===m||(m==="pendentes"&&false),okQ=!q||semAc((r.cod||"")+" "+(r.desc||"")+" "+(r.cat||"")+" "+(r.sub||"")).includes(q);
+    const mostra=okM&&okQ;c.style.display=mostra?"":"none";if(mostra)n++});
+  const inf=document.getElementById("romfN");if(inf)inf.textContent=(q||m!=="todas")?n+" de "+ROM.rows.length+" peças":"";
+  w.querySelectorAll("[data-romf]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.romf===m)));
+}
+function romFiltroMontar(){
+  const w=document.getElementById("romWrap");if(!w||!ROM||ROM.rows.length<2)return;
+  const sum=w.querySelector(".rom-sum");if(!sum||w.querySelector(".romf"))return;
+  const d=document.createElement("div");d.className="romf";
+  d.innerHTML='<input type="search" id="romfQ" placeholder="Buscar peça por código ou descrição…" aria-label="Buscar peça neste romaneio" autocomplete="off"><span class="seg" role="group" aria-label="Filtrar por situação">'+
+    [["todas","Todas"],["pendentes","Pendentes"],["prontas","Prontas"],["lancadas","Lançadas"],["ignoradas","Ignoradas"]].map(a=>'<button type="button" data-romf="'+a[0]+'" aria-pressed="false">'+a[1]+'</button>').join("")+'</span><span class="hint" id="romfN"></span>';
+  sum.after(d);d.querySelector("#romfQ").value=ROMF.q;romFiltroAplicar();
+}
+{const _rr=renderRom;renderRom=function(){const r=_rr.apply(this,arguments);try{romFiltroMontar();document.body.classList.toggle("rom-ativo",!!ROM)}catch(e){}return r}}
+{const _ra=romAtual;romAtual=function(){const r=_ra.apply(this,arguments);try{romFiltroAplicar()}catch(e){}return r}}
+document.getElementById("romWrap").addEventListener("input",e=>{if(e.target.id==="romfQ"){ROMF.q=e.target.value;romFiltroAplicar()}});
+document.getElementById("romWrap").addEventListener("click",e=>{const b=e.target.closest("[data-romf]");if(b){ROMF.m=b.dataset.romf;romFiltroAplicar()}});
+/* romaneios lançados: busca por fornecedor, documento ou observação */
+{const _rl=romListaAbrir;romListaAbrir=function(){const r=_rl.apply(this,arguments);try{
+  const ov=document.querySelector(".rep"),tb=ov&&ov.querySelector(".rep-tb");if(!tb)return r;
+  const i=document.createElement("input");i.type="search";i.className="rep-busca";i.placeholder="Buscar por fornecedor, documento, observação ou quem montou…";i.setAttribute("aria-label","Buscar romaneio");
+  tb.before(i);i.addEventListener("input",()=>{const q=semAc(i.value);tb.querySelectorAll("tbody tr").forEach(tr=>{tr.style.display=!q||semAc(tr.textContent).includes(q)?"":"none"})});
+  setTimeout(()=>{if(!celular())i.focus()},0)}catch(e){}return r}}
+
+/* ===== v19: visões (Dividida · Planilha · Lançar · Cadastros) ===== */
+function visAtual(){const v=document.body.dataset.vis||"tudo";return v}
+function visPara(v,soSeEscondido){
+  if(celular()&&v==="tudo")v="planilha";
+  const a=visAtual();
+  if(soSeEscondido){const escondido=v==="cad"?(a==="planilha"||a==="lancar"):(a==="planilha"||a==="cad");if(!escondido)return}
+  document.body.dataset.vis=v;abertos.vis=v;guardarAbertos();
+  document.querySelectorAll("#vis [data-vis]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vis===v)));
+  if(celular())formAbrir(v==="lancar");
+  const pb=document.getElementById("paneBot");if(pb&&v!=="planilha")pb.scrollTo({top:0});
+}
+document.getElementById("vis").addEventListener("click",e=>{const b=e.target.closest("[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
+document.addEventListener("keydown",e=>{
+  const t=e.target,campo=/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable;
+  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-4]$/.test(e.key)){e.preventDefault();visPara(["tudo","planilha","lancar","cad"][+e.key-1]);return}
+  if(e.key==="/"&&!campo&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const fb=document.getElementById("fBusca");if(fb&&!fb.closest("[hidden]")){e.preventDefault();if(visAtual()==="lancar"||visAtual()==="cad")visPara(celular()?"planilha":"tudo");fb.focus();fb.select()}}
+});
+visPara(abertos.vis&&["tudo","planilha","lancar","cad"].includes(abertos.vis)?(abertos.vis==="lancar"&&celular()?"planilha":abertos.vis):(celular()?"planilha":"tudo"));
 /* celular: a barra de baixo some o "Lançar peça" quando o formulário já está na tela */
 try{const io=new IntersectionObserver(es=>{document.body.classList.toggle("formvis",!celular()&&es.some(x=>x.isIntersecting))},{threshold:0.1});io.observe(document.getElementById("formWrap"))}catch(e){}
 })();
