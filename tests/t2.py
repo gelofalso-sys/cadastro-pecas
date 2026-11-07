@@ -16,6 +16,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1280,"height":900}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.goto(URL);pg.wait_for_timeout(800)
+    pg.click('[data-act="ctab"][data-id="cat"]');pg.wait_for_timeout(300)
     n0=nomes(pg,'[data-cat="2"] .chip .cn')
     pg.click('[data-cat="2"] .chip .cn >> nth=0');pg.fill('[data-subren]',"EscTeste");pg.press('[data-subren]',"Escape");pg.wait_for_timeout(300)
     ok(nomes(pg,'[data-cat="2"] .chip .cn')==n0,"Esc cancela a renomeação")

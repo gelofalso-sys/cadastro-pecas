@@ -23,21 +23,20 @@ with sync_playwright() as p:
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.goto(URL);pg.wait_for_timeout(800)
     # cores na categoria Anél
-    pg.click('[data-act="ctab"][data-id="cat"]')
-    pg.click('[data-cat="1"] details:has([data-enter="cv"]) summary');pg.wait_for_timeout(200)
-    pg.fill('[data-cat="1"] [data-enter="cv"]',"Dourado; Rosé");pg.press('[data-cat="1"] [data-enter="cv"]',"Enter");pg.wait_for_timeout(300)
-    pg.fill('[data-cat="1"] [data-cvi="1"] [data-cvf="letra"]',"R");pg.press('[data-cat="1"] [data-cvi="1"] [data-cvf="letra"]',"Tab")
-    pg.fill('[data-cat="1"] [data-cvi="0"] [data-cvf="texto"]',"-");pg.press('[data-cat="1"] [data-cvi="0"] [data-cvf="texto"]',"Tab")
+    pg.click('[data-act="ctab"][data-id="cor"]')
+    pg.fill('[data-enter="cor"]',"Dourado; Rosé");pg.press('[data-enter="cor"]',"Enter");pg.wait_for_timeout(300)
+    pg.fill('[data-lc] [data-lcf="sig"] >> nth=-1',"R");pg.press('[data-lc] [data-lcf="sig"] >> nth=-1',"Tab");pg.wait_for_timeout(300)
     pg.screenshot(path=SC+r"\s_cores_cfg.png")
     # lancar anel com tamanhos e cores
     pg.select_option("#f-I","Anél");pg.wait_for_timeout(300)
-    ok(pg.locator("[data-cs]").count()==2,"form mostra as cores para selecionar")
+    pg.click('[data-act="cor-on"]');pg.wait_for_timeout(200)
+    ok(pg.locator("[data-cs]").count()>=2,"form mostra as cores para selecionar")
     pg.fill("#f-F","Anel solitario");pg.fill("#f-N","2");pg.fill("#f-P","10")
     print(pg.eval_on_selector_all('[data-gi]','e=>e.map(x=>x.dataset.gi)')[:5],pg.eval_on_selector('#f-I','e=>e.value'))
     gi=pg.eval_on_selector_all('[data-gi]','e=>e.map(x=>x.dataset.gi)')
     for g in gi[1:3]:pg.eval_on_selector('[data-gi="%s"]'%g,'e=>e.click()');pg.wait_for_timeout(200)
     pg.check("[data-cs]:nth-of-type(1)") if False else None
-    for cid in pg.eval_on_selector_all("[data-cs]","e=>e.map(x=>x.dataset.cs)"):pg.eval_on_selector('[data-cs="%s"]'%cid,'e=>e.click()');pg.wait_for_timeout(200)
+    for cid in [x for x in pg.eval_on_selector_all("[data-cs]","e=>e.map(x=>x.dataset.cs)") if x in ("L:dourado","L:rose")]:pg.eval_on_selector('[data-cs="%s"]'%cid,'e=>e.click()');pg.wait_for_timeout(200)
     for i in pg.eval_on_selector_all("[data-on]","e=>e.map(x=>x.dataset.on)"):
         if not pg.is_checked('[data-on="%s"]'%i):pg.check('[data-on="%s"]'%i)
     ids=pg.eval_on_selector_all('[id^="f-"][id$="-W"]',"e=>e.map(x=>x.id)");print(len(ids),"campos de quantidade")

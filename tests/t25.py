@@ -30,9 +30,10 @@ with sync_playwright() as p:
     card=pg.locator("#romWrap .rc").nth(2)
     ok(card.locator('[data-rp="gi"]').count()>=4,"＋ tamanho adiciona GG no cartão")
     # + cor da pedra
+    card.locator('[data-act="rom-cor-on"]').first.click();pg.wait_for_timeout(300);card=pg.locator("#romWrap .rc").nth(2)
     card.locator('[data-act="rom-q"][data-q="cv"]').first.click();pg.fill("#q1","Azul; Lilás");pg.press("#q1","Enter");pg.wait_for_timeout(700)
     card=pg.locator("#romWrap .rc").nth(2)
-    ok(card.locator('[data-rp="cs"]').count()==2 and card.locator('[data-rp="cs"]:checked').count()==2,"＋ cor cria e marca as cores no cartão")
+    ok(card.locator('[data-rp="cs"]').count()>=2 and card.locator('[data-rp="cs"]:checked').count()==2,"＋ cor cria e marca as cores no cartão")
     ok(card.locator(".qmx").count()>=1 or card.locator(".szt").count()>=1,"tabela de quantidade por tamanho × cor aparece")
     # fornecedor e desconto por peca
     card.locator('summary, [data-act="rom-x"]').first.click() if card.locator('[data-act="rom-x"]').count() else None
