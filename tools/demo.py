@@ -26,8 +26,8 @@ rep('''    case "imp-ok":aplicarImp();break;''', '''    case "demo-reset":if(con
 rep('''setStatus("Salvando neste navegador");return}''', '''setStatus("Demonstração · salva só neste navegador");return}''')
 rep('''<title>Cadastro de Peças</title>''', '')
 rep('if(!Array.isArray(o.lanc))erro("o backup não tem a lista de peças");','if(!Array.isArray(o.lanc))erro("o backup não tem a lista de peças");if(o.lanc.length>DEMO_MAX)erro("a demonstração aceita no máximo "+DEMO_MAX+" peças");')
-rep('''<div class="app" id="app">''', '''<div class="demo-tag" role="note">DEMONSTRAÇÃO · dados fictícios ficam só neste navegador · exporta até 20 linhas · cópia não autorizada</div>
-<div class="app" id="app">''')
+rep('''<div class="app" id="app" role="main">''', '''<div class="demo-tag" role="note">DEMONSTRAÇÃO · dados fictícios ficam só neste navegador · exporta até 20 linhas · cópia não autorizada</div>
+<div class="app" id="app" role="main">''')
 rep('@media (prefers-reduced-motion:reduce)', '.demo-tag{flex:none;text-align:center;font-size:11px;letter-spacing:.03em;padding:3px 8px;background:var(--accent);color:var(--accent-ink)}\n@media (prefers-reduced-motion:reduce)')
 
 doms_js = ",".join('"%s"' % d for d in doms)

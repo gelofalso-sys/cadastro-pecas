@@ -545,6 +545,8 @@ input.isauto{color:var(--accent);font-style:italic}
 .bcard.sm .bh2{gap:8px}.bcard.sm .bh2 small{margin-left:auto}
 .bcard.sm .bf{display:flex;gap:6px}.bcard.sm .bf .fq{width:auto}
 .bcard.sm .bf input{width:72px!important;height:28px}.bcard.sm .bf .fq:last-child input{width:92px!important}
+.bcard.sm .bf{flex-wrap:wrap}.bcard.sm .bf .fq{flex:0 0 auto;min-width:max-content}.bcard.sm .bf .fq>span{overflow:visible;text-overflow:clip}
+.rc .bcard.sm{flex:1 1 300px;min-width:300px}
 .bcard.off{opacity:.55}
 .rc-gr{display:flex;flex-direction:column;gap:6px;padding:0 10px 8px}
 .rc-gh{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
@@ -830,7 +832,7 @@ table.t tr.flash td{animation:flash 1.6s ease-out}
 .gl b{font-family:var(--mono);font-weight:600;font-size:11.5px}
 .gl small{color:var(--muted);text-align:right;font-family:var(--mono)}
 .gq.all input{background:var(--accent-soft)}
-.z-var .faixa{width:136px;height:24px;font-size:12px;border-radius:12px;padding:0 10px}
+.z-var .faixa,.rc-gh .faixa{width:136px;height:24px;font-size:12px;border-radius:12px;padding:0 10px}
 .z-orig .w-m{width:134px}.z-orig .w-s{width:104px}.z-orig .w-u{width:106px}.z-orig .w-n{width:58px}
 .z-orig .w-l{flex:1 1 150px;min-width:130px}
 .mod{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
@@ -1089,7 +1091,8 @@ table.cfg td input:not([type=checkbox]){min-width:110px}
 .banner{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}
 .banner span{flex:1 1 240px}
 .mdl{display:inline-block}.mdl summary{list-style:none;cursor:pointer;display:inline-flex}.mdl summary::-webkit-details-marker{display:none}.mdl[open]>.row{margin-top:6px}
-.chip .cn{border:0;background:none;font:inherit;color:inherit;cursor:pointer;padding:0}.chip .cn:hover{text-decoration:underline}
+.chip .cn{border:0;background:none;font:inherit;color:inherit;cursor:pointer;padding:0;width:auto;height:auto;border-radius:0;flex:0 1 auto;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chip{flex-wrap:wrap;max-width:100%}.chip .sr{flex-basis:auto}
+#cfg .cards{align-items:start}#cfg .fl>span{white-space:normal;line-height:1.25}#cfg .chips input{width:min(260px,100%)}.tabres{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.cobs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}@media(max-width:900px){.cobs{grid-template-columns:1fr}}.cobs section{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}.cobs h3{margin:0;font-size:14px}.cobs h3 small{color:var(--muted);font-weight:400}.cobs p{margin:0;font-size:12px;color:var(--muted)}.cobs .add{display:flex;gap:6px}.cobs .add input{flex:1;min-width:0;max-width:none;width:auto}.cobs .chip{padding:3px 4px 3px 10px;font-size:13px}.cobs .chip button{width:22px;height:22px}.cobs ul.obs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}.cobs .obs li{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:13px}.cobs .obs li span{flex:1;min-width:0}.cobs .obs li button{border:0;background:none;color:var(--muted);cursor:pointer}.rdoc{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rdoc small{color:var(--muted)}.chip .cn:hover{text-decoration:underline}
 .chip .cn-in{width:130px;height:24px;font-size:12.5px;border-radius:999px;padding:0 8px}
 .chip .mv{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 2px;font-size:13px;line-height:1}.chip .mv:hover{color:var(--ink)}
 select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
@@ -1302,7 +1305,8 @@ const vzOn=(l,bh,b)=>l.vz&&b.id in l.vz?!!l.vz[b.id]:vzPad(bh,b);
 /* Texto, coluna e valor de cada opção seguem a variação (rótulo, coluna e nome) até serem digitados à mão: trocar "aro" por "tamanho" ou o nome de uma opção atualiza tudo. */
 const rotG=g=>g.rotulo==null?" ":g.rotulo;
 const efetivo=(g,x)=>({...x,g,texto:!vazio(x.texto)?x.texto:rotG(g)+(x.nome||x.letra),col:!vazio(x.col)?x.col:(g.col||""),valor:!vazio(x.valor)?x.valor:(g.col||!vazio(x.col)?(x.nome||""):"")});
-const proxCorLetra=c=>{const us=new Set(((c&&c.cores)||[]).map(x=>String(x.letra||"").toUpperCase()));for(let i=1;i<100;i++)if(!us.has(String(i)))return String(i);return ""};
+/* sigla sugerida a partir do nome (Azul → AZ, Rosa → RO); se já existe na categoria tenta outras letras; por fim cai no número */
+const proxCorLetra=(c,nome)=>{const us=new Set(((c&&c.cores)||[]).map(x=>String(x.letra||"").toUpperCase()));const w=semAc(String(nome||"")).toUpperCase().replace(/[^A-Z0-9]/g,"");if(w.length>=2){const cand=[w.slice(0,2)];for(let k=2;k<w.length;k++)cand.push(w[0]+w[k]);for(const q of cand)if(!us.has(q))return q}for(let i=1;i<100;i++)if(!us.has(String(i)))return String(i);return ""};
 const coresDaCat=(cat,sub)=>{const c=catBy(cat);if(!c||!Array.isArray(c.cores)||!c.cores.length)return [];const ss=(c.coresCfg&&c.coresCfg.subs)||[];return !ss.length||ss.includes(sub)?c.cores:[]};
 const coresPadrao=(cat,sub)=>{const c=catBy(cat),p=(c&&c.coresCfg&&c.coresCfg.padrao)||[];return coresDaCat(cat,sub).map(x=>x.id).filter(id=>p.includes(id))};
 const coresItem=(cat,x)=>{const c=catBy(cat),cf=(c&&c.coresCfg)||{};return {id:"c_"+x.id,letra:String(x.letra||""),nome:x.nome,ref:cf.modoRef==="nome"?String(x.nome):String(x.letra||""),texto:x.texto==="-"?"":(!vazio(x.texto)?(/^\s/.test(x.texto)?x.texto:" "+x.texto):" "+x.nome),col:cf.col||"",valor:cf.col?x.nome:"",cfCol:cf.col||""}};
@@ -2148,7 +2152,7 @@ function addTamanhos(gr,texto){const ids=[];
 function letrasDeTamanho(){return todasGrades().flatMap(g=>g.itens.filter(x=>String(x.letra||"").toUpperCase()===String(x.nome||"").toUpperCase()).map(x=>String(x.letra).toUpperCase()))}
 function salvarRapido(){
   const C=cfg(),f=S.form,g=id=>{const e=document.getElementById(id);return e?e.value.trim():""},n=g("q1"),lo=s=>s.toLowerCase();
-  if(!n){document.getElementById("q1").focus();return}const rq=romQRow;
+  if(!n){document.getElementById("q1").focus();return}const rq=romQRow;if(rq!=null&&ROM&&ROM.rows[rq])romArma(ROM.rows[rq]);
   if(quick==="multi"){const linhas=n.split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean),F0=f.v.F,N0=f.v.N,P0=f.v.P,antes=S.lanc.length;let add=0;
     linhas.forEach(ln=>{const p=ln.split(/[;	]/).map(x=>x.trim());f.v.F=p[0];if(p[1])f.v.N=p[1];if(p[2])f.v.P=p[2];if(adicionar(false,true))add++});
     f.v.F=F0;if(N0==null)delete f.v.N;else f.v.N=N0;if(P0==null)delete f.v.P;else f.v.P=P0;erro="";
@@ -2158,19 +2162,19 @@ function salvarRapido(){
     if(!c){c={nome:n,prefixo:pr,subs:[]};C.categorias.push(c)}if(!(pr in C.seqs)||g("q3"))C.seqs[pr]=g("q3").replace(/\D/g,"")||C.seqs[pr]||"0";f.v.I=c.nome;delete f.v.J;sincGrade(f)}
   if(quick==="sub"){const c=catBy(f.v.I);if(c&&!c.subs.includes(n))c.subs.push(n);f.v.J=n;sincGrade(f)}
   if(quick==="forn"){let fo=C.fornecedores.find(x=>lo(x.nome)===lo(n));if(!fo){fo={nome:n,codigo:g("q2"),desconto:g("q3")||"0",tipo:document.getElementById("q4").value};C.fornecedores.push(fo)}
-    f.v.H=fo.nome;f.desconto=fo.desconto||"0";if(fo.codigo)f.v.G=fo.codigo;if(!editId)banhistaDoFornecedor(f)}
+    if(rq!=null&&ROM&&ROM.rows[rq]){ROM.rows[rq].forn=fo.nome;romReset(ROM.rows[rq])}else{f.v.H=fo.nome;f.desconto=fo.desconto||"0";if(fo.codigo)f.v.G=fo.codigo;if(!editId)banhistaDoFornecedor(f)}}
   if(quick==="obs"){if(!C.observacoes.includes(n))C.observacoes.unshift(n);f.v.M=n}
   if(quick==="cor"){if(!C.cores.includes(n))C.cores.push(n);if(quickB){f.ov=f.ov||{};f.ov[quickB]=f.ov[quickB]||{};f.ov[quickB].L=n}else f.v.L=n}
   if(quick==="cv"){const c=catBy(f.v.I);if(!c){toast("Escolha a categoria antes de criar cores.");return}c.cores=c.cores||[];const tgt=rq!=null&&ROM&&ROM.rows[rq]?ROM.rows[rq]:f;tgt.csel=tgt.csel||[];const L=partir(n),lt=L.length===1?g("q2").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,2):"";
     if(lt&&c.cores.some(y=>String(y.letra||"").toUpperCase()===lt&&semAc(y.nome)!==semAc(L[0]))){toast("Essa letra já é de outra cor desta categoria.");document.getElementById("q2").focus();return}
-    L.forEach(nm=>{if(!C.cores.some(y=>semAc(y)===semAc(nm)))C.cores.push(nm);let x=c.cores.find(y=>semAc(y.nome)===semAc(nm));if(!x){x={id:uid(),nome:nm,texto:L.length===1?g("q3"):"",letra:lt||proxCorLetra(c)};c.cores.push(x)}if(!tgt.csel.includes(x.id))tgt.csel.push(x.id)})}
+    L.forEach(nm=>{if(!C.cores.some(y=>semAc(y)===semAc(nm)))C.cores.push(nm);let x=c.cores.find(y=>semAc(y.nome)===semAc(nm));if(!x){x={id:uid(),nome:nm,texto:L.length===1?g("q3"):"",letra:lt||proxCorLetra(c,nm)};c.cores.push(x)}if(!tgt.csel.includes(x.id))tgt.csel.push(x.id)})}
   if(quick==="gi"){const gr=rq!=null?gradeDaCat(f.v.I,f.v.J):gradeBy(f.grade);if(gr){const novos=addTamanhos(gr,n);if(rq!=null&&ROM&&ROM.rows[rq]){const r0=ROM.rows[rq];r0.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(r0.gsel||[]).includes(id));r0.semG=false}else{f.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(f.gsel||[]).includes(id));f.semGrade=false}}else if(rq!=null&&catBy(f.v.I)){const c0=catBy(f.v.I);c0.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};const nv=addTamanhos(c0.grade,n);if(ROM&&ROM.rows[rq]){ROM.rows[rq].gsel=nv.slice();ROM.rows[rq].semG=false}}}
   if(quick==="bn"){const bh=banhistaBy(f.banhista),L=(g("q2")||proxLetra(bh.banhos.map(x=>x.letra).concat(letrasDeTamanho()))).toUpperCase(),id=uid();
     bh.banhos.push({id,nome:n,letra:L,cor:document.getElementById("q3").value||n,mil:g("q4"),modo:"peso",mult:g("q5"),coluna:document.getElementById("q6").value,sufixo:document.getElementById("q7").value||(" banho "+n.toLowerCase()),marcado:false,vz:true});f.on[id]=true}
   if(quick==="bh"){const base=banhistaBy(f.banhista),nb=clone(base);nb.id=uid();nb.nome=n;nb.verniz=g("qv")||base.verniz;nb.banhos.forEach((b,i)=>{const v=g("qb"+i);if(v)b.mult=v});
     C.banhistas.push(nb);f.banhista=nb.id;marcadosPadrao(f);f.ov={}}
   if(ROM){if(rq!=null&&ROM.rows[rq]&&(quick==="cat"||quick==="sub")){const r=ROM.rows[rq];if(quick==="cat"){r.cat=f.v.I;r.sub="";r.catq=false;romNovaCat(r)}else{r.sub=f.v.J||n}}
-    if(quick==="bh")ROM.rows.forEach(r=>{r.on={};r.bo={};r.vz={};r.mk={}})}
+    if(quick==="bh")ROM.rows.forEach(r=>{if(r.feito)return;r.on={};r.bo={};r.vz={};r.mk={}})}
   romQFim();
   const nome=n;quick=null;salvar(true);renderListas();renderTopo();renderForm();renderCfg();toast(`“${nome}” cadastrado.`);if(ROM)renderRom();else refocar("#f-F");
 }
@@ -2640,32 +2644,47 @@ function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g
   Object.keys(r.ex||{}).forEach(L=>{if(!vazio(r.ex[L]))f.v[L]=r.ex[L]});
   if(!bruta){if(!vazio(r.cor))f.v.L=r.cor;if(!vazio(r.vp))f.v.V=r.vp}
   if(r.forn){f.v.H=r.forn;const fo=fornBy(r.forn);if(fo)f.desconto=fo.desconto}
-  f.ft=r.fotoMini||null;f.ftR=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.csel=(r.csel||[]).slice();f.semGrade=!!r.semG;f.ov={};f.vinc=false;
+  f.ft=r.fotoMini||null;f.ftR=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.csel=(r.csel||[]).slice();f.semGrade=!!r.semG;f.ov={};f.vinc=!bruta&&!!r.vinc&&!romIds(r).length&&(!cols.length||cols[0].id==="p");
   f.mk=clone(snap.mk||{});Object.keys(r.mk||{}).forEach(k=>{if(!vazio(r.mk[k]))f.mk[k]=r.mk[k]});
   f.vz={...(snap.vz||{}),...(r.vz||{})};
   f.desconto=((T.custo==="precod"&&r.precod!=null)||r.nfSemDesc)?"0":(r.forn&&fornBy(r.forn)?fornBy(r.forn).desconto:snap.desconto);if(!vazio(r.dsc))f.desconto=String(r.dsc);
   const q=romKeys(r,cols).map(k=>[k,Math.trunc(num(r.q[k])||0)]).filter(x=>x[1]>0);
-  if(bruta){f.on={};q.forEach(([k,n])=>{f.on[k.split("~")[0]]=true;f.ov[k]={...(f.ov[k]||{}),W:String(n)}});if(prev&&!q.length)cols.forEach(c=>{f.on[c.id]=true});
+  if(!bruta&&(!cols.length||cols[0].id==="p"))f.onP={};
+  if(bruta){f.on={};cols.forEach(c=>{f.on[c.id]=true});q.forEach(([k,n])=>{f.ov[k]={...(f.ov[k]||{}),W:String(n)}});
     cols.forEach(c=>{if(!f.on[c.id])return;const bo=(r.bo||{})[c.id]||{},o=f.ov[c.id]=f.ov[c.id]||{};
-      if(!vazio(bo.L))o.L=bo.L;if(!vazio(bo.O))o.O=bo.O;if(!vazio(bo.C))o[c.col]=bo.C;if(!vazio(bo.U))o.U=bo.U;if(!vazio(bo.V))o.V=bo.V;if(!vazio(bo.F))o.F=bo.F})}
-  else if(!bruta&&cols.length&&cols[0].id!=="p"){f.onP={};q.forEach(([k,n])=>{f.onP[k.split("~")[0]]=true;f.ov[k]={...(f.ov[k]||{}),W:String(n)}});if(prev&&!q.length)cols.forEach(c=>{f.onP[c.id]=true});
+      if(!vazio(bo.L))o.L=bo.L;if(!vazio(bo.O))o.O=bo.O;if(!vazio(bo._m))o._m=bo._m;if(!vazio(bo.C))o[c.col]=bo.C;if(!vazio(bo.U))o.U=bo.U;if(!vazio(bo.V))o.V=bo.V;if(!vazio(bo.F))o.F=bo.F})}
+  else if(!bruta&&cols.length&&cols[0].id!=="p"){f.onP={};cols.forEach(c=>{f.onP[c.id]=true});q.forEach(([k,n])=>{f.ov[k]={...(f.ov[k]||{}),W:String(n)}});
     cols.forEach(c=>{if(!f.onP[c.id])return;const bo=(r.bo||{})[c.id]||{},o=f.ov[c.id]=f.ov[c.id]||{};if(!vazio(bo.L))o.L=bo.L;if(!vazio(bo.O))o.O=bo.O;if(!vazio(bo.V))o.V=bo.V;if(!vazio(bo.F))o.F=bo.F})}
   else if(romIds(r).length)q.forEach(([k,n])=>{f.ov[k]={W:String(n)}});
   else if(q.length)f.v.W=String(q[0][1]);
   return {f,q,cols,g}}
 /* simula o que vai ser criado (referências, preços) sem gravar nada */
-function romPreview(){const out=[],fakes=[];
-  ROM.rows.forEach((r,i)=>{out[i]=null;if(r.skip)return;const {f}=romForm(r,true);fakes.push({...f,id:"__rom"+i});out[i]={rows:[]}});
-  if(!fakes.length)return out;let g;try{g=gerar([...S.lanc,...fakes])}catch(e){return out}
+/* a peça refeita mantém a posição (e portanto a referência) se a categoria/prefixo é o mesmo; mudou o prefixo, vai para o fim e recebe a próxima referência da sequência nova */
+const romPrefDe=l=>prefDe(val(l,"I")||"",val(l,"J"));
+/* peça que sai de uma sequência (trocou de categoria): as seguintes da sequência antiga NÃO são renumeradas; ficam com a referência que já tinham (fixada como referência própria) e a vaga fica livre */
+function romFixaRefs(arr,pos,p,ign,clon){const g=gerar(arr);
+  for(let i=pos+1;i<arr.length;i++){const l=arr[i];if(ign.includes(l.id)||romPrefDe(l)!==p||!vazio(l.v.E))continue;
+    const rw=g.linhas.find(x=>x.lancId===l.id);if(!rw)continue;const E=String(rw.v.E||""),pt=String(rw.part||""),b=pt&&E.endsWith(pt)?E.slice(0,E.length-pt.length):E;
+    if(clon)arr[i]={...l,v:{...l.v,E:b}};else l.v.E=b}}
+function romMonta(base,r,fk){if(r.refaz&&r.lancIds&&r.lancIds.length){const pos=base.findIndex(l=>l.id===r.lancIds[0]),vel=pos>=0?base[pos]:null,troca=!!vel&&romPrefDe(vel)!==romPrefDe(fk);
+    if(troca)romFixaRefs(base,pos,romPrefDe(vel),r.lancIds,true);
+    for(let j=base.length-1;j>=0;j--)if(r.lancIds.includes(base[j].id))base.splice(j,1);
+    if(vel&&!troca){base.splice(Math.min(pos,base.length),0,fk);return {troca:false}}
+    base.push(fk);return {troca}}
+  base.push(fk);return {troca:false}}
+function romPreview(){const out=[],base=S.lanc.slice();
+  ROM.rows.forEach((r,i)=>{out[i]=null;if(r.skip)return;const {f}=romForm(r,true),t=romMonta(base,r,{...f,id:"__rom"+i});out[i]={rows:[],troca:t.troca}});
+  if(!base.some(l=>String(l.id).startsWith("__rom")))return out;let g;try{g=gerar(base)}catch(e){return out}
   g.linhas.forEach((row,ri)=>{const id=String(row.lancId);if(!id.startsWith("__rom"))return;const o=out[+id.slice(5)];if(!o)return;
     const cs=celulas(row,ri+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
     o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),cb:row.banho?n(row.banho.coluna):null,custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
 const fm=n=>n==null?"—":"R$ "+brl(n);
 function romLinhasHTML(pv,r,cols){if(!pv||!pv.rows.length)return `<span class="hint">Escolha a categoria (e os banhos) para ver as referências desta peça.</span>`;
+  const aviso=pv.troca?`<span class="hint" title="A peça mudou de categoria: recebe a próxima referência da nova sequência. As outras peças da categoria antiga NÃO são renumeradas">↪ categoria nova: próxima referência da sequência; as outras peças da categoria antiga mantêm as referências (fica uma vaga)</span> `:"";
   const g=gradeDaCat(r.cat,r.sub);
   return pv.rows.map(x=>{const c=cols.find(c=>c.id===x.bid),it=x.gi?{nome:romNomeId(r.cat,r.sub,x.gi)}:null;
-    return `<span class="rch${x.dup?" dup":""}" title="${esc(x.dup?"Referência repetida":"Linha que será criada")}"><b>${esc(x.ref)}</b>${c&&c.nome?` <i>${esc(c.nome)}</i>`:""}${it?` <i>${esc(it.nome||it.letra)}</i>`:""} <em>${x.q?x.q+" un.":"sem qtd"}</em> <u>${fm(x.v)}</u></span>`}).join("")}
+    return `<span class="rch${x.dup?" dup":""}" title="${esc(x.dup?"Referência repetida":"Linha que será criada")}"><b>${esc(x.ref)}</b>${c&&c.nome?` <i>${esc(c.nome)}</i>`:""}${it?` <i>${esc(it.nome||it.letra)}</i>`:""} <em>${x.q?x.q+" un.":"sem qtd"}</em> <u>${fm(x.v)}</u></span>`}).join("")+aviso}
 function renderRom(){const el=document.getElementById("romWrap");if(!el)return;if(!ROM){el.innerHTML="";renderNum();return}
   const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),cols=romCols();
   const fq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
@@ -2765,13 +2784,15 @@ let ROMS=[],romArm=null,TABS=[],ARQ={},AUTOR="",tabArm=null;
 function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.open("cadpecas-big",3);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};rq.onerror=()=>res(null);
   rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(store,mode),st=tx.objectStore(store);let out=null;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>{d.close();res(out)};tx.onerror=tx.onabort=()=>{d.close();res(null)}}catch(e){d.close();res(null)}}}catch(e){res(null)}})}
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
-function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,mk:f.mk,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
-function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
+function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,mk:f.mk,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
+function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);return gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
 function romGravarBig(){if(!ROM||!ROM.rows.length)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=romRec();idbPut("roms",rec.id,rec).then(r=>{if(r===null)avisoIdb("o romaneio");else romIndex(rec)})}
 let avisoIdbT=0;
 function avisoIdb(oque){setStatus("NÃO salvo — memória do navegador cheia ("+oque+"). Baixe o backup.",true);if(Date.now()-avisoIdbT>10000){avisoIdbT=Date.now();toast("NÃO consegui guardar "+oque+" — a memória do navegador pode estar cheia. Baixe o backup completo.")}}
 function romExcluirSalvo(id){idbDel("roms",id);ROMS=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
+/* mexeu numa peça já lançada: ela passa a ser substituída ao criar (mesma posição e mesma referência; categoria nova = próxima referência da nova sequência). Se ela está numa tabela salva, não dá para substituir aqui. */
+function romArma(r){if(r&&r.feito&&r.skip&&!r.arq){r.skip=false;r.refaz=true;r.aviso="";return true}return false}
 function romMarcar(){if(!ROM)return;ROM.rows.forEach(r=>{const vivos=(r.lancIds||[]).filter(i=>S.lanc.some(l=>l.id===i)),arq=(r.lancIds||[]).filter(i=>!vivos.includes(i)&&ARQ[i]),v=vivos.concat(arq);r.lancIds=v;r.arq=!vivos.length&&arq.length?ARQ[arq[0]]:"";
   if(v.length){r.feito=true;if(!r.refaz||r.arq){r.refaz=false;r.skip=true;r.aviso="· já lançada"}}else if(r.feito){r.feito=false;r.refaz=false;r.skip=false;r.aviso=""}})}
 async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await idbGet("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
@@ -2779,16 +2800,16 @@ async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=awai
 async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição antes.");return}
   if(ROM&&ROM.rows.length)romSalvar();
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
-  const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",conf:rec.conf||"",bulk:rec.bulk||null,rows:rec.rows,pdf:null};
+  const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",conf:rec.conf||"",bulk:rec.bulk||null,rows:rec.rows,pdf:null};
   if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;f.mk=rec.form.mk||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
   romMarcar();const nf=ROM.rows.filter(r=>r.feito).length,np=ROM.rows.filter(r=>!r.skip).length;
-  ROM.msg=`Romaneio salvo aberto · ${nf} já lançada(s) · ${np} para lançar. Marque a caixa de uma peça já lançada para corrigir (ela é substituída, mantendo a posição).`;
+  ROM.msg=`Romaneio salvo aberto · ${nf} já lançada(s) · ${np} para lançar. Mude qualquer campo de uma peça já lançada para corrigir (ela é substituída, mantendo posição e referência; só muda de referência se você trocar a categoria; nesse caso as outras peças nunca são renumeradas).`;
   renderTopo();renderForm();renderRom();romSalvar();const w=document.getElementById("romWrap");if(w)rolarPane(w)}
 function romListaAbrir(){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";
   ov.innerHTML=`<div class="rep-c"><div class="rep-h"><div><b class="rep-t">Romaneios salvos</b><div class="hint">Cada romaneio colado fica guardado com as fotos e quantidades. Abra para lançar o que faltou ou para editar todas as peças de novo — sem importar o arquivo outra vez.</div></div><div class="rep-ac"><button type="button" class="btn sm" data-act="backup-total" title="Um arquivo com tudo: peças, cadastros, romaneios e fotos">Backup completo</button><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div>
-  <div class="rep-tb"><table><thead><tr><th>Data</th><th>Fornecedor</th><th>Montado por</th><th class="n">Peças</th><th class="n">Lançadas</th><th class="n">A lançar</th><th></th></tr></thead><tbody>${ROMS.length?ROMS.map(x=>`<tr><td>${esc(new Date(x.em).toLocaleString("pt-BR"))}</td><td><b>${esc(x.forn||"—")}</b></td><td>${esc(x.por||"não informado")}</td><td class="n">${x.n}</td><td class="n">${x.feitas}</td><td class="n">${x.pend}</td><td><button type="button" class="btn sm" data-act="rom-ver" data-id="${esc(x.id)}">Ver</button> <button type="button" class="btn sm pri" data-act="rom-salvo-abrir" data-id="${esc(x.id)}">Abrir</button> <button type="button" class="btn sm danger" data-act="rom-salvo-del" data-id="${esc(x.id)}">${romArm===x.id?"Confirmar exclusão":"Excluir"}</button></td></tr>`).join(""):`<tr><td colspan="7" class="hint">Nenhum romaneio salvo ainda.</td></tr>`}</tbody></table></div></div>`;
+  <div class="rep-tb"><table><thead><tr><th>Data</th><th>Fornecedor</th><th>Observação (documento)</th><th>Montado por</th><th class="n">Peças</th><th class="n">Lançadas</th><th class="n">A lançar</th><th></th></tr></thead><tbody>${ROMS.length?ROMS.map(x=>`<tr><td>${esc(new Date(x.em).toLocaleString("pt-BR"))}</td><td><b>${esc(x.forn||"—")}</b></td><td class="rdoc" title="${esc((x.doc||"")+(x.doc&&x.obs?" · ":"")+(x.obs||""))}">${esc(x.doc||x.obs||"—")}${x.doc&&x.obs?`<small> · ${esc(x.obs)}</small>`:""}</td><td>${esc(x.por||"não informado")}</td><td class="n">${x.n}</td><td class="n">${x.feitas}</td><td class="n">${x.pend}</td><td><button type="button" class="btn sm" data-act="rom-ver" data-id="${esc(x.id)}">Ver</button> <button type="button" class="btn sm pri" data-act="rom-salvo-abrir" data-id="${esc(x.id)}">Abrir</button> <button type="button" class="btn sm danger" data-act="rom-salvo-del" data-id="${esc(x.id)}">${romArm===x.id?"Confirmar exclusão":"Excluir"}</button></td></tr>`).join(""):`<tr><td colspan="8" class="hint">Nenhum romaneio salvo ainda.</td></tr>`}</tbody></table></div></div>`;
   document.body.appendChild(ov)}
-function romBadge(r){const rf=(G&&G.linhas?G.linhas:[]).filter(x=>(r.lancIds||[]).includes(x.lancId)).map(x=>x.v.E);return `<span class="rfeito" title="Marque a caixa ao lado para lançar de novo (corrige a peça já lançada)">✓ já lançada${rf.length?" · "+esc(rf.join(", ")):(r.refs?" · "+esc(r.refs):"")}${r.arq?" · na tabela salva “"+esc(r.arq)+"”":""}${r.refaz?" · será substituída":""}</span>`}
+function romBadge(r){const rf=(G&&G.linhas?G.linhas:[]).filter(x=>(r.lancIds||[]).includes(x.lancId)).map(x=>x.v.E);return `<span class="rfeito" title="Mude qualquer campo (ou marque a caixa) para corrigir esta peça: ao criar, ela é substituída na mesma posição e com a mesma referência">✓ já lançada${rf.length?" · "+esc(rf.join(", ")):(r.refs?" · "+esc(r.refs):"")}${r.arq?" · na tabela salva “"+esc(r.arq)+"”":""}${r.refaz?" · será substituída":""}</span>`}
 async function bkMontar(){
   const falhas=[],chaves=async n=>{const k=await idbOp(n,"readonly",st=>st.getAllKeys());if(k===null){falhas.push(n);return []}return k},valor=async(n,k)=>{const v=await idbGet(n,k);if(v===null)falhas.push(n+":"+k);return v};
   const rk=await chaves("roms"),roms={};for(const k of rk)roms[k]=await valor("roms",k);
@@ -2911,7 +2932,7 @@ function restaurarTotal(file){try{checaTam(file,MAX_BACKUP_BYTES,"O backup")}cat
 const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 function romSalvar(){if(!ROM||!ROM.rows.length)return;romGravarBig();const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
-  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,mk:f.mk,desconto:f.desconto},em:Date.now()};
+  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,mk:f.mk,desconto:f.desconto},em:Date.now()};
   romInfo=`${f.v.H||""} · ${ROM.rows.length} peças`;try{localStorage.setItem("cadpecas-rom-info",romInfo)}catch(e){}
   try{localStorage.setItem(ROMKEY,JSON.stringify(snap));romTem=true}catch(e){try{localStorage.setItem(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true}catch(x){}}
   if(db){try{const pr=db.doc("dados/romaneio").set({...snap,rows:semFoto(snap.rows),texto:String(ROM.texto||"").slice(0,200000)});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}
@@ -2919,7 +2940,7 @@ function romRascunho(){try{const j=localStorage.getItem(ROMKEY);return j?JSON.pa
 function romLimparRascunho(){romTem=false;romInfo="";try{localStorage.removeItem("cadpecas-rom-info")}catch(e){}clearTimeout(romST);try{localStorage.removeItem(ROMKEY)}catch(e){}if(db){try{const pr=db.doc("dados/romaneio").delete();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}
 async function romSync(){if(!db||romTem)return;try{const d=await db.doc("dados/romaneio").get();if(d.exists&&d.data()&&d.data().rows&&d.data().rows.length){localStorage.setItem(ROMKEY,JSON.stringify(d.data()));romTem=true;romInfo=((d.data().form||{}).H||"")+" · "+d.data().rows.length+" peças";renderForm()}}catch(e){}}
 function romRetomar(){const d=romRascunho();if(!d||!d.rows||!d.rows.length)return false;const f=S.form;
-  ROM={sid:d.sid,por:d.por,criado:d.criado,log:d.log,tid:d.tid,texto:d.texto||"",obs:d.obs||"",conf:d.conf||"",bulk:d.bulk||null,rows:d.rows,msg:`Romaneio em andamento retomado · ${d.rows.length} peças`,pdf:null};
+  ROM={sid:d.sid,por:d.por,criado:d.criado,log:d.log,tid:d.tid,texto:d.texto||"",obs:d.obs||"",doc:d.doc||"",conf:d.conf||"",bulk:d.bulk||null,rows:d.rows,msg:`Romaneio em andamento retomado · ${d.rows.length} peças`,pdf:null};
   if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;f.mk=d.form.mk||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}
 /* ===== edição em lote ===== */
 function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),fq=romFq,cc=catBy(b.cat),ns=ROM.rows.filter(r=>r.sel).length;
@@ -2936,13 +2957,13 @@ function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhu
   document.querySelectorAll("#romWrap .rc").forEach((rc,i)=>{const c=rc.querySelector("[data-rp=sel]");if(c)c.checked=!!ROM.rows[i].sel});romSelN()}
 function romSelN(){const e=document.getElementById("romSelN");if(e)e.textContent=`${ROM.rows.filter(r=>r.sel).length} selecionada(s) — sem seleção, vale para todas`}
 function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r=>r.sel);if(!alvo.length)alvo=ROM.rows.filter(r=>!r.skip);let n=0;
-  alvo.forEach(r=>{let m=false;
+  alvo.forEach(r=>{let m=false;if(r.feito&&r.arq)return;
     if(!vazio(b.peso)){r.peso=b.peso;m=true}
     Object.keys(b.mk||{}).forEach(k=>{if(vazio(b.mk[k]))return;r.mk=r.mk||{};if(String(b.mk[k])===String((f.mk||{})[k]??""))delete r.mk[k];else r.mk[k]=b.mk[k];m=true});
     if(!vazio(b.obs)){r.obs=b.obs;m=true}
     if(b.cat){const g0=!!romTemVar(r.cat,r.sub);r.cat=b.cat;r.sub=b.sub||"";m=true;if(g0||romTemVar(r.cat,r.sub))romNovaCat(r)}
     if(b.tipo||b.bh){if(b.tipo)r.tipo=b.tipo;if(b.bh)r.bh=b.bh;romReset(r);m=true}
-    if(m)n++});
+    if(m){romArma(r);n++}});
   ROM.bulk={...b,aberto:true};renderRom();toast(`Aplicado a ${n} peça(s).`)}
 /* ===== revisão final ===== */
 function romRevisar(){const pv=romPreview(),it=[];
@@ -2967,21 +2988,21 @@ function romRevisar(){const pv=romPreview(),it=[];
   document.body.appendChild(ov)}
 const romFq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
 function romCardHTML(r,i){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
-  const lcor=coresDaCat(r.cat,r.sub),ids=romIds(r),usaVar=(!!g&&!r.semG)||ids.length>0,dupCod=r.cod&&S.lanc.some(l=>String(l.v.G||"")===String(r.cod));
+  const lcor=coresDaCat(r.cat,r.sub),ids=romIds(r),usaVar=(!!g&&!r.semG)||ids.length>0,dupCod=r.cod&&S.lanc.some(l=>!(r.lancIds||[]).includes(l.id)&&String(l.v.G||"")===String(r.cod)&&String(l.v.H||"")===String(r.forn||f.v.H||""));
   const banhoCard=b=>{const on=romOn(r,b),vz=r.vz&&(b.id in r.vz)?r.vz[b.id]:vzOn(f,bh,b),dis=on?"":"disabled";
     return `<div class="bcard sm${on?"":" off"}"><div class="bh2"><label class="ck"><input type="checkbox" data-rp="bon" data-b="${b.id}" ${on?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</label>${bruta?`<label class="ck vz" title="Esta peça leva verniz"><input type="checkbox" data-rp="vz" data-b="${b.id}" ${vz?"checked":""} ${dis}>Verniz</label><small data-cb="${b.id}"></small>`:""}</div>
       <div class="bf">${usaVar?"":fq("Quantidade",`<input class="n" data-rp="q" data-b="${b.id}" value="${esc(r.q[b.id]??"")}" inputmode="numeric" placeholder="0" ${dis}>`)}${fq("Fator ×",`<input class="n" title="Fator do preço: varejo = custos × este número" data-rp="mk" data-b="${b.id}" value="${esc((r.mk||{})[b.id]??(f.mk||{})[b.id]??"")}" placeholder="×" inputmode="decimal" ${dis}>`)}${fq("Preço de Varejo",`<input class="n calc" data-rp="bo" data-k="V" data-b="${b.id}" data-auto="V:${b.id}" value="${esc(((r.bo||{})[b.id]||{}).V??"")}" placeholder="—" inputmode="decimal" ${dis}>`)}<small class="bfx" data-cbase="${b.id}"></small></div></div>`};
   const prontaCard=`<div class="bcard sm"><div class="bh2"><b>Quantidade e preço</b></div><div class="bf">${usaVar?"":fq("Quantidade",`<input class="n" data-rp="q" data-b="p" value="${esc(r.q.p??"")}" inputmode="numeric" placeholder="0">`)}${fq("Fator ×",`<input class="n" title="Fator do preço: varejo = custos × este número" data-rp="mk" data-b="p" value="${esc((r.mk||{}).p??(f.mk||{}).p??"")}" placeholder="×" inputmode="decimal">`)}${fq("Preço de Varejo",`<input class="n calc" data-rp="vp" data-auto="V:p" value="${esc(r.vp??"")}" placeholder="—" inputmode="decimal">`)}<small class="bfx" data-cbase="p"></small></div></div>`;
   const dotc=c=>`<span class="dot d-${c.col||"R"}"></span>`;
   const btnQ=(q,rot,tit)=>`<button type="button" class="gi tod" data-act="rom-q" data-q="${q}" data-i="${i}" title="${tit}">${rot}</button>`;
-  const chipsSz=g?`<div class="rc-gh"><b>${esc(g.nome)}</b><div class="gch">${g.itens.map(it=>{const on=(r.gsel||[]).includes(it.id);return `<label class="gi${on?" on":""}"><input type="checkbox" data-rp="gi" data-id="${it.id}" ${on?"checked":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="rom-gt">${(r.gsel||[]).length===g.itens.length?"nenhum":"todos"}</button>${btnQ("gi","＋ tamanho","Adiciona um tamanho novo (número ou letras) a esta variação")}<button type="button" class="gi tod" data-act="rom-pmg" data-i="${i}" title="Cria P, M e G">＋ P M G</button><button type="button" class="gi tod" data-act="rom-gpad" data-i="${i}" title="Guarda os tamanhos marcados como padrão desta categoria">★ padrão</button><label class="sg" title="Peça única, sem tamanho"><input type="checkbox" data-rp="semg" ${r.semG?"checked":""}> sem tamanho</label></div></div>`:(cc?`<div class="rc-gh"><div class="gch"><button type="button" class="gi tod" data-act="rom-pmg" data-i="${i}" title="Cria tamanhos P, M e G para ${esc(r.cat)}">＋ Tamanhos P M G em ${esc(r.cat)}</button>${btnQ("gi","＋ tamanho","Cria tamanhos para esta categoria")}</div></div>`:"");
+  const chipsSz=g?`<div class="rc-gh"><b>${esc(g.nome)}</b><div class="gch">${g.itens.map(it=>{const on=(r.gsel||[]).includes(it.id);return `<label class="gi${on?" on":""}"><input type="checkbox" data-rp="gi" data-id="${it.id}" ${on?"checked":""}>${esc(it.nome||it.letra)}</label>`}).join("")}<button type="button" class="gi tod" data-act="rom-gt">${(r.gsel||[]).length===g.itens.length?"nenhum":"todos"}</button>${btnQ("gi","＋ tamanho","Adiciona um tamanho novo (número ou letras) a esta variação")}<button type="button" class="gi tod" data-act="rom-pmg" data-i="${i}" title="Cria P, M e G">＋ P M G</button><button type="button" class="gi tod" data-act="rom-gpad" data-i="${i}" title="Guarda os tamanhos marcados como padrão desta categoria">★ padrão</button><input class="faixa" data-rp="faixa" placeholder="faixa: 12-16, 20" title="Digite uma faixa e aperte Enter: 12-16 marca de 12 a 16; 12, 18, 20 marca esses; todos marca tudo" aria-label="Faixa de tamanhos" autocomplete="off"><label class="sg" title="Peça única, sem tamanho"><input type="checkbox" data-rp="semg" ${r.semG?"checked":""}> sem tamanho</label></div></div>`:(cc?`<div class="rc-gh"><div class="gch"><button type="button" class="gi tod" data-act="rom-pmg" data-i="${i}" title="Cria tamanhos P, M e G para ${esc(r.cat)}">＋ Tamanhos P M G em ${esc(r.cat)}</button>${btnQ("gi","＋ tamanho","Cria tamanhos para esta categoria")}</div></div>`:"");
   const chipsCr=cc?`<div class="rc-gh"><b title="Cor da pedra ou do detalhe (não é a cor do banho)">Cor da pedra</b><div class="gch">${lcor.map(x=>{const on=(r.csel||[]).includes(x.id);return `<label class="gi${on?" on":""}"><input type="checkbox" data-rp="cs" data-id="${esc(x.id)}" ${on?"checked":""}>${esc(x.nome)}</label>`}).join("")}${lcor.length?`<button type="button" class="gi tod" data-act="rom-ct">${(r.csel||[]).length===lcor.length?"nenhuma":"todas"}</button>`:""}${btnQ("cv","＋ cor","Cria uma cor de pedra nova para esta categoria")}${lcor.length?`<button type="button" class="gi tod" data-act="rom-cpad" data-i="${i}" title="Guarda as cores marcadas como padrão desta categoria">★ padrão</button>`:""}</div></div>`:"";
   const szSel=g&&!r.semG?(r.gsel||[]):[],crSel=lcor.filter(x=>(r.csel||[]).includes(x.id)),matriz=szSel.length&&crSel.length;
-  const tabMx=matriz?rc.map(c=>`<div class="qmxw"><b class="qmx-t">${bruta?dotc(c)+esc(c.nome):"Quantidade"}</b><table class="qmx"><thead><tr><th></th>${crSel.map(x=>`<th>${esc(x.nome)}</th>`).join("")}</tr></thead><tbody>${szSel.map(id=>{const it=g.itens.find(y=>y.id===id);return `<tr><th>${esc(it?(it.nome||it.letra):"")}</th>${crSel.map(x=>`<td><input class="n" data-rp="q" data-b="${c.id}~${id}+c_${x.id}" value="${esc(r.q[c.id+"~"+id+"+c_"+x.id]??"")}" inputmode="numeric" placeholder="0" aria-label="Quantidade ${esc(it?(it.nome||it.letra):"")} ${esc(x.nome)}"></td>`).join("")}</tr>`}).join("")}</tbody></table></div>`).join(""):"";
-  const tabVar=matriz?tabMx:ids.length?`<table class="szt"><thead><tr><th>Quantidade por ${g&&lcor.length?"tamanho · cor":(lcor.length&&!g?"cor":"tamanho")}</th>${ids.map(id=>`<th>${esc(romNomeId(r.cat,r.sub,id))}</th>`).join("")}</tr></thead><tbody>${rc.map(c=>`<tr><th>${bruta?dotc(c)+esc(c.nome):"Qtd"}</th>${ids.map(id=>`<td><input class="n" data-rp="q" data-b="${c.id}~${id}" value="${esc(r.q[c.id+"~"+id]??"")}" inputmode="numeric" placeholder="0"></td>`).join("")}</tr>`).join("")}</tbody></table>`:(g&&!r.semG?`<span class="hint">Escolha os tamanhos (ou as cores) acima para dividir a quantidade.</span>`:"");
+  const tabMx=matriz?rc.map(c=>`<div class="qmxw"><b class="qmx-t">${bruta?dotc(c)+esc(c.nome):"Quantidade"}</b><label class="fq gq all" title="Mesma quantidade em todas as combinações"><span>todos</span><input class="n" data-rp="qall" data-b="${c.id}" placeholder="=" inputmode="numeric" aria-label="Quantidade para todas as combinações"></label><table class="qmx"><thead><tr><th></th>${crSel.map(x=>`<th>${esc(x.nome)}</th>`).join("")}</tr></thead><tbody>${szSel.map(id=>{const it=g.itens.find(y=>y.id===id);return `<tr><th>${esc(it?(it.nome||it.letra):"")}</th>${crSel.map(x=>`<td><input class="n" data-rp="q" data-b="${c.id}~${id}+c_${x.id}" value="${esc(r.q[c.id+"~"+id+"+c_"+x.id]??"")}" inputmode="numeric" placeholder="0" aria-label="Quantidade ${esc(it?(it.nome||it.letra):"")} ${esc(x.nome)}"></td>`).join("")}</tr>`}).join("")}</tbody></table></div>`).join(""):"";
+  const tabVar=matriz?tabMx:ids.length?`<table class="szt"><thead><tr><th>Quantidade por ${g&&lcor.length?"tamanho · cor":(lcor.length&&!g?"cor":"tamanho")}</th>${ids.map(id=>`<th>${esc(romNomeId(r.cat,r.sub,id))}</th>`).join("")}<th>todos</th></tr></thead><tbody>${rc.map(c=>`<tr><th>${bruta?dotc(c)+esc(c.nome):"Qtd"}</th>${ids.map(id=>`<td><input class="n" data-rp="q" data-b="${c.id}~${id}" value="${esc(r.q[c.id+"~"+id]??"")}" inputmode="numeric" placeholder="0"></td>`).join("")}<td><input class="n" data-rp="qall" data-b="${c.id}" placeholder="=" inputmode="numeric" aria-label="Mesma quantidade em todos"></td></tr>`).join("")}</tbody></table>`:(g&&!r.semG?`<span class="hint">Escolha os tamanhos (ou as cores) acima para dividir a quantidade.</span>`:"");
   const grade=(g||cc)?`<div class="rc-gr">${chipsSz}${chipsCr}${tabVar}</div>`:"";
   return `<div class="rc${r.skip?" sk":""}${r.open?" op":""}" data-i="${i}">
-    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}${(r.bh||r.tipo)?`<span class="rch" title="Esta peça foge do lote (tipo e/ou banhista próprios)">${esc(romTipo(r)==="bruta"?"Bruta":"Pronta")} · ${esc(romBh(r).nome)}</span>`:""}<span class="rsum"><span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span><span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷</button></span></div>
+    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}${((r.bh&&r.bh!==f.banhista)||(r.tipo&&r.tipo!==f.tipo))?`<span class="rch" title="Esta peça foge do lote (tipo e/ou banhista próprios)">${esc(romTipo(r)==="bruta"?"Bruta":"Pronta")} · ${esc(romBh(r).nome)}</span>`:""}<span class="rsum"><span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span><span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷</button></span></div>
     <div class="rc-top"><label class="rsel" title="Selecionar para edição em lote"><input type="checkbox" data-rp="sel" ${r.sel?"checked":""}><span>lote</span></label><input type="checkbox" data-rp="use" ${r.skip?"":"checked"} aria-label="Criar esta peça" title="Criar esta peça">${r.feito?romBadge(r):""}
       ${r.foto?`<button type="button" class="rc-fb" data-act="rom-foto" title="Ampliar a foto"><img class="rc-ft" src="${fs(r.foto)}" alt="Foto da peça"></button>`:""}
       ${fq("Código do fornecedor",`<input data-rp="cod" value="${esc(r.cod||"")}">`,"w-c")}
@@ -2997,12 +3018,12 @@ function romCardHTML(r,i){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=r
     <div class="rc-b" data-body>${r.open?romBodyHTML(r):""}</div></div>`}
 function romBodyHTML(r){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),fq=romFq;
   const exL=["E","A","B","C","D","K","Q","X","Y","Z","AA","AB","AC","AD","AE"],nEx=Object.keys(r.ex||{}).length;
-  let h=`<div class="rc-r">${fq("Fornecedor desta peça",`<select data-rp="fornI"><option value="">igual ao lote (${esc(f.v.H||"—")})</option>${C.fornecedores.map(x=>`<option value="${esc(x.nome)}" ${r.forn===x.nome?"selected":""}>${esc(x.nome)}</option>`).join("")}</select>`,"w-m")}${fq("Desc. % desta peça",`<input class="n" data-rp="dscI" value="${esc(r.dsc??"")}" placeholder="${esc(f.desconto||"0")}" inputmode="decimal" title="Desconto só desta peça (vazio = o do fornecedor)">`,"w-c")}</div><div class="rc-r">${fq("Tipo desta peça",`<select data-rp="tipoI"><option value="">igual ao lote (${f.tipo==="bruta"?"Bruta":"Pronta"})</option><option value="bruta" ${r.tipo==="bruta"?"selected":""}>Bruta (vai banhar)</option><option value="pronta" ${r.tipo==="pronta"?"selected":""}>Pronta (já banhada)</option></select>`,"w-m")}${bruta?fq("Banhista desta peça",`<select data-rp="bhI"><option value="">igual ao lote (${esc(banhistaBy(f.banhista).nome)})</option>${C.banhistas.map(b=>`<option value="${esc(b.id)}" ${r.bh===b.id?"selected":""}>${esc(b.nome)}</option>`).join("")}</select>`,"w-m"):""}</div><div class="rc-r">${fq("Observação só desta peça",`<input data-rp="obs1" value="${esc(r.obs||"")}" placeholder="(usa a observação de cima)">`,"w-l")}</div>`;
+  let h=`<div class="rc-r">${fq("Fornecedor desta peça",`<select data-rp="fornI"><option value="">igual ao lote (${esc(f.v.H||"—")})</option>${C.fornecedores.map(x=>`<option value="${esc(x.nome)}" ${r.forn===x.nome?"selected":""}>${esc(x.nome)}</option>`).join("")}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="forn" data-i="${ROM.rows.indexOf(r)}" title="Cadastrar um fornecedor novo agora e usar só nesta peça" aria-label="Novo fornecedor">＋</button>${fq("Desc. % desta peça",`<input class="n" data-rp="dscI" value="${esc(r.dsc??"")}" placeholder="${esc(f.desconto||"0")}" inputmode="decimal" title="Desconto só desta peça (vazio = o do fornecedor)">`,"w-c")}</div><div class="rc-r">${fq("Tipo desta peça",`<select data-rp="tipoI"><option value="">igual ao lote (${f.tipo==="bruta"?"Bruta":"Pronta"})</option><option value="bruta" ${r.tipo==="bruta"?"selected":""}>Bruta (vai banhar)</option><option value="pronta" ${r.tipo==="pronta"?"selected":""}>Pronta (já banhada)</option></select>`,"w-m")}${fq("Banhista desta peça",`<select data-rp="bhI"><option value="">igual ao lote (${esc(banhistaBy(f.banhista).nome)})</option>${C.banhistas.map(b=>`<option value="${esc(b.id)}" ${r.bh===b.id?"selected":""}>${esc(b.nome)}</option>`).join("")}</select>`,"w-m")}</div><div class="rc-r">${fq("Observação só desta peça",`<input data-rp="obs1" value="${esc(r.obs||"")}" placeholder="(usa a observação de cima)">`,"w-l")}${(!bruta&&(romColsR(r)[0]||{}).id==="p"&&!romIds(r).length)?`<label class="vchk" title="Mesma peça em outra cor ou pedra: mesmo número, próxima letra"><input type="checkbox" data-rp="vinc" ${r.vinc?"checked":""}> Variação da anterior</label>`:""}</div>`;
   if(bruta||(romColsR(r)[0]||{}).id!=="p")h+=bh.banhos.filter(b=>romOn(r,b)).map(b=>{const bo=(r.bo||{})[b.id]||{},ai=(k,v)=>`data-auto="${k}:${b.id}" value="${esc(v??"")}" placeholder="—"`;
     return `<div class="rc-r bd"><span class="bd-t"><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></span>
       ${fq("Cor",`<select data-rp="bo" data-k="L" data-b="${b.id}">${opts(C.cores,bo.L||b.cor)}</select>`,"w-s")}
       ${fq("Milésimos",`<input class="n" data-rp="bo" data-k="O" data-b="${b.id}" value="${esc(bo.O??milDe(b,r.cat||f.v.I)??"")}" inputmode="decimal">`,"w-n")}
-      ${!bruta?"":fq("Custo do banho R$",`<input class="n calc" data-rp="bo" data-k="C" data-b="${b.id}" ${ai("C",bo.C)} inputmode="decimal" title="Peso × valor por grama do banhista ${esc(bh.nome)}. Digite para trocar só nesta peça; apague para voltar ao cálculo.">`,"w-c")}
+      ${!bruta?"":fq(b.modo==="fixo"?"R$ banho":"R$/g da peça",`<input class="n" data-rp="bo" data-k="_m" data-b="${b.id}" value="${esc(bo._m??"")}" placeholder="${esc(String(multDe(b,r.cat||f.v.I)||"").replace(".",","))}" inputmode="decimal" title="Valor do banho só desta peça (R$ por grama; ou valor fixo se o banho for assim). Vazio = o valor da categoria no banhista">`,"w-n")}${!bruta?"":fq("Custo do banho R$",`<input class="n calc" data-rp="bo" data-k="C" data-b="${b.id}" ${ai("C",bo.C)} inputmode="decimal" title="Peso × valor por grama do banhista ${esc(bh.nome)}. Digite para trocar só nesta peça; apague para voltar ao cálculo.">`,"w-c")}
       ${!bruta?"":fq("Custo do verniz R$",`<input class="n calc" data-rp="bo" data-k="U" data-b="${b.id}" ${ai("U",bo.U)} inputmode="decimal">`,"w-c")}
       ${fq("Descrição desta linha",`<input data-rp="bo" data-k="F" data-b="${b.id}" ${ai("F",bo.F)}>`,"w-l")}</div>`}).join("");
   h+=`<details class="gdet" ${nEx?"open":""}><summary><b>Todos os outros campos</b><span>${nEx} alterado(s) · referência manual, ID, foto, códigos, tamanho, localização, NCM, CFOP, impostos, catálogo, status…</span></summary><div class="gb"><div class="dgrid">${exL.map(L=>fq(esc(NOME[L])+(L==="E"?" (referência manual)":""),`<input data-rp="ex" data-k="${L}" value="${esc((r.ex||{})[L]??padraoDe(r.cat||f.v.I,L)??"")}" ${L==="E"?'placeholder="automática"':""}>`)).join("")}</div></div></details>`;
@@ -3036,7 +3057,7 @@ async function romPlanilha(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planilh
   let hi=0,best=-1;for(let i=0;i<Math.min(15,aoa.length);i++){let n=0;aoa[i].forEach(c=>{if(Object.values(ROM_SIN).some(rx=>rx.test(String(c))))n++});if(n>best){best=n;hi=i}}
   const head=(aoa[hi]||[]).map((c,j)=>String(c||"").trim()||("Coluna "+(j+1))),map={};
   Object.entries(ROM_SIN).forEach(([k,rx])=>{const j=head.findIndex((h,q)=>rx.test(h)&&!Object.values(map).includes(q));if(j>=0)map[k]=j});
-  ROM.plan={nome:file.name,head,rows:aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=="")),map};ROM.msg="";renderRom()}catch(e){ROM.msg=e.message||"Não consegui ler a planilha.";renderRom()}}
+  ROM.doc=file.name;ROM.plan={nome:file.name,head,rows:aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=="")),map};ROM.msg="";renderRom()}catch(e){ROM.msg=e.message||"Não consegui ler a planilha.";renderRom()}}
 function romPlanHTML(){const P=ROM&&ROM.plan;if(!P)return "";
   const sel=(k,n)=>`<label class="fq w-m"><span>${n}</span><select data-rp="planmap" data-k="${k}"><option value="">— não tem —</option>${P.head.map((h,j)=>`<option value="${j}" ${P.map[k]===j?"selected":""}>${letraN(j)} · ${esc(h)}</option>`).join("")}</select></label>`;
   const cel=(r,k)=>P.map[k]==null?"":String(r[P.map[k]]==null?"":r[P.map[k]]);
@@ -3048,12 +3069,13 @@ function romExInfo(){const C=cfg(),tx=String(romUI.txt||"");if(!tx.trim())return
   const R=lerRomaneioAuto(tx,clone(C.romaneios[0]));if(R.erro||!R.rows.length)return {html:`<span class="warn">Não reconheci nenhuma peça. Confira se copiou a tabela inteira, com código, quantidade e valores. Se for uma planilha, use o botão “Importar planilha” no romaneio, que deixa você escolher as colunas.</span>`,ok:false};
   return {html:`<b>Reconheci ${R.rows.length} peça(s)</b>${R.conf?` <small>· ${esc(R.conf)}</small>`:""}<div class="prevg">${R.rows.slice(0,6).map(r=>`<div><small>${esc(r.cod||"sem código")} · ${esc(String(r.qtd??"?"))} un · ${esc(String(r.precod??r.preco??"sem valor"))}</small><b>${esc(String(r.desc||"").slice(0,70))}</b></div>`).join("")}</div>${R.rows.some(r=>!r.cod)?`<span class="warn">Algumas linhas ficaram sem código — o app só dá “já lançada” e evita repetição quando há código.</span>`:""}`,ok:true,R}}
 function romExAtualiza(){const p=document.getElementById("romExPrev"),b=document.getElementById("romExOk");if(!p)return;const r=romExInfo();p.innerHTML=r.html;if(b)b.disabled=!r.ok}
+let romBusy=false;
 function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan){ROM.plan.map[t.dataset.k]=t.value===""?null:+t.value;renderRom()}return}const k=t.dataset.rp;if(!k)return;const f=S.form;romSalvarSoon();
   if(k==="texto"){ROM.texto=t.value;return}
   if(k==="obs"){ROM.obs=t.value;romAtualSoon();return}
   if(k==="tid"){ROM.tid=t.value;abertos.romT=t.value;guardarAbertos();ROM.msg="Modelo trocado: clique em Ler lista para reler com ele.";const T=romT();if(T&&T.forn&&fornBy(T.forn))romSetForn(T.forn);renderRom();return}
-  if(k==="forn"){const t0=S.form.tipo;romSetForn(t.value);if(S.form.tipo!==t0)ROM.rows.forEach(r=>{r.q={};romNovaCat(r)});renderRom();return}
-  if(k==="bh"){trocarBanhista(f,t.value);salvar(false);renderForm();ROM.rows.forEach(r=>{r.on={};r.bo={};r.vz={};r.mk={}});renderRom();return}
+  if(k==="forn"){const t0=S.form.tipo;romSetForn(t.value);if(S.form.tipo!==t0)ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});renderRom();return}
+  if(k==="bh"){trocarBanhista(f,t.value);salvar(false);renderForm();ROM.rows.forEach(r=>{if(r.feito)return;r.on={};r.bo={};r.vz={};r.mk={}});renderRom();return}
   if(k==="bn"){(f.tipo==="bruta"?f.on:(f.onP=f.onP||{}))[t.dataset.b]=t.checked;salvar(false);renderForm();renderRom();return}
   if(k==="ult"){const pf=t.dataset.p;cfg().seqs[pf]=limpaUlt(t.value);salvar(true,false);renderTopo();document.querySelectorAll(`#romWrap [data-nx="${pf}"] b`).forEach(b=>b.textContent=proxDe(pf));const lb=t.closest("label");if(lb)lb.classList.toggle("bad",!(ultimo(pf)>0));romAtualSoon();return}
   if(k==="rb"){ROM.bulk=ROM.bulk||{mk:{}};const kk=t.dataset.k;
@@ -3062,6 +3084,10 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
     ROM.bulk[kk]=t.value;if(kk==="cat"){ROM.bulk.sub="";const ss=document.querySelector("#romWrap [data-rp=rb][data-k=sub]"),cc=catBy(t.value);if(ss)ss.innerHTML=opts(cc?cc.subs:[],"","(manter)")}return}
   if(k==="mkg"){f.mk=f.mk||{};const bm=t.dataset.b;if(vazio(t.value))delete f.mk[bm];else f.mk[bm]=t.value;salvar(false);document.querySelectorAll(`#romWrap [data-rp=mk][data-b="${bm}"]`).forEach(e=>{const rr=ROM.rows[+e.closest(".rc").dataset.i];if(rr&&!(rr.mk&&rr.mk[bm]!==undefined))e.value=t.value});romAtualSoon();return}
   const rc=t.closest(".rc");if(!rc)return;const i=+rc.dataset.i,r=ROM.rows[i];if(!r)return;
+  if(k!=="sel"&&k!=="use"){if(r.feito&&r.arq){if(fin)toast("Esta peça está na tabela salva “"+r.arq+"”. Restaure a tabela para corrigir.");return}
+    if(romArma(r)){rc.classList.remove("sk");const u=rc.querySelector('[data-rp="use"]');if(u)u.checked=true;const bd=rc.querySelector(".rfeito");if(bd)bd.outerHTML=romBadge(r);if(fin)toast("Peça já lançada: ao criar ela é substituída, na mesma posição e com a mesma referência.")}}
+  if(k==="qall"){const v=t.value;if(!vazio(v)){const n=num(v);if(n==null||n<0||!Number.isInteger(n)){if(fin)toast("Quantidade precisa ser um número inteiro, 0 ou mais.");return}}if(!fin||romBusy)return;romBusy=true;try{romKeys(r,[{id:t.dataset.b}]).forEach(kk=>{r.q[kk]=vazio(v)?"":String(num(v))});renderRom()}finally{romBusy=false}return}
+  if(k==="faixa"){if(!fin||romBusy)return;romBusy=true;try{const g0=gradeDaCat(r.cat,r.sub);if(g0){r.gsel=selFaixa(g0,t.value);r.semG=false}renderRom()}finally{romBusy=false}return}
   if(k==="dscI"){r.dsc=t.value;romAtualSoon();return}
   if(k==="fornI"){r.forn=t.value||undefined;romReset(r);renderRom();return}
   if(k==="tipoI"||k==="bhI"){if(k==="tipoI")r.tipo=t.value||undefined;else r.bh=t.value||undefined;romReset(r);renderRom();return}
@@ -3074,11 +3100,13 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
     if(col)m=checaCel(col,t.value).erro||"";
     else if(k==="q"){const n=num(t.value);if(n==null||n<0||!Number.isInteger(n))m="Quantidade precisa ser um número inteiro, 0 ou mais."}
     else if(k==="mk"){const n=num(t.value);if(n==null||n<0)m="Multiplicador precisa ser um número maior ou igual a 0."}
+    else if(k==="bo"&&["C","U","V","O","_m"].includes(t.dataset.k)){const n=num(t.value);if(n==null||n<0)m="Digite um número maior ou igual a 0."}
     if(m){t.classList.add("bad");t.style.outline="2px solid #c0392b";if(fin)toast(m+" (não gravado)");return}
     t.classList.remove("bad");t.style.outline=""}
   if(k==="custo")r.custo=t.value;else if(k==="peso")r.peso=t.value;else if(k==="cor")r.cor=t.value;else if(k==="vp")r.vp=t.value;else if(k==="obs1")r.obs=t.value;
   else if(k==="cat"){r.catq=false;r.aviso=String(r.aviso||"").replace("· categoria não reconhecida: confira","").trim();const g0=!!romTemVar(r.cat,r.sub);r.cat=t.value;r.sub="";if(g0||romTemVar(r.cat,r.sub))romNovaCat(r);renderRom();return}
   else if(k==="sub"){const g0=!!romTemVar(r.cat,r.sub);r.sub=t.value;if(g0||romTemVar(r.cat,r.sub))romNovaCat(r);renderRom();return}
+  else if(k==="vinc"){r.vinc=t.checked}
   else if(k==="semg"){r.semG=t.checked;if(t.checked)r.gsel=[];renderRom();return}
   else if(k==="cs"){const id=t.dataset.id;r.csel=(r.csel||[]).filter(x=>x!==id);if(t.checked)r.csel.push(id);r.csel=coresDaCat(r.cat,r.sub).map(x=>x.id).filter(x=>r.csel.includes(x));renderRom();return}
   else if(k==="gi"){const id=t.dataset.id;r.gsel=(r.gsel||[]).filter(x=>x!==id);if(t.checked)r.gsel.push(id);const g=gradeDaCat(r.cat,r.sub);if(g)r.gsel=g.itens.map(x=>x.id).filter(x=>r.gsel.includes(x));renderRom();return}
@@ -3149,7 +3177,7 @@ function romFotos(rows){const P=ROM.pdf;if(!P)return;const pares=[],usados=new S
   pares.sort((a,b)=>a[0]-b[0]);pares.forEach(([d,i,j])=>{if(feitos.has(i)||usados.has(j))return;feitos.add(i);usados.add(j);rows[i].foto=P.fotos[j].url;rows[i].fotoMini=P.fotos[j].mini})}
 async function romPdf(file){
   if(!ROM){ROM={tid:abertos.romT&&cfg().romaneios.some(x=>x.id===abertos.romT)?abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}
-  ROM.msg="Lendo o PDF…";renderRom();rolarPane(document.getElementById("romWrap"));
+  ROM.doc=file.name;ROM.msg="Lendo o PDF…";renderRom();rolarPane(document.getElementById("romWrap"));
   try{const P=await lerPdf(file);ROM.pdf=P;ROM.texto=P.texto;romLer();
     if(ROM.rows.length){const n=ROM.rows.filter(r=>r.foto).length;ROM.msg=`${ROM.rows.length} peças lidas do PDF · ${n} foto${n===1?"":"s"} encontrada${n===1?"":"s"}`;const h=document.querySelector("#romWrap .rom-b .hint");if(h)h.textContent=ROM.msg}}
   catch(e){let m=String(e&&e.message?e.message:"erro").replace(/[.\s]+$/,"");if(/invalid pdf|missing pdf|unexpected server|xref|not a pdf/i.test(m)||(e&&/Invalid|Missing/i.test(e.name||"")))m="o arquivo não é um PDF válido ou está corrompido";
@@ -3224,13 +3252,13 @@ function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a ediç�
   const snap=clone(f),feitas=[],ign=[];let sem=0,err=0,un=0;const naLista=ROM.rows.filter(r=>!r.skip).reduce((t,r)=>t+r.qtd,0);
   ROM.rows.forEach(r=>{if(r.skip){if(!(r.feito&&!r.refaz))ign.push({desc:r.desc,cod:r.cod,motivo:r.aviso?String(r.aviso).replace("· ",""):"desmarcada"});return}
     S.form=clone(snap);const {f:f2,q}=romForm(r);if(!q.length){sem++;ign.push({desc:r.desc,cod:r.cod,motivo:"sem quantidade"});return}
-    S.form=f2;let pos=-1,velhos=null;if(r.refaz&&r.lancIds&&r.lancIds.length){pos=S.lanc.findIndex(l=>l.id===r.lancIds[0]);velhos=S.lanc.filter(l=>r.lancIds.includes(l.id));S.lanc=S.lanc.filter(l=>!r.lancIds.includes(l.id))}
-    if(adicionar(false,true)){const nl=S.lanc[S.lanc.length-1];if(pos>=0){S.lanc.pop();S.lanc.splice(Math.min(pos,S.lanc.length),0,nl)}feitas.push({r,id:nl.id});un+=q.reduce((t,x)=>t+x[1],0)}else{if(velhos)S.lanc.splice(Math.max(0,pos),0,...velhos);err++;ign.push({desc:r.desc,cod:r.cod,motivo:"erro ao criar"})}});
+    S.form=f2;let pos=-1,velhos=null;if(r.refaz&&r.lancIds&&r.lancIds.length){pos=S.lanc.findIndex(l=>l.id===r.lancIds[0]);if(pos>=0&&romPrefDe(S.lanc[pos])!==prefDe(f2.v.I||"",f2.v.J))romFixaRefs(S.lanc,pos,romPrefDe(S.lanc[pos]),r.lancIds,false);velhos=S.lanc.filter(l=>r.lancIds.includes(l.id));S.lanc=S.lanc.filter(l=>!r.lancIds.includes(l.id))}
+    if(adicionar(false,true)){const nl=S.lanc[S.lanc.length-1];if(pos>=0&&velhos&&velhos[0]&&romPrefDe(velhos[0])===romPrefDe(nl)){S.lanc.pop();S.lanc.splice(Math.min(pos,S.lanc.length),0,nl)}feitas.push({r,id:nl.id});un+=q.reduce((t,x)=>t+x[1],0)}else{if(velhos)S.lanc.splice(Math.max(0,pos),0,...velhos);err++;ign.push({desc:r.desc,cod:r.cod,motivo:"erro ao criar"})}});
   S.form=snap;erro="";
   const ids=feitas.map(x=>x.id);
   const meta={forn:snap.v.H||"",banhista:snap.tipo==="bruta"?banhistaBy(snap.banhista).nome:"",tipo:snap.tipo,obs:ROM.obs||"",modelo:(romT()||{}).nome||"",conf:ROM.conf||"",naLista,un};
   {const g2=gerar(),corr=feitas.filter(({r})=>r.refaz).length;
-  feitas.forEach(({r,id})=>{const ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=!!r.refaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto)idbPut("fotos",id,r.foto)});
+  feitas.forEach(({r,id})=>{const ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=!!r.refaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto)idbPut("fotos",id,r.foto)});
   if(feitas.length)ROM.log=(ROM.log||[]).concat([{em:Date.now(),por:AUTOR,acao:`Lançou ${feitas.length-corr} peça(s) nova(s)${corr?` e corrigiu ${corr}`:""} · ${un} unidades`}])}
   romGravarBig();
   ROM=null;romLimparRascunho();renderRom();salvar(false);renderTopo();renderForm();if(ids.length)mostrarNoFim(ids[ids.length-1]);
@@ -3413,7 +3441,7 @@ function nfConfirmar(){if(!NF)return;const N=NF.nota;
   else{const fo=fornBy(nome);if(fo&&!fo.cnpj&&N.emit.cnpj){fo.cnpj=N.emit.cnpj;salvar(true,false)}}
   ROM={tid:abertos.romT&&C.romaneios.some(x=>x.id===abertos.romT)?abertos.romT:C.romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};romSetForn(nome);
   lin.forEach(r=>{r.mk={};r.bo={};r.on={};r.vz={};r.ex={};{const nc=String(r.nfNcm||"").replace(/\D/g,""),cf=String(r.nfCfop||"").replace(/\D/g,"");if(nc.length===8)r.ex.Y=nc;if(cf.length===4)r.ex.AA=cf}romNovaCat(r);if(r.cod&&S.lanc.some(l=>String(l.v.G||"")===r.cod&&(l.v.H||"")===(S.form.v.H||""))){r.skip=true;r.aviso="· já lançada"}});
-  const c=nfCalc();ROM.rows=lin;ROM.obs=`NF ${N.numero}${N.emit.nome?" · "+N.emit.nome:""}`;
+  const c=nfCalc();ROM.doc=f.name||"";ROM.rows=lin;ROM.obs=`NF ${N.numero}${N.emit.nome?" · "+N.emit.nome:""}`;
   {const nImp=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar").length,nTot=N.itens.length;ROM.conf=c.okProd?(nImp===nTot?`✓ ${nTot} itens conferem com a nota (${nfM(c.sP)})`:`✓ a nota confere (${nTot} itens somam ${nfM(c.sP)}); você está importando só ${nImp} de ${nTot} itens`):`⚠ a soma dos itens (${nfM(c.sP)}) não bate com o total dos produtos da nota (${nfM(N.totais.prod)})`}
   ROM.msg=`${lin.length} peça${lin.length===1?"":"s"} importada${lin.length===1?"":"s"} da nota ${N.numero}. Falta informar o peso (e os banhos).`;
   nfFechar();romSalvarSoon();renderRom();const w=document.getElementById("romWrap");if(w)rolarPane(w);toast(ROM.msg)}
@@ -3560,7 +3588,12 @@ function renderCfg0(){
         <td class="c" data-th="Verniz"><input type="checkbox" data-bnf="vz" ${vzPad(b,x)?"checked":""} title="Este banho leva verniz por padrão" aria-label="Verniz no banho ${esc(x.nome)}"></td><td class="c" data-th="Vem marcado"><input type="checkbox" data-bnf="marcado" ${x.marcado?"checked":""} title="Este banho já vem marcado ao lançar uma peça" aria-label="Banho ${esc(x.nome)} vem marcado"></td><td class="acts" data-th=""><button class="x" type="button" data-act="bn-dup" title="Duplicar esta linha de banho" aria-label="Duplicar o banho ${esc(x.nome)}">⧉</button><button class="x" type="button" data-act="bn-del" title="Remover banho" aria-label="Remover o banho ${esc(x.nome)}">×</button></td></tr>`).join("")}
       </tbody></table></div>${C.categorias.length&&b.banhos.length?`<details class="gdet" data-open="mc:${esc(b.id)}" ${abertos["mc:"+b.id]===false?"":"open"}><summary><b>Milésimos e valor por categoria</b><span>ex.: Brincos 1 · R$ 1,42; Colares 5 · R$ 4,76 — vazio = usa a linha Padrão</span></summary><div class="gb"><div class="hint">Os milésimos e o valor do banho ficam por categoria (por banho): o primeiro campo é o milésimo, o segundo é o valor em R$. A linha Padrão vale para as categorias sem valor próprio. Ao lançar a peça, os valores da categoria entram sozinhos; dentro do item você ainda troca livremente (campos Milésimos e R$/g de cada banho).</div><div class="tw"><table class="cfg bnt"><thead><tr><th>Categoria</th>${b.banhos.map(x=>`<th>${esc(x.nome)} <small>milésimos · R$</small></th>`).join("")}</tr></thead><tbody><tr><td data-th="Categoria"><b>Padrão</b> <small>(categorias sem valor próprio)</small></td>${b.banhos.map((x,j)=>`<td data-th="${esc(x.nome)} · milésimos e R$"><input class="n" data-bmc="${j}" data-mcat="__padrao" value="${esc(x.mil||"")}" placeholder="milésimos" title="Milésimos padrão" inputmode="decimal" style="width:64px" aria-label="Milésimos padrão de ${esc(x.nome)}"> <input class="n" data-bmv="${j}" data-mcat="__padrao" value="${esc(x.mult||"")}" placeholder="R$" title="Valor padrão do banho em R$" inputmode="decimal" style="width:64px" aria-label="Valor padrão em R$ de ${esc(x.nome)}"></td>`).join("")}</tr>${C.categorias.map(c=>`<tr><td data-th="Categoria"><b>${esc(c.nome)}</b></td>${b.banhos.map((x,j)=>`<td data-th="${esc(x.nome)} · milésimos e R$"><input class="n" data-bmc="${j}" data-mcat="${esc(c.nome)}" value="${esc((x.milCat||{})[c.nome]??"")}" placeholder="${esc(x.mil||"")}" title="Milésimos de banho" inputmode="decimal" style="width:64px" aria-label="Milésimos de ${esc(x.nome)} em ${esc(c.nome)}"> <input class="n" data-bmv="${j}" data-mcat="${esc(c.nome)}" value="${esc((x.multCat||{})[c.nome]??"")}" placeholder="${esc(x.mult||"")}" title="Valor do banho em R$ (por grama, ou fixo)" inputmode="decimal" style="width:64px" aria-label="Valor em R$ de ${esc(x.nome)} em ${esc(c.nome)}"></td>`).join("")}</tr>`).join("")}</tbody></table></div></div></details>`:""}${(()=>{const fl=b.banhos.filter(x=>!x.cor||!C.cores.includes(x.cor));return fl.length?`<div class="soft" role="status">${fl.map(x=>x.cor?`O banho “${esc(x.nome)}” usa a cor “${esc(x.cor)}”, que não está mais em Cores.`:`O banho “${esc(x.nome)}” está sem cor.`).join(" ")} Escolha outra na lista ou crie com “+ Nova cor…”.</div>`:""})()}${catUI.corNova&&catUI.corNova.bi===i?`<div class="cpanel"><b>Nova cor</b><div class="row"><input data-ncor placeholder="Nome da cor (ex.: Rosé)" maxlength="40" aria-label="Nome da nova cor" style="max-width:220px"><button type="button" class="btn pri sm" data-act="cor-nova-ok">Criar e usar</button><button type="button" class="btn ghost sm" data-act="cor-nova-no">Cancelar</button></div></div>`:""}
       <div class="row"><span class="hint">Adicionar banho:</span><button class="btn sm" type="button" data-act="bn-pronto" data-tp="ouro" title="Banho de ouro: coluna R, texto “banho ouro”">+ Ouro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="rodio" title="Banho de ródio: coluna S, texto “banho ródio”">+ Ródio</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="prata" title="Banho de prata: coluna T, texto “banho prata”">+ Prata</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="negro" title="Banho de ródio negro: coluna S, texto “banho ródio negro”">+ Ródio negro</button><button class="btn sm" type="button" data-act="bn-pronto" data-tp="outro" title="Banho em branco para você preencher">+ Outro</button></div></div>`).join("")}
-    <div><button class="btn sm" type="button" data-act="bh-add">+ Banhista</button></div>`);
+    <div><button class="btn sm" type="button" data-act="bh-add">+ Banhista</button></div>
+    ${C.categorias.length?`<details class="gdet" data-open="insc" ${abertos["insc"]===false?"":"open"}><summary><b>Custo de insumos por categoria</b><span>soma no custo da peça junto com compra, banho e verniz · vazio = usa o padrão geral</span></summary>
+      <div class="tw"><table class="cfg"><thead><tr><th>Categoria</th><th class="n">Insumos (R$)</th></tr></thead><tbody>
+        <tr data-cc="Q"><td><b>Padrão para todas as categorias</b></td><td style="width:140px"><input class="n" data-ccf="padrao" value="${esc((C.colcfg.Q||{}).padrao||"")}" inputmode="decimal" aria-label="Insumos padrão para todas as categorias"></td></tr>
+        ${C.categorias.map((c,i)=>`<tr data-cat="${i}"><td>${esc(c.nome)}</td><td style="width:140px"><input class="n" data-cf="insumos" value="${esc(c.insumos||"")}" placeholder="${esc((C.colcfg.Q||{}).padrao||"padrão")}" inputmode="decimal" aria-label="Insumos de ${esc(c.nome)}"></td></tr>`).join("")}
+      </tbody></table></div></details>`:""}`);
   h+=sec("forn","Fornecedores",C.fornecedores.map(f=>f.nome+(num(f.desconto)?` ${f.desconto}%`:"")).join(" · "),
     `<p class="d">Ao escolher o fornecedor no lançamento entram sozinhos o Código do Fornecedor, o desconto, o tipo de peça e, nas brutas, o banhista (com os banhos, verniz e custos dele). Também lembra os banhos marcados e os multiplicadores usados da última vez com ele. Os banhistas ficam em Banhos e custos.</p><div class="tw"><table class="cfg"><thead><tr><th>Fornecedor</th><th>Desconto %</th><th>Código do Fornecedor</th><th>Vende peça</th><th>Banhista (peça bruta)</th><th>Lembra no lançamento</th><th></th></tr></thead><tbody>
     ${C.fornecedores.map((f,i)=>`<tr data-forn="${i}"><td><input data-ff="nome" value="${esc(f.nome)}"></td><td style="width:90px"><input class="n" data-ff="desconto" value="${esc(f.desconto)}" inputmode="decimal"></td>
@@ -3576,8 +3609,12 @@ function renderCfg0(){
       <td>${auto||FORMULA.has(L)?'<span class="hint">automático</span>':`<input data-ccf="padrao" value="${esc(c.padrao)}" style="width:150px" aria-label="Valor padrão">`}</td><td><input data-ccf="opcoes" value="${esc(c.opcoes||"")}" style="min-width:200px" placeholder="opção 1; opção 2" aria-label="Opções"></td></tr>`}).join("")}
     </tbody></table></div><div><button class="btn sm" type="button" data-act="cc-reset">Voltar ao padrão</button></div>`);
   h+=sec("cor","Cores e observações",`${C.cores.length} cores · ${C.observacoes.length} observações`,
-    `<div class="hint">Cor</div><div class="chips">${C.cores.map((c,j)=>`<span class="chip">${esc(c)}<button type="button" data-act="cor-del" data-j="${j}" aria-label="Remover">×</button></span>`).join("")}<input data-enter="cor" placeholder="+ Cor, Enter (várias: use ;)" aria-label="Nova cor"></div>
-    <div class="hint">Observação (sugestões)</div><div class="chips">${C.observacoes.map((c,j)=>`<span class="chip">${esc(c)}<button type="button" data-act="obs-del" data-j="${j}" aria-label="Remover">×</button></span>`).join("")}<input data-enter="obs" placeholder="+ Observação, Enter (várias: use ;)" style="width:260px" aria-label="Nova observação"></div>`);
+    `<div class="cobs"><section><header><h3>Cores <small>${C.cores.length}</small></h3><p>Lista única: serve para a cor do banho e para a cor da pedra/detalhe. Em cada categoria você só liga ou desliga a pergunta; as cores vêm daqui.</p></header>
+      <div class="add"><input data-enter="cor" placeholder="Nova cor (várias: separe com ;)" aria-label="Nova cor"><button type="button" class="btn sm pri" data-act="cor-add">Adicionar</button></div>
+      <div class="chips">${C.cores.map((c,j)=>`<span class="chip">${esc(c)}<button type="button" data-act="cor-del" data-j="${j}" aria-label="Remover ${esc(c)}">×</button></span>`).join("")}</div></section>
+     <section><header><h3>Observações <small>${C.observacoes.length}</small></h3><p>Frases prontas para escolher no campo Observação, sem digitar.</p></header>
+      <div class="add"><input data-enter="obs" placeholder="Nova observação (várias: separe com ;)" aria-label="Nova observação"><button type="button" class="btn sm pri" data-act="obs-add">Adicionar</button></div>
+      <ul class="obs">${C.observacoes.map((c,j)=>`<li><span title="${esc(c)}">${esc(c)}</span><button type="button" class="x" data-act="obs-del" data-j="${j}" aria-label="Remover observação">×</button></li>`).join("")}</ul></section></div>`);
   h+=secRom(C);h+=secModelo(C);
   h+=sec("foto","Fotos (link)",fotoKey()?"imgbb conectado neste navegador":"sem chave do imgbb ainda",
     `<p class="d">Os sistemas (Jueri, Bling…) não recebem a foto dentro da planilha: eles pedem o <b>link</b> da foto. Aqui o app envia a foto para o <b>imgbb</b> (grátis) e coloca o link na coluna <b>Foto</b> de cada peça. Se você já tem o link, é só digitar ou colar na célula da coluna Foto.</p>
@@ -4115,13 +4152,14 @@ document.addEventListener("click",e=>{
     case "bn-add":{const b=C.banhistas[bi],usadas=b.banhos.map(x=>x.letra);let L="A";while(usadas.some(u=>String(u).toUpperCase()===L)&&L<"Z")L=String.fromCharCode(L.charCodeAt(0)+1);if(usadas.some(u=>String(u).toUpperCase()===L)){toast("Já existem banhos de A a Z neste banhista — não cabe mais um.");break}b.banhos.push({id:uid(),nome:"Ródio",letra:L,cor:"Ródio",mil:"",modo:"peso",mult:"",coluna:"S",sufixo:" banho ródio",marcado:false,vz:true});salvar(true,false);render();break}
     case "bn-del":{{const bh0=C.banhistas[bi],bn0=bh0.banhos[+t.closest("[data-bn]").dataset.bn],n=S.lanc.filter(l=>l.banhista===bh0.id&&((l.on&&l.on[bn0.id])||(l.onP&&l.onP[bn0.id]))).length;if(n&&!confirm(`${n} peça(s) já lançadas usam o banho “${bn0.nome}”. Remover mesmo assim? (Ctrl+Z desfaz)`))break}C.banhistas[bi].banhos.splice(+t.closest("[data-bn]").dataset.bn,1);salvar(true);render();break}
     case "cc-reset":C.colcfg=colcfgPadrao();salvar(true,false);render();break;
+    case "cor-add":case "obs-add":{const inp=t.closest(".add")&&t.closest(".add").querySelector("input");if(inp){if(!inp.value.trim())inp.focus();else inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))}break}
     case "cor-del":C.cores.splice(+t.dataset.j,1);salvar(true,false);render();break;
     case "obs-del":C.observacoes.splice(+t.dataset.j,1);salvar(true,false);render();break;
     case "cs-padrao":{const f=S.form,c=catBy(f.v.I);if(!c)break;c.coresCfg=c.coresCfg||{};c.coresCfg.padrao=(f.csel||[]).slice();salvar(true,false);renderCfg();toast((f.csel||[]).length?"Cores padrão salvas: ao escolher "+f.v.I+" elas já vêm marcadas.":"Padrão removido: nenhuma cor vem marcada.");break}
     case "cs-todas":{const f=S.form,l=coresDaCat(f.v.I,f.v.J);f.csel=f.csel&&f.csel.length===l.length?[]:l.map(x=>x.id);renderTopo();renderForm();salvar(false);break}
     case "cv-del":{const c=C.categorias[ci],j=+t.closest("[data-cvi]").dataset.cvi;c.cores.splice(j,1);abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
-    case "cv-num":{const c=C.categorias[ci];(c.cores||[]).forEach(x=>{if(vazio(x.letra))x.letra=proxCorLetra(c)});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
-    case "cv-todas":{const c=C.categorias[ci];c.cores=c.cores||[];C.cores.forEach(n=>{if(!c.cores.some(y=>semAc(y.nome)===semAc(n)))c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c)})});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
+    case "cv-num":{const c=C.categorias[ci];(c.cores||[]).forEach(x=>{if(vazio(x.letra))x.letra=proxCorLetra(c,x.nome)});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
+    case "cv-todas":{const c=C.categorias[ci];c.cores=c.cores||[];C.cores.forEach(n=>{if(!c.cores.some(y=>semAc(y.nome)===semAc(n)))c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c,n)})});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
     case "gi-todos":{const f=S.form,gr=gradeBy(f.grade);if(gr){f.gsel=f.gsel&&f.gsel.length===gr.itens.length?[]:gr.itens.map(x=>x.id);renderTopo();renderForm();salvar(false)}break}
     case "gr-add":{const c=C.categorias[ci];c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};abertos["g:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
     case "gr-own":{const c=C.categorias[ci],e=effGrade(c),sb=c.grade.subs,id=c.grade.id;c.grade={...clone(e),id,subs:sb};delete c.grade.usa;salvar(true,false);render();break}
@@ -4179,14 +4217,14 @@ document.addEventListener("click",e=>{
     case "rom-ler":romLer();break;
     case "rom-criar":romRevisar();break;
     case "rom-x":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i];r.open=!r.open;rc.classList.toggle("op",r.open);const bd=rc.querySelector("[data-body]");if(r.open&&bd&&!bd.innerHTML.trim()){bd.innerHTML=romBodyHTML(r);romAtual()}break}
-    case "rom-div":{const r=ROM.rows[+t.closest(".rc").dataset.i];if(romKeys(r,romColsR(r)).length)romDividir(r,romColsR(r));else toast("Escolha os tamanhos antes.");renderRom();break}
+    case "rom-div":{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);if(romKeys(r,romColsR(r)).length)romDividir(r,romColsR(r));else toast("Escolha os tamanhos antes.");renderRom();break}
     case "rom-div-todas":{ROM.rows.forEach(r=>{if(!r.skip&&(!gradeDaCat(r.cat,r.sub)||r.semG)&&!(r.csel||[]).length)romDividir(r,romColsR(r))});renderRom();break}
-    case "rom-pmg":{const i=+t.dataset.i,r=ROM&&ROM.rows[i];if(!r)break;let g=gradeDaCat(r.cat,r.sub);const c=catBy(r.cat);if(!g&&c){c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};g=c.grade}if(!g)break;const nv=addTamanhos(g,"P M G");r.gsel=g.itens.map(x=>x.id).filter(id=>nv.includes(id)||(r.gsel||[]).includes(id));r.semG=false;salvar(true,false);renderRom();break}
+    case "rom-pmg":{const i=+t.dataset.i,r=ROM&&ROM.rows[i];if(!r)break;romArma(r);let g=gradeDaCat(r.cat,r.sub);const c=catBy(r.cat);if(!g&&c){c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};g=c.grade}if(!g)break;const nv=addTamanhos(g,"P M G");r.gsel=g.itens.map(x=>x.id).filter(id=>nv.includes(id)||(r.gsel||[]).includes(id));r.semG=false;salvar(true,false);renderRom();break}
     case "rom-gpad":{const i=+t.dataset.i,r=ROM&&ROM.rows[i],g=r&&gradeDaCat(r.cat,r.sub);if(!g)break;g.faixa=g.itens.filter(x=>(r.gsel||[]).includes(x.id)).map(x=>x.nome).join(", ");salvar(true,false);toast(g.faixa?"Tamanhos padrão: "+g.faixa:"Padrão removido: nenhum tamanho vem marcado.");break}
     case "rom-cpad":{const i=+t.dataset.i,r=ROM&&ROM.rows[i],c=r&&catBy(r.cat);if(!c)break;c.coresCfg=c.coresCfg||{};c.coresCfg.padrao=(r.csel||[]).slice();salvar(true,false);toast((r.csel||[]).length?"Cores padrão salvas para "+c.nome+".":"Padrão removido: nenhuma cor vem marcada.");break}
-    case "rom-ct":{const r=ROM.rows[+t.closest(".rc").dataset.i],l=coresDaCat(r.cat,r.sub);r.csel=(r.csel||[]).length===l.length?[]:l.map(x=>x.id);renderRom();break}
-    case "rom-gt":{const r=ROM.rows[+t.closest(".rc").dataset.i],g=gradeDaCat(r.cat,r.sub);if(g){r.gsel=(r.gsel||[]).length===g.itens.length?[]:g.itens.map(x=>x.id);renderRom()}break}
-    case "rom-tipo":{const f=S.form;f.tipo=t.dataset.v;if(f.tipo==="bruta"){if(!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f);banhistaDoFornecedor(f)}ROM.rows.forEach(r=>{r.q={};romNovaCat(r)});salvar(false);renderForm();renderRom();break}
+    case "rom-ct":{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);const l=coresDaCat(r.cat,r.sub);r.csel=(r.csel||[]).length===l.length?[]:l.map(x=>x.id);renderRom();break}
+    case "rom-gt":{const r=ROM.rows[+t.closest(".rc").dataset.i],g=gradeDaCat(r.cat,r.sub);if(g){romArma(r);r.gsel=(r.gsel||[]).length===g.itens.length?[]:g.itens.map(x=>x.id);renderRom()}break}
+    case "rom-tipo":{const f=S.form;f.tipo=t.dataset.v;if(f.tipo==="bruta"){if(!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f);banhistaDoFornecedor(f)}ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});salvar(false);renderForm();renderRom();break}
     case "rom-add":C.romaneios.push({...clone(ROMS0()[0]),id:uid(),nome:"Novo fornecedor",forn:""});salvar(true,false);renderCfg();break;
     case "rom-dup":{const i=+t.closest("[data-rom]").dataset.rom,x=clone(C.romaneios[i]);x.id=uid();x.nome+=" (cópia)";C.romaneios.splice(i+1,0,x);salvar(true,false);renderCfg();break}
     case "rom-del":{if(C.romaneios.length>1){C.romaneios.splice(+t.closest("[data-rom]").dataset.rom,1);salvar(true,false);renderCfg()}else toast("Mantenha pelo menos um modelo.");break}
@@ -4393,7 +4431,7 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.id==="fileBkT"&&t.files[0])return restaurarTotal(t.files[0]);
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
   if(t.id==="romXls"&&t.files[0]){const fl=t.files[0];t.value="";return romPlanilha(fl)}
-  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.cvf!==undefined||t.dataset.cvg!==undefined||t.dataset.ff==="desconto"||t.dataset.bhf!==undefined||t.dataset.gif==="letra"||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
+  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.cvf!==undefined||t.dataset.cvg!==undefined||t.dataset.ff==="desconto"||t.dataset.bhf!==undefined||t.dataset.gif==="letra"||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.rp==="faixa"||t.dataset.rp==="qall"||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
 document.addEventListener("paste",e=>{const cb=e.clipboardData||window.clipboardData;let tcb="";try{tcb=cb?cb.getData("text"):""}catch(x){}
   if(tcb.length>MAX_TEXTO_COLADO){e.preventDefault();toast(`Texto grande demais para colar (${tcb.length} caracteres; o limite é ${MAX_TEXTO_COLADO}). Cole em partes menores.`);return}
   const pt=e.target;
@@ -4418,6 +4456,7 @@ document.addEventListener("keydown",e=>{
     return;
   }
   if(t.classList&&t.classList.contains("pc")&&(e.key==="Enter"||e.key===" ")){e.preventDefault();t.click();return}
+  if(t.dataset&&t.dataset.rp==="faixa"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));return}
   if(t.dataset&&t.dataset.rp&&e.key==="Enter"&&t.tagName==="INPUT"&&t.closest(".rc")){e.preventDefault();let nx=t.closest(".rc").nextElementSibling;while(nx&&nx.classList.contains("sk"))nx=nx.nextElementSibling;
     const n2=nx&&nx.querySelector(`[data-rp="${t.dataset.rp}"]${t.dataset.b?`[data-b="${t.dataset.b}"]`:""}`);if(n2){n2.focus();try{n2.select()}catch(x){}}return}
   if(t.id==="sheet"&&selR&&!celEd){
@@ -4447,7 +4486,7 @@ document.addEventListener("keydown",e=>{
   if(t.dataset&&t.dataset.enter&&e.key==="Enter"){e.preventDefault();const v=t.value.trim();if(!v)return;const C=cfg(),k=t.dataset.enter;
     const ci=t.closest("[data-cat]")?t.closest("[data-cat]").dataset.cat:null;
     if(k==="cv"){const L=partir(v),c=C.categorias[+ci];c.cores=c.cores||[];const novos=L.filter(n=>!c.cores.some(y=>semAc(y.nome)===semAc(n)));if(!novos.length){toast("Essas cores já estão na lista.");t.value="";return}
-      novos.forEach(n=>c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c)}));abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();refocar(`[data-cat="${ci}"] [data-enter="cv"]`);return}
+      novos.forEach(n=>c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c,n)}));abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();refocar(`[data-cat="${ci}"] [data-enter="cv"]`);return}
     if(k==="sub"||k==="cor"||k==="obs"){const L=partir(v);if(!L.length){t.value="";return}
       const alvo=k==="sub"?C.categorias[+ci].subs:k==="cor"?C.cores:C.observacoes,novos=L.filter(x=>!alvo.some(y=>semAc(y)===semAc(x)));
       if(!novos.length){toast(L.length>1?"Esses itens já existem.":"Esse item já existe.");t.value="";return}
