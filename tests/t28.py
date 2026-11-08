@@ -13,7 +13,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1400,"height":1000}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto("http://127.0.0.1:8804/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(900)
-    pg.click('nav.ir [data-sec="cat"]');pg.wait_for_timeout(400)
+    pg.click('#side [data-go="sec:cat"]');pg.wait_for_timeout(400)
     # nomes dos chips de subcategoria não podem ficar cortados
     cortados=pg.evaluate("[...document.querySelectorAll('#cfg .chip .cn')].filter(e=>e.scrollWidth>e.clientWidth+1&&e.clientWidth<150).length")
     ok(cortados==0,"nomes dos chips de subcategoria visíveis (%d cortados)"%cortados)

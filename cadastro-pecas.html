@@ -1256,6 +1256,50 @@ body[data-vis=cad] #impBar{display:none}
 #cfg .chips .chip{border-radius:8px;padding:4px 6px 4px 10px;background:var(--surface);border:1px solid var(--line)}
 #cfg .chips .chip .cn-in{border-radius:6px}
 .card .cx{padding:0 10px;font-weight:600}
+/* v22: menu lateral moderno: coluna própria (nunca sobre a tabela), expandido ou faixa de ícones */
+:root{--sw:248px}
+body.side-mini{--sw:60px}
+@media (min-width:901px){header{display:none}}
+.side{background:var(--surface)}
+.side-h{height:52px;padding:0 10px 0 16px}
+.side-h b{font-size:15px;white-space:nowrap}
+.side .side-t{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.side .side-t .ic svg{transition:transform .15s}
+body.side-mini .side .side-t .ic svg{transform:rotate(180deg)}
+.ic{flex:none;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center}
+.ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.side-top{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.side-top .status{flex:1 1 100%}
+.side-exp{flex:none;border-top:1px solid var(--line);padding:6px 10px 12px;max-height:46vh;overflow:auto}
+.side .sp{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:4px 0}
+.side .sp .btn,.side .sp input,.side .sp select{width:100%;min-width:0}
+.side .sp .mod{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--muted)}
+.sn{padding:8px 10px}
+.sn .sg{margin:16px 0 4px;padding:0 10px;border:0;background:transparent;border-radius:0;font:700 10.5px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.sn .sg:first-child{margin-top:4px}
+.sn button{display:flex;align-items:center;gap:12px;min-height:38px;padding:0 12px;border-radius:10px;border:0;border-left:0;font:500 13.5px var(--body);color:var(--ink)}
+.sn button .ic{color:var(--muted)}
+.sn button:hover{background:var(--surface-2)}
+.sn button:hover .ic{color:var(--ink)}
+.sn button[aria-current=true]{background:var(--accent-soft);color:var(--accent);font-weight:700;box-shadow:inset 3px 0 0 var(--accent)}
+.sn button[aria-current=true] .ic{color:var(--accent)}
+.railonly{display:none!important}
+body.side-mini .sl,body.side-mini .side-top,body.side-mini .side-exp{display:none}
+body.side-mini .side-h{padding:0;justify-content:center}
+body.side-mini .sn{padding:8px 6px}
+body.side-mini .sn .sg{height:1px;margin:10px 8px;padding:0;background:var(--line)}
+body.side-mini .sn button{justify-content:center;padding:0}
+body.side-mini .sn .railonly{display:flex!important}
+body.side-mini .sn button[aria-current=true]{box-shadow:none}
+.rc.lote{border:1px solid var(--accent);border-radius:12px;padding:12px 14px;background:var(--accent-soft);display:flex;flex-direction:column;gap:8px}
+.lote-h{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between;font-size:14px}
+.lote-sum{padding:7px 10px;border-radius:8px;font-weight:600;font-size:13px}
+.lote-sum.ok{background:#e1f3e8;color:#1f6b3b}.lote-sum.warn{background:#fff1d6;color:var(--warn)}.lote-sum.bad{background:#fde4e4;color:var(--bad)}
+.lote-tag{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 10px;margin:-4px -4px 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font:600 12px var(--body)}
+.nf.multi{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.mtw{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.mtb{width:100%;border-collapse:collapse}.mtb th{position:sticky;top:0;background:var(--surface-2);text-align:left;font:600 11.5px var(--body);color:var(--muted);padding:6px 8px}
+.mtb td{padding:3px 6px;border-top:1px solid var(--line)}.mtb td:nth-child(2){width:100%}.mtb input{width:100%;height:30px}.mtb td:nth-child(3) input,.mtb td:nth-child(4) input{width:96px}
 .expl{margin-top:18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:13px;line-height:1.45}
 .expl p{margin:4px 0 6px}.expl ul{margin:0;padding-left:18px}.expl li{margin:2px 0}
 @media (max-width:900px){
@@ -1270,20 +1314,7 @@ body[data-vis=cad] #impBar{display:none}
 }
 </style>
 
-<aside class="side" id="side" aria-label="Menu lateral" hidden><div class="side-h"><b>Menu</b><button type="button" class="side-t" id="sideT" aria-label="Recolher o menu" title="Recolher o menu (Alt+B)">« Recolher</button></div><nav class="sn">
-<div class="sg g0">Principal</div>
-<button type="button" data-vis="tudo"><span class="sl">Tabela e formulário</span></button>
-<div class="sg g1">Romaneios</div>
-<button type="button" data-go="act:rom-abrir"><span class="sl">Novo / continuar</span></button><button type="button" data-go="sec:roml"><span class="sl">Lançados</span></button><button type="button" data-go="act:tab-lista"><span class="sl">Tabelas salvas</span></button>
-<div class="sg g2">Cadastros</div>
-<button type="button" data-go="sec:banho"><span class="sl">Galvânicas e banhos</span></button><button type="button" data-go="sec:cor"><span class="sl">Cores, tamanhos e variações</span></button><button type="button" data-go="sec:cat"><span class="sl">Categorias</span></button><button type="button" data-go="sec:forn"><span class="sl">Fornecedores</span></button>
-<div class="sg g3">Planilha</div>
-<button type="button" data-go="sec:col"><span class="sl">Padrões das colunas</span></button><button type="button" data-go="sec:mod"><span class="sl">Modelo da planilha</span></button>
-<div class="sg g4">Leitura e arquivos</div>
-<button type="button" data-go="sec:rom"><span class="sl">Leitura de romaneios</span></button><button type="button" data-go="sec:foto"><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc"><span class="sl">Importar e backup</span></button>
-<div class="sg g5">Ações</div>
-<button type="button" data-go="act:xlsx"><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar"><span class="sl">Copiar para o Excel</span></button>
-</nav></aside>
+<aside class="side" id="side" aria-label="Menu lateral" hidden><div class="side-h"><b class="sl">Cadastro de Peças</b><button type="button" class="side-t" id="sideT" aria-label="Recolher ou expandir o menu" title="Recolher / expandir (Alt+B)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></i></button></div><div class="side-top sl" id="sideTop"></div><nav class="sn"><div class="sg g0"><span class="sl">Principal</span></div><button type="button" data-vis="tudo" title="Tabela e formulário"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></i><span class="sl">Tabela e formulário</span></button><div class="sg g1"><span class="sl">Romaneios</span></div><button type="button" data-go="act:imp-pick" title="Importar romaneio"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></i><span class="sl">Importar romaneio</span></button><button type="button" data-go="act:rom-abrir" title="Novo / continuar"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6M9 15h6"/></svg></i><span class="sl">Novo / continuar</span></button><button type="button" data-go="sec:roml" title="Romaneios lançados"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></i><span class="sl">Romaneios lançados</span></button><button type="button" data-go="act:tab-lista" title="Tabelas salvas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg></i><span class="sl">Tabelas salvas</span></button><div class="sg g2"><span class="sl">Cadastros</span></div><button type="button" data-go="sec:banho" title="Galvânicas e banhos"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.7l5.7 5.6a8 8 0 1 1-11.4 0z"/></svg></i><span class="sl">Galvânicas e banhos</span></button><button type="button" data-go="sec:cor" title="Cores, tamanhos e variações"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></i><span class="sl">Cores, tamanhos e variações</span></button><button type="button" data-go="sec:cat" title="Categorias"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01"/></svg></i><span class="sl">Categorias</span></button><button type="button" data-go="sec:forn" title="Fornecedores"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></i><span class="sl">Fornecedores</span></button><div class="sg g3"><span class="sl">Planilha</span></div><button type="button" data-go="sec:col" title="Padrões das colunas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/></svg></i><span class="sl">Padrões das colunas</span></button><button type="button" data-go="sec:mod" title="Modelo da planilha"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h8"/></svg></i><span class="sl">Modelo da planilha</span></button><div class="sg g4"><span class="sl">Leitura e arquivos</span></div><button type="button" data-go="sec:rom" title="Leitura de romaneios"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg></i><span class="sl">Leitura de romaneios</span></button><button type="button" data-go="sec:foto" title="Fotos (link)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21"/></svg></i><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc" title="Importar e backup"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3zM21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></i><span class="sl">Importar e backup</span></button><button type="button" data-go="act:xlsx" title="Baixar .xlsx" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></i><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar" title="Copiar para o Excel" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></i><span class="sl">Copiar para o Excel</span></button></nav><div class="side-exp sl" id="sideExp"></div></aside>
 <header><div class="gut hin">
   <h1>Cadastro de Peças</h1><span id="saveStatus" class="status">Carregando…</span><span class="udo"><button type="button" class="btn sm" id="btnUndo" data-act="undo-b" title="Desfazer a última alteração (Ctrl+Z)" aria-label="Desfazer" disabled>↶ Desfazer</button><button type="button" class="btn sm" id="btnRedo" data-act="redo-b" title="Refazer (Ctrl+Y)" aria-label="Refazer" disabled>↷ Refazer</button></span>
   <nav class="ir" aria-label="Ir para"><button type="button" data-act="ir" data-sec="lancar">Lançar</button><button type="button" data-act="ir" data-sec="banho">Galvânicas e banhos</button><button type="button" data-act="ir" data-sec="cor">Cores, tamanhos e variações</button><button type="button" data-act="ir" data-sec="cat">Categorias</button><button type="button" data-act="ir" data-sec="forn">Fornecedores</button><button type="button" data-act="ir" data-sec="col">Padrões das colunas</button><button type="button" data-act="ir" data-sec="mod">Modelo da planilha</button><button type="button" data-act="ir" data-sec="opc">Importar</button></nav>
@@ -1309,7 +1340,7 @@ body[data-vis=cad] #impBar{display:none}
 </div>
 <div class="mbar" id="mbar"><button type="button" class="btn" data-act="ir-lista">↑ Lista</button><button type="button" class="btn pri" data-act="ir-form">＋ Lançar peça</button></div>
 <button type="button" class="dpill" id="dpill" hidden></button>
-<button type="button" class="side-open" id="sideOpen" hidden title="Abrir o menu lateral (Alt+B)">Menu ›</button>
+
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <div id="lists"></div><datalist id="dl-cel"></datalist>
 
@@ -1394,10 +1425,11 @@ const JUERI_CATS=[
   {nome:"Pulseiras",prefixo:"PU",subs:[],remover:["Riviera","Elos","Braceletes","Berloques"]},
   {nome:"Relógios",prefixo:"RL",subs:[]},
   {nome:"Tornozeleiras",prefixo:"TZ",subs:[]}];
+const ROM_PESO=()=>({id:"pedido-peso",nome:"Pedido com itens por peso (GR)",padrao:"{item} {cod} {desc} {u}{qv} {pu} {total}",ini:"Unit. Total",fim:"Total Produtos",obsRe:"N. Pedido:\\s*(\\d+)",mapa:"Brinco=Brincos; Corrente=Colares>Correntes; Pingente=Pingentes; Anel=Anél; Pulseira=Pulseiras; Colar=Colares",auto:false,custo:"preco",valorRe:"Total Produtos:\\s*(\\d[\\d.]*,\\d{2})"});
 const ROMS0=()=>[{id:"carlinha",nome:"Clube de Compras da Carlinha",
   padrao:"{desc} [#{cod}] R$ {preco} R$ {precod} {qtd} R$ {total}",ini:"Valor Total",fim:"Valor Produtos",lixo:"P.gina \\d+/\\d+",
   obsRe:"Romaneio do (.+?) Pedido",mapa:"Colar=Colares; Corrente=Colares>Correntes; Choker=Colares>Chokers; Brinco=Brincos; Argola=Brincos>Argolas; Pingente=Pingentes; Anel=Anél; Pulseira=Pulseiras; Conjunto=Conjuntos",
-  custo:"precod",qtdRe:"Quantidade Total de Produtos:\\s*(\\d+)",valorRe:"Valor Produtos(?: \\(sem desconto\\))?:\\s*R\\$\\s*(\\d[\\d.]*,\\d{2})"}];
+  custo:"precod",qtdRe:"Quantidade Total de Produtos:\\s*(\\d+)",valorRe:"Valor Produtos(?: \\(sem desconto\\))?:\\s*R\\$\\s*(\\d[\\d.]*,\\d{2})"},ROM_PESO()];
 const DEFAULT_CONFIG={
   modelos:[modeloJueri()],modelo:"jueri",v9:true,v10:true,v12:true,seqs:{BR:"1669",CO:"0",AN:"0",PU:"0",TZ:"0",CJ:"0",PG:"0",AC:"0",IN:"0",MA:"0",PE:"0",RL:"0"},ordem:"int",v11:true,colcfg:colcfgPadrao(),banhistas:[BANHISTA0],grades:[],romaneios:ROMS0(),
   categorias:JUERI_CATS.map(j=>({nome:j.nome,prefixo:j.prefixo,...(j.sufixo?{sufixo:j.sufixo}:{}),subs:[...j.subs],...(j.subPref?{subPref:{...j.subPref}}:{}),...(j.subSoRef?{subSoRef:{...j.subSoRef}}:{}),...(j.gr?{grade:mkGrade(j.gr.subs,j.gr.id)}:{})})),
@@ -1848,7 +1880,7 @@ function lerConfig(c){
   o.v4=true;o.v5=true;o.v6=true;o.v7=true;o.v8=true;o.v9=c.v9?true:undefined;o.v10=c.v10?true:undefined;if(!Array.isArray(o.modelos)||!o.modelos.length)o.modelos=[modeloJueri()];if(!o.modelos.some(m=>m.id===o.modelo))o.modelo=o.modelos[0].id;o.v11=c.v11?true:undefined;o.v12=c.v12?true:undefined;
   if(!c.v14){const an=o.categorias.find(x=>x.grade&&!x.grade.usa&&/an[eé]l|anéis|aneis/i.test(x.nome||""));
     if(an){const nm=g=>g.itens.map(i=>String(i.nome)).join("|");o.categorias.forEach(x=>{if(x!==an&&x.grade&&!x.grade.usa&&nm(x.grade)===nm(an.grade))x.grade.usa=an.nome})}}o.v14=true;
-  if(!c.v13){DEFAULT_CONFIG.cores.forEach(x=>{if(!o.cores.some(y=>semAc(y)===semAc(x)))o.cores.push(x)})}o.v13=true;if(!o.vLib){o.coresMeta=o.coresMeta||{};const M=o.coresMeta,us=new Set();(o.categorias||[]).forEach(c=>(c.cores||[]).forEach(x=>{if(!x||!x.nome)return;if(!o.cores.some(y=>semAc(y)===semAc(x.nome)))o.cores.push(x.nome);const k=semAc(String(x.nome)).trim();M[k]=M[k]||{};M[k].ped=true;const Lt=String(x.letra||'').toUpperCase();if(Lt&&!M[k].sig&&!us.has(Lt)&&!/^[0-9]+$/.test(Lt)){M[k].sig=Lt;us.add(Lt)}if(!M[k].txt&&x.texto&&x.texto!=='-')M[k].txt=String(x.texto).trim()}));o.vLib=true}
+  if(!c.v13){DEFAULT_CONFIG.cores.forEach(x=>{if(!o.cores.some(y=>semAc(y)===semAc(x)))o.cores.push(x)})}o.v13=true;if(!o.vLib){o.coresMeta=o.coresMeta||{};const M=o.coresMeta,us=new Set();(o.categorias||[]).forEach(c=>(c.cores||[]).forEach(x=>{if(!x||!x.nome)return;if(!o.cores.some(y=>semAc(y)===semAc(x.nome)))o.cores.push(x.nome);const k=semAc(String(x.nome)).trim();M[k]=M[k]||{};M[k].ped=true;const Lt=String(x.letra||'').toUpperCase();if(Lt&&!M[k].sig&&!us.has(Lt)&&!/^[0-9]+$/.test(Lt)){M[k].sig=Lt;us.add(Lt)}if(!M[k].txt&&x.texto&&x.texto!=='-')M[k].txt=String(x.texto).trim()}));o.vLib=true}if(!o.vPeso){o.romaneios=o.romaneios||[];if(!o.romaneios.some(t=>t.id==="pedido-peso")){o.romaneios.push(ROM_PESO())}o.vPeso=true}
   {const ids=x=>{if(x&&typeof x==="object"&&x.id!=null)x.id=idLimpo(x.id)||uid()};
     (o.banhistas||[]).forEach(b=>{ids(b);(b.banhos||[]).forEach(ids)});(o.grades||[]).forEach(g=>{ids(g);(g.itens||[]).forEach(ids)});
     (o.categorias||[]).forEach(c=>{if(c.grade){ids(c.grade);(c.grade.itens||[]).forEach(ids)}});(o.romaneios||[]).forEach(ids);(o.modelos||[]).forEach(ids);
@@ -2243,6 +2275,11 @@ function campoHTML(L,f,opt){
 }
 let quick=null,quickB=null,romQRow=null,romQ0=null;
 function romQFim(){const f=S.form;if(romQ0){f.v.I=romQ0.I;if(romQ0.J==null)delete f.v.J;else f.v.J=romQ0.J}romQ0=null;romQRow=null}
+let MULTI=[];
+function painelMulti(){if(!MULTI.length)return "";
+  return `<div class="nf multi" id="multiPanel"><b>Várias peças · ${MULTI.length} linha(s) para editar</b><span class="hint">Cada linha vira uma peça com o que está no formulário (categoria, fornecedor, banhos, tamanhos e quantidades). Ajuste as linhas e adicione todas de uma vez.</span>
+    <div class="mtw"><table class="mtb"><thead><tr><th>#</th><th>Descrição</th><th>Peso (g)</th><th>Custo de compra</th><th></th></tr></thead><tbody>${MULTI.map((m,i)=>`<tr data-mi="${i}"><td class="hint">${i+1}</td><td><input data-mf="F" value="${esc(m.F)}" placeholder="Descrição" aria-label="Descrição da linha ${i+1}"></td><td><input class="n" data-mf="N" value="${esc(m.N||"")}" inputmode="decimal" aria-label="Peso da linha ${i+1}"></td><td><input class="n" data-mf="P" value="${esc(m.P||"")}" inputmode="decimal" aria-label="Custo de compra da linha ${i+1}"></td><td><button type="button" class="x" data-act="multi-del" data-i="${i}" aria-label="Remover a linha ${i+1}">×</button></td></tr>`).join("")}</tbody></table></div>
+    <div class="row"><button type="button" class="btn sm" data-act="multi-mais">＋ Linha</button><button type="button" class="btn pri sm" data-act="multi-ok">Adicionar ${MULTI.length} peça(s)</button><button type="button" class="btn ghost sm" data-act="multi-limpar">Limpar linhas</button></div></div>`}
 function painelRapido(){
   const C=cfg(),f=S.form,bh=banhistaBy(f.banhista);if(!quick)return "";
   const cx=(id,rot,w,val,ph)=>`<label class="fq w-${w}"><span>${rot}</span><input id="${id}" value="${esc(val||"")}" placeholder="${esc(ph||"")}" ${w==="n"||w==="c"?'class="n" inputmode="decimal"':""}></label>`;
@@ -2257,7 +2294,7 @@ function painelRapido(){
   if(quick==="gi"){const gq=gradeBy(f.grade);t=`Novo tamanho${gq?" · "+esc(gq.nome):""}`;corpo=cx("q1","Tamanho (número ou letras)","m","","ex.: 26 · GG · P M G")}
   if(quick==="bn"){const us=bh.banhos.map(x=>x.letra);t=`Nova letra · ${esc(bh.nome)}`;corpo=cx("q1","Banho","s","","ex.: Ródio")+cx("q2","Letra","n",proxLetra(us.concat(letrasDeTamanho())))+`<label class="fq w-s"><span>Cor</span><select id="q3">${opts(C.cores,"")}</select></label>`+cx("q4","Milésimos","n")+cx("q5","R$ por grama","c")+`<label class="fq w-s"><span>Coluna do custo</span><select id="q6">${opts(Object.entries(BANHO_COLS).map(([k,n])=>[k,"Banho de "+n]),"S")}</select></label>`+cx("q7","Texto na Descrição","m","","ex.:  banho ródio")}
   if(quick==="bh"){t="Nova galvânica";corpo=cx("q1","Galvânica","m")+bh.banhos.map((b,i)=>cx("qb"+i,`${esc(b.nome)} R$/g`,"c",b.mult))+cx("qv","Verniz R$/g","c",bh.verniz)}
-  return `<div class="nf" data-quick="${quick}"><b>${t}</b>${corpo}<button class="btn pri sm" type="button" data-act="q-salvar">${quick==="multi"?"Adicionar todas":`Salvar <kbd>Enter</kbd>`}</button><button class="btn ghost sm" type="button" data-act="q-fechar">Cancelar</button>${quick==="bh"?'<span class="hint">Os demais dados (letra, cor, milésimos) vêm da galvânica atual; ajuste em Banhos e custos.</span>':""}</div>`;
+  return `<div class="nf" data-quick="${quick}"><b>${t}</b>${corpo}<button class="btn pri sm" type="button" data-act="q-salvar">${quick==="multi"?"Criar linhas no formulário":`Salvar <kbd>Enter</kbd>`}</button><button class="btn ghost sm" type="button" data-act="q-fechar">Cancelar</button>${quick==="bh"?'<span class="hint">Os demais dados (letra, cor, milésimos) vêm da galvânica atual; ajuste em Banhos e custos.</span>':""}</div>`;
 }
 function renderForm(){
   const C=cfg(),f=S.form,bruta=f.tipo==="bruta",cc=C.colcfg,bh=banhistaBy(f.banhista),p=prefDe(f.v.I,f.v.J);
@@ -2315,7 +2352,7 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
     <button type="button" class="tg min" data-act="tg-min"title="${abertos.min?"Mostrar tudo":"Mostrar só o essencial"}">${abertos.min?"▴ Mostrar tudo":"▾ Só o essencial"}</button>
   </div>
   ${rowOrig}
-  ${painelRapido()}
+  ${painelRapido()}${painelMulti()}
   <div class="z-row z-main">${rowMain}</div>
   ${f.conj?conjPainel(f):""}
   ${chips}${chipsCor}${rowBanhos}
@@ -2344,11 +2381,10 @@ function letrasDeTamanho(){return todasGrades().flatMap(g=>g.itens.filter(x=>Str
 function salvarRapido(){
   const C=cfg(),f=S.form,g=id=>{const e=document.getElementById(id);return e?e.value.trim():""},n=g("q1"),lo=s=>s.toLowerCase();
   if(!n){document.getElementById("q1").focus();return}const rq=romQRow;if(rq!=null&&ROM&&ROM.rows[rq])romArma(ROM.rows[rq]);
-  if(quick==="multi"){const linhas=n.split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean),F0=f.v.F,N0=f.v.N,P0=f.v.P,antes=S.lanc.length;let add=0;
-    linhas.forEach(ln=>{const p=ln.split(/[;	]/).map(x=>x.trim());f.v.F=p[0];if(p[1])f.v.N=p[1];if(p[2])f.v.P=p[2];if(adicionar(false,true))add++});
-    f.v.F=F0;if(N0==null)delete f.v.N;else f.v.N=N0;if(P0==null)delete f.v.P;else f.v.P=P0;erro="";
-    const ids=S.lanc.slice(antes).map(l=>l.id);quick=null;if(ids.length)undo={tipo:"dup",ids};salvar(false);renderTopo();renderForm();if(ids.length)mostrarNoFim(ids[ids.length-1]);
-    toast(`${add} peça(s) adicionada(s) no fim da tabela.`,add?{t:"Desfazer",fn:desfazer}:null);return}
+  if(quick==="multi"){const linhas=n.split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean);
+    linhas.forEach(ln=>{const q=ln.split(/[;\t]/).map(x=>x.trim());MULTI.push({F:q[0]||"",N:q[1]||"",P:q[2]||""})});
+    quick=null;renderForm();toast(`${linhas.length} linha(s) no formulário: ajuste o que precisar e clique em “Adicionar”.`);
+    {const pn=document.getElementById("multiPanel");if(pn)rolarPane(pn)}return}
   if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
     if(!c){c={nome:n,prefixo:pr,subs:[]};C.categorias.push(c)}if(!(pr in C.seqs)||g("q3"))C.seqs[pr]=g("q3").replace(/\D/g,"")||C.seqs[pr]||"0";f.v.I=c.nome;delete f.v.J;sincGrade(f)}
   if(quick==="sub"){const c=catBy(f.v.I);if(c&&!c.subs.includes(n))c.subs.push(n);f.v.J=n;sincGrade(f)}
@@ -2772,10 +2808,10 @@ function modeloDeJson(file){const fr=new FileReader();fr.onload=()=>{try{
   }catch(e){toast("Não consegui abrir o modelo: "+(e&&e.message?e.message:"arquivo inválido")+".")}};fr.readAsText(file)}
 /* ===== colar romaneio: lê a lista do fornecedor com um modelo de leitura ===== */
 const MON="(\\d[\\d.]*,\\d{2})";
-const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d+)",x:"(?:.*?)"};
+const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d+)",x:"(?:.*?)",item:"(?:\\d{1,4})",u:"(?:([A-Za-z]{1,4})\\.?\\s+)?",qv:"(\\d[\\d.]*(?:,\\d+)?)",pu:"(\\d[\\d.]*,\\d{2,4})"};
 function padraoRegex(pad){const ordem=[];let src="";
   String(pad||"").split(/(\{\w+\})/).forEach(p=>{const m=p.match(/^\{(\w+)\}$/);
-    if(m&&TOK[m[1]]){if(m[1]!=="x")ordem.push(m[1]);src+=TOK[m[1]]}
+    if(m&&TOK[m[1]]){if(m[1]!=="x"&&m[1]!=="item")ordem.push(m[1]);src+=TOK[m[1]]}
     else src+=p.split(/\s+/).map(z=>z.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")).join("\\s*")});
   return {re:new RegExp(src,"g"),ordem}}
 const rxs=(x,f)=>{try{return new RegExp(x,f||"i")}catch(e){return null}};
@@ -2794,18 +2830,21 @@ function lerRomaneio(texto,T){
   if(T.ini){const i=flat.toLowerCase().indexOf(String(T.ini).toLowerCase());if(i>=0)flat=flat.slice(i+T.ini.length)}
   if(T.fim){const i=flat.toLowerCase().indexOf(String(T.fim).toLowerCase());if(i>=0)flat=flat.slice(0,i)}
   let P;try{P=padraoRegex(T.padrao)}catch(e){R.erro="O padrão da linha é inválido.";return R}
-  if(!P.ordem.includes("desc")||!P.ordem.includes("qtd")){R.erro="O padrão precisa ter pelo menos {desc} e {qtd}.";return R}
+  if(!P.ordem.includes("desc")||!(P.ordem.includes("qtd")||P.ordem.includes("qv"))){R.erro="O padrão precisa ter pelo menos {desc} e {qtd}.";return R}
   let fimLido=0;
   const colhe=P=>{let m,g=0;
   while((m=P.re.exec(flat))&&g++<3000){if(!m[0].length){P.re.lastIndex++;continue}fimLido=P.re.lastIndex;
     const o={};P.ordem.forEach((k,i)=>o[k]=m[i+1]);
     const desc=String(o.desc||"").replace(/Varia[^:]{1,4}:/i," ").replace(/ {2,}/g," ").replace(/^[\s,;:\-]+|[\s,;:\-]+$/g,"");
-    R.rows.push({cod:o.cod||"",desc,preco:o.preco?num(o.preco):null,precod:o.precod?num(o.precod):null,total:o.total?num(o.total):null,qtd:Math.trunc(num(o.qtd)||0),peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":""})}};
+    const un=String(o.u||"").toUpperCase().replace(/[.]/g,""),porPeso=/^(GR|G|KG)$/.test(un),pr=o.preco||o.pu,qn=o.qtd||o.qv;
+    let loteG=null,precoG=null;if(porPeso){const fk=un==="KG"?1000:1;loteG=(num(qn)||0)*fk;precoG=(num(pr)||0)/fk}
+    R.rows.push({cod:o.cod||"",desc,preco:pr?num(pr):null,precod:o.precod?num(o.precod):null,total:o.total?num(o.total):null,qtd:porPeso?1:Math.trunc(num(qn)||0),peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":"",
+      ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}};
   colhe(P);if(!R.rows.length&&String(T.padrao).includes("R$ {precod}")){try{colhe(padraoRegex(String(T.padrao).replace("R$ {precod}","").replace(/ {2,}/g," ")))}catch(e){}}
   {const r0=R.rows[0];if(r0){const m=r0.desc.match(/^\s*(?:total(?:\s+geral)?|qtd\.?\s*total|quantidade\s+total|romaneio|pedido|resumo)\b[^\d]{0,20}\d[0-9.,]*\s*(?:pe[cç]as?|itens?|unidades?|un\.?|produtos?|volumes?)?\s*/i);
       if(m&&m[0].length<r0.desc.length){R.cab=m[0].trim();r0.desc=r0.desc.slice(m[0].length).replace(/^[s,;:-]+/,"")}}}
   if(!R.rows.length){R.erro="Não reconheci nenhuma peça. Confira se copiou a tabela inteira (com código e valores). Se o fornecedor usa outro formato, veja Cadastros › Romaneios › Avançado.";return R}
-  const sq=R.rows.reduce((t,r)=>t+r.qtd,0),sv=R.rows.reduce((t,r)=>t+(r.preco!=null?r.preco*r.qtd:(r.total||0)),0),pt=[];
+  const sq=R.rows.reduce((t,r)=>t+r.qtd,0),sv=R.rows.reduce((t,r)=>t+(r.lote?(r.total||0):(r.preco!=null?r.preco*r.qtd:(r.total||0))),0),pt=[];
   if(T.qtdRe){const r=rxs(T.qtdRe),m2=r&&full.match(r);if(m2){const n=+String(m2[1]).replace(/\D/g,"");pt.push(n===sq?`✓ ${sq} peças conferem`:`⚠ a lista diz ${n} peças e li ${sq}`)}}
   if(T.valorRe){const r=rxs(T.valorRe),m2=r&&full.match(r);if(m2){const v=num(m2[1]);pt.push(v!=null&&Math.abs(v-sv)<0.05?`✓ valor R$ ${brl(sv)} confere`:`⚠ a lista diz R$ ${brl(v||0)} e li R$ ${brl(sv)}`)}}
   if(R.cab)pt.push(`⚠ ignorei o cabeçalho “${R.cab}” antes da 1ª peça`);
@@ -2895,7 +2934,8 @@ function romLinhasHTML(pv,r,cols){if(!pv||!pv.rows.length)return `<span class="h
   const g=gradeDaCat(r.cat,r.sub);
   return pv.rows.map(x=>{const c=cols.find(c=>c.id===x.bid),it=x.gi?{nome:romNomeId(r.cat,r.sub,x.gi)}:null;
     return `<span class="rch${x.dup?" dup":""}" title="${esc(x.dup?"Referência repetida":"Linha que será criada")}"><b>${esc(x.ref)}</b>${c&&c.nome?` <i>${esc(c.nome)}</i>`:""}${it?` <i>${esc(it.nome||it.letra)}</i>`:""} <em>${x.q?x.q+" un.":"sem qtd"}</em> <u>${fm(x.v)}</u></span>`}).join("")+aviso}
-function renderRom(){const el=document.getElementById("romWrap");if(!el)return;if(!ROM){el.innerHTML="";renderNum();return}
+function renderRom(){renderRom0();romLoteDecora()}
+function renderRom0(){const el=document.getElementById("romWrap");if(!el)return;if(!ROM){el.innerHTML="";renderNum();return}
   const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),cols=romCols();
   const fq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
   const exCols=LET.filter(L=>!["E","F","G","H","I","J","L","M","N","O","P","R","S","T","U","V","W"].includes(L));
@@ -3199,7 +3239,7 @@ function romRevisar(){const pv=romPreview(),it=[];
     <div class="rev-f"><button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length?"":"disabled"}>${nal?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
   document.body.appendChild(ov)}
 const romFq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
-function romCardHTML(r,i){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
+function romCardHTML(r,i){if(r.lote)return romLoteHTML(r,i);const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
   const lcor=coresDaCat(r.cat,r.sub),ids=romIds(r),usaVar=(!!g&&!r.semG)||ids.length>0,dupCod=r.cod&&S.lanc.some(l=>!(r.lancIds||[]).includes(l.id)&&String(l.v.G||"")===String(r.cod)&&String(l.v.H||"")===String(r.forn||f.v.H||""));
   const banhoCard=b=>{const on=romOn(r,b),vz=r.vz&&(b.id in r.vz)?r.vz[b.id]:vzOn(f,bh,b),dis=on?"":"disabled";
     return `<div class="bcard sm${on?"":" off"}"><div class="bh2"><label class="ck"><input type="checkbox" data-rp="bon" data-b="${b.id}" ${on?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</label>${bruta?`<label class="ck vz" title="Esta peça leva verniz"><input type="checkbox" data-rp="vz" data-b="${b.id}" ${vz?"checked":""} ${dis}>Verniz</label><small data-cb="${b.id}"></small>`:""}</div>
@@ -3247,7 +3287,7 @@ let romT0=null;
 const romAtualSoon=()=>{clearTimeout(romT0);romT0=setTimeout(romAtual,120);romSalvarSoon()};
 function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();const pv=romPreview(),f=S.form;
   let nl=0,var_=0,cus=0;
-  ROM.rows.forEach((r,i)=>{const rc=document.querySelector(`#romWrap .rc[data-i="${i}"]`);if(!rc)return;const cols=romColsR(r),sm=romSomaDe(r,cols),p=pv[i];
+  ROM.rows.forEach((r,i)=>{if(r.lote)return;const rc=document.querySelector(`#romWrap .rc[data-i="${i}"]`);if(!rc)return;const cols=romColsR(r),sm=romSomaDe(r,cols),p=pv[i];
     const so=rc.querySelector("[data-soma]");so.textContent=`${sm}/${r.qtd}`;so.className="soma n "+(sm===r.qtd?"ok":"bad");
     rc.querySelector("[data-px]").innerHTML=romLinhasHTML(p,r,cols);
     if(p)p.rows.forEach(x=>{nl++;var_+=(x.v||0)*x.q;cus+=x.custo*x.q});
@@ -3261,6 +3301,28 @@ function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();const pv=romPre
     if(!sp&&!dv&&!dp)pt.push("✓ pronto para criar");chk.textContent="Antes de criar: "+pt.join(" · ");chk.className="rom-c "+((sp||dv||dp)?"bad":"")}
   const tt=document.getElementById("romTot");if(tt)tt.textContent=nl?`${nl} linhas · Custo total ${fm(cus)} · Varejo ${fm(var_)}${var_?` · Lucro ${fmt(Math.round((var_-cus)/var_*1000)/10)}%`:""}`:"";
   const b=document.getElementById("romCriar");if(b){const n=ROM.rows.filter(r=>!r.skip).length;b.textContent=`Criar ${n} peça${n===1?"":"s"}`;b.disabled=!n}}
+const g3=n=>(Math.round((+n||0)*1000)/1000).toFixed(3).replace(".",",");
+const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);
+function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>{const p=num(x.peso);if(p>0)w+=p;v+=num(x.custo)||0});
+  const dif=Math.round(((r.loteG||0)-w)*1000)/1000,tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);let cls,txt;
+  if(!kids.length){cls="warn";txt="Nenhum item ainda: pese as peças e adicione cada uma abaixo."}
+  else if(Math.abs(dif)<=0.05){cls="ok";txt=`✓ a soma bate: ${g3(w)} g de ${g3(r.loteG)} g`}
+  else if(dif>0){cls="warn";txt=`faltam ${g3(dif)} g para fechar o lote (${g3(w)} g de ${g3(r.loteG)} g)`}
+  else{cls="bad";txt=`passou ${g3(-dif)} g do peso do lote (${g3(w)} g de ${g3(r.loteG)} g)`}
+  return {cls,dif,txt:`${txt} · ${kids.length} item(ns) · valor dos itens R$ ${brl(v)} de R$ ${brl(tot)}`}}
+function romLoteHTML(r,i){const R=romLoteResumo(r),tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);
+  return `<div class="rc lote" data-i="${i}"><div class="lote-h"><b>Lote por peso · ${esc(r.cod||"")} ${esc(r.desc)}</b><span>${g3(r.loteG)} g × R$ ${String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")}/g = <b>R$ ${brl(tot)}</b></span></div>
+    <p class="hint">O fornecedor vendeu este lote por peso, sem separar as peças. Pese cada peça e adicione-a aqui: o custo de cada uma é o peso × o valor da grama, e depois entra o fator. Confira se a soma dos pesos fecha com o lote.</p>
+    <div class="row"><label class="fq"><span>Quantos itens?</span><input class="n" data-lotn value="1" inputmode="numeric" style="width:64px"></label><button type="button" class="btn pri sm" data-act="lote-add" data-i="${i}">＋ Adicionar itens</button><button type="button" class="btn sm" data-act="lote-resto" data-i="${i}" title="Cria um item com o peso que falta para fechar o lote">＋ Item com o que falta</button></div>
+    <div class="lote-sum ${R.cls}" data-lsum="${esc(r.lid)}" role="status">${esc(R.txt)}</div></div>`}
+function romLoteAtualiza(lot){const el=document.querySelector(`#romWrap [data-lsum="${CSS.escape(lot.lid)}"]`);if(!el)return;const R=romLoteResumo(lot);el.className="lote-sum "+R.cls;el.textContent=R.txt}
+function romLotePeso(r,rc){const w=num(r.peso);r.custo=w>0&&r.precoG!=null?virg(w*r.precoG):"";const ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci)ci.value=r.custo;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);if(lot)romLoteAtualiza(lot)}
+function romLoteAdd(r,n,peso){let pos=ROM.rows.indexOf(r);ROM.rows.forEach((x,j)=>{if(x.loteDe===r.lid)pos=j});const f=S.form,novos=[],k0=romLoteKids(r).length;
+  for(let q=0;q<n;q++){const x={cod:(r.cod||"")+"-"+(k0+q+1),desc:"",preco:r.precoG,precod:null,total:null,qtd:1,peso:peso!=null?g3(peso):"",q:{},skip:false,aviso:"",cat:r.cat||f.v.I||"",sub:r.sub||"",loteDe:r.lid,precoG:r.precoG,custo:peso!=null?virg(peso*r.precoG):""};
+    x.mk={};x.bo={};x.on={};x.vz={};x.ex={};romNovaCat(x);novos.push(x)}
+  ROM.rows.splice(pos+1,0,...novos);romSalvarSoon();renderRom()}
+function romLoteDecora(){if(!ROM)return;const cs=document.querySelectorAll("#romWrap .rc[data-i]");cs.forEach(c=>{const r=ROM.rows[+c.dataset.i];if(!r||!r.loteDe||c.querySelector(".lote-tag"))return;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);
+  c.insertAdjacentHTML("afterbegin",`<div class="lote-tag"><span>Item do lote ${esc(lot?lot.cod:"")} · custo = peso × R$ ${String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")}/g</span><button type="button" class="x" data-act="lote-del" data-i="${c.dataset.i}" aria-label="Remover este item do lote">×</button></div>`)})}
 function romNovaCat(r){const g=gradeDaCat(r.cat,r.sub);r.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];r.csel=coresPadrao(r.cat,r.sub);r.semG=false;r.open=false;r.q={};if(!romIds(r).length&&!g&&romTipo(r)!=="bruta")r.q.p=String(r.qtd)}
 const ROM_PAPEIS=[["cod","Código"],["desc","Descrição"],["qtd","Quantidade"],["preco","Valor unitário"],["total","Valor total"]];
 const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|mercadoria|artigo/i,qtd:/qtd|quant|^qt$|^un/i,preco:/unit|pre[cç]o|vlr un|valor un|^valor$/i,total:/total|subtotal/i};
@@ -3318,7 +3380,7 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
     else if(k==="bo"&&["C","U","V","O","_m"].includes(t.dataset.k)){const n=num(t.value);if(n==null||n<0)m="Digite um número maior ou igual a 0."}
     if(m){t.classList.add("bad");t.style.outline="2px solid #c0392b";if(fin)toast(m+" (não gravado)");return}
     t.classList.remove("bad");t.style.outline=""}
-  if(k==="custo")r.custo=t.value;else if(k==="peso")r.peso=t.value;else if(k==="cor")r.cor=t.value;else if(k==="vp")r.vp=t.value;else if(k==="obs1")r.obs=t.value;
+  if(k==="custo")r.custo=t.value;else if(k==="peso"){r.peso=t.value;if(r.loteDe)romLotePeso(r,rc)}else if(k==="cor")r.cor=t.value;else if(k==="vp")r.vp=t.value;else if(k==="obs1")r.obs=t.value;
   else if(k==="cat"){r.catq=false;r.aviso=String(r.aviso||"").replace("· categoria não reconhecida: confira","").trim();const g0=!!romTemVar(r.cat,r.sub);r.cat=t.value;r.sub="";if(g0||romTemVar(r.cat,r.sub))romNovaCat(r);renderRom();return}
   else if(k==="sub"){const g0=!!romTemVar(r.cat,r.sub);r.sub=t.value;if(g0||romTemVar(r.cat,r.sub))romNovaCat(r);renderRom();return}
   else if(k==="vinc"){r.vinc=t.checked}
@@ -3337,7 +3399,8 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   else if(k==="exv"){r._v=t.value;return}
   else if(k==="q"){r.q[t.dataset.b]=t.value}
   romAtualSoon()}
-function romLer(){if(ROM&&String(ROM.texto||"").length>MAX_TEXTO_COLADO){ROM.msg=`O texto tem ${String(ROM.texto).length} caracteres e o limite é ${MAX_TEXTO_COLADO}. Cole em partes.`;renderRom();return}if(ROM&&ROM.pdf&&ROM.texto!==ROM.pdf.texto)ROM.pdf=null;const f=S.form,T=romT(),R=lerRomaneioAuto(ROM.texto,T);
+function romLer(){if(ROM&&String(ROM.texto||"").length>MAX_TEXTO_COLADO){ROM.msg=`O texto tem ${String(ROM.texto).length} caracteres e o limite é ${MAX_TEXTO_COLADO}. Cole em partes.`;renderRom();return}if(ROM&&ROM.pdf&&ROM.texto!==ROM.pdf.texto)ROM.pdf=null;let f=S.form,T=romT(),R=lerRomaneioAuto(ROM.texto,T);
+  {const pts=r=>r.erro?-1e9:romScore(r)+(/✓ valor/.test(r.conf||"")?1000:0);let bp=pts(R);for(const T2 of cfg().romaneios){if(T2.id===T.id)continue;const R2=lerRomaneioAuto(ROM.texto,T2),p2=pts(R2);if(p2>bp){bp=p2;ROM.tid=T2.id;T=T2;R=R2}}}
   if(R.erro){const tinha=ROM.rows&&ROM.rows.length;ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg=R.erro+(tinha?" Os cartões da leitura anterior foram removidos.":"");romSalvarSoon();renderRom();return}
   romAplicaR(R)}
 function romAplicaR(R){const f=S.form,T=romT();
@@ -3348,6 +3411,7 @@ function romAplicaR(R){const f=S.form,T=romT();
     else if(r.cod){const tb=TABS.find(t=>(t.cods||[]).includes(chaveCod(f.v.H,r.cod)));if(tb){r.skip=true;r.arq=tb.nome;r.aviso="· já lançada na tabela salva “"+tb.nome+"” — desmarcada"}}});
   if(ROM.pdf)romFotos(R.rows);
   {const vel={},n1={},n2={};(ROM.rows||[]).forEach(o=>{if(o.cod){n1[o.cod]=(n1[o.cod]||0)+1;vel[o.cod+"|"+n1[o.cod]]=o}});let mant=0;R.rows.forEach(r=>{if(r.cod)n2[r.cod]=(n2[r.cod]||0)+1;const o=r.cod&&vel[r.cod+"|"+n2[r.cod]];if(!o)return;mant++;["peso","desc","cat","sub","custo","q","gsel","mk","bo","on","vz","ex","obs","vp","cor","sel","open","catq"].forEach(k=>{if(o[k]!==undefined)r[k]=o[k]})});R._mant=mant}
+  {const kids=(ROM.rows||[]).filter(x=>x.loteDe);if(kids.length){const old={};(ROM.rows||[]).forEach(x=>{if(x.lote&&x.cod)old[x.cod]=x});const out=[];R.rows.forEach(x=>{out.push(x);if(x.lote&&old[x.cod]){x.lid=old[x.cod].lid;kids.filter(k=>k.loteDe===x.lid).forEach(k=>out.push(k))}});R.rows=out}}
   ROM.rows=R.rows;ROM.obs=R.obs||ROM.obs||"";ROM.conf=R.conf;ROM.msg=`${R.rows.length} peças lidas${R._mant?` · ${R._mant} com as suas edições mantidas`:""}`;romSalvarSoon();renderRom();{const pe=[...document.querySelectorAll('#romWrap [data-rp=peso]')].find(x=>!x.value);if(pe)pe.focus({preventScroll:true})}}
 function romDividir(r,cols){const ks=romKeys(r,cols),n=ks.length;if(!n)return;const base=Math.floor(r.qtd/n);let resto=r.qtd-base*n;ks.forEach(k=>{r.q[k]=String(base+(resto-->0?1:0))})}
 /* ===== importar o PDF do romaneio: texto + fotos em alta resolução ===== */
@@ -4319,6 +4383,14 @@ document.addEventListener("click",e=>{
     case "rom-q":{const f=S.form,i=t.dataset.i!=null?+t.dataset.i:null,r=i!=null&&ROM?ROM.rows[i]:null;romQ0={I:f.v.I,J:f.v.J};romQRow=i;if(r&&["sub","gi","cv"].includes(t.dataset.q)){if(r.cat)f.v.I=r.cat;if(t.dataset.q!=="sub"){if(r.sub)f.v.J=r.sub;else delete f.v.J}}quick=t.dataset.q;quickB=null;renderForm();const el=document.querySelector("#formWrap .nf");if(el)el.scrollIntoView({block:"center"});refocar("#q1");break}
     case "q":quick=quick===t.dataset.q&&(t.dataset.qb||null)===quickB?null:t.dataset.q;quickB=quick?(t.dataset.qb||null):null;renderForm();break;
     case "q-salvar":salvarRapido();break;
+    case "multi-mais":{MULTI.push({F:"",N:"",P:""});renderForm();const ins=document.querySelectorAll('#multiPanel [data-mf="F"]');if(ins.length)ins[ins.length-1].focus();break}
+    case "multi-del":{MULTI.splice(+t.dataset.i,1);renderForm();break}
+    case "multi-limpar":{MULTI=[];renderForm();break}
+    case "multi-ok":{const f=S.form,F0=f.v.F,N0=f.v.N,P0=f.v.P,antes=S.lanc.length,resto=[];let add=0;
+      MULTI.forEach(m=>{if(!String(m.F||"").trim()&&!String(m.N||"").trim()&&!String(m.P||"").trim())return;f.v.F=m.F;if(m.N)f.v.N=m.N;else if(N0==null)delete f.v.N;else f.v.N=N0;if(m.P)f.v.P=m.P;else if(P0==null)delete f.v.P;else f.v.P=P0;if(adicionar(false,true))add++;else resto.push(m)});
+      f.v.F=F0;if(N0==null)delete f.v.N;else f.v.N=N0;if(P0==null)delete f.v.P;else f.v.P=P0;erro="";MULTI=resto;
+      const ids=S.lanc.slice(antes).map(l=>l.id);if(ids.length)undo={tipo:"dup",ids};salvar(false);renderTopo();renderForm();if(ids.length)mostrarNoFim(ids[ids.length-1]);
+      toast(add?`${add} peça(s) adicionada(s) no fim da tabela.${resto.length?` ${resto.length} linha(s) ficaram aqui: confira os campos obrigatórios.`:""}`:"Nenhuma peça entrou: confira os campos obrigatórios do formulário.",add?{t:"Desfazer",fn:desfazer}:null);break}
     case "q-fechar":romQFim();quick=null;renderForm();break;
     case "bk-escolher":{if(typeof showDirectoryPicker!=="function"){toast("Este navegador não deixa escolher pasta. Use o Chrome ou o Edge.");break}
       showDirectoryPicker({mode:"readwrite",id:"cadpecas-bk"}).then(async h=>{await idbPut("pontos","pasta",h);const r=await bkAuto(true,true);toast(typeof r==="string"&&r.startsWith("cadastro")?"Backup automático ligado: "+r:"Pasta escolhida, mas não consegui gravar agora ("+r+").");bkStatus()}).catch(e=>{if(e&&e.name!=="AbortError")toast("Não consegui usar essa pasta.")});break}
@@ -4380,6 +4452,9 @@ document.addEventListener("click",e=>{
     case "cat-del-ok":{const nome=C.categorias[ci].nome;C.categorias.splice(ci,1);delCat=null;
       if(S.form.v.I===nome){S.form.v.I=C.categorias.length?C.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}
       salvar(true);render();toast(`Categoria “${nome}” excluída.`);break}
+    case "lote-add":{const r=ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));break}
+    case "lote-resto":{const r=ROM.rows[+t.dataset.i];if(!r)break;const R=romLoteResumo(r);if(R.dif>0.05)romLoteAdd(r,1,R.dif);else toast("O peso do lote já fechou.");break}
+    case "lote-del":{ROM.rows.splice(+t.dataset.i,1);romSalvarSoon();renderRom();break}
     case "imp-pick":{document.getElementById("impFile").click();break}
     case "imp-up":{const i=+t.dataset.i;if(i>0){[IMPQ[i-1],IMPQ[i]]=[IMPQ[i],IMPQ[i-1]];renderImp()}break}
     case "imp-down":{const i=+t.dataset.i;if(i<IMPQ.length-1){[IMPQ[i+1],IMPQ[i]]=[IMPQ[i],IMPQ[i+1]];renderImp()}break}
@@ -4539,6 +4614,7 @@ function trocarPrefixo(c,txt){const C=cfg(),antigo=String(c.prefixo||"").toUpper
   {const re=new RegExp("^"+antigo+"\\d");let nm=0;S.lanc.forEach(l=>{if(val(l,"I")!==c.nome)return;[l.v.E,...Object.values(l.ov||{}).map(o=>o&&typeof o==="object"?o.E:"")].forEach(x=>{if(antigo&&re.test(String(x||"").replace(/\s+/g,"").toUpperCase()))nm++})});if(nm)msg+=` Atenção: ${nm} referência(s) digitada(s) à mão continuam com ${antigo} (não mudam sozinhas) — confira na tabela.`}
   salvar(true,false);render();toast(msg,{t:"Desfazer",fn:desfazer})}
 function onField(t,isChange){
+  if(t.dataset&&t.dataset.mf!==undefined){const tr=t.closest("[data-mi]"),m=tr&&MULTI[+tr.dataset.mi];if(m)m[t.dataset.mf]=t.value;return}
   if(t.dataset&&t.dataset.lcf!==undefined){if(!isChange)return;const C=cfg(),tr=t.closest("[data-lc]"),j=+tr.dataset.lc,n=C.cores[j],k=corKey(n),M=C.coresMeta=C.coresMeta||{},fl=t.dataset.lcf;
     if(fl==="nome"){const nv=t.value.trim();if(!nv||nv===n){t.value=n;return}if(C.cores.some((y,q)=>q!==j&&corKey(y)===corKey(nv))){toast("Já existe uma cor com esse nome.");t.value=n;return}
       const nk=corKey(nv);if(M[k]){M[nk]=M[k];if(nk!==k)delete M[k]}C.cores[j]=nv;
@@ -4981,25 +5057,28 @@ function sideMarcar(){const sd=document.getElementById("side");if(!sd||sd.hidden
   const marca=(b,on)=>{if(on)b.setAttribute("aria-current","true");else b.removeAttribute("aria-current")};
   sd.querySelectorAll("[data-vis]").forEach(b=>marca(b,b.dataset.vis===v));
   sd.querySelectorAll("[data-go^=\"sec:\"]").forEach(b=>marca(b,(v==="cad"||v==="tudo")&&b.dataset.go==="sec:"+abertos.tab))}
-function sideAplicar(modo){/* modo: "off" | "open" */
-  if(modo==="mini")modo="open";
-  const sd=document.getElementById("side"),ligado=modo==="open";
-  if(celular())return;
-  sd.hidden=!ligado;document.body.classList.toggle("side-on",ligado);document.body.classList.toggle("side-mini",modo==="mini");
-  const so=document.getElementById("sideOpen");if(so)so.hidden=ligado||celular();
-  
+function sideAplicar(modo){/* "open" = expandido · "mini" = faixa estreita só com ícones */
+  if(modo!=="mini")modo="open";
+  const sd=document.getElementById("side");if(celular()){sd.hidden=true;document.body.classList.remove("side-on","side-mini");return}
+  sd.hidden=false;document.body.classList.add("side-on");document.body.classList.toggle("side-mini",modo==="mini");
   abertos.side=modo;guardarAbertos();sideMarcar()}
-document.getElementById("sideOpen").addEventListener("click",()=>sideAplicar("open"));
-document.getElementById("sideT").addEventListener("click",()=>sideAplicar("off"));
+function hdrLayout(){const hin=document.querySelector("header .hin");if(!hin)return;
+  const st=document.getElementById("saveStatus"),ud=hin.querySelector(".udo"),sp=hin.querySelector(".sp"),top=document.getElementById("sideTop"),ex=document.getElementById("sideExp");if(!st||!ud||!sp||!top||!ex)return;
+  if(!celular()){if(st.parentNode!==top)top.append(st,ud);if(sp.parentNode!==ex)ex.append(sp)}
+  else{const ref=hin.querySelector("nav.ir");if(st.parentNode!==hin){hin.insertBefore(st,ref);hin.insertBefore(ud,ref)}if(sp.parentNode!==hin)hin.append(sp)}}
+window.addEventListener("resize",()=>{hdrLayout();if(!celular())sideAplicar(abertos.side)});
+hdrLayout()
+
+document.getElementById("sideT").addEventListener("click",()=>sideAplicar(abertos.side==="mini"?"open":"mini"));
 document.getElementById("side").addEventListener("click",e=>{
   const v=e.target.closest("button[data-vis]");if(v){visPara(v.dataset.vis);if(v.dataset.vis==="lancar")refocar("#f-F");return}
   const g=e.target.closest("[data-go]");if(!g)return;const [k,id]=g.dataset.go.split(":");
   if(k==="sec"){if(celular())formAbrir(false);irPara(id);return}
   /* ações: aciona o botão que já existe no app (o menu não tem cópia deles) */
-  const alvo=document.querySelector('header [data-act="'+id+'"],#vis [data-act="'+id+'"],#paneBot [data-act="'+id+'"]');if(alvo)alvo.click()});
+  const alvo=document.querySelector('[data-act="'+id+'"]');if(alvo)alvo.click()});
 document.addEventListener("click",()=>setTimeout(sideMarcar,0));
 document.addEventListener("keydown",e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&e.key.toLowerCase()==="b"){e.preventDefault();document.getElementById("vside").click()}});
-if(!celular())sideAplicar(abertos.side==="off"?"off":"open");
+if(!celular())sideAplicar(abertos.side);
 /* celular: a barra de baixo some o "Lançar peça" quando o formulário já está na tela */
 try{const io=new IntersectionObserver(es=>{document.body.classList.toggle("formvis",!celular()&&es.some(x=>x.isIntersecting))},{threshold:0.1});io.observe(document.getElementById("formWrap"))}catch(e){}
 })();
