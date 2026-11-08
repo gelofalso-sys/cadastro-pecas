@@ -1222,7 +1222,13 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
   .tabp .sb>p.d:not(.mais)::after{content:" … mais"}
 }
 /* v20: abas de cadastro numa linha só no desktop; tabelas de cadastro viram cartões no celular */
-@media (min-width:901px){#cfg .ctabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#cfg .ctabs::-webkit-scrollbar{display:none}#cfg .ctabs .ctab{padding-inline:11px;white-space:nowrap;flex:none}}
+#cfg .ctabs{flex-wrap:wrap;overflow:visible;position:static;gap:2px 4px}
+#cfg .ctabs .ctab{flex:none;white-space:nowrap;padding-inline:11px}
+@media (max-width:900px){#cfg .ctabs{flex-direction:column;align-items:stretch;top:auto}#cfg .ctabs .ctab{width:100%;text-align:left}#cfg .ctabs .cgrp{padding:8px 4px 0}}
+.vis .vplan{display:none}@media (max-width:900px){.vis .vplan{display:block}}
+.sn button{white-space:normal}
+.expl{margin-top:18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:13px;line-height:1.45}
+.expl p{margin:4px 0 6px}.expl ul{margin:0;padding-left:18px}.expl li{margin:2px 0}
 @media (max-width:900px){
   #cfg table.cfg:not(.bnt),#cfg table.cfg:not(.bnt) tbody{display:block;width:100%}
   #cfg table.cfg:not(.bnt) thead{display:none}
@@ -1235,15 +1241,15 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
 }
 </style>
 
-<aside class="side" id="side" aria-label="Menu lateral" hidden><button type="button" class="side-t" id="sideT" aria-label="Recolher ou expandir o menu" title="Recolher / expandir (Alt+B)">«</button><nav class="sn">
-<div class="sg">Visões</div>
-<button type="button" data-vis="tudo"><i>▤</i><span class="sl">Dividida</span></button><button type="button" data-vis="planilha"><i>▦</i><span class="sl">Planilha</span></button><button type="button" data-vis="lancar"><i>＋</i><span class="sl">Lançar</span></button><button type="button" data-vis="cad"><i>⚙</i><span class="sl">Cadastros</span></button>
+<aside class="side" id="side" aria-label="Menu lateral" hidden><button type="button" class="side-t" id="sideT" aria-label="Recolher o menu" title="Recolher o menu (Alt+B)">«</button><nav class="sn">
+<div class="sg">Principal</div>
+<button type="button" data-vis="tudo"><span class="sl">Tabela e formulário</span></button>
 <div class="sg">Romaneios</div>
-<button type="button" data-go="act:rom-abrir"><i>📝</i><span class="sl">Novo / continuar</span></button><button type="button" data-go="act:rom-lista"><i>📋</i><span class="sl">Lançados</span></button><button type="button" data-go="act:tab-lista"><i>🗂</i><span class="sl">Tabelas salvas</span></button>
-<div class="sg">Cadastros</div>
-<button type="button" data-go="sec:banho"><i>✨</i><span class="sl">Banhistas e banhos</span></button><button type="button" data-go="sec:cor"><i>🎨</i><span class="sl">Cores, tamanhos e variações</span></button><button type="button" data-go="sec:cat"><i>🏷</i><span class="sl">Categorias</span></button><button type="button" data-go="sec:forn"><i>🚚</i><span class="sl">Fornecedores</span></button><button type="button" data-go="sec:col"><i>▥</i><span class="sl">Padrões das colunas</span></button><button type="button" data-go="sec:mod"><i>⇪</i><span class="sl">Modelo da planilha</span></button><button type="button" data-go="sec:rom"><i>📄</i><span class="sl">Leitura de romaneios</span></button><button type="button" data-go="sec:foto"><i>🖼</i><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc"><i>💾</i><span class="sl">Importar e backup</span></button>
+<button type="button" data-go="act:rom-abrir"><span class="sl">Novo / continuar</span></button><button type="button" data-go="sec:roml"><span class="sl">Lançados</span></button><button type="button" data-go="act:tab-lista"><span class="sl">Tabelas salvas</span></button>
+<div class="sg">Cadastros e personalização</div>
+<button type="button" data-go="sec:banho"><span class="sl">Banhistas e banhos</span></button><button type="button" data-go="sec:cor"><span class="sl">Cores, tamanhos e variações</span></button><button type="button" data-go="sec:cat"><span class="sl">Categorias</span></button><button type="button" data-go="sec:forn"><span class="sl">Fornecedores</span></button><button type="button" data-go="sec:col"><span class="sl">Padrões das colunas</span></button><button type="button" data-go="sec:mod"><span class="sl">Modelo da planilha</span></button><button type="button" data-go="sec:rom"><span class="sl">Leitura de romaneios</span></button><button type="button" data-go="sec:foto"><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc"><span class="sl">Importar e backup</span></button>
 <div class="sg">Ações</div>
-<button type="button" data-go="act:xlsx"><i>⬇</i><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar"><i>⧉</i><span class="sl">Copiar para o Excel</span></button><button type="button" id="sideK"><i>⌘</i><span class="sl">Comandos <small>Ctrl+K</small></span></button>
+<button type="button" data-go="act:xlsx"><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar"><span class="sl">Copiar para o Excel</span></button><button type="button" id="sideK"><span class="sl">Comandos <small>Ctrl+K</small></span></button>
 </nav></aside>
 <header><div class="gut hin">
   <h1>Cadastro de Peças</h1><span id="saveStatus" class="status">Carregando…</span><span class="udo"><button type="button" class="btn sm" id="btnUndo" data-act="undo-b" title="Desfazer a última alteração (Ctrl+Z)" aria-label="Desfazer" disabled>↶ Desfazer</button><button type="button" class="btn sm" id="btnRedo" data-act="redo-b" title="Refazer (Ctrl+Y)" aria-label="Refazer" disabled>↷ Refazer</button></span>
@@ -1257,7 +1263,7 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
     <button class="btn pri" type="button" data-act="xlsx">Baixar .xlsx</button>
   </div>
 </div></header>
-<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Planilha em cima e lançamento embaixo (Alt+1)">▤ Dividida</button><button type="button" data-vis="planilha" title="Só a planilha, em tela cheia (Alt+2)">▦ Planilha</button><button type="button" data-vis="lancar" title="Lançar peças e romaneios (Alt+3)">＋ Lançar</button><button type="button" data-vis="cad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+4)">⚙ Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">📋 Romaneios</button><button type="button" class="vside" id="vside" title="Menu lateral (Alt+B)" aria-pressed="false">☰ Menu</button><button type="button" class="vpal" id="vpal" title="Paleta de comandos (Ctrl+K)">⌘ Comandos</button><span class="vhint">Alt+1…4 visões · <kbd>/</kbd> busca · <kbd>Ctrl+K</kbd> comandos</span></nav>
+<nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Tabela em cima e formulário embaixo (Alt+1)">Tabela e formulário</button><button type="button" data-vis="planilha" class="vplan" title="Só a tabela">Tabela</button><button type="button" data-vis="cad" class="vcad" title="Categorias, banhos, fornecedores e demais cadastros (Alt+3)">Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">Romaneios</button><button type="button" class="vside" id="vside" title="Menu lateral (Alt+B)" aria-pressed="false">Menu</button><button type="button" class="vpal" id="vpal" title="Paleta de comandos (Ctrl+K)">Comandos</button><span class="vhint">Alt+1…3 · <kbd>/</kbd> busca · <kbd>Ctrl+K</kbd> comandos</span></nav>
 <div class="app" id="app" role="main">
   <section class="gut pane-top" id="paneTop" aria-label="Planilha">
     <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><button type="button" class="btn sm" id="filTog" aria-expanded="false" title="Mostrar ou esconder os filtros">⚲ Filtros</button><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
@@ -2486,6 +2492,18 @@ function irPara(id){
 /* ===== configurações ===== */
 /* cadastros em abas na horizontal: o nome de cada um fica sempre à vista e o conteúdo abre embaixo */
 let SECS=[],LIBTAM="";
+const EXPL={
+banho:`<div class="expl"><b>Para que serve esta aba</b><p>Define quem banha as peças e quanto custa cada banho. É daqui que saem as linhas de banho de cada peça (uma linha por banho marcado).</p><ul><li><b>Letra do banho</b> entra na referência (AN001<b>A</b>) e na coluna E da planilha.</li><li><b>Coluna do custo (R, S ou T)</b> recebe o custo do banho: peso × valor por grama, ou o valor fixo. O verniz vai na coluna U.</li><li><b>Milésimos e valor por categoria</b> mudam o custo das peças daquela categoria; a linha “Padrão” vale para as demais.</li><li><b>Insumos por categoria</b> somam no custo (coluna Q). O <b>Preço de Varejo</b> (coluna V) é a soma dos custos × o fator do banho.</li></ul></div>`,
+cor:`<div class="expl"><b>Para que serve esta aba</b><p>Biblioteca de cores e de tamanhos/variações. Tudo o que é criado aqui aparece nos botões <b>＋ Cor da pedra</b> e <b>＋ Tamanho</b> ao lançar uma peça ou um romaneio, em qualquer categoria.</p><ul><li><b>Sigla da cor e do tamanho</b> entram na referência, na ordem: prefixo + número + letra do banho + tamanho + cor (ex.: AN001A17AZ).</li><li><b>Palavra na descrição</b> entra no fim da Descrição (coluna F).</li><li><b>Coluna do valor</b> da variação (ex.: Tamanho) recebe o nome da opção em cada linha da planilha; cada opção marcada gera uma linha.</li><li><b>Pedra/detalhe</b> marcado: a cor aparece na escolha da cor da pedra. Cores usadas como cor do banho (Ouro, Prata…) ficam fora por padrão.</li></ul></div>`,
+cat:`<div class="expl"><b>Para que serve esta aba</b><p>Organiza as categorias e subcategorias das peças e a numeração da referência.</p><ul><li><b>Categoria e subcategoria</b> vão para as colunas I e J da planilha.</li><li><b>Prefixo + última peça</b> formam a referência (coluna E) e definem de onde a numeração continua; prefixos iguais dividem a mesma sequência.</li><li><b>Texto da categoria na Descrição</b> é acrescentado ao fim da Descrição (coluna F).</li><li><b>NCM, CFOP e FCP</b> preenchem as colunas Y, AA e AB; <b>Insumos</b> a coluna Q. Vazio = usa o padrão da coluna.</li></ul></div>`,
+forn:`<div class="expl"><b>Para que serve esta aba</b><p>Cadastro dos fornecedores. Ao escolher o fornecedor no lançamento, o app preenche o resto sozinho.</p><ul><li><b>Nome</b> vai para a coluna H e o <b>código do fornecedor</b> para a coluna G.</li><li><b>Desconto %</b> é aplicado ao custo de compra (coluna P).</li><li><b>Bruta/pronta</b> decide se a peça vai para banho ou já chega banhada; na bruta o <b>banhista</b> vinculado traz os banhos e custos.</li><li>A coluna “Aprendeu” guarda os banhos e fatores usados da última vez com esse fornecedor.</li></ul></div>`,
+col:`<div class="expl"><b>Para que serve esta aba</b><p>Cada linha é uma coluna da planilha. Aqui você decide como ela se comporta no lançamento.</p><ul><li><b>No lançamento</b>: mostra o campo no formulário. <b>Lembrar</b>: repete o valor na próxima peça. <b>Obrigatória</b>: impede lançar sem preencher.</li><li><b>Valor padrão</b>: entra quando o campo fica vazio. <b>Opções</b>: lista de sugestões para escolher sem digitar.</li><li><b>Observações prontas</b> alimentam a coluna M (Observação).</li><li>Isto muda só o preenchimento; os nomes e a ordem das colunas na saída são definidos em <b>Modelo da planilha</b>.</li></ul></div>`,
+mod:`<div class="expl"><b>Para que serve esta aba</b><p>Define o formato do arquivo que vai para o sistema de destino (Jueri, Bling…).</p><ul><li><b>Cabeçalhos, ordem e colunas</b> do arquivo baixado (.xlsx) e do “Copiar para o Excel”.</li><li><b>Mapeamento</b> de cada coluna do app para a coluna do sistema; colunas desligadas não saem.</li><li>Trocar o modelo em “Exportar para”, no topo, muda a saída sem alterar as peças.</li></ul></div>`,
+rom:`<div class="expl"><b>Para que serve esta aba</b><p>Ensina o app a ler a lista de compra de cada fornecedor.</p><ul><li><b>Modelo de leitura</b> diz onde estão código, descrição, quantidade e preço no texto ou PDF colado.</li><li><b>Palavras → categoria</b> define a categoria e a subcategoria que cada peça recebe (colunas I e J).</li><li>O que o modelo lê vira cartões no romaneio, e cada cartão vira uma ou mais linhas da planilha.</li></ul></div>`,
+roml:`<div class="expl"><b>Para que serve esta aba</b><p>Histórico dos romaneios importados.</p><ul><li><b>Observação (documento)</b> mostra o nome do arquivo importado.</li><li><b>Abrir</b> reabre o romaneio para lançar o que faltou ou corrigir peças já lançadas (a referência fica a mesma; só muda se a categoria mudar).</li><li><b>Excluir</b> remove só o romaneio guardado; as peças já lançadas na tabela continuam.</li></ul></div>`,
+foto:`<div class="expl"><b>Para que serve esta aba</b><p>Envia as fotos para um serviço de imagens e guarda o link.</p><ul><li>O <b>link</b> da foto vai para a coluna B (Foto) da planilha, porque os sistemas pedem o link e não a imagem.</li><li>A foto original do romaneio fica guardada à parte (coluna “Foto do romaneio”).</li><li>A chave do serviço fica só neste navegador e não entra no backup.</li></ul></div>`,
+opc:`<div class="expl"><b>Para que serve esta aba</b><p>Entrada de dados antigos e segurança.</p><ul><li><b>Importar planilha</b> acerta a última peça de cada prefixo (a numeração continua dali) e traz fornecedores, categorias e cores.</li><li><b>Ordem das linhas</b> define como a planilha é montada (A depois B, ou na ordem de lançamento).</li><li><b>Backup em pasta, pontos de restauração e cópias</b> guardam tudo (peças, cadastros, romaneios e fotos) para voltar no tempo.</li></ul></div>`};
+
 function sec(id,titulo,resumo,corpo){SECS.push({id,titulo,resumo,corpo});return ""}
 function abaCfg(){return SECS.some(s=>s.id===abertos.tab)?abertos.tab:SECS[0].id}
 /* ===== Catálogo rápido: colar lista, modelos, duplicar seguro, renomear e ordenar ===== */
@@ -2962,9 +2980,11 @@ async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição
   romMarcar();const nf=ROM.rows.filter(r=>r.feito).length,np=ROM.rows.filter(r=>!r.skip).length;
   ROM.msg=`Romaneio salvo aberto · ${nf} já lançada(s) · ${np} para lançar. Mude qualquer campo de uma peça já lançada para corrigir (ela é substituída, mantendo posição e referência; só muda de referência se você trocar a categoria; nesse caso as outras peças nunca são renumeradas).`;
   renderTopo();renderForm();renderRom();romSalvar();const w=document.getElementById("romWrap");if(w)rolarPane(w)}
+function romListaTabela(){return `<div class="rep-tb"><table><thead><tr><th>Data</th><th>Fornecedor</th><th>Observação (documento)</th><th>Montado por</th><th class="n">Peças</th><th class="n">Lançadas</th><th class="n">A lançar</th><th></th></tr></thead><tbody>${ROMS.length?ROMS.map(x=>`<tr><td>${esc(new Date(x.em).toLocaleString("pt-BR"))}</td><td><b>${esc(x.forn||"—")}</b></td><td class="rdoc" title="${esc((x.doc||"")+(x.doc&&x.obs?" · ":"")+(x.obs||""))}">${esc(x.doc||x.obs||"—")}${x.doc&&x.obs?`<small> · ${esc(x.obs)}</small>`:""}</td><td>${esc(x.por||"não informado")}</td><td class="n">${x.n}</td><td class="n">${x.feitas}</td><td class="n">${x.pend}</td><td><button type="button" class="btn sm" data-act="rom-ver" data-id="${esc(x.id)}">Ver</button> <button type="button" class="btn sm pri" data-act="rom-salvo-abrir" data-id="${esc(x.id)}">Abrir</button> <button type="button" class="btn sm danger" data-act="rom-salvo-del" data-id="${esc(x.id)}">${romArm===x.id?"Confirmar exclusão":"Excluir"}</button></td></tr>`).join(""):`<tr><td colspan="8" class="hint">Nenhum romaneio salvo ainda.</td></tr>`}</tbody></table></div>`}
+function romListaRef(){if(document.querySelector(".rep"))romListaAbrir();else renderCfg()}
 function romListaAbrir(){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";
   ov.innerHTML=`<div class="rep-c"><div class="rep-h"><div><b class="rep-t">Romaneios salvos</b><div class="hint">Cada romaneio colado fica guardado com as fotos e quantidades. Abra para lançar o que faltou ou para editar todas as peças de novo — sem importar o arquivo outra vez.</div></div><div class="rep-ac"><button type="button" class="btn sm" data-act="backup-total" title="Um arquivo com tudo: peças, cadastros, romaneios e fotos">Backup completo</button><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div>
-  <div class="rep-tb"><table><thead><tr><th>Data</th><th>Fornecedor</th><th>Observação (documento)</th><th>Montado por</th><th class="n">Peças</th><th class="n">Lançadas</th><th class="n">A lançar</th><th></th></tr></thead><tbody>${ROMS.length?ROMS.map(x=>`<tr><td>${esc(new Date(x.em).toLocaleString("pt-BR"))}</td><td><b>${esc(x.forn||"—")}</b></td><td class="rdoc" title="${esc((x.doc||"")+(x.doc&&x.obs?" · ":"")+(x.obs||""))}">${esc(x.doc||x.obs||"—")}${x.doc&&x.obs?`<small> · ${esc(x.obs)}</small>`:""}</td><td>${esc(x.por||"não informado")}</td><td class="n">${x.n}</td><td class="n">${x.feitas}</td><td class="n">${x.pend}</td><td><button type="button" class="btn sm" data-act="rom-ver" data-id="${esc(x.id)}">Ver</button> <button type="button" class="btn sm pri" data-act="rom-salvo-abrir" data-id="${esc(x.id)}">Abrir</button> <button type="button" class="btn sm danger" data-act="rom-salvo-del" data-id="${esc(x.id)}">${romArm===x.id?"Confirmar exclusão":"Excluir"}</button></td></tr>`).join(""):`<tr><td colspan="8" class="hint">Nenhum romaneio salvo ainda.</td></tr>`}</tbody></table></div></div>`;
+  ${romListaTabela()}</div>`;
   document.body.appendChild(ov)}
 function romBadge(r){const rf=(G&&G.linhas?G.linhas:[]).filter(x=>(r.lancIds||[]).includes(x.lancId)).map(x=>x.v.E);return `<span class="rfeito" title="Mude qualquer campo (ou marque a caixa) para corrigir esta peça: ao criar, ela é substituída na mesma posição e com a mesma referência">✓ já lançada${rf.length?" · "+esc(rf.join(", ")):(r.refs?" · "+esc(r.refs):"")}${r.arq?" · na tabela salva “"+esc(r.arq)+"”":""}${r.refaz?" · será substituída":""}</span>`}
 async function bkMontar(){
@@ -3780,6 +3800,7 @@ function renderCfg0(){
       </tbody></table></div></section></div>
     ${LIBTAM}`);}
   h+=secRom(C);h+=secModelo(C);
+  h+=sec("roml","Romaneios lançados",`${ROMS.length} guardado(s)`,`<p class="d">Cada romaneio colado ou importado fica guardado aqui, com as fotos e quantidades. Abra um para lançar o que faltou ou editar todas as peças de novo, sem importar o arquivo outra vez.</p>${romListaTabela()}`);
   h+=sec("foto","Fotos (link)",fotoKey()?"imgbb conectado neste navegador":"sem chave do imgbb ainda",
     `<p class="d">Os sistemas (Jueri, Bling…) não recebem a foto dentro da planilha: eles pedem o <b>link</b> da foto. Aqui o app envia a foto para o <b>imgbb</b> (grátis) e coloca o link na coluna <b>Foto</b> de cada peça. Se você já tem o link, é só digitar ou colar na célula da coluna Foto.</p>
     <div class="row"><label class="fl" style="width:340px"><span>Chave do imgbb</span><input type="password" data-fkey value="${esc(fotoKey())}" placeholder="cole a chave aqui" autocomplete="off" aria-label="Chave do imgbb"></label></div>
@@ -3801,10 +3822,10 @@ function renderCfg0(){
     <div class="row"><button type="button" class="btn sm" data-act="ponto-novo">Criar ponto agora</button></div>
     <div class="row"><button class="btn sm" type="button" data-act="backup">Baixar cópia dos cadastros</button><label class="btn sm" style="cursor:pointer">Restaurar cópia<input type="file" id="fileBk" accept=".json" hidden></label></div>
     <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><label class="btn sm" style="cursor:pointer">Restaurar backup completo<input type="file" id="fileBkT" accept=".json" hidden></label></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
-  {const T={banho:"Banhistas e banhos",cor:"Cores, tamanhos e variações",cat:"Categorias",forn:"Fornecedores",col:"Padrões das colunas",mod:"Modelo da planilha",rom:"Leitura de romaneios",foto:"Fotos",opc:"Importar e backup"},O=Object.keys(T);SECS.forEach(x=>{if(T[x.id])x.titulo=T[x.id]});SECS.sort((a,b)=>O.indexOf(a.id)-O.indexOf(b.id))}
+  {const T={banho:"Banhistas e banhos",cor:"Cores, tamanhos e variações",cat:"Categorias",forn:"Fornecedores",col:"Padrões das colunas",mod:"Modelo da planilha",rom:"Leitura de romaneios",roml:"Romaneios lançados",foto:"Fotos",opc:"Importar e backup"},O=Object.keys(T);SECS.forEach(x=>{if(T[x.id])x.titulo=T[x.id]});SECS.sort((a,b)=>O.indexOf(a.id)-O.indexOf(b.id))}
   const at=abaCfg(),cur=SECS.find(s=>s.id===at);
-  document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha e arquivos"}[s.id]?`<span class="cgrp">${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha e arquivos"}[s.id]}</span>`:""}<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" tabindex="${s.id===at?0:-1}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
-    <section class="sec tabp" id="sec-${cur.id}" role="tabpanel"><div class="tabres">${esc(cur.resumo)}</div><div class="sb">${cur.corpo}${resetBar(cur.id)}</div></section>`;
+  document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]?`<span class="cgrp">${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]}</span>`:""}<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" tabindex="${s.id===at?0:-1}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
+    <section class="sec tabp" id="sec-${cur.id}" role="tabpanel"><div class="tabres">${esc(cur.resumo)}</div><div class="sb">${cur.corpo}${resetBar(cur.id)}${EXPL[cur.id]||""}</div></section>`;
   if(ROM&&document.getElementById("romWrap"))renderRom();
 }
 
@@ -4375,7 +4396,7 @@ document.addEventListener("click",e=>{
     case "rom-lista":romListaAbrir();break;
     case "rom-refazer-todas":{if(!ROM)break;let n=0;ROM.rows.forEach(r=>{if(r.feito&&!r.arq){r.refaz=true;r.skip=false;r.aviso="";n++}});ROM.msg=n?`${n} peça(s) já lançadas liberadas para edição. Mude o que quiser e clique em Criar peças: elas substituem as antigas.`:"Nenhuma peça já lançada para editar.";renderRom();break}
     case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());romAbrirSalvo(t.dataset.id);break}
-    case "rom-salvo-del":{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaAbrir()}else{romExcluirSalvo(romArm);romArm=null;romListaAbrir();renderForm()}break}
+    case "rom-salvo-del":{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(romArm);romArm=null;romListaRef();renderForm()}break}
     case "backup-total":backupTotal();break;
     case "tab-lista":tabListaAbrir();break;
     case "tab-salvar-abrir":tabSalvarAbrir();break;
@@ -4795,12 +4816,12 @@ document.addEventListener("keydown",e=>{if((e.key==="["||e.key==="]")&&!e.ctrlKe
 
 /* ===== v19: paleta de comandos (Ctrl+K) ===== */
 const PALCMD=[
- ["Visão: Dividida","Alt+1",()=>visPara("tudo")],["Visão: Planilha","Alt+2",()=>visPara("planilha")],["Visão: Lançar","Alt+3",()=>visPara("lancar")],["Visão: Cadastros","Alt+4",()=>visPara("cad")],
+ ["Tabela e formulário","Alt+1",()=>visPara("tudo")],["Recolher o formulário (só a tabela)","Alt+2",()=>visPara("planilha")],["Cadastros","Alt+3",()=>visPara("cad")],
  ["Novo romaneio / continuar romaneio","",()=>document.querySelector('[data-act="rom-abrir"]')&&document.querySelector('[data-act="rom-abrir"]').click()],
  ["Romaneios lançados","",()=>document.querySelector('[data-act="rom-lista"]').click()],["Tabelas salvas","",()=>document.querySelector('[data-act="tab-lista"]').click()],
  ["Baixar .xlsx","",()=>document.querySelector('[data-act="xlsx"]').click()],["Copiar para o Excel","",()=>document.querySelector('[data-act="copiar"]').click()],
  ["Desfazer","Ctrl+Z",()=>desfazer()],["Refazer","Ctrl+Y",()=>desfazer(true)],
- ["Cadastros: Banhistas e banhos","",()=>irPara("banho")],["Cadastros: Cores, tamanhos e variações","",()=>irPara("cor")],["Cadastros: Categorias","",()=>irPara("cat")],["Cadastros: Fornecedores","",()=>irPara("forn")],["Cadastros: Padrões das colunas","",()=>irPara("col")],["Cadastros: Modelo da planilha","",()=>irPara("mod")],["Cadastros: Leitura de romaneios","",()=>irPara("rom")],["Cadastros: Fotos (link)","",()=>irPara("foto")],["Cadastros: Importar e backup","",()=>irPara("opc")],
+ ["Cadastros: Banhistas e banhos","",()=>irPara("banho")],["Cadastros: Cores, tamanhos e variações","",()=>irPara("cor")],["Cadastros: Categorias","",()=>irPara("cat")],["Cadastros: Fornecedores","",()=>irPara("forn")],["Cadastros: Padrões das colunas","",()=>irPara("col")],["Cadastros: Modelo da planilha","",()=>irPara("mod")],["Cadastros: Leitura de romaneios","",()=>irPara("rom")],["Romaneios lançados","",()=>irPara("roml")],["Cadastros: Fotos (link)","",()=>irPara("foto")],["Cadastros: Importar e backup","",()=>irPara("opc")],
  ["Buscar na planilha","/",()=>{visPara(celular()?"planilha":"tudo");const f=document.getElementById("fBusca");if(f){f.focus()}}]];
 function palAbrir(){
   if(document.getElementById("pal"))return;
@@ -4823,10 +4844,10 @@ document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.
 document.getElementById("filTog").addEventListener("click",()=>{const f=document.getElementById("fil");const on=f.classList.toggle("fopen");document.getElementById("filTog").setAttribute("aria-expanded",String(on))});
 document.getElementById("tools").addEventListener("click",e=>{if(e.target.closest(".issues")&&!e.target.closest("a,button"))document.getElementById("tools").classList.toggle("aberto")});
 function pilulaAtualiza(){const b=document.getElementById("dpill");if(!b)return;const v=document.body.dataset.vis||"tudo";
-  const alvo=v==="planilha"?["lancar","＋ Lançar peça"]:v==="cad"?["planilha","▦ Ver a planilha"]:["planilha","▾ Recolher o formulário"];
+  const alvo=v==="planilha"?["tudo","▴ Expandir o formulário"]:v==="cad"?["tudo","Tabela e formulário"]:["planilha","▾ Recolher o formulário"];
   b.dataset.alvo=alvo[0];b.textContent=alvo[1];b.hidden=celular()}
 window.addEventListener("resize",pilulaAtualiza);
-document.getElementById("dpill").addEventListener("click",e=>{const a=e.currentTarget.dataset.alvo;visPara(a);if(a==="lancar")refocar("#f-F")});
+document.getElementById("dpill").addEventListener("click",e=>{const a=e.currentTarget.dataset.alvo;visPara(a);if(a==="tudo")refocar("#f-F")});
 
 /* ===== v20: cartões de categoria recolhíveis ===== */
 const CARDX=new Set();
@@ -4861,6 +4882,7 @@ function tabelasRotular(){document.querySelectorAll("#cfg table.cfg:not(.bnt)").
 function visAtual(){const v=document.body.dataset.vis||"tudo";return v}
 function visPara(v,soSeEscondido){
   if(celular()&&v==="tudo")v="planilha";
+  if(!celular()&&v==="lancar")v="tudo"; /* o lançamento nunca é uma tela própria: fica sempre embaixo da tabela */
   const a=visAtual();
   if(soSeEscondido){const escondido=v==="cad"?(a==="planilha"||a==="lancar"):(a==="planilha"||a==="cad");if(!escondido)return}
   document.body.dataset.vis=v;abertos.vis=v;guardarAbertos();
@@ -4873,7 +4895,7 @@ function visPara(v,soSeEscondido){
 document.getElementById("vis").addEventListener("click",e=>{if(e.target.closest("#vpal")){palAbrir();return}const b=e.target.closest("button[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
 document.addEventListener("keydown",e=>{
   const t=e.target,campo=/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable;
-  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-4]$/.test(e.key)){e.preventDefault();visPara(["tudo","planilha","lancar","cad"][+e.key-1]);return}
+  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-3]$/.test(e.key)){e.preventDefault();visPara(["tudo","planilha","cad"][+e.key-1]);return}
   if(e.key==="/"&&!campo&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const fb=document.getElementById("fBusca");if(fb&&!fb.closest("[hidden]")){e.preventDefault();if(visAtual()==="lancar"||visAtual()==="cad")visPara(celular()?"planilha":"tudo");fb.focus();fb.select()}}
 });
 visPara(abertos.vis&&["tudo","planilha","lancar","cad"].includes(abertos.vis)?(abertos.vis==="lancar"&&celular()?"planilha":abertos.vis):(celular()?"planilha":"tudo"));
@@ -4882,15 +4904,16 @@ function sideMarcar(){const sd=document.getElementById("side");if(!sd||sd.hidden
   const marca=(b,on)=>{if(on)b.setAttribute("aria-current","true");else b.removeAttribute("aria-current")};
   sd.querySelectorAll("[data-vis]").forEach(b=>marca(b,b.dataset.vis===v));
   sd.querySelectorAll("[data-go^=\"sec:\"]").forEach(b=>marca(b,(v==="cad"||v==="tudo")&&b.dataset.go==="sec:"+abertos.tab))}
-function sideAplicar(modo){/* modo: "off" | "open" | "mini" */
-  const sd=document.getElementById("side"),ligado=modo==="open"||modo==="mini";
+function sideAplicar(modo){/* modo: "off" | "open" */
+  if(modo==="mini")modo="open";
+  const sd=document.getElementById("side"),ligado=modo==="open";
   if(celular())return;
   sd.hidden=!ligado;document.body.classList.toggle("side-on",ligado);document.body.classList.toggle("side-mini",modo==="mini");
   const vb=document.getElementById("vside");if(vb)vb.setAttribute("aria-pressed",String(ligado));
   const t=document.getElementById("sideT");if(t)t.textContent=modo==="mini"?"»":"«";
   abertos.side=modo;guardarAbertos();sideMarcar()}
 document.getElementById("vside").addEventListener("click",()=>sideAplicar(abertos.side==="open"||abertos.side==="mini"?"off":"open"));
-document.getElementById("sideT").addEventListener("click",()=>sideAplicar(abertos.side==="mini"?"open":"mini"));
+document.getElementById("sideT").addEventListener("click",()=>sideAplicar("off"));
 document.getElementById("sideK").addEventListener("click",()=>palAbrir());
 document.getElementById("side").addEventListener("click",e=>{
   const v=e.target.closest("button[data-vis]");if(v){visPara(v.dataset.vis);if(v.dataset.vis==="lancar")refocar("#f-F");return}
