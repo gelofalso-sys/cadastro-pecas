@@ -30,7 +30,7 @@
 function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!localStorage.getItem(u))localStorage.setItem(u,String(Date.now()));
   const ult=+localStorage.getItem(k)||+localStorage.getItem(u)||Date.now();
   if(S.lanc.length>=5&&Date.now()-ult>7*864e5)setTimeout(()=>toast("Faz mais de uma semana que você não baixa um backup completo. Seus dados ficam só neste navegador.",{t:"Fazer backup",fn:backupTotal}),2500)}catch(e){}}
-carregar().then(()=>tabsMigrar()).then(()=>{try{if(snapBanhistas()){histIni();salvar(false)}}catch(e){}lembreteBackup();return varrerTudo()}).catch(()=>{});
+carregar().then(()=>tabsMigrar()).then(()=>{try{if(fixarPrecos()){histIni();salvar(false)}}catch(e){}lembreteBackup();return varrerTudo()}).catch(()=>{});
 /* duas abas abertas: se a outra gravou, esta avisa (e para de gravar) em vez de sobrescrever */
 window.addEventListener("storage",e=>{
   if(e.key!=="cadpecas4"||e.newValue==null||e.storageArea!==localStorage)return;

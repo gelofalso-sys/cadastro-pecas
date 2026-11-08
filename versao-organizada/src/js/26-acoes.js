@@ -15,7 +15,7 @@ function resumoMem(fo){const m=fo.mem;if(!m)return "";const bh=m.banhista&&cfg()
   if(!vazio(m.mkp))out.push("pronta ×"+m.mkp);return out.join(" · ")}
 function marcadosPadrao(f){f.on={};banhistaBy(f.banhista).banhos.forEach(b=>f.on[b.id]=!!b.marcado)}
 /* trocar a galvânica refaz o preenchimento: banhos marcados, verniz e custos voltam ao que a galvânica define (só as quantidades ficam) */
-function trocarBanhista(f,id){f.banhista=id;delete f.bhs;marcadosPadrao(f);f.onP={};f.vz={};
+function trocarBanhista(f,id){f.banhista=id;marcadosPadrao(f);f.onP={};f.vz={};
   Object.keys(f.ov||{}).forEach(k=>{const o=f.ov[k];if(!o||typeof o!=="object"){delete f.ov[k];return}Object.keys(o).forEach(L=>{if(L!=="W")delete o[L]});if(!Object.keys(o).length)delete f.ov[k]})}
 /* a galvânica de cada fornecedor (Fornecedores → Galvânica) entra sozinho quando a peça é bruta */
 function banhistaDoFornecedor(f){const fo=fornBy(f.v.H);if(f.tipo==="bruta"&&fo&&fo.banhista&&fo.banhista!==f.banhista&&cfg().banhistas.some(b=>b.id===fo.banhista))trocarBanhista(f,fo.banhista)}

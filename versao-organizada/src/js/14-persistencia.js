@@ -22,7 +22,7 @@ function histNota(){
     REDO.length=0;snapL=L;snapC=C}
   snapF=F;snapE=!!editId;undoBtns();
 }
-function salvar(c,l){if(l!==false){try{snapBanhistas()}catch(e){}}if(c)dirty.c=true;if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
+function salvar(c,l){if(l!==false){try{fixarPrecos()}catch(e){}}if(c)dirty.c=true;if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
 /* grava já (ao fechar a aba, trocar de aba ou sair): não deixa a última edição dentro dos 600 ms se perder */
 function flushJa(){if(romST){clearTimeout(romST);romST=null;try{romSalvar()}catch(e){}}   /* romaneio: o salvamento de 800 ms também não pode ficar para trás */
   if(sT){clearTimeout(sT);sT=null}if(dirty.c||dirty.l){try{flush()}catch(e){}}}

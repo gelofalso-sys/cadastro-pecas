@@ -17,12 +17,18 @@ const cfg=()=>S.config;
 const catBy=n=>cfg().categorias.find(c=>c.nome===n);
 const fornBy=n=>cfg().fornecedores.find(f=>f.nome===n);
 const banhistaBy=id=>cfg().banhistas.find(b=>b.id===id)||cfg().banhistas[0];
-/* a galvânica de uma PEÇA LANÇADA é a versão guardada na própria peça (l.bhs) no momento do lançamento: mudar preço, milésimos ou verniz da galvânica depois NÃO altera peças já lançadas.
-   Peça sem versão guardada usa a galvânica atual. "Aplicar às peças lançadas" (Cadastros › Galvânicas) apaga a versão guardada e a peça volta a seguir a galvânica. */
-function bhDe(x){const v=x&&x.bhs;return v&&v.id===(x.banhista||v.id)&&Array.isArray(v.banhos)?v:banhistaBy(x&&x.banhista)}
-function snapBanhistas(){const C=cfg();let mudou=false;
-  S.lanc.forEach(l=>{if(l.tipo!=="bruta"&&l.tipo!=="pronta"&&!l.conj)return;if(l.bhs&&l.bhs.id===l.banhista&&Array.isArray(l.bhs.banhos))return;const bh=C.banhistas.find(b=>b.id===l.banhista);if(!bh)return;l.bhs=JSON.parse(JSON.stringify(bh));mudou=true});return mudou}
-const bhDifere=id=>{const cur=cfg().banhistas.find(b=>b.id===id);if(!cur)return 0;const s=JSON.stringify(cur);return S.lanc.filter(l=>l.banhista===id&&l.bhs&&JSON.stringify(l.bhs)!==s).length};
+/* bhDe: a galvânica de uma peça (hoje sempre a cadastrada: custo do banho e do verniz acompanham o cadastro) */
+const bhDe=x=>banhistaBy(x&&x.banhista);
+/* PREÇO DE VENDA FIXO: ao ser lançada, cada linha guarda o Preço de Varejo calculado (l.pv[chave]). Custos, referências e descrições seguem o cadastro; só o preço final não se mexe.
+   Peça aberta para editar no formulário perde o preço fixo (volta a calcular pelo fator) e ganha um novo ao ser salva. Preço digitado à mão continua valendo (fica em l.ov). */
+function fixarPrecos(){const falta=S.lanc.filter(l=>l.pv===undefined);if(!falta.length)return false;
+  let g;try{g=gerar()}catch(e){return false}
+  const iv=LET.indexOf("V"),ids=new Set(falta.map(l=>l.id));
+  falta.forEach(l=>{l.pv={}});
+  g.linhas.forEach((row,ri)=>{if(!ids.has(row.lancId))return;const l=falta.find(x=>x.id===row.lancId);if(!l)return;
+    if(!vazio(row.v.V))return;   /* já tem preço digitado */
+    const x=celulas(row,ri+2)[iv];if(x&&typeof x.v==="number")l.pv[row.key]=x.v});
+  return true}
 const prefDe=(cat,sub)=>{const c=catBy(cat)||{},sp=sub&&c.subPref&&c.subPref[sub];return String(sp||c.prefixo||"BR").toUpperCase()};
 function comSufixoCat(d,cat){const sx=(catBy(cat)||{}).sufixo;d=String(d||"").trim();if(!sx||!d)return d;return d.toLowerCase().includes(sx.trim().toLowerCase())?d:d+sx}
 const ultimo=p=>Math.trunc(num(cfg().seqs[p])||0);

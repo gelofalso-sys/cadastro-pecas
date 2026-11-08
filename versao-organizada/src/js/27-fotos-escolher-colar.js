@@ -133,7 +133,7 @@ let editSnap=null;
 const formSujo=()=>!!editId&&JSON.stringify(S.form)!==editSnap;
 function editar(id){
   const l=S.lanc.find(x=>x.id===id);if(!l)return;
-  if(!editId)rascunho=clone(S.form);editId=id;S.form=clone(l);delete S.form.id;erro="";
+  if(!editId)rascunho=clone(S.form);editId=id;S.form=clone(l);delete S.form.id;delete S.form.pv;erro="";
   dobrarOv(S.form,id);if(S.form.conj)conjSync(S.form);editSnap=JSON.stringify(S.form);
   if(["A","B","C","D","K","X","Z","AD","AE","Y","AA","AB","AC"].some(L=>!vazio(S.form.v[L])))abertos.det=true;
   if(Object.values(S.form.ov||{}).some(o=>o&&Object.keys(o).some(L=>!["W","V"].includes(L))))abertos.det=true;

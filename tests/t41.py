@@ -1,0 +1,64 @@
+"""Cadastros mudam: tudo acompanha (nomes, referências, descrições, custos), MENOS o preço de venda das peças já lançadas."""
+import os,threading,http.server,socketserver,functools
+from playwright.sync_api import sync_playwright
+D=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+class Q(http.server.SimpleHTTPRequestHandler):
+    def log_message(self,*a):pass
+socketserver.TCPServer.allow_reuse_address=True
+srv=socketserver.TCPServer(("127.0.0.1",8829),functools.partial(Q,directory=D));threading.Thread(target=srv.serve_forever,daemon=True).start()
+f=[]
+def ok(c,m):
+    print(("OK    " if c else "FALHA ")+m)
+    if not c:f.append(m)
+URL="http://127.0.0.1:8829/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html"
+def col(pg,L):return pg.evaluate("L=>[...document.querySelectorAll('#sheet tr[data-l]')].map(tr=>{const t=tr.querySelector('td[data-c=\"'+L+'\"]');return t?t.innerText.trim():''})",L)
+def aba(pg,nome):
+    pg.get_by_text(nome,exact=True).locator("visible=true").first.click();pg.wait_for_timeout(700)
+def set_(pg,sel,val,idx=0):
+    pg.evaluate("a=>{const i=document.querySelectorAll(a.s)[a.i];i.value=a.v;i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}))}",{"s":sel,"v":val,"i":idx});pg.wait_for_timeout(500)
+def volta(pg):pg.get_by_text("Tabela e formulário",exact=False).locator("visible=true").first.click();pg.wait_for_timeout(800)
+with sync_playwright() as p:
+    b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1500,"height":900}).new_page()
+    errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
+    pg.goto(URL);pg.wait_for_timeout(900)
+    aba(pg,"Galvânicas e banhos")
+    for i in range(2):set_(pg,'[data-bnf="fator"]',"3",i)   # preço de venda = custo × 3
+    volta(pg)
+    for desc,peso,compra in (("Argola um","4","10"),("Argola dois","6","20")):
+        pg.fill("#f-F",desc);pg.fill("#f-N",peso);pg.fill("#f-P",compra)
+        pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(900)
+    V0=col(pg,"V");E0=col(pg,"E");F0=col(pg,"F");U0=col(pg,"U");R0=col(pg,"R");P0=col(pg,"P")
+    ok(len([x for x in V0 if x])==4 and all(x for x in V0[:4]),"4 linhas com preço de venda %s"%V0[:4])
+    # categoria: nome, prefixo, texto na descrição → acompanham
+    aba(pg,"Categorias")
+    ix=pg.evaluate("()=>[...document.querySelectorAll('[data-cf=\"nome\"]')].findIndex(i=>i.value==='Brincos')")
+    set_(pg,'[data-cf="sufixo"]'," sufixo teste",ix)
+    set_(pg,'[data-cf="prefixo"]',"ZZ",ix)
+    volta(pg)
+    ok(col(pg,"F")!=F0 and all("sufixo teste" in x for x in col(pg,"F")[:4]),"descrição das peças lançadas acompanha o texto da categoria: %s"%col(pg,"F")[0])
+    ok(col(pg,"E")!=E0 and col(pg,"E")[0].startswith("ZZ"),"referência acompanha o prefixo da categoria: %s → %s"%(E0[0],col(pg,"E")[0]))
+    ok(col(pg,"V")==V0,"preço de venda NÃO muda (%s)"%col(pg,"V")[:4])
+    # galvânica e fornecedor/padrões: custos acompanham, preço fica
+    aba(pg,"Galvânicas e banhos")
+    set_(pg,'[data-bhf="verniz"]',"9.99",0)
+    set_(pg,'[data-bnf="fator"]',"2.5",0)   # o fator do banho mudou: peças novas calculariam outro preço
+    volta(pg)
+    ok(col(pg,"U")!=U0,"custo do verniz acompanha a galvânica (%s → %s)"%(U0[0],col(pg,"U")[0]))
+    ok(col(pg,"V")==V0,"preço de venda continua fixo depois de mudar a galvânica")
+    # editar o peso na tabela: custo muda, preço fica
+    pg.locator('#sheet tr[data-ri="0"] td[data-c="N"]').first.click();pg.wait_for_timeout(500)
+    pg.fill("#celIn","10");pg.keyboard.press("Enter");pg.wait_for_timeout(600)
+    ok(col(pg,"R")[0]!=R0[0],"custo do banho acompanha o peso digitado (%s → %s)"%(R0[0],col(pg,"R")[0]))
+    ok(col(pg,"V")[0]==V0[0],"preço de venda continua o mesmo (%s)"%col(pg,"V")[0])
+    pg.keyboard.press("Escape")
+    # a peça 1 já está aberta no formulário (clicar numa célula abre a peça): ao salvar, o preço dela volta a ser calculado com o cadastro de hoje
+    pg.click("#f-F");pg.wait_for_timeout(400)
+    pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(1000)
+    ok(col(pg,"V")[0]!=V0[0],"peça aberta e salva recalcula o preço com o cadastro de hoje (%s → %s)"%(V0[0],col(pg,"V")[0]))
+    ok(col(pg,"V")[2]==V0[2] and col(pg,"V")[3]==V0[3],"as outras peças continuam com o preço fixo (%s)"%col(pg,"V")[2:4])
+    novoV=col(pg,"V")
+    pg.reload();pg.wait_for_timeout(1300)
+    ok(col(pg,"V")==novoV,"preços sobrevivem ao recarregar")
+    ok(not errs,"sem erro de página %s"%errs[:2])
+    print("FALHAS",f)
+    if f:raise SystemExit(1)

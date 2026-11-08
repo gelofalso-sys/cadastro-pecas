@@ -1488,12 +1488,18 @@ const cfg=()=>S.config;
 const catBy=n=>cfg().categorias.find(c=>c.nome===n);
 const fornBy=n=>cfg().fornecedores.find(f=>f.nome===n);
 const banhistaBy=id=>cfg().banhistas.find(b=>b.id===id)||cfg().banhistas[0];
-/* a galvânica de uma PEÇA LANÇADA é a versão guardada na própria peça (l.bhs) no momento do lançamento: mudar preço, milésimos ou verniz da galvânica depois NÃO altera peças já lançadas.
-   Peça sem versão guardada usa a galvânica atual. "Aplicar às peças lançadas" (Cadastros › Galvânicas) apaga a versão guardada e a peça volta a seguir a galvânica. */
-function bhDe(x){const v=x&&x.bhs;return v&&v.id===(x.banhista||v.id)&&Array.isArray(v.banhos)?v:banhistaBy(x&&x.banhista)}
-function snapBanhistas(){const C=cfg();let mudou=false;
-  S.lanc.forEach(l=>{if(l.tipo!=="bruta"&&l.tipo!=="pronta"&&!l.conj)return;if(l.bhs&&l.bhs.id===l.banhista&&Array.isArray(l.bhs.banhos))return;const bh=C.banhistas.find(b=>b.id===l.banhista);if(!bh)return;l.bhs=JSON.parse(JSON.stringify(bh));mudou=true});return mudou}
-const bhDifere=id=>{const cur=cfg().banhistas.find(b=>b.id===id);if(!cur)return 0;const s=JSON.stringify(cur);return S.lanc.filter(l=>l.banhista===id&&l.bhs&&JSON.stringify(l.bhs)!==s).length};
+/* bhDe: a galvânica de uma peça (hoje sempre a cadastrada: custo do banho e do verniz acompanham o cadastro) */
+const bhDe=x=>banhistaBy(x&&x.banhista);
+/* PREÇO DE VENDA FIXO: ao ser lançada, cada linha guarda o Preço de Varejo calculado (l.pv[chave]). Custos, referências e descrições seguem o cadastro; só o preço final não se mexe.
+   Peça aberta para editar no formulário perde o preço fixo (volta a calcular pelo fator) e ganha um novo ao ser salva. Preço digitado à mão continua valendo (fica em l.ov). */
+function fixarPrecos(){const falta=S.lanc.filter(l=>l.pv===undefined);if(!falta.length)return false;
+  let g;try{g=gerar()}catch(e){return false}
+  const iv=LET.indexOf("V"),ids=new Set(falta.map(l=>l.id));
+  falta.forEach(l=>{l.pv={}});
+  g.linhas.forEach((row,ri)=>{if(!ids.has(row.lancId))return;const l=falta.find(x=>x.id===row.lancId);if(!l)return;
+    if(!vazio(row.v.V))return;   /* já tem preço digitado */
+    const x=celulas(row,ri+2)[iv];if(x&&typeof x.v==="number")l.pv[row.key]=x.v});
+  return true}
 const prefDe=(cat,sub)=>{const c=catBy(cat)||{},sp=sub&&c.subPref&&c.subPref[sub];return String(sp||c.prefixo||"BR").toUpperCase()};
 function comSufixoCat(d,cat){const sx=(catBy(cat)||{}).sufixo;d=String(d||"").trim();if(!sx||!d)return d;return d.toLowerCase().includes(sx.trim().toLowerCase())?d:d+sx}
 const ultimo=p=>Math.trunc(num(cfg().seqs[p])||0);
@@ -1595,7 +1601,7 @@ function gerar(list){
   /* uma referência digitada só "reserva" o número para as peças lançadas depois dela; a peça antiga não é empurrada (se coincidir, aparece como repetida) */
   const next=p=>{if(!(p in cont))cont[p]=ultimo(p);do{cont[p]++}while(usados[p]&&usados[p].has(cont[p])&&usados[p].get(cont[p])<=curI);return cont[p]};
   const cats=[null];
-  const aplicaOv=(row,l)=>{row.ovs=[];const ov=l.ov||{},put=(o,pai)=>{if(o&&typeof o==="object")Object.keys(o).forEach(L=>{if(L[0]==="_")return;if(FORMULA.has(L)&&vazio(o[L]))return;if(pai&&(L==="W"||L==="E"))return;row.v[L]=o[L];if(!(l.conj&&CJ_COL.includes(L))&&!row.ovs.includes(L))row.ovs.push(L)})};
+  const aplicaOv=(row,l)=>{row.ovs=[];if(l.pv&&l.pv[row.key]!=null&&vazio(row.v.V))row.v.V=String(l.pv[row.key]).replace(".",",");const ov=l.ov||{},put=(o,pai)=>{if(o&&typeof o==="object")Object.keys(o).forEach(L=>{if(L[0]==="_")return;if(FORMULA.has(L)&&vazio(o[L]))return;if(pai&&(L==="W"||L==="E"))return;row.v[L]=o[L];if(!(l.conj&&CJ_COL.includes(L))&&!row.ovs.includes(L))row.ovs.push(L)})};
     if(row.bid&&row.key!==row.bid)put(ov[row.bid],true);row.v0={...row.v};put(ov[row.key],false);return row};
   cats.forEach(cat=>{
     const its=list,grupos=[];
@@ -1805,7 +1811,7 @@ function histNota(){
     REDO.length=0;snapL=L;snapC=C}
   snapF=F;snapE=!!editId;undoBtns();
 }
-function salvar(c,l){if(l!==false){try{snapBanhistas()}catch(e){}}if(c)dirty.c=true;if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
+function salvar(c,l){if(l!==false){try{fixarPrecos()}catch(e){}}if(c)dirty.c=true;if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
 /* grava já (ao fechar a aba, trocar de aba ou sair): não deixa a última edição dentro dos 600 ms se perder */
 function flushJa(){if(romST){clearTimeout(romST);romST=null;try{romSalvar()}catch(e){}}   /* romaneio: o salvamento de 800 ms também não pode ficar para trás */
   if(sT){clearTimeout(sT);sT=null}if(dirty.c||dirty.l){try{flush()}catch(e){}}}
@@ -3404,7 +3410,7 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   if(k==="tid"){ROM.tid=t.value;abertos.romT=t.value;guardarAbertos();ROM.msg="Modelo trocado: clique em Ler lista para reler com ele.";const T=romT();if(T&&T.forn&&fornBy(T.forn))romSetForn(T.forn);renderRom();return}
   if(k==="forn"){const t0=S.form.tipo;romSetForn(t.value);if(S.form.tipo!==t0)ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});renderRom();return}
   if(k==="bh"){trocarBanhista(f,t.value);salvar(false);renderForm();ROM.rows.forEach(r=>{if(r.feito)return;r.on={};r.bo={};r.vz={};r.mk={}});renderRom();return}
-  if(k==="bn"){delete f.bhs;(f.tipo==="bruta"?f.on:(f.onP=f.onP||{}))[t.dataset.b]=t.checked;salvar(false);renderForm();renderRom();return}
+  if(k==="bn"){(f.tipo==="bruta"?f.on:(f.onP=f.onP||{}))[t.dataset.b]=t.checked;salvar(false);renderForm();renderRom();return}
   if(k==="ult"){const pf=t.dataset.p;cfg().seqs[pf]=limpaUlt(t.value);salvar(true,false);renderTopo();document.querySelectorAll(`#romWrap [data-nx="${pf}"] b`).forEach(b=>b.textContent=proxDe(pf));const lb=t.closest("label");if(lb)lb.classList.toggle("bad",!(ultimo(pf)>0));romAtualSoon();return}
   if(k==="rb"){ROM.bulk=ROM.bulk||{mk:{}};const kk=t.dataset.k;
     if(kk==="selmode"){romSelecionar(t.value);t.value="";return}
@@ -3908,11 +3914,11 @@ function renderCfg0(){
   let h=`<h2 id="sec-topo">Cadastros e personalização</h2>`;
   h+=secCat(C,usoPref);
   h+=sec("banho","Banhos e custos",C.banhistas.map(b=>`${b.nome}: ${b.banhos.map(x=>`${x.letra} ${x.nome} ${x.modo==="fixo"?"R$ "+fmt(num(x.mult)):"R$ "+fmt(num(x.mult))+"/g"}`).join(", ")}`).join(" · "),
-    `<p class="d">Cada galvânica tem seus custos. <b>O que vale primeiro:</b> o que você digita dentro da peça; depois o valor da categoria (tabela “por categoria”); por último a linha “Padrão”. <b>Por grama</b>: Custo do Banho = Peso × valor (fica como fórmula na planilha). <b>Valor fixo</b>: o mesmo custo para toda peça. Em qualquer peça você ainda pode digitar outro custo, no lançamento ou direto na célula. <b>Mudar os valores de uma galvânica não altera peças que já estão lançadas</b>: elas guardam os valores de quando foram lançadas (se quiser que acompanhem, use “Aplicar às peças lançadas” no cartão da galvânica).</p>${C.banhistas.map((b,i)=>`<div class="card" data-bh="${i}">
+    `<p class="d">Cada galvânica tem seus custos. <b>O que vale primeiro:</b> o que você digita dentro da peça; depois o valor da categoria (tabela “por categoria”); por último a linha “Padrão”. <b>Por grama</b>: Custo do Banho = Peso × valor (fica como fórmula na planilha). <b>Valor fixo</b>: o mesmo custo para toda peça. Em qualquer peça você ainda pode digitar outro custo, no lançamento ou direto na célula. Mudar uma galvânica recalcula os <b>custos</b> das peças já lançadas, mas o <b>Preço de Varejo</b> delas fica como estava quando foram lançadas (para recalcular o preço de uma peça, abra-a e salve de novo).</p>${C.banhistas.map((b,i)=>`<div class="card" data-bh="${i}">
       <div class="row"><label class="fl" style="width:190px"><span>Galvânica</span><input data-bhf="nome" value="${esc(b.nome)}"></label>
       <label class="fl" style="width:150px"><span>Custo do Banho de Verniz (R$/g)</span><input class="n" data-bhf="verniz" value="${esc(b.verniz)}" inputmode="decimal"></label>
       <span class="hint" style="align-self:center">Verniz (camada protetora depois do banho): marque na coluna “Verniz” de cada banho abaixo; no lançamento dá para trocar peça a peça</span>
-      <span style="margin-left:auto"></span>${bhDifere(b.id)?`<span class="hint" style="color:var(--warn,#a35a00)">${bhDifere(b.id)} peça(s) lançada(s) ainda usam os valores antigos desta galvânica</span><button class="btn sm" type="button" data-act="bh-aplicar" title="Recalcula essas peças com os valores atuais desta galvânica">Aplicar às peças lançadas</button>`:""}<button class="btn sm" type="button" data-act="bh-dup">Duplicar</button>${C.banhistas.length>1?`<button class="btn sm danger" type="button" data-act="bh-del">Remover</button>`:""}</div>
+      <span style="margin-left:auto"></span><button class="btn sm" type="button" data-act="bh-dup">Duplicar</button>${C.banhistas.length>1?`<button class="btn sm danger" type="button" data-act="bh-del">Remover</button>`:""}</div>
       <div class="tw"><table class="cfg bnt"><thead><tr><th>Banho</th><th>Letra</th><th>Cor</th><th title="Por grama: o valor por categoria (abaixo) é R$ por grama. Valor fixo: é o mesmo custo para toda peça">Cálculo</th><th>Coluna</th><th title="Multiplicador padrão do preço de venda: Preço de Varejo = soma dos custos × fator. Vale para este banho em toda peça; dentro da peça você ainda troca.">Fator ×</th><th>Texto na Descrição (do banho)</th><th title="Verniz é a camada protetora passada depois do banho; cobra o custo por grama da galvânica">Verniz</th><th title="Marcado: este banho já vem marcado ao lançar uma peça">Vem marcado</th><th></th></tr></thead><tbody>
       ${b.banhos.map((x,j)=>`<tr data-bn="${j}"><td data-th="Banho"><input data-bnf="nome" value="${esc(x.nome)}" style="width:92px" aria-label="Nome do banho"></td><td data-th="Letra"><input data-bnf="letra" value="${esc(x.letra)}" maxlength="2" style="width:42px" aria-label="Letra do banho ${esc(x.nome)}"></td>
         <td data-th="Cor"><select data-bnf="cor" style="width:108px" aria-label="Cor do banho ${esc(x.nome)}"${(x.cor&&!C.cores.includes(x.cor))||!x.cor?' class="warn-sel"':""}>${corOpts(C,x)}</select></td>
@@ -4000,7 +4006,7 @@ function resumoMem(fo){const m=fo.mem;if(!m)return "";const bh=m.banhista&&cfg()
   if(!vazio(m.mkp))out.push("pronta ×"+m.mkp);return out.join(" · ")}
 function marcadosPadrao(f){f.on={};banhistaBy(f.banhista).banhos.forEach(b=>f.on[b.id]=!!b.marcado)}
 /* trocar a galvânica refaz o preenchimento: banhos marcados, verniz e custos voltam ao que a galvânica define (só as quantidades ficam) */
-function trocarBanhista(f,id){f.banhista=id;delete f.bhs;marcadosPadrao(f);f.onP={};f.vz={};
+function trocarBanhista(f,id){f.banhista=id;marcadosPadrao(f);f.onP={};f.vz={};
   Object.keys(f.ov||{}).forEach(k=>{const o=f.ov[k];if(!o||typeof o!=="object"){delete f.ov[k];return}Object.keys(o).forEach(L=>{if(L!=="W")delete o[L]});if(!Object.keys(o).length)delete f.ov[k]})}
 /* a galvânica de cada fornecedor (Fornecedores → Galvânica) entra sozinho quando a peça é bruta */
 function banhistaDoFornecedor(f){const fo=fornBy(f.v.H);if(f.tipo==="bruta"&&fo&&fo.banhista&&fo.banhista!==f.banhista&&cfg().banhistas.some(b=>b.id===fo.banhista))trocarBanhista(f,fo.banhista)}
@@ -4143,7 +4149,7 @@ let editSnap=null;
 const formSujo=()=>!!editId&&JSON.stringify(S.form)!==editSnap;
 function editar(id){
   const l=S.lanc.find(x=>x.id===id);if(!l)return;
-  if(!editId)rascunho=clone(S.form);editId=id;S.form=clone(l);delete S.form.id;erro="";
+  if(!editId)rascunho=clone(S.form);editId=id;S.form=clone(l);delete S.form.id;delete S.form.pv;erro="";
   dobrarOv(S.form,id);if(S.form.conj)conjSync(S.form);editSnap=JSON.stringify(S.form);
   if(["A","B","C","D","K","X","Z","AD","AE","Y","AA","AB","AC"].some(L=>!vazio(S.form.v[L])))abertos.det=true;
   if(Object.values(S.form.ov||{}).some(o=>o&&Object.keys(o).some(L=>!["W","V"].includes(L))))abertos.det=true;
@@ -4539,7 +4545,6 @@ document.addEventListener("click",e=>{
     case "forn-dup":{const i=+t.closest("[data-forn]").dataset.forn,f=clone(C.fornecedores[i]);{const b0=f.nome+" (cópia)";let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);f.nome=n}C.fornecedores.splice(i+1,0,f);salvar(true,false);render();break}
     case "forn-del":C.fornecedores.splice(+t.closest("[data-forn]").dataset.forn,1);salvar(true,false);render();break;
     case "bh-add":C.banhistas.push({id:uid(),nome:"Nova galvânica",verniz:"0.42",vernizOn:true,banhos:clone(BANHISTA0.banhos)});salvar(true,false);render();break;
-    case "bh-aplicar":{const b=C.banhistas[bi],n=bhDifere(b.id);if(n&&confirm(`Aplicar os valores atuais da galvânica “${b.nome}” às ${n} peça(s) já lançada(s)? O custo delas vai mudar.`)){S.lanc.forEach(l=>{if(l.banhista===b.id)delete l.bhs});snapBanhistas();salvar(true);render();toast(`${n} peça(s) recalculada(s) com os valores atuais de “${b.nome}”.`)}break}
     case "bh-dup":{const b=clone(C.banhistas[bi]);b.id=uid();b.nome+=" (cópia)";C.banhistas.splice(bi+1,0,b);salvar(true,false);render();break}
     case "bh-del":{const id=C.banhistas[bi].id;{const n=S.lanc.filter(l=>l.banhista===id).length;if(n&&!confirm(`${n} peça(s) já lançadas usam esta galvânica. Remover mesmo assim? (Ctrl+Z desfaz)`))break}C.banhistas.splice(bi,1);C.fornecedores.forEach(f=>{if(f.banhista===id)f.banhista=""});salvar(true);render();break}
     case "bn-add":{const b=C.banhistas[bi],usadas=b.banhos.map(x=>x.letra);let L="A";while(usadas.some(u=>String(u).toUpperCase()===L)&&L<"Z")L=String.fromCharCode(L.charCodeAt(0)+1);if(usadas.some(u=>String(u).toUpperCase()===L)){toast("Já existem banhos de A a Z neste galvânica — não cabe mais um.");break}b.banhos.push({id:uid(),nome:"Ródio",letra:L,cor:"Ródio",mil:"",modo:"peso",mult:"",coluna:"S",sufixo:" banho ródio",marcado:false,vz:true});salvar(true,false);render();break}
@@ -4966,7 +4971,7 @@ document.addEventListener("input",e=>{if(e.target&&e.target.id==="celIn"&&celEd)
 function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!localStorage.getItem(u))localStorage.setItem(u,String(Date.now()));
   const ult=+localStorage.getItem(k)||+localStorage.getItem(u)||Date.now();
   if(S.lanc.length>=5&&Date.now()-ult>7*864e5)setTimeout(()=>toast("Faz mais de uma semana que você não baixa um backup completo. Seus dados ficam só neste navegador.",{t:"Fazer backup",fn:backupTotal}),2500)}catch(e){}}
-carregar().then(()=>tabsMigrar()).then(()=>{try{if(snapBanhistas()){histIni();salvar(false)}}catch(e){}lembreteBackup();return varrerTudo()}).catch(()=>{});
+carregar().then(()=>tabsMigrar()).then(()=>{try{if(fixarPrecos()){histIni();salvar(false)}}catch(e){}lembreteBackup();return varrerTudo()}).catch(()=>{});
 /* duas abas abertas: se a outra gravou, esta avisa (e para de gravar) em vez de sobrescrever */
 window.addEventListener("storage",e=>{
   if(e.key!=="cadpecas4"||e.newValue==null||e.storageArea!==localStorage)return;
