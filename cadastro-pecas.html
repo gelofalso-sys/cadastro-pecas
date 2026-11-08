@@ -1364,7 +1364,8 @@ const fmtMB=n=>(n/MB).toFixed(n<10*MB?1:0).replace(".",",");
 /* confere o tamanho do arquivo antes de ler; lanca erro com mensagem clara se passar */
 function checaTam(f,max,oque){if(f&&f.size>max)throw limErr(`${oque} “${f.name||"arquivo"}” tem ${fmtMB(f.size)} MB e o limite é ${fmtMB(max)} MB`);return f}
 function checaPaginas(doc){if(doc.numPages>MAX_PDF_PAGINAS){try{doc.destroy()}catch(e){}throw limErr(`Esse PDF tem ${doc.numPages} páginas e o limite é ${MAX_PDF_PAGINAS}`)}return doc}
-function checaLinhasPlan(ws){const r=ws&&ws["!ref"]?XLSX.utils.decode_range(ws["!ref"]):null;if(r&&r.e.r+1>MAX_PLANILHA_LINHAS)throw limErr(`Essa planilha tem ${r.e.r+1} linhas e o limite é ${MAX_PLANILHA_LINHAS}`)}
+function checaLinhasPlan(ws){const r=ws&&ws["!ref"]?XLSX.utils.decode_range(ws["!ref"]):null;if(r&&r.e.r+1>MAX_PLANILHA_LINHAS)throw limErr(`Essa planilha tem ${r.e.r+1} linhas e o limite é ${MAX_PLANILHA_LINHAS}`);
+  if(r&&r.e.c+1>300)throw limErr(`Essa planilha tem ${r.e.c+1} colunas e o limite é 300`);if(r&&(r.e.r+1)*(r.e.c+1)>1500000)throw limErr(`Essa planilha é grande demais (${(r.e.r+1)*(r.e.c+1)} células; o limite é 1.500.000)`)}
 /* ===== as 31 colunas do modelo ===== */
 /* Modelo da planilha: nome, ordem e quais colunas saem no arquivo. Os dados continuam guardados nas 31 colunas internas (A–AE); cada coluna do modelo diz de qual delas pega o valor. */
 const modeloJueri=()=>({id:"jueri",nome:"Jueri",cols:LET.map((k,i)=>({k,h:HEAD[i],on:true}))});
@@ -1807,21 +1808,22 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 const ftRSalvas=new Set();
 function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
   return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
-async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const r=await idbPut("fotos","m:"+l.id,l.ft);if(r!==null)ftSalvas.add(l.id);else ok=false}
-    if(l.ftR&&!ftRSalvas.has(l.id)){const r=await idbPut("fotos","r:"+l.id,l.ftR);if(r!==null)ftRSalvas.add(l.id);else ok=false}}return ok}
+async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await idbPut("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
+    if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await idbPut("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
 async function flush(){
   const d={...dirty};dirty={c:false,l:false};
   if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",true);return}
   if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return}
   let remoto=true;
   try{
-    if(db){if(d.c)await db.doc("dados/config").set({v:4,config:S.config});if(d.l)await db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
+    if(db){if(d.c)await db.doc("dados/config").set({v:4,config:S.config});if(conflito)throw new Error("conflito");if(d.l)await db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
   }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Não consegui salvar agora — tento de novo na próxima alteração",true)}
   if(!remoto)return;
+  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return}
   let local=true;
   try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){
     local=false;
-    try{if(await guardarMinis()){localStorage.setItem("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
+    try{if(await guardarMinis()&&!conflito){localStorage.setItem("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
   if(!local){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
     setStatus(db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,true);
@@ -1832,8 +1834,9 @@ async function flush(){
   if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){}}})}
 }
 const PONTOS_MAX=15,PONTO_INTERVALO=30*60*1000;
-async function pontoSalvar(motivo){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:S.lanc.length,json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
-async function pontoAuto(motivo,forcar){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return;if(!S.lanc.length&&!forcar)return;await pontoSalvar(motivo)}catch(e){}}
+async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
+async function pontoAuto(motivo,forcar){const snap={n:S.lanc.length,json:jsonLocal(false)};   /* estado de ANTES da operação, capturado já */
+  try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return;if(!snap.n&&!forcar)return;await pontoSalvar(motivo,snap)}catch(e){}}
 setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)")},5*60*1000);
 const BK_DIAS=7,BK_INTERVALO=30*60*1000;
 async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
@@ -2166,27 +2169,28 @@ function gravarCel(ri,L,valor){
   const base=row.banho&&FORMULA.has(L)?"":String(row.v0[L]??"");
   if(String(valor)===base)delete o[L];else o[L]=valor;
   if(!Object.keys(o).length)delete l.ov[row.key];
-  if(editId===l.id)sincFormCelula(l.id,L);   /* colar/limpar/preencher em massa numa peça aberta no formulário: o formulário recebe o valor (senão Salvar desfaz) */
+  if(editId===l.id)sincFormCelula(l.id,L,row.key);   /* colar/limpar/preencher em massa numa peça aberta no formulário: o formulário recebe o valor (senão Salvar desfaz) */
 }
 /* célula editada na tabela de uma peça que está aberta no formulário: o formulário recebe o valor novo (senão "Salvar" apagaria a edição) */
-function sincFormCelula(id,L){
+function sincFormCelula(id,L,key){
   if(editId!==id)return;const l=S.lanc.find(x=>x.id===id);if(!l)return;
   const f2=clone(l),G0=G;try{G=gerar()}catch(e){}   /* linhas recalculadas com o valor novo (as de G são de antes da edição) */
   try{dobrarOv(f2,id)}finally{G=G0}const f=S.form;f.v=f.v||{};f.ov=f.ov||{};
   if(vazio(f2.v[L]))delete f.v[L];else f.v[L]=f2.v[L];
-  Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!(f2.ov&&f2.ov[k]&&L in f2.ov[k]))delete f.ov[k][L]});
+  const dobrou=!vazio(f2.v[L])&&f2.v[L]!==l.v[L];   /* valor igual em todas as linhas virou valor da peça: aí vale para todas */
+  Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!(f2.ov&&f2.ov[k]&&L in f2.ov[k])&&(dobrou||key===undefined||k===key))delete f.ov[k][L]});   /* edições não salvas das outras variações ficam */
   Object.keys(f2.ov||{}).forEach(k=>{if(f2.ov[k]&&typeof f2.ov[k]==="object"&&L in f2.ov[k]){f.ov[k]=f.ov[k]||{};f.ov[k][L]=f2.ov[k][L]}});
   Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!Object.keys(f.ov[k]).length)delete f.ov[k]});
 }
 function fecharCel(commit,mover){
-  if(!celEd)return;const {ri,L,orig,nova}=celEd,i=document.getElementById("celIn"),lid=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].lancId:null;celEd=null;
+  if(!celEd)return;const {ri,L,orig,nova}=celEd,i=document.getElementById("celIn"),lid=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].lancId:null,chaveCel=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].key:undefined;celEd=null;
   let v=i?i.value:orig;if(L==="E"&&commit)v=v.replace(/\s+/g,"").toUpperCase();
   const rej=commit&&v!==orig?checaCel(L,v).erro:null;
   if(commit&&v!==orig&&!rej){
     if(nova){if(!vazio(v)){const l=novaLivre({[L]:v});S.lanc.push(l);undo={tipo:"cola",antes:{},ids:[l.id]};salvar(false)}}
     else{const l=S.lanc.find(x=>x.id===G.linhas[ri].lancId);undo={tipo:"multi",antes:{[l.id]:clone(l.ov||{})}};gravarCel(ri,L,v);salvar(false)}
   }
-  const sj0=formSujo();renderTopo();if(editId&&lid===editId&&commit&&v!==orig&&!rej)sincFormCelula(lid,L);if(editId)renderForm();if(editId&&!sj0)editSnap=JSON.stringify(S.form);
+  const sj0=formSujo();renderTopo();if(editId&&lid===editId&&commit&&v!==orig&&!rej)sincFormCelula(lid,L,chaveCel);if(editId)renderForm();if(editId&&!sj0)editSnap=JSON.stringify(S.form);
   if(rej){toast(rej+" (valor não gravado)");marcaRuim(ri,L)}
   if(commit&&L==="E"){const d=[...new Set(G.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(d.length)toast("Referência repetida: "+d.join(", ")+" — corrija antes de baixar a planilha.")}
   if(mover){let nri=ri,nL=L;
@@ -3003,15 +3007,15 @@ async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArra
 const dtbr=t=>new Date(t).toLocaleString("pt-BR");
 function repModal(inner){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";ov.innerHTML=`<div class="rep-c">${inner}</div>`;document.body.appendChild(ov)}
 async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabela está vazia.");return null}
-  if(por)setAutor(por);const g=gerar();
+  if(por)setAutor(por);const g=gerar(),lancSnap=clone(S.lanc),seqsSnap=clone(cfg().seqs),sigT=sigLanc();   /* versão consistente: tudo abaixo usa esta foto, não o estado de depois das esperas */
   const linhas=g.linhas.map((x,ri)=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:null},q=num(x.v.W)||0,cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),l=S.lanc.find(z=>z.id===x.lancId)||{};
     return {ref:x.v.E,desc:x.v.F||"",cat:x.v.I||"",sub:x.v.J||"",cor:x.v.L||"",forn:x.v.H||"",cod:x.v.G||"",q,custo:cu,varejo:n("V"),lanc:x.lancId,por:l.por||""}});
-  const ids=new Set(S.lanc.map(l=>l.id)),ks=(await idbOp("roms","readonly",st=>st.getAllKeys()))||[],roms=[];
+  const ids=new Set(lancSnap.map(l=>l.id)),ks=(await idbOp("roms","readonly",st=>st.getAllKeys()))||[],roms=[];
   for(const k of ks){const r=await idbGet("roms",k);if(r&&r.rows.some(x=>(x.lancIds||[]).some(i=>ids.has(i))))roms.push(k)}
-  const rec={id:uid(),nome,em:Date.now(),por:por||AUTOR,lanc:clone(S.lanc),seqs:clone(cfg().seqs),linhas,roms};
+  const rec={id:uid(),nome,em:Date.now(),por:por||AUTOR,lanc:lancSnap,seqs:seqsSnap,linhas,roms};
   if(await idbPut("tabs",rec.id,rec)===null){toast("NÃO consegui salvar a tabela — memória do navegador cheia. Baixe o backup completo. A tabela atual foi mantida.");setStatus("Tabela NÃO salva (memória cheia)",true);return null}
   if(!tabIndex(rec)){toast("A tabela foi guardada, mas NÃO consegui anotá-la na lista de tabelas salvas (memória do navegador cheia). Por segurança, NÃO limpei a tabela atual nem comecei outra. Baixe o backup completo e libere espaço; a tabela guardada reaparece na lista quando você reabrir o programa.");setStatus("Tabela guardada, mas fora da lista (memória cheia)",true);return null}
-  if(nova){const c=contFinal(g);Object.entries(c).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});S.lanc=[];sel.clear();lastExport=null;salvar(true);render()}
+  if(nova){const c=contFinal(g);Object.entries(c).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});let ficou=0;S.lanc=S.lanc.filter(l=>{if(sigT[l.id]!==undefined&&sigT[l.id]===JSON.stringify(l))return false;ficou++;return true});sel.clear();lastExport=null;salvar(true);render();if(ficou)setTimeout(()=>toast(ficou+" peça(s) lançadas ou editadas durante o salvamento ficaram na lista."),50)}
   if(!quieto)toast(`Tabela “${nome}” salva${nova?" — nova tabela começada, a numeração continua de onde parou":""}.`);
   return rec}
 function tabListaAbrir(){
@@ -3085,7 +3089,11 @@ async function bkMontar(){
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
   return {o,falhas,hoje}}
-async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");const {o,falhas,hoje}=await bkMontar();const bl=new Blob([JSON.stringify(o)],{type:"application/json"});
+async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");const {o,falhas,hoje}=await bkMontar();let bl=new Blob([JSON.stringify(o)],{type:"application/json"});
+  if(bl.size>MAX_BACKUP_BYTES&&confirm(`Esse backup tem ${Math.round(bl.size/1048576)} MB e o aplicativo só restaura até ${Math.round(MAX_BACKUP_BYTES/1048576)} MB.
+
+OK = salvar uma versão LEVE (sem as fotos originais grandes; ficam as miniaturas), que dá para restaurar.
+Cancelar = salvar completo mesmo assim (só restauraria por fora do aplicativo).`)){const lev={};Object.keys(o.fotos||{}).forEach(k=>{if(/^[mr]:/.test(k))lev[k]=o.fotos[k]});bl=new Blob([JSON.stringify({...o,fotos:lev,leve:true})],{type:"application/json"})}
   try{await dl.save({filename:"cadastro-pecas-backup-completo"+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});if(bl.size>MAX_BACKUP_BYTES){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. Apague fotos que não usa ou faça o backup em partes.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
 /* restaurar backup completo: valida TUDO e monta objetos novos antes de mexer em qualquer coisa. Semântica: SUBSTITUI peças,
    cadastros e formulário atuais pelos do backup (confirmação antes); romaneios, tabelas e fotos do backup são adicionados
@@ -4200,7 +4208,7 @@ async function baixar(forcar){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
+  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -4230,13 +4238,15 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
     const s=txtSaida(x,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
+function sigCfg(){const c={...S.config};delete c.seqs;delete c.observacoes;return JSON.stringify(c)}
 function sigLanc(){const o={};S.lanc.forEach(l=>{o[l.id]=JSON.stringify(l)});return o}
 function gravarExport(limpar){
   if(!lastExport)return;Object.entries(lastExport.cont).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});
   S.lanc.forEach(l=>{const o=val(l,"M");if(o&&!cfg().observacoes.includes(o))cfg().observacoes.unshift(o)});cfg().observacoes=cfg().observacoes.slice(0,30);
+  if(limpar&&lastExport.cfg&&lastExport.cfg!==sigCfg()){limpar=false;setTimeout(()=>toast("A configuração mudou depois da planilha (preços, fatores, modelo…): gravei só a numeração e deixei as peças na lista. Exporte de novo antes de limpar."),50)}
   if(limpar){const fei=new Set(lastExport.ids||S.lanc.map(l=>l.id)),sg=lastExport.sig||{};let alt=0;S.lanc=S.lanc.filter(l=>{if(!fei.has(l.id))return true;if(sg[l.id]!==undefined&&sg[l.id]!==JSON.stringify(l)){alt++;return true}return false});sel.clear();if(alt)setTimeout(()=>toast(alt+" peça(s) foram editadas depois da planilha e ficaram na lista."),50)}   /* só some o que foi exportado: peça lançada depois do download fica */
   lastExport=null;salvar(true);render();toast("Última peça do sistema atualizada.");
 }
@@ -4581,8 +4591,8 @@ document.addEventListener("click",e=>{
       C.categorias.forEach(c=>add(c.nome,c.nome,""));C.categorias.forEach(c=>(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,c.nome,sb)}));
       T.mapa=mapaStr(a);salvar(true,false);renderCfg();toast(n?`${n} palavra(s) criadas a partir das suas categorias.`:"Todas as suas categorias já estão no mapa.",{t:"Desfazer",fn:desfazer});break}
     case "rom-plan-ok":{const P=ROM&&ROM.plan;if(!P)break;const m=P.map,nn=v=>{const x=String(v==null?"":v).replace(/[R$\s]/g,"");return x===""?null:num(x)},rows=[];
-      const ruim=[],zero=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc)return;const qn=m.qtd==null?1:nn(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
-      if(ruim.length){ROM.msg=`${ruim.length} linha(s) com quantidade vazia, decimal ou inválida, não importei nada: ${ruim.slice(0,5).join("; ")}${ruim.length>5?"…":""}. Corrija a planilha ou a coluna de quantidade.`;renderRom();break}
+      const ruim=[],zero=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc){const cd=m.cod==null?"":String(r[m.cod]||"").trim();if(cd&&m.qtd!=null&&nn(r[m.qtd])>0)ruim.push(cd.slice(0,30)+" (sem descrição)");return}const qn=m.qtd==null?1:nn(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
+      if(ruim.length){ROM.msg=`${ruim.length} linha(s) com quantidade vazia/decimal/inválida ou sem descrição, não importei nada: ${ruim.slice(0,5).join("; ")}${ruim.length>5?"…":""}. Corrija a planilha ou a coluna de quantidade.`;renderRom();break}
       if(!rows.length){ROM.msg="Nenhuma linha com descrição e quantidade. Confira as colunas.";renderRom();break}
       ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças${zero.length?` · ${zero.length} linha(s) com quantidade 0 ficaram de fora: ${zero.slice(0,5).join("; ")}${zero.length>5?"…":""}`:""}`,erro:""});break}
     case "rom-plan-no":ROM.plan=null;renderRom();break;
