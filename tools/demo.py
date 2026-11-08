@@ -32,12 +32,12 @@ rep('@media (prefers-reduced-motion:reduce)', '.demo-tag{flex:none;text-align:ce
 
 doms_js = ",".join('"%s"' % d for d in doms)
 guard = '''<script>
-(function(){var D=[%s,"localhost","127.0.0.1"],h=location.hostname,ok=location.protocol==="file:"||D.some(function(d){return h===d||h.slice(-d.length-1)==="."+d});
+(function(){var D=[%s,"localhost","127.0.0.1"],h=location.hostname,ok=%s||location.protocol==="file:"||D.some(function(d){return h===d||h.slice(-d.length-1)==="."+d});
 if(window.top!==window.self)ok=false;
 if(!ok){window.__bloq=true;document.addEventListener("DOMContentLoaded",function(){document.body.innerHTML='<p style="font:16px sans-serif;padding:40px;max-width:520px;margin:auto">Esta demonstração só funciona no endereço oficial.</p>'})}
 document.addEventListener("contextmenu",function(e){if(!/INPUT|TEXTAREA/.test(e.target.tagName))e.preventDefault()});
 })();
-</script>''' % doms_js
+</script>''' % (doms_js, "false" if doms else "true")
 
 # minifica o script principal (se o terser estiver disponível)
 i = s.index('<script>\n(function(){')
@@ -57,7 +57,7 @@ except Exception as e:
 html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow,noarchive"><title>Cadastro de Peças · demo</title><style>html,body{margin:0}</style>' + guard + '</head><body>\n' + s + '\n</body></html>'
 open(os.path.join(outdir, 'index.html'), 'w', encoding='utf-8').write(html)
 open(os.path.join(outdir, '_headers'), 'w', encoding='utf-8').write('''/*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://cdnjs.cloudflare.com; worker-src blob: https://cdnjs.cloudflare.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ibb.co; connect-src 'self' https://cdnjs.cloudflare.com https://api.imgbb.com; worker-src blob: https://cdnjs.cloudflare.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
