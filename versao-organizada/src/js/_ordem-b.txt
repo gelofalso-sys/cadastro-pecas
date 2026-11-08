@@ -1,0 +1,16 @@
+20-armazenamento-idb.js
+21-edicao-em-lote-e-revisao.js
+22-importar-pdf-romaneio.js
+23-fotos-imgbb-e-nota-fiscal.js
+24-ui-numeracao-e-colunas.js
+25-relatorio-romaneio.js
+26-acoes.js
+27-fotos-escolher-colar.js
+28-exportar.js
+29-importar-e-copia.js
+30-eventos-mouse-e-clique.js
+31-eventos-campos-e-grade.js
+32-eventos-entrada-teclado-e-arrasto.js
+33-janelas-busca-e-paleta.js
+34-filtros-importacao-e-cartoes.js
+35-visoes-menu-e-final.js

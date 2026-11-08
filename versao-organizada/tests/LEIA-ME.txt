@@ -1,0 +1,5 @@
+Testes automaticos do Cadastro de Pecas (Playwright + Edge).
+Rodar:  python tests/run_all.py
+Precisa: pip install playwright openpyxl
+Os testes com dados reais (t18) so rodam se a variavel CP_BACKUP apontar para um backup completo seu (nunca suba esse arquivo ao GitHub).
+dados/rom_amostra.txt e uma lista de exemplo sem dados pessoais.

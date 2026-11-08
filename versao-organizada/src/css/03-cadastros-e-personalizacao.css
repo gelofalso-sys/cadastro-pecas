@@ -1,0 +1,34 @@
+/* ===== v25 ===== */
+.gm{flex-wrap:wrap}.gm button{flex:1 1 auto;padding:3px 7px}
+.gl li{position:relative;padding-bottom:5px}
+.gl u{position:absolute;left:16px;bottom:0;height:3px;border-radius:2px;opacity:.55;text-decoration:none;max-width:calc(100% - 16px)}
+.rst{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line);align-items:center}
+
+/* ===== v26: cadastros e personalização ===== */
+#cfg>h2#sec-topo{font-size:16px;color:var(--ink);margin:6px 0 10px;display:flex;align-items:center;gap:8px}
+#cfg>h2#sec-topo::after{content:"";flex:1;height:1px;background:var(--line)}
+.ctabs{position:sticky;top:0;z-index:4;background:var(--bg);padding-top:4px;gap:4px;overflow-x:auto;scrollbar-width:thin}
+.ctab{display:inline-flex;align-items:center;gap:6px;border-radius:9px 9px 0 0}
+.bdg{font-style:normal;font-size:10.5px;font-weight:600;background:var(--surface-2);color:var(--muted);border-radius:999px;padding:0 7px;min-width:18px;text-align:center;line-height:17px}
+.ctab.on .bdg{background:var(--accent);color:var(--accent-ink)}
+.tabp{background:var(--surface);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding-bottom:6px}
+.tabres{padding:10px 16px 0;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabp .sb{padding:6px 16px 14px;gap:12px}
+.tabp .sb p.d{background:var(--accent-soft);border-radius:8px;padding:8px 12px;color:var(--ink);font-size:12.5px;line-height:1.5}
+.clbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 0 -2px;display:flex;gap:8px;align-items:baseline}
+.clbl span{font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;opacity:.85}
+#cfg .cards>.card{padding:12px;gap:10px;box-shadow:0 1px 2px color-mix(in srgb,var(--ink) 6%,transparent);transition:border-color .15s}
+#cfg .cards>.card:hover,#cfg .cards>.card:focus-within{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+#cfg .cards>.card[hidden]{display:none}
+#cfg .card .fl>span{font-size:10.5px;color:var(--muted);font-weight:500}
+#cfg .card .cfoot{margin-top:2px}
+table.cfg thead th{position:static;top:auto;background:var(--surface);border-bottom:1px solid var(--line);z-index:1}
+table.cfg tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--surface-2) 35%,var(--surface))}
+table.cfg tbody tr:hover td{background:var(--accent-soft)}
+table.cfg td{border-top:0;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.tw{border:1px solid var(--line);border-radius:10px;max-height:none}
+.chips{padding:2px 0}
+.chip{background:var(--surface);}
+.rst{margin-top:10px!important;padding-top:10px!important}
+@media (max-width:700px){.tabp{border-radius:0 0 12px 12px}.tabp .sb{padding:6px 10px 12px}.ctabs{margin-inline:-4px}}
+

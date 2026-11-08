@@ -1,0 +1,50 @@
+/* ===== v19: visões (Dividida · Planilha · Lançar · Cadastros) ===== */
+function visAtual(){const v=document.body.dataset.vis||"tudo";return v}
+function visPara(v,soSeEscondido){
+  if(celular()&&v==="tudo")v="planilha";
+  if(!celular()&&v==="lancar")v="tudo"; /* o lançamento nunca é uma tela própria: fica sempre embaixo da tabela */
+  const a=visAtual();
+  if(soSeEscondido){const escondido=v==="cad"?(a==="planilha"||a==="lancar"):(a==="planilha"||a==="cad");if(!escondido)return}
+  document.body.dataset.vis=v;abertos.vis=v;guardarAbertos();
+  document.querySelectorAll("#vis [data-vis]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.vis===v)));
+  if(celular())formAbrir(v==="lancar");
+  const pb=document.getElementById("paneBot");if(pb&&v!=="planilha")pb.scrollTo({top:0});
+  if(typeof sideMarcar==="function")sideMarcar();
+  pilulaAtualiza();if(celular()&&v!=="lancar")window.scrollTo({top:0});
+}
+document.getElementById("vis").addEventListener("click",e=>{if(e.target.closest("#vpal")){palAbrir();return}const b=e.target.closest("button[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
+document.addEventListener("keydown",e=>{
+  const t=e.target,campo=/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable;
+  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-3]$/.test(e.key)){e.preventDefault();visPara(["tudo","planilha","cad"][+e.key-1]);return}
+  if(e.key==="/"&&!campo&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const fb=document.getElementById("fBusca");if(fb&&!fb.closest("[hidden]")){e.preventDefault();if(visAtual()==="lancar"||visAtual()==="cad")visPara(celular()?"planilha":"tudo");fb.focus();fb.select()}}
+});
+visPara(abertos.vis&&["tudo","planilha","lancar","cad"].includes(abertos.vis)?(abertos.vis==="lancar"&&celular()?"planilha":abertos.vis):(celular()?"planilha":"tudo"));
+/* ===== v19: menu lateral ===== */
+function sideMarcar(){const sd=document.getElementById("side");if(!sd||sd.hidden)return;const v=document.body.dataset.vis||"tudo";
+  const marca=(b,on)=>{if(on)b.setAttribute("aria-current","true");else b.removeAttribute("aria-current")};
+  sd.querySelectorAll("[data-vis]").forEach(b=>marca(b,b.dataset.vis===v));
+  sd.querySelectorAll("[data-go^=\"sec:\"]").forEach(b=>marca(b,(v==="cad"||v==="tudo")&&b.dataset.go==="sec:"+abertos.tab))}
+function sideAplicar(modo){/* "open" = expandido · "mini" = faixa estreita só com ícones */
+  if(modo!=="mini")modo="open";
+  const sd=document.getElementById("side");if(celular()){sd.hidden=true;document.body.classList.remove("side-on","side-mini");return}
+  sd.hidden=false;document.body.classList.add("side-on");document.body.classList.toggle("side-mini",modo==="mini");
+  abertos.side=modo;guardarAbertos();sideMarcar()}
+function hdrLayout(){const hin=document.querySelector("header .hin");if(!hin)return;
+  const st=document.getElementById("saveStatus"),ud=hin.querySelector(".udo"),sp=hin.querySelector(".sp"),top=document.getElementById("sideTop"),ex=document.getElementById("sideExp");if(!st||!ud||!sp||!top||!ex)return;
+  if(!celular()){if(st.parentNode!==top)top.append(st,ud);if(sp.parentNode!==ex)ex.append(sp)}
+  else{const ref=hin.querySelector("nav.ir");if(st.parentNode!==hin){hin.insertBefore(st,ref);hin.insertBefore(ud,ref)}if(sp.parentNode!==hin)hin.append(sp)}}
+window.addEventListener("resize",()=>{hdrLayout();if(!celular())sideAplicar(abertos.side)});
+hdrLayout()
+
+document.getElementById("sideT").addEventListener("click",()=>sideAplicar(abertos.side==="mini"?"open":"mini"));
+document.getElementById("side").addEventListener("click",e=>{
+  const v=e.target.closest("button[data-vis]");if(v){visPara(v.dataset.vis);if(v.dataset.vis==="lancar")refocar("#f-F");return}
+  const g=e.target.closest("[data-go]");if(!g)return;const [k,id]=g.dataset.go.split(":");
+  if(k==="sec"){if(celular())formAbrir(false);irPara(id);return}
+  /* ações: aciona o botão que já existe no app (o menu não tem cópia deles) */
+  const alvo=document.querySelector('[data-act="'+id+'"]');if(alvo)alvo.click()});
+document.addEventListener("click",()=>setTimeout(sideMarcar,0));
+document.addEventListener("keydown",e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&e.key.toLowerCase()==="b"){e.preventDefault();document.getElementById("vside").click()}});
+if(!celular())sideAplicar(abertos.side);
+/* celular: a barra de baixo some o "Lançar peça" quando o formulário já está na tela */
+try{const io=new IntersectionObserver(es=>{document.body.classList.toggle("formvis",!celular()&&es.some(x=>x.isIntersecting))},{threshold:0.1});io.observe(document.getElementById("formWrap"))}catch(e){}

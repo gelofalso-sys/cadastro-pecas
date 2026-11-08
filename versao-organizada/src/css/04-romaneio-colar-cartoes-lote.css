@@ -1,0 +1,128 @@
+/* ===== v27: colar romaneio ===== */
+#romWrap:empty{display:none}
+.rom{background:var(--surface);border:1px solid var(--accent);border-radius:12px;box-shadow:0 0 0 2px var(--accent-soft);margin-bottom:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.rom-h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.rom-h b{font-family:var(--display);color:var(--accent);font-size:14px}
+.rom-t textarea,textarea.cp{width:100%;font:12px var(--mono);border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface);color:var(--ink);resize:vertical}
+.rom-b{display:flex;gap:10px;align-items:center;margin-top:6px}
+.rom-i{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end}
+.rom-c{font-size:12.5px;font-weight:500;color:var(--accent)}.rom-c.bad{color:var(--bad)}
+.rom-w{max-height:55vh}
+.rom-tb td,.rom-tb th{white-space:nowrap}
+.rom-tb tr.sk td{opacity:.45}
+.rom-tb td.soma{font-family:var(--mono);font-weight:600}.soma.ok{color:#2f7d5b}.soma.bad{color:var(--bad)}
+.rom-f{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.rom-f .big{margin-left:auto}
+code{font-family:var(--mono);font-size:12px;background:var(--surface-2);border-radius:4px;padding:0 4px}
+@media (max-width:900px){.rom{padding:8px}.rom-f .big{flex:1 1 100%;height:46px}}
+
+/* ===== v28: romaneio em cartões, próxima referência em destaque ===== */
+.prox{font-size:12px;color:var(--muted);background:var(--accent-soft);border-radius:8px;padding:2px 10px;white-space:nowrap}
+.prox b{font-family:var(--mono);font-size:15px;color:var(--accent);margin-left:4px}
+.seq .px{margin-left:8px;color:var(--accent);font-weight:600}
+.rom-cfg{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:flex-end}
+.rom-bn{display:flex;gap:4px;align-items:center;padding-bottom:2px}
+.rom-px{font-size:13px;background:var(--accent-soft);border-radius:8px;padding:6px 12px;color:var(--ink)}
+.rom-px b{font-family:var(--mono);color:var(--accent)}
+.rcs{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow:auto;padding:2px}
+.rc{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.rc.op{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));box-shadow:0 1px 4px color-mix(in srgb,var(--ink) 8%,transparent)}
+.rc.sk{opacity:.5}
+.rc-h{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:6px 10px}
+.rc-ref{font-family:var(--mono);font-weight:600;color:var(--accent);min-width:64px;font-size:12.5px}
+.rc-cod{font-size:11.5px;color:var(--muted)}
+.rc-desc{flex:1 1 180px;min-width:140px}
+.rc-h select{width:auto;max-width:130px;height:28px}
+.rq{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--muted)}
+.rq i{font-style:normal;min-width:10px}
+.rq input{width:56px!important;height:28px}
+.rq.pg input{width:60px!important}
+.rc-q{display:inline-flex;gap:6px;align-items:center}
+.rc .soma{font-family:var(--mono);font-weight:600;min-width:38px;text-align:right}
+.rc .soma.ok{color:#2f7d5b}.rc .soma.bad{color:var(--bad)}
+.rc-b{display:none;border-top:1px dashed var(--line);padding:8px 12px;flex-direction:column;gap:8px;background:color-mix(in srgb,var(--surface-2) 40%,var(--surface))}
+.rc.op .rc-b{display:flex}
+.rc-r{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.rmap{display:flex;flex-direction:column;gap:5px}
+.rmr{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rmr input{width:170px}.rmr select{width:170px}
+@media (max-width:900px){.rc-h select{max-width:none;flex:1 1 120px}.rc-desc{flex:1 1 100%}}
+
+/* ===== v29: fotos do romaneio ===== */
+.rc-ft{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:var(--surface-2)}
+.lbox{position:fixed;inset:0;z-index:60;background:rgba(10,14,22,.85);display:flex;align-items:center;justify-content:center;cursor:zoom-out;padding:20px}
+.lbox img{max-width:min(94vw,1100px);max-height:92vh;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.5);background:#fff}
+
+/* ===== v30: romaneio completo ===== */
+.rom{max-width:100%}
+.rom-cfg{align-items:flex-end}
+.rom-sum{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;background:var(--accent-soft);border-radius:8px;padding:6px 12px}
+.rcs{max-height:none;overflow:visible}
+.rc-top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;padding:8px 10px 4px}
+.rc-fb{border:0;background:none;padding:0;cursor:zoom-in;flex:none;align-self:center}
+.rc-ft{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
+.rc-fb:hover .rc-ft{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.rc-id{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);align-self:center;min-width:130px}
+.rc-id b{color:var(--ink);font-size:13px}
+.rc-desc{flex:1 1 220px;min-width:180px}
+.rc-px{display:flex;flex-wrap:wrap;gap:4px 6px;padding:0 10px 4px}
+.rch{display:inline-flex;gap:5px;align-items:baseline;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));background:var(--accent-soft);border-radius:8px;padding:1px 8px;font-size:12px}
+.rch b{font-family:var(--mono);color:var(--accent);font-size:13px}.rch i{font-style:normal;color:var(--muted)}.rch em{font-style:normal;color:var(--ink)}.rch u{text-decoration:none;font-family:var(--mono);font-weight:600}
+.rch.dup{border-color:var(--bad);background:var(--bad-soft)}.rch.dup b{color:var(--bad)}
+.rc-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:flex-end;padding:2px 10px 10px}
+.rc-row .fq select,.rc-row .fq input{min-width:0}
+.rc-row .fq{width:auto}.rc-row .fq:not(.w-c):not(.w-n){min-width:120px}
+.rc-row .w-c{width:104px}.rc-row .w-n{width:74px}
+.rbk{border:1px solid var(--line);border-radius:9px;padding:4px 8px 6px;background:var(--surface-2);display:flex;flex-direction:column;gap:2px}
+.rbt{display:flex;align-items:center;gap:6px;font-size:12px}.rbt small{color:var(--muted);font-family:var(--mono)}
+.rbf{display:flex;gap:6px}.rbf .fq{width:auto}.rbf input{width:78px!important}
+.rsum{display:flex;flex-direction:column;align-items:flex-end;gap:0;padding-bottom:4px;margin-left:auto}
+.rc .soma{font-size:14px}
+.rc-b .hide{display:none}
+.rc-b .bcard .rc-r .fq{width:auto}.rc-b .bcard .w-s{min-width:120px}
+.rc-ex select{width:auto;min-width:140px}.rc-ex input{width:160px}
+.rom-bn{display:flex;gap:4px;flex-wrap:wrap}
+.lbox{flex-direction:column;gap:10px;padding:14px;cursor:default}
+.lbt{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.12);border-radius:10px;padding:4px 8px;color:#fff}
+.lbt button{border:0;background:rgba(255,255,255,.18);color:#fff;border-radius:8px;min-width:38px;height:34px;padding:0 12px;font:600 15px var(--body);cursor:pointer}
+.lbt button:hover{background:rgba(255,255,255,.3)}.lbz{min-width:52px;text-align:center;font-family:var(--mono);font-size:13px}
+.lbs{overflow:auto;max-width:96vw;max-height:calc(100vh - 80px);border-radius:10px;cursor:grab;text-align:center}
+/* botões de zoom fixos no alto da tela; a foto rola por baixo sem arrastar os botões */
+.lbox{display:block;padding:0}
+.lbt{position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:3;background:rgba(14,19,30,.88);box-shadow:0 4px 18px rgba(0,0,0,.45);backdrop-filter:blur(6px);max-width:calc(100vw - 16px)}
+.lbs{position:absolute;inset:0;max-width:none;max-height:none;border-radius:0;display:flex;padding:64px 12px 12px;box-sizing:border-box}
+.lbs img{margin:auto;flex:none}
+.lbs.grab{cursor:grabbing}.lbs img{max-width:none;display:block;margin:auto;background:#fff;border-radius:6px;user-select:none}
+@media (max-width:900px){.rc-ft{width:64px;height:64px}.rc-row .fq:not(.w-c):not(.w-n){min-width:46%;flex:1 1 46%}}
+
+/* ===== v31: ajustes do romaneio ===== */
+#form .z-row .ub input{width:96px!important;min-width:96px}
+.rom-ult{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:flex-end;border:1px dashed var(--accent);border-radius:10px;padding:6px 12px}
+.rom-ult>b{font-size:12.5px;color:var(--accent);align-self:center}
+.rom-ult .ub input{width:96px!important}
+.rom-ult .fq.bad input{border-color:var(--bad);background:var(--bad-soft)}
+.rom-ult .fq.bad small{color:var(--bad)}
+input.isauto{color:var(--accent);font-style:italic}
+.rc-px{align-items:center}.rc-pl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.rc-pc{display:inline-flex;flex-wrap:wrap;gap:4px 6px}
+.rc-b .gdet{margin-top:2px}
+
+/* ===== v32: lote, rascunho e revisão ===== */
+.rsel{display:inline-flex;flex-direction:column;align-items:center;font-size:9.5px;color:var(--muted);align-self:center;gap:0;line-height:1.1}
+.rsel input{margin:0}
+.rom-bulk{border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.rev{position:fixed;inset:0;z-index:70;background:rgba(10,14,22,.6);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto}
+.rev-c{background:var(--surface);border-radius:14px;max-width:1100px;width:100%;box-shadow:0 12px 50px rgba(0,0,0,.4);display:flex;flex-direction:column;max-height:calc(100vh - 32px)}
+.rev-h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.rev-h b{font-family:var(--display);font-size:16px;color:var(--accent)}
+.rev-s{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:10px 16px}
+.tt.bad{color:var(--bad);border-color:var(--bad)}.tt.ok{color:#2f7d5b}
+.rev-t{overflow:auto;padding:0 16px;flex:1 1 auto}
+.rev-t table{width:100%}
+.rev-t tr.al td{background:var(--bad-soft)}.rev-t tr.nc td{opacity:.6}
+.rev-t .al-t{color:var(--bad);font-size:12px}
+.rc-ft.sm{width:40px;height:40px;border-radius:6px}
+.lnk{border:0;background:none;color:var(--accent);cursor:pointer;font:inherit;text-align:left;padding:0;text-decoration:underline}
+.rev.so-al tr:not(.al){display:none}
+.rev-f{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+

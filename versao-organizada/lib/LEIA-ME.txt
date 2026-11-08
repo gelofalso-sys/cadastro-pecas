@@ -1,0 +1,11 @@
+Bibliotecas locais do Cadastro de Pecas
+
+xlsx.full.min.js
+  SheetJS Community Edition 0.20.3
+  Origem: https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js
+  Baixado em: 2026-11-06
+  SHA-256: cc015130aa8521e7f088f88898eba949ccdcbfb38df0bd129b44b7273c3a6f41
+
+Como e usada: o app carrega lib/xlsx.full.min.js (relativo ao arquivo HTML aberto, funciona em file://).
+Se o arquivo nao existir ao lado do HTML, cai na reserva: SheetJS 0.18.5 do cdnjs (versao antiga, com falhas conhecidas).
+Para conferir o arquivo: certutil -hashfile xlsx.full.min.js SHA256

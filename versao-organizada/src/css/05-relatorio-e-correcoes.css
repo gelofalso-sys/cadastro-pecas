@@ -1,0 +1,22 @@
+/* ===== v33: relatório ===== */
+.rep{position:fixed;inset:0;z-index:70;background:rgba(10,14,22,.6);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto}
+.rep-c{background:var(--surface);border-radius:14px;max-width:1100px;width:100%;box-shadow:0 12px 50px rgba(0,0,0,.4);display:flex;flex-direction:column;max-height:calc(100vh - 32px);padding-bottom:10px}
+.rep .rev-t{padding-bottom:6px}
+@media print{
+  html,body{height:auto!important;overflow:visible!important;display:block!important;background:#fff!important}
+  body>*:not(.rep){display:none!important}
+  .rep{position:static!important;background:none!important;padding:0!important;display:block!important;overflow:visible!important}
+  .rep-c{box-shadow:none!important;max-height:none!important;max-width:none!important;border-radius:0!important}
+  .rep .noprint{display:none!important}.rep .rev-t{overflow:visible!important}
+  .rep{color:#000}.rep td,.rep th{font-size:11px}
+}
+
+/* ===== v34: correções da auditoria ===== */
+#form .z-row .fq.w-u,#form .z-orig .fq.w-u{width:auto;min-width:118px;flex:none}
+.z-row .fq.w-u>span{overflow:visible;text-overflow:clip}
+.z-row .ub{flex-wrap:wrap;height:auto;min-height:28px}
+.rom-ult .fq{width:auto!important;min-width:150px}.rom-ult .fq>span{overflow:visible;text-overflow:clip}
+.rom-ult .ub{flex-wrap:wrap;height:auto}
+.rom-ult .ub input,#form .z-row .ub input{flex:none!important}
+.rom-ult .ub small{flex:1 0 100%}
+
