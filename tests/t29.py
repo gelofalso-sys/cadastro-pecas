@@ -14,7 +14,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1400,"height":900}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto("http://127.0.0.1:8809/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(900)
-    pg.click("#vside");pg.wait_for_timeout(300)
+    pg.wait_for_timeout(300)
     ok(not EMOJI.search(pg.inner_text("#side")),"menu lateral sem emojis")
     ok(pg.locator('#side [data-vis]').count()==1,"menu lateral só tem a página principal (sem visões)")
     ok(pg.locator('[data-vis="lancar"]').count()==0,"não existe visão/aba Lançar")

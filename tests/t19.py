@@ -18,7 +18,7 @@ with sync_playwright() as p:
     ok("Cores" in pg.inner_text('#cfg [data-act="ctab"].on'),"seta → troca de aba")
     ok(pg.evaluate("document.activeElement.dataset.act")=="ctab","foco fica na aba")
     pg.keyboard.press("End");pg.wait_for_timeout(300);pg.keyboard.press("Home");pg.wait_for_timeout(300)
-    ok("Banhistas" in pg.inner_text('#cfg [data-act="ctab"].on'),"Home volta à primeira")
+    ok("Galvânicas" in pg.inner_text('#cfg [data-act="ctab"].on'),"Home volta à primeira")
     pg.click('[data-act="ctab"][data-id="cat"]');pg.wait_for_timeout(300)
     # Tab depois de editar NCM numa categoria nao perde o foco
     pg.fill('[data-cat="0"] [data-cf="ncm"]',"71131100");pg.keyboard.press("Tab");pg.wait_for_timeout(300)
