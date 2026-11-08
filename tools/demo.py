@@ -1,6 +1,12 @@
 import sys, os, re, subprocess
 src, outdir = sys.argv[1], sys.argv[2]
 doms = [d for d in (sys.argv[3] if len(sys.argv) > 3 else "").split(",") if d]
+# 4o argumento (opcional): JSON de dados iniciais ja anonimizado (tools/demo_dados.py)
+seed = None
+if len(sys.argv) > 4 and sys.argv[4]:
+    import json
+    seed = open(sys.argv[4], encoding='utf-8').read()
+    n_seed = len(json.loads(seed)["lanc"])
 s = open(src, encoding='utf-8').read()
 
 def rep(a, b, n=1):
@@ -30,6 +36,14 @@ rep('''<div class="app" id="app" role="main">''', '''<div class="demo-tag" role=
 <div class="app" id="app" role="main">''')
 rep('@media (prefers-reduced-motion:reduce)', '.demo-tag{flex:none;text-align:center;font-size:11px;letter-spacing:.03em;padding:3px 8px;background:var(--accent);color:var(--accent-ink)}\n@media (prefers-reduced-motion:reduce)')
 
+if seed:
+    rep('const DEMO_MAX=40,DEMO_EXP=20;', 'const DEMO_MAX=%d,DEMO_EXP=20;' % (n_seed + 30))
+    rep('carregar().then(()=>tabsMigrar())', 'semente().then(carregar).then(()=>tabsMigrar())')
+    rep('/* duas abas abertas: se a outra gravou', """/* demo com dados de exemplo: na primeira abertura (nada salvo neste navegador) carrega o backup embutido */
+async function semente(){try{const el=document.getElementById("seed");if(!el||localStorage.getItem("cadpecas4")||localStorage.getItem("cadpecas3"))return;await aplicarBackupTotal(validarBackup(JSON.parse(el.textContent)),true);flushJa()}catch(e){console.error("semente",e)}}
+/* duas abas abertas: se a outra gravou""")
+    s = s.replace('dados fictícios ficam só neste navegador', 'dados de exemplo; o que você lançar fica só neste navegador')
+
 doms_js = ",".join('"%s"' % d for d in doms)
 guard = '''<script>
 (function(){var D=[%s,"localhost","127.0.0.1"],h=location.hostname,ok=%s||location.protocol==="file:"||D.some(function(d){return h===d||h.slice(-d.length-1)==="."+d});
@@ -54,7 +68,7 @@ try:
 except Exception as e:
     print('sem minificar:', e)
 
-html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow,noarchive"><title>Cadastro de Peças · demo</title><style>html,body{margin:0}</style>' + guard + '</head><body>\n' + s + '\n</body></html>'
+html = '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow,noarchive"><title>Cadastro de Peças · demo</title><style>html,body{margin:0}</style>' + guard + '</head><body>\n' + (('<script type="application/json" id="seed">' + seed.replace('</', '<\\/') + '</script>\n') if seed else '') + s + '\n</body></html>'
 open(os.path.join(outdir, 'index.html'), 'w', encoding='utf-8').write(html)
 open(os.path.join(outdir, '_headers'), 'w', encoding='utf-8').write('''/*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://i.ibb.co; connect-src 'self' https://cdnjs.cloudflare.com https://api.imgbb.com; worker-src blob: https://cdnjs.cloudflare.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; object-src 'none'

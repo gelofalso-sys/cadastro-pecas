@@ -3161,6 +3161,8 @@ function validarBackup(o){
 function restaurarTotal(file){try{checaTam(file,MAX_BACKUP_BYTES,"O backup")}catch(e){toast("Backup NÃO restaurado — "+e.message+". Nada foi alterado.");return}const fr=new FileReader();fr.onload=async()=>{
   let n;try{n=validarBackup(JSON.parse(fr.result))}catch(e){toast("Backup NÃO restaurado — "+(e instanceof SyntaxError?"o arquivo está danificado ou não é um backup (não consegui ler o texto dele)":e&&e.message?e.message:"arquivo inválido")+". Nada foi alterado.");return}
   if(!confirm(`Restaurar o backup?\n\nIsto SUBSTITUI as ${S.lanc.length} peça(s), os cadastros e o formulário atuais por ${n.lanc.length} peça(s) do backup.\nRomaneios (${Object.keys(n.roms).length}), tabelas salvas (${Object.keys(n.tabs).length}) e fotos (${Object.keys(n.fotos).length}) do backup são ADICIONADOS (o que só existe aqui é mantido).\n\nDepois dá para desfazer as peças e os cadastros com Ctrl+Z.`))return;
+  aplicarBackupTotal(n)};fr.readAsText(file)}
+async function aplicarBackupTotal(n,quieto){
   const antLS={},escritas=[],ant={config:S.config,lanc:S.lanc,form:S.form};
   const lsSet=(k,v)=>{if(!(k in antLS))antLS[k]=localStorage.getItem(k);localStorage.setItem(k,JSON.stringify(v))};
   const reverter=async()=>{for(const k of Object.keys(antLS)){try{if(antLS[k]==null)localStorage.removeItem(k);else localStorage.setItem(k,antLS[k])}catch(e){}}
@@ -3180,7 +3182,7 @@ function restaurarTotal(file){try{checaTam(file,MAX_BACKUP_BYTES,"O backup")}cat
   Object.values(n.roms).forEach(r=>{try{romIndex(r)}catch(e){}});Object.values(n.tabs).forEach(r=>{try{tabIndex(r)}catch(e){}});arqRef();
   if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
   ftSalvas.clear();resolverCorrompido();salvar(true);render();
-  toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.`,{t:"Desfazer",fn:desfazer})};fr.readAsText(file)}
+  if(!quieto)toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.`,{t:"Desfazer",fn:desfazer});return true}
 const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 function romSalvar(){if(!ROM||!ROM.rows.length)return;romGravarBig();const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
