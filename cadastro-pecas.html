@@ -4115,7 +4115,9 @@ function duplicarLinha(ri){
   const row=G.linhas[ri];if(!row)return;const l=S.lanc.find(x=>x.id===row.lancId);if(!l)return;
   const c=clone(l);c.id=uid();delete c.v.E;c.vinc=false;delete c.excl;
   if(c.tipo==="bruta"||(row.bid&&row.bid!=="p")){const bid=row.bid||row.key;if(c.tipo==="bruta")c.on={[bid]:true};else c.onP={[bid]:true};const o=(c.ov||{})[bid],o2=row.gi?(c.ov||{})[row.key]:null;c.ov={};if(o)c.ov[bid]=o;if(o2)c.ov[row.key]=o2}
-  if(row.gi)c.gsel=[row.gi];
+  if(row.gi){   /* a linha pode ser tamanho, cor ou tamanho+cor (id "a17+c_L:azul"): a cópia fica só com aquela combinação */
+    const ps=String(row.gi).split("+"),tam=ps.find(x=>!x.startsWith("c_")),cor=ps.find(x=>x.startsWith("c_"));
+    c.gsel=tam?[tam]:[];if(cor)c.csel=[cor.slice(2)]}
   if(c.ov)Object.values(c.ov).forEach(o=>delete o.E);
   S.lanc.push(c);undo={tipo:"dup",ids:[c.id]};salvar(false);renderTopo();
   toast(`Linha duplicada: ${(G.refs[c.id]||[]).join(", ")}`,{t:"Desfazer",fn:desfazer});
@@ -4177,7 +4179,10 @@ function montarCsv(g,cols,mo,slx){
   sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{const r=valorCol(c,celCol(c,cs,e));let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
   return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
 /* com filtro ativo, baixar e copiar levam as PEÇAS que o filtro mostra, sempre com todas as variações (pai e filhos não se separam) */
-function gerarExport(){const g0=gerar(),fil=filtroOn();return {g0,fil,g:fil?(()=>{const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}})():g0}}
+function gerarExport(){const g0=gerar(),fil=filtroOn();
+  /* com filtro: sai EXATAMENTE o que o filtro mostra. Só no modelo que agrupa em produto pai + variações a peça vai inteira (senão o pai ficaria sem filhos) */
+  const peca=!!(fil&&modeloAtual().agrupar==="sim");
+  return {g0,fil,peca,g:fil?(()=>{if(peca){const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}}return {...g0,linhas:g0.linhas.filter(casa)}})():g0}}
 async function baixar(forcar){
   const GE=gerarExport(),g=GE.g;if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de baixar.");return}
@@ -4191,7 +4196,7 @@ async function baixar(forcar){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:S.lanc.map(l=>l.id)};renderTopo();if(GE.fil)toast(`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça.`);
+  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:S.lanc.map(l=>l.id)};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -4221,7 +4226,7 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
     const s=txtSaida(x,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:S.lanc.map(l=>l.id)};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:S.lanc.map(l=>l.id)};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
 function gravarExport(limpar){
