@@ -35,6 +35,10 @@ document.addEventListener("keydown",e=>{
     if(e.key==="Enter"){e.preventDefault();fecharCel(true,e.shiftKey?"up":"down")}
     else if(e.key==="Tab"){e.preventDefault();fecharCel(true,e.shiftKey?"left":"right")}
     else if(e.key==="Escape"){e.preventDefault();fecharCel(false);document.getElementById("sheet").focus({preventScroll:true})}
+    else if(/^Arrow(Up|Down|Left|Right)$/.test(e.key)&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){
+      /* setas andam pelas células: sempre para cima/baixo; para os lados enquanto você não digitou nada (clique simples) ou quando o cursor está na ponta do texto */
+      const sa=celEd&&celEd.setas,ini=t.selectionStart===0&&t.selectionEnd===0,fim=t.selectionStart===t.value.length&&t.selectionEnd===t.value.length,dir={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right"}[e.key];
+      if(e.key==="ArrowUp"||e.key==="ArrowDown"||sa||(e.key==="ArrowLeft"&&ini)||(e.key==="ArrowRight"&&fim)){e.preventDefault();fecharCel(true,dir)}}
     return;
   }
   if(t.classList&&t.classList.contains("pc")&&(e.key==="Enter"||e.key===" ")){e.preventDefault();t.click();return}
@@ -92,3 +96,4 @@ document.addEventListener("keydown",e=>{if(ROM&&ROM.rows.length&&(e.ctrlKey||e.m
   document.addEventListener("scroll",e=>{const el=e.target;if(el&&el.matches&&el.matches("nav.ir,.ctabs"))at(el)},true);
   let raf=0;new MutationObserver(()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;document.querySelectorAll("nav.ir,.ctabs").forEach(at)})}).observe(document.body,{childList:true,subtree:true});
   window.addEventListener("resize",()=>document.querySelectorAll("nav.ir,.ctabs").forEach(at));document.querySelectorAll("nav.ir,.ctabs").forEach(at)}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="celIn"&&celEd)celEd.setas=false});   /* digitou: as setas esquerda/direita voltam a mexer no cursor do texto */

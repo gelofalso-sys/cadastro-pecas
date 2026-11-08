@@ -15,7 +15,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1280,"height":1000}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.goto("http://127.0.0.1:8783/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(800)
-    pg.select_option("#f-I","Conjuntos");pg.wait_for_timeout(500)
+    (pg.fill("#f-I","Conjuntos"),pg.press("#f-I","Tab"));pg.wait_for_timeout(500)
     ok(pg.locator("#conjSum").count()==1,"resumo do conjunto")
     pg.fill('#conj [data-ci="0"] [data-cp="desc"]',"Brincos");pg.fill('#conj [data-ci="0"] [data-cp="peso"]',"2")
     pg.fill('#conj [data-ci="1"] [data-cp="desc"]',"Colar");pg.fill('#conj [data-ci="1"] [data-cp="peso"]',"3");pg.fill('#conj [data-ci="1"] [data-cp="custo"]',"20")

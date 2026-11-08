@@ -17,6 +17,12 @@ const cfg=()=>S.config;
 const catBy=n=>cfg().categorias.find(c=>c.nome===n);
 const fornBy=n=>cfg().fornecedores.find(f=>f.nome===n);
 const banhistaBy=id=>cfg().banhistas.find(b=>b.id===id)||cfg().banhistas[0];
+/* a galvânica de uma PEÇA LANÇADA é a versão guardada na própria peça (l.bhs) no momento do lançamento: mudar preço, milésimos ou verniz da galvânica depois NÃO altera peças já lançadas.
+   Peça sem versão guardada usa a galvânica atual. "Aplicar às peças lançadas" (Cadastros › Galvânicas) apaga a versão guardada e a peça volta a seguir a galvânica. */
+function bhDe(x){const v=x&&x.bhs;return v&&v.id===(x.banhista||v.id)&&Array.isArray(v.banhos)?v:banhistaBy(x&&x.banhista)}
+function snapBanhistas(){const C=cfg();let mudou=false;
+  S.lanc.forEach(l=>{if(l.tipo!=="bruta"&&l.tipo!=="pronta"&&!l.conj)return;if(l.bhs&&l.bhs.id===l.banhista&&Array.isArray(l.bhs.banhos))return;const bh=C.banhistas.find(b=>b.id===l.banhista);if(!bh)return;l.bhs=JSON.parse(JSON.stringify(bh));mudou=true});return mudou}
+const bhDifere=id=>{const cur=cfg().banhistas.find(b=>b.id===id);if(!cur)return 0;const s=JSON.stringify(cur);return S.lanc.filter(l=>l.banhista===id&&l.bhs&&JSON.stringify(l.bhs)!==s).length};
 const prefDe=(cat,sub)=>{const c=catBy(cat)||{},sp=sub&&c.subPref&&c.subPref[sub];return String(sp||c.prefixo||"BR").toUpperCase()};
 function comSufixoCat(d,cat){const sx=(catBy(cat)||{}).sufixo;d=String(d||"").trim();if(!sx||!d)return d;return d.toLowerCase().includes(sx.trim().toLowerCase())?d:d+sx}
 const ultimo=p=>Math.trunc(num(cfg().seqs[p])||0);
@@ -42,7 +48,7 @@ function sincGrade(f){const g=gradeDaCat(f.v.I,f.v.J),id=g?g.id:"";if(id!==(f.gr
 /* sufixo da referência: letra do banho + letra (AA, BA…) ou nome (A12) da opção, conforme a variação */
 const refParte=(b,it)=>(b?b.letra:"")+(!it?"":(it.ref!=null?it.ref:(it.g&&it.g.modoRef==="nome"?String(it.nome||it.letra):it.letra)));
 const onDe=l=>l.tipo==="bruta"?(l.on=l.on||{}):(l.onP=l.onP||{});
-const bonP=l=>l.tipo==="pronta"?banhistaBy(l.banhista).banhos.filter(b=>(l.onP||{})[b.id]):[];
+const bonP=l=>l.tipo==="pronta"?bhDe(l).banhos.filter(b=>(l.onP||{})[b.id]):[];
 const vzPad=(bh,b)=>b.vz!=null?!!b.vz:bh.vernizOn!==false;
 const vzOn=(l,bh,b)=>l.vz&&b.id in l.vz?!!l.vz[b.id]:vzPad(bh,b);
 /* Texto, coluna e valor de cada opção seguem a variação (rótulo, coluna e nome) até serem digitados à mão: trocar "aro" por "tamanho" ou o nome de uma opção atualiza tudo. */

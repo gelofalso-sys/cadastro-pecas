@@ -15,7 +15,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1280,"height":1000}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.goto("http://127.0.0.1:8786/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(800)
-    pg.select_option("#f-I","Colares");pg.wait_for_timeout(300)
+    (pg.fill("#f-I","Colares"),pg.press("#f-I","Tab"));pg.wait_for_timeout(300)
     pg.click('[data-act="cor-on"]');pg.wait_for_timeout(200)
     ok(pg.locator('[data-act="q"][data-q="cv"]').count()==1,"botão ＋ cor aparece mesmo sem cores")
     pg.click('[data-act="q"][data-q="cv"]');pg.wait_for_timeout(200)

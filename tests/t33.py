@@ -15,7 +15,7 @@ with sync_playwright() as p:
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto("http://127.0.0.1:8818/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(900)
     # uma peça para ter linha na tabela
-    pg.select_option("#f-I","Brincos");pg.fill("#f-F","Brinco teste colagem");pg.fill("#f-N","2");pg.fill("#f-P","3")
+    (pg.fill("#f-I","Brincos"),pg.press("#f-I","Tab"));pg.fill("#f-F","Brinco teste colagem");pg.fill("#f-N","2");pg.fill("#f-P","3")
     pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(600)
     n0=pg.locator("#sheet tr[data-l]").count();ok(n0>=1,"há linha na tabela (%d)"%n0)
     # Ctrl+V com foco num botão do menu NÃO pode criar peça
@@ -37,7 +37,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(800)
     cats=[x["nome"] for x in cfg(pg)["categorias"]]
     ok("Sem subs" in cats or not pg.locator("#fileBk").count(),"restaurar cópia com categoria sem subcategorias é aceito")
-    pg.select_option("#f-I",label="Sem subs") if "Sem subs" in cats else None
+    (pg.fill("#f-I","Sem subs"),pg.press("#f-I","Tab")) if "Sem subs" in cats else None
     pg.wait_for_timeout(400)
     ok(not errs,"sem erro de página %s"%errs[:2])
     # romaneio: salvamento pendente é gravado ao sair (função flushJa liga ao pagehide)

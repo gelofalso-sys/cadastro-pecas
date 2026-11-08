@@ -13,7 +13,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1500,"height":1000}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto("http://127.0.0.1:8817/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(900)
-    pg.select_option("#f-I","Brincos");pg.wait_for_timeout(300)
+    (pg.fill("#f-I","Brincos"),pg.press("#f-I","Tab"));pg.wait_for_timeout(300)
     pg.click('[data-act="q"][data-q="multi"]');pg.wait_for_timeout(200)
     pg.fill("#q1","Brinco gota; 2,1; 3,60\nArgola lisa; 1,7; 3,36\nPingente coracao; 0,9; 2,00")
     pg.click('[data-act="q-salvar"]');pg.wait_for_timeout(500)

@@ -30,11 +30,11 @@ with sync_playwright() as p:
     pg.reload();pg.wait_for_timeout(800);pg.click('[data-act="ctab"][data-id="banho"]')
     ok(pg.input_value('[data-bh="0"] [data-bmc="0"][data-mcat="Colares"]')=="5","milésimos por categoria persistem")
     # conjunto automatico
-    pg.select_option("#f-I","Conjuntos");pg.wait_for_timeout(500)
+    (pg.fill("#f-I","Conjuntos"),pg.press("#f-I","Tab"));pg.wait_for_timeout(500)
     ok(pg.locator("#conj").count()>0,"categoria Conjuntos ativa a aba de conjuntos")
     pg.screenshot(path=SC+r"\s_conj.png")
     # faixa sem erro
-    pg.select_option("#f-I","Anél");pg.wait_for_timeout(400)
+    (pg.fill("#f-I","Anél"),pg.press("#f-I","Tab"));pg.wait_for_timeout(400)
     if pg.locator("[data-faixa]").count():
         pg.fill("[data-faixa]","12 - 14");pg.press("[data-faixa]","Enter");pg.wait_for_timeout(300)
     ok(not errs,"sem erro de console: %s"%errs)
