@@ -1221,6 +1221,18 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
   .tabp .sb>p.d:not(.mais){display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
   .tabp .sb>p.d:not(.mais)::after{content:" … mais"}
 }
+/* v20: abas de cadastro numa linha só no desktop; tabelas de cadastro viram cartões no celular */
+@media (min-width:901px){#cfg .ctabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#cfg .ctabs::-webkit-scrollbar{display:none}#cfg .ctabs .ctab{padding-inline:11px;white-space:nowrap;flex:none}}
+@media (max-width:900px){
+  #cfg table.cfg:not(.bnt),#cfg table.cfg:not(.bnt) tbody{display:block;width:100%}
+  #cfg table.cfg:not(.bnt) thead{display:none}
+  #cfg table.cfg:not(.bnt) tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;padding:10px 6px;border-bottom:1px solid var(--line)}
+  #cfg table.cfg:not(.bnt) td{display:block;padding:0!important;min-width:0;width:auto!important;border:0!important;background:transparent!important}
+  #cfg table.cfg:not(.bnt) td::before{content:attr(data-l);display:block;font:600 11px var(--body);color:var(--muted);margin-bottom:2px}
+  #cfg table.cfg:not(.bnt) td[colspan]{grid-column:1/-1}
+  #cfg table.cfg:not(.bnt) td:first-child{grid-column:1/-1}
+  #cfg table.cfg:not(.bnt) td input:not([type=checkbox]),#cfg table.cfg:not(.bnt) td select{width:100%!important;min-width:0!important}
+}
 </style>
 
 <aside class="side" id="side" aria-label="Menu lateral" hidden><button type="button" class="side-t" id="sideT" aria-label="Recolher ou expandir o menu" title="Recolher / expandir (Alt+B)">«</button><nav class="sn">
@@ -4794,6 +4806,11 @@ document.getElementById("cfg").addEventListener("click",e=>{
     cardsDecorar();return}
   if(e.target.closest("#cardsTog")){const cmp=cardsModoCompacto();abertos.catc=!cmp;guardarAbertos();CARDX.clear();cardsDecorar();return}
   const pd=e.target.closest(".tabp .sb>p.d");if(pd&&celular())pd.classList.toggle("mais")});
+
+/* ===== v20: rótulos nas células das tabelas de cadastro (para virarem cartões no celular) ===== */
+function tabelasRotular(){document.querySelectorAll("#cfg table.cfg:not(.bnt)").forEach(t=>{const hs=[...t.querySelectorAll("thead th")].map(h=>h.textContent.trim());
+  if(!hs.length)return;t.querySelectorAll("tbody tr").forEach(tr=>{[...tr.children].forEach((td,i)=>{if(td.tagName==="TD"&&td.dataset.l===undefined)td.dataset.l=hs[i]||""})})})}
+{const cf=document.getElementById("cfg");if(cf){new MutationObserver(()=>{try{tabelasRotular()}catch(e){}}).observe(cf,{childList:true,subtree:true});try{tabelasRotular()}catch(e){}}}
 
 /* ===== v19: visões (Dividida · Planilha · Lançar · Cadastros) ===== */
 function visAtual(){const v=document.body.dataset.vis||"tudo";return v}
