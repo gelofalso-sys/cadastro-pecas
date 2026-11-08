@@ -48,10 +48,10 @@ with sync_playwright() as p:
     pg.evaluate("()=>{const i=document.querySelector('[data-bhf=\"verniz\"]');i.value='9.99';i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}))}");pg.wait_for_timeout(700)
     pg.get_by_text("Tabela e formulário",exact=False).locator("visible=true").first.click();pg.wait_for_timeout(700)
     ok(txt(pg,0,"U")!=custo0,"custo do verniz da peça já lançada ACOMPANHA a galvânica (%s → %s)"%(custo0,txt(pg,0,"U")))
-    ok(txt(pg,0,"V")==preco0,"preço de venda da peça lançada fica FIXO (%s → %s)"%(preco0,txt(pg,0,"V")))
+    ok(txt(pg,0,"V")==preco0,"preço de venda não digitado continua vazio, mesmo com fator (%s → %s)"%(preco0,txt(pg,0,"V")))
     # sobrevive a recarregar
     pg.reload();pg.wait_for_timeout(1200)
-    ok(txt(pg,0,"V")==preco0,"preço fixo sobrevive ao recarregar")
+    ok(txt(pg,0,"V")==preco0,"preço (vazio) igual depois de recarregar")
     ok(not errs,"sem erro de página %s"%errs[:2])
     print("FALHAS",f)
     if f:raise SystemExit(1)

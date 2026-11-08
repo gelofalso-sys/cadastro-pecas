@@ -48,43 +48,53 @@ with sync_playwright() as p:
         compra_c=r2(compra-compra*round(desc/100,4))
         exp={"P":compra_c,"Q":ins,col:round(peso*mult,4),"U":round(peso*verniz,4)}
         total=compra_c+ins+round(peso*mult,4)+round(peso*verniz,4)
-        exp["V"]=r2(total*mk[banho])
+        ok_v=(rw["V"]=="")
+        if not ok_v:erros.append((rw["l"],banho,"V deveria estar vazio",rw["V"]))
         for L,e in exp.items():
             got=num(rw[L])
             if got is None or abs(got-e)>0.0051:erros.append((rw["l"],banho,L,rw[L],e))
     ok(not erros,"tabela confere com o cálculo independente (%d divergências) %s"%(len(erros),erros[:4]))
-    # exportação: as fórmulas do arquivo recalculadas fora do Excel
+    # exportação: custos do arquivo (fórmulas) recalculados fora do app; preço de venda sai vazio quando não foi digitado
     with pg.expect_download(timeout=20000) as d:
         pg.evaluate("()=>document.querySelector('[data-act=\"xlsx\"]').click()");pg.wait_for_timeout(900)
         if pg.locator('[data-act="exp-assim"]').count():pg.evaluate("()=>document.querySelector('[data-act=\"exp-assim\"]').click()")
     nome=os.path.join(tempfile.gettempdir(),"t40.xlsx");d.value.save_as(nome)
     ws=openpyxl.load_workbook(nome).active;hdr=[c.value for c in ws[1]]
     def idx(h):return hdr.index(h)+1
-    cols={h:idx(h) for h in ("Custo de Compra","Custo de Insumos","Custo do Banho de Ouro","Custo do Banho de Prata","Custo do Banho de Verniz","Preço de Varejo")}
     cache={}
     def val(r,c):
         k=(r,c)
         if k in cache:return cache[k]
         x=ws.cell(r,c).value
         if isinstance(x,str) and x.startswith("="):
-            fx=x[1:]
-            fx=re.sub(r"\b([A-Z]{1,2})(\d+)\b",lambda m:"val(%s,%d)"%(m.group(2),openpyxl.utils.column_index_from_string(m.group(1))),fx)
-            fx=fx.replace("ROUND(","rnd(")
+            fx=re.sub(r"([A-Z]{1,2})(\d+)",lambda m:"val(%s,%d)"%(m.group(2),openpyxl.utils.column_index_from_string(m.group(1))),x[1:]).replace("ROUND(","rnd(")
             x=eval(fx,{"val":val,"rnd":lambda a,n:r2(a) if n==2 else round(a,n)})
-        elif isinstance(x,str):
-            x=num(x)
+        elif isinstance(x,str):x=num(x)
         cache[k]=0 if x is None else x
         return cache[k]
-    dif=[];n=0
+    n=0;dif=[];vazios=0
     for r in range(2,ws.max_row+1):
         if ws.cell(r,idx("Referência")).value is None:continue
-        # confere V = ROUND(soma*fator) com os valores recalculados das outras células
-        soma=sum(val(r,cols[h]) for h in ("Custo de Compra","Custo de Insumos","Custo do Banho de Ouro","Custo do Banho de Prata","Custo do Banho de Verniz"))
-        v=ws.cell(r,cols["Preço de Varejo"]).value;n+=1
-        if isinstance(v,str) and v.startswith("="):
-            m=re.search(r"\*([0-9.]+),2\)",v);fator=float(m.group(1))
-            if abs(val(r,cols["Preço de Varejo"])-r2(soma*fator))>0.0051:dif.append((r,v,soma))
-    ok(n==28 and not dif,"fórmulas do arquivo exportado recalculadas fora do app batem (%d linhas, %d divergências) %s"%(n,len(dif),dif[:2]))
+        n+=1
+        if ws.cell(r,idx("Preço de Varejo")).value in (None,""):vazios+=1
+        pr=num(ws.cell(r,idx("Custo de Compra")).value) if not str(ws.cell(r,idx("Custo de Compra")).value).startswith("=") else val(r,idx("Custo de Compra"))
+    ok(n==28 and vazios==28,"arquivo: 28 linhas e preço de venda vazio nas 28 (%d linhas, %d vazias)"%(n,vazios))
+    # sugestão pelo fator: no formulário (placeholder), conferida fora do app
+    fatores={"ouro":3.2,"prata":4.15}
+    pg.reload();pg.wait_for_timeout(1200)
+    cfg2=pg.evaluate("()=>JSON.parse(localStorage.getItem('cadpecas4')).config");cat=[c for c in cfg2['categorias'] if c['nome']=='Brincos'][0]
+    ins=num(cat.get('insumos') if cat.get('insumos') not in (None,'') else cfg2['colcfg']['Q'].get('padrao') or 0) or 0
+    falhas=[]
+    for peso,compra in ((1,1),(4,10),(7.5,22.3),(0.8,3.5)):
+        pg.fill("#f-F","sug");pg.fill('#form [data-mk="ouro"]',"3,2");pg.fill('#form [data-mk="prata"]',"4,15");pg.wait_for_timeout(300);pg.fill("#f-N",str(peso).replace(".",","));pg.fill("#f-P",str(compra).replace(".",","));pg.wait_for_timeout(1100)
+        ph=pg.evaluate("()=>[...document.querySelectorAll('[data-ph$=\"-V\"]')].map(i=>i.placeholder)")
+        if (peso,compra)==(1,1):continue
+        for banho,txt_ in zip(("ouro","prata"),ph[:2]):
+            pr=banhos[banho];mult=float(str(pr["mult"]).replace(",","."))
+            total=r2(compra)+ins+round(peso*mult,4)+round(peso*verniz,4)
+            esp=r2(total*fatores[banho]);got=num(re.search(r"([0-9.,]+)",txt_.replace("R$","")).group(1)) if txt_ else None
+            if got is None or abs(got-esp)>0.011:falhas.append((peso,compra,banho,txt_,esp))
+    ok(not falhas,"sugestão de preço do formulário (custo × fator) confere fora do app %s"%falhas[:2])
     ok(not errs,"sem erro de página %s"%errs[:2])
     print("FALHAS",f)
     if f:raise SystemExit(1)

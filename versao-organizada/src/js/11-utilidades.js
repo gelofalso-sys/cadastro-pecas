@@ -19,16 +19,7 @@ const fornBy=n=>cfg().fornecedores.find(f=>f.nome===n);
 const banhistaBy=id=>cfg().banhistas.find(b=>b.id===id)||cfg().banhistas[0];
 /* bhDe: a galvânica de uma peça (hoje sempre a cadastrada: custo do banho e do verniz acompanham o cadastro) */
 const bhDe=x=>banhistaBy(x&&x.banhista);
-/* PREÇO DE VENDA FIXO: ao ser lançada, cada linha guarda o Preço de Varejo calculado (l.pv[chave]). Custos, referências e descrições seguem o cadastro; só o preço final não se mexe.
-   Peça aberta para editar no formulário perde o preço fixo (volta a calcular pelo fator) e ganha um novo ao ser salva. Preço digitado à mão continua valendo (fica em l.ov). */
-function fixarPrecos(){const falta=S.lanc.filter(l=>l.pv===undefined);if(!falta.length)return false;
-  let g;try{g=gerar()}catch(e){return false}
-  const iv=LET.indexOf("V"),ids=new Set(falta.map(l=>l.id));
-  falta.forEach(l=>{l.pv={}});
-  g.linhas.forEach((row,ri)=>{if(!ids.has(row.lancId))return;const l=falta.find(x=>x.id===row.lancId);if(!l)return;
-    if(!vazio(row.v.V))return;   /* já tem preço digitado */
-    const x=celulas(row,ri+2)[iv];if(x&&typeof x.v==="number")l.pv[row.key]=x.v});
-  return true}
+/* O Preço de Varejo só existe na peça lançada se o usuário o DIGITOU dentro da peça. O fator gera apenas uma SUGESTÃO (mostrada no formulário); o valor definitivo é do usuário. */
 const prefDe=(cat,sub)=>{const c=catBy(cat)||{},sp=sub&&c.subPref&&c.subPref[sub];return String(sp||c.prefixo||"BR").toUpperCase()};
 function comSufixoCat(d,cat){const sx=(catBy(cat)||{}).sufixo;d=String(d||"").trim();if(!sx||!d)return d;return d.toLowerCase().includes(sx.trim().toLowerCase())?d:d+sx}
 const ultimo=p=>Math.trunc(num(cfg().seqs[p])||0);

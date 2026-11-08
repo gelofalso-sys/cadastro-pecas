@@ -159,7 +159,7 @@ function fatorDoPreco(k){
   const mkOld=f.mk[k];let base=null;
   try{if(pronta)delete f.v.V;else delete f.ov[k].V;f.mk[k]="1";
     const g=previsao(),ri=g.linhas.findIndex(r=>r.lancId===id&&(r.bid||r.key)===k);
-    if(ri>=0){const x=celulas(g.linhas[ri],ri+2)[LET.indexOf("V")];if(x&&typeof x.v==="number")base=x.v}}
+    if(ri>=0){const x=celulas(g.linhas[ri],ri+2,true)[LET.indexOf("V")];if(x&&typeof x.v==="number")base=x.v}}
   finally{if(mkOld==null)delete f.mk[k];else f.mk[k]=mkOld;if(pronta)f.v.V=vOld;else f.ov[k].V=vOld}
   if(!(base>0)){toast("Para o fator ser calculado, informe antes o peso e os custos.");return}
   const fator=Math.round(alvo/base*10000)/10000,txt=String(fator).replace(".",",");

@@ -117,7 +117,7 @@ function romPreview(){const out=[],base=S.lanc.slice();
   ROM.rows.forEach((r,i)=>{out[i]=null;if(r.skip)return;const {f}=romForm(r,true),t=romMonta(base,r,{...f,id:"__rom"+i});out[i]={rows:[],troca:t.troca}});
   if(!base.some(l=>String(l.id).startsWith("__rom")))return out;let g;try{g=gerar(base)}catch(e){return out}
   g.linhas.forEach((row,ri)=>{const id=String(row.lancId);if(!id.startsWith("__rom"))return;const o=out[+id.slice(5)];if(!o)return;
-    const cs=celulas(row,ri+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
+    const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
     o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),cb:row.banho?n(row.banho.coluna):null,custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
 const fm=n=>n==null?"—":"R$ "+brl(n);

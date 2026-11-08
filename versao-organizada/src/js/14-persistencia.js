@@ -22,7 +22,7 @@ function histNota(){
     REDO.length=0;snapL=L;snapC=C}
   snapF=F;snapE=!!editId;undoBtns();
 }
-function salvar(c,l){if(l!==false){try{fixarPrecos()}catch(e){}}if(c)dirty.c=true;if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
+function salvar(c,l){if(c)dirty.c=true;if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
 /* grava já (ao fechar a aba, trocar de aba ou sair): não deixa a última edição dentro dos 600 ms se perder */
 function flushJa(){if(romST){clearTimeout(romST);romST=null;try{romSalvar()}catch(e){}}   /* romaneio: o salvamento de 800 ms também não pode ficar para trás */
   if(sT){clearTimeout(sT);sT=null}if(dirty.c||dirty.l){try{flush()}catch(e){}}}
@@ -179,7 +179,7 @@ function lerLanc(l){
   if(!l.v)l={id:l.id||uid(),tipo:l.tipo==="pronta"?"pronta":"bruta",desconto:l.desconto||"0",banhista:"scarlat",vinc:!!l.vinc,
     v:{F:l.desc,G:l.codForn,H:l.forn,I:l.cat,J:l.sub,M:l.obs,N:l.peso,P:l.custo,V:l.preco,L:l.cor,W:l.qtd},
     on:{ouro:!(l.tipo==="bruta"&&l.prata&&!(num(l.qtdA)>0)),prata:!!l.prata},q:{ouro:l.qtdA,prata:l.qtdB},dsc:{prata:l.descB||""}};
-  l.id=idLimpo(l.id)||uid();
+  l.id=idLimpo(l.id)||uid();delete l.pv;
   l.ov=l.ov||{};
   if(l.ft&&!ftOk(l.ft)){delete l.ft}
   if(l.ftR&&!ftOk(l.ftR)){delete l.ftR}

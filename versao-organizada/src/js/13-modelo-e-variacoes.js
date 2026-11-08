@@ -71,9 +71,9 @@ function chaveDoCabecalho(h){const n=normH(h);if(!n)return null;
 /* fórmulas guardam as letras internas (N, P…U); no arquivo viram as letras do modelo. Sem a coluna no modelo, vai só o valor. */
 function traduzF(f,cols){const mapa={};cols.forEach((c,i)=>{if(c.k&&!(c.k in mapa))mapa[c.k]=letraN(i)});let falta=false;
   const out=String(f).replace(/([A-Z]{1,2})([0-9]+)/g,(m,a,n)=>{if(!(a in mapa)){falta=true;return m}return mapa[a]+n});return falta?null:out}
-function celulas(row,r){
+function celulas(row,r,sugestao){
   const c=celulasBase(row,r);
-  if(row.mk&&vazio(row.v.V)){const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v});
+  if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v});
     c[iv]={v:Math.round(soma*row.mk*100)/100,f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
   return c;
 }
@@ -91,7 +91,7 @@ function avisos(g){
   ps.forEach(p=>{if(!(ultimo(p)>0)&&!((g.manual||{})[p]>0))out.push({bad:1,t:`Falta a última peça de ${p} no sistema.`})});
   Object.entries(g.manual||{}).forEach(([p,n])=>{if(n>ultimo(p))out.push({t:`${p}${fnum(p,n)} foi digitada à mão (a última do sistema é ${p}${fnum(p,ultimo(p))}): as próximas automáticas continuam em ${p}${fnum(p,n+1)}`})});
   const d=new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E));if(d.size)out.push({bad:1,t:`Referência repetida: ${[...d].join(", ")}`});
-  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!(num(r.v.W)>0):(vazio(r.v[L])&&!(L==="V"&&num(r.mk)>0))).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
+  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!(num(r.v.W)>0):vazio(r.v[L])).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
   const sp=g.linhas.filter(r=>r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo").length;if(sp)out.push({t:`${sp} bruta(s) sem Peso`});
   {const sm=new Set();g.linhas.forEach(r=>{if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))sm.add(r.v.L||r.col||r.banho.coluna)});
    sm.forEach(n=>out.push({t:`Banho “${n}” sem multiplicador: o custo do banho sai vazio — preencha em Banhos e galvânicas`}))}

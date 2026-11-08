@@ -86,7 +86,7 @@ function atualizarGera(){
   if(g.semQ&&g.semQ[id])h+=`<span class="warn" title="Quando só algumas combinações têm quantidade, as sem quantidade não viram linha">⚠ ${g.semQ[id]} combinação(ões) sem quantidade ficam de fora da tabela.</span>`;
   if(erro&&!h.includes(">"+esc(erro)+"<"))h+=`<span class="err">${esc(erro)}</span>`;
   el.innerHTML=h;
-  {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
+  {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2,true),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
       if(P==null&&B==null&&U==null)return "";
       if(P!=null)pt.push(`Compra <b>${brl(P)}</b>${r.desconto>0?` <small>(com ${fmt(r.desconto)}% de desconto)</small>`:""}`);
       if(Q!=null)pt.push(`Insumos <b>${brl(Q)}</b>`);
@@ -97,14 +97,14 @@ function atualizarGera(){
     if(rows.length>8)linhas+=`<div class="ck-l"><small>…e mais ${rows.length-8} linha(s)</small></div>`;
     el2.innerHTML=linhas.replace(/<div class="ck-l"><small>…e mais[^]*$/,m=>m)&&linhas.indexOf("ck-l")>=0&&/ck-l"><b>/.test(linhas)?`<details class="custos" data-open="custos" ${abertos.custos===false?"":"open"}><summary>De onde vem o custo <small>(Compra + Insumos + Banho + Verniz = Custo; Custo × fator = Varejo)</small></summary>${linhas}</details>`:""}}
   {const visto=new Set();rows.forEach((r,k)=>{const kb=String(r.bid||r.key);if(visto.has(kb))return;visto.add(kb);
-    const cs=celulas(r,ri0+k+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),
+    const cs=celulas(r,ri0+k+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),
       partes=[["compra",P],["insumos",Q],["banho",B],["verniz",U]].filter(x=>x[1]!=null),custo=partes.reduce((a,x)=>a+x[1],0),mk=(custo>0&&V!=null&&cs[LET.indexOf("V")]&&!cs[LET.indexOf("V")].f)?Math.round(V/custo*100)/100:(r.mk||(custo>0&&V!=null?Math.round(V/custo*100)/100:null));
     const sp=document.querySelector(`[data-bf="${CSS.escape(kb)}"]`);
     const inc=r.banho&&B==null;if(sp)sp.innerHTML=custo>0?`${inc?`<span class="bfx-n">sem peso: banho e verniz não entram na base (normal em peça pronta/banhada).</span> `:""}Base do fator <b>R$ ${brl(custo)}</b> <span class="bfx-d">= ${partes.map(x=>x[0]+" "+brl(x[1])).join(" + ")}</span>${mk&&V!=null?` · × ${fmt(mk)} = <b>R$ ${brl(V)}</b>`:""}`:"";
     const mi=document.querySelector(`[data-mk="${CSS.escape(kb)}"]`);if(mi&&mi.tagName==="INPUT")mi.placeholder=!r.mk&&mk&&!inc?fmt(mk):(fatorBanho(kb)||"×")})}
   rows.forEach((r,k)=>{if(!r.banho)return;const cel=celulas(r,ri0+k+2)[LET.indexOf(r.banho.coluna)],sp=document.querySelector(`[data-cb="${CSS.escape(String(r.bid||r.key))}"]`);
     if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(num(r.v.N)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor na galvânica"))});
-  rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v)+" (×"+fmt(r.mk)+")":"";
+  rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2,true)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v)+" (×"+fmt(r.mk)+")":"";
     const kb=r.bid||r.key,i=document.querySelector(kb==="p"?"#f-V":`[data-ph="${kb}-V"]`);if(i&&i.tagName==="INPUT")i.placeholder=ph});
   // dicas (placeholder) com o que vai entrar quando o campo fica vazio
   const setPh=(sel,t)=>{const i=document.querySelector(sel);if(i&&i.tagName==="INPUT")i.placeholder=t};
