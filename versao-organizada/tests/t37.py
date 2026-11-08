@@ -13,7 +13,7 @@ URL="http://127.0.0.1:8822/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html"
 ST="()=>({ed:!!document.getElementById('celIn'),sa:!!document.querySelector('#sheet td.sa'),sl:document.querySelectorAll('#sheet td.sl').length,sx:document.getElementById('sheet').scrollLeft})"
 def lanca(pg,n):
     for i in range(n):
-        pg.select_option("#f-I","Brincos");pg.fill("#f-F","Peca %d"%i);pg.fill("#f-N","2");pg.fill("#f-P","3")
+        (pg.fill("#f-I","Brincos"),pg.press("#f-I","Tab"));pg.fill("#f-F","Peca %d"%i);pg.fill("#f-N","2");pg.fill("#f-P","3")
         pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(400)
 with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge")

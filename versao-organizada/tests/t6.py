@@ -23,7 +23,7 @@ with sync_playwright() as p:
     setv(pg,'[data-bh="0"] [data-bmc="0"][data-mcat="Colares"]',"5");setv(pg,'[data-bh="0"] [data-bmv="0"][data-mcat="Colares"]',"4,76")
     pg.screenshot(path=SC+r"\s_valcat.png")
     for cat,esp in [("Brincos","1,42"),("Colares","4,76")]:
-        pg.select_option("#f-I",cat);pg.fill("#f-F","Teste "+cat);pg.fill("#f-N","2");pg.fill("#f-P","10");pg.wait_for_timeout(300)
+        (pg.fill("#f-I",cat),pg.press("#f-I","Tab"));pg.fill("#f-F","Teste "+cat);pg.fill("#f-N","2");pg.fill("#f-P","10");pg.wait_for_timeout(300)
         t=pg.inner_text("#custos");print(cat,"->",t.replace(chr(10)," | ")[:420])
         ok("R$ "+esp+"/g" in t,"%s usa R$ %s/g no custo"%(cat,esp))
     # editar livre no item

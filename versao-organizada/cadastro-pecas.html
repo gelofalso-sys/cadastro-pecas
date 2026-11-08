@@ -2277,19 +2277,21 @@ function usarModelo(id){
 }
 /* ===== lançamento (parte de baixo) ===== */
 /* campo com o nome da coluna em cima; w = largura (n: número, c: valor, s: curto, m: médio, l: ocupa o resto) */
+/* colunas com cadastro prévio: escolher da lista OU digitar livre (como Observação). Categoria nova pede o prefixo; fornecedor e subcategoria digitados entram no cadastro ao adicionar a peça */
+const MISTO=new Set(["H","I","J"]);
 function campoHTML(L,f,opt){
   opt=opt||{};const C=cfg(),cc=C.colcfg[L],bid=opt.banho;
   const v=bid?((f.ov[bid]||{})[L]??""):(f.v[L]??"");
   const attr=bid?`data-bo="${bid}" data-k="${L}"`:`data-col="${L}"`,id=bid?`f-${bid}-${L}`:`f-${L}`;
-  const lista=listaDe(L,f.v.I),ph=opt.ph!=null?opt.ph:(padraoDe(f.v.I,L)||"");
+  const lista=listaDe(L,f.v.I),ph=opt.ph!=null?opt.ph:(padraoDe(f.v.I,L)||(!bid&&MISTO.has(L)?"escolha…":""));
   const calc=FORMULA.has(L)?" calc":"";
   let inp;
-  if(!bid&&(L==="H"||L==="I"||L==="J"||L==="AD"||L==="AE")&&!opcoesDe(L).length)inp=`<select id="${id}" ${attr}>${opts(lista,v,ph?`(${ph})`:"—")}</select>`;
-  else inp=`<input id="${id}" ${attr} value="${esc(v)}" class="${NUM.has(L)?"n":""}${calc}" ${NUM.has(L)?'inputmode="decimal"':""} ${lista.length?`list="dl-${L}"`:""} placeholder="${esc(ph)}" data-ph="${bid?bid+"-":""}${L}" autocomplete="off" ${opt.dis?"disabled":""}>`;
+  if(!bid&&(L==="AD"||L==="AE")&&!opcoesDe(L).length)inp=`<select id="${id}" ${attr}>${opts(lista,v,ph?`(${ph})`:"—")}</select>`;
+  else inp=`<input id="${id}" ${attr} value="${esc(v)}" class="${NUM.has(L)?"n":""}${calc}${!bid&&MISTO.has(L)?" misto":""}" ${NUM.has(L)?'inputmode="decimal"':""} ${lista.length?`list="dl-${L}"`:""} placeholder="${esc(ph)}" data-ph="${bid?bid+"-":""}${L}" autocomplete="off" ${opt.dis?"disabled":""}>`;
   const w=opt.w||(NUM.has(L)?"n":"m"),mais=opt.q?`<button type="button" class="plus" data-act="q" data-q="${opt.q}"${opt.qb?` data-qb="${opt.qb}"`:""} title="Cadastrar ${esc(opt.qn||NOME[L])}">＋</button>`:"";
   return `<label class="fq w-${w}${cc.obrig?" req":""}" for="${id}" title="${esc(NOME[L])} (coluna ${L})"><span>${esc(opt.nome||NOME[L])}${opt.extra||""}</span><div class="ip">${inp}${mais}</div></label>`;
 }
-let quick=null,quickB=null,romQRow=null,romQ0=null;
+let quick=null,quickB=null,romQRow=null,romQ0=null,quickPre="";
 function romQFim(){const f=S.form;if(romQ0){f.v.I=romQ0.I;if(romQ0.J==null)delete f.v.J;else f.v.J=romQ0.J}romQ0=null;romQRow=null}
 let MULTI=[];
 function painelMulti(){if(!MULTI.length)return "";
@@ -2300,9 +2302,9 @@ function painelRapido(){
   const C=cfg(),f=S.form,bh=banhistaBy(f.banhista);if(!quick)return "";
   const cx=(id,rot,w,val,ph)=>`<label class="fq w-${w}"><span>${rot}</span><input id="${id}" value="${esc(val||"")}" placeholder="${esc(ph||"")}" ${w==="n"||w==="c"?'class="n" inputmode="decimal"':""}></label>`;
   let t="",corpo="";
-  if(quick==="cat"){t="Nova categoria";corpo=cx("q1","Categoria","m")+cx("q2","Prefixo","n","","ex.: CO")+cx("q3","Última peça no sistema","c","","número")}
-  if(quick==="sub"){t=`Nova subcategoria em ${esc(f.v.I||"—")}`;corpo=cx("q1","Subcategoria","m")}
-  if(quick==="forn"){t="Novo fornecedor";corpo=cx("q1","Fornecedor","m")+cx("q2","Código do Fornecedor","s")+cx("q3","Desconto %","n","0")+`<label class="fq w-s"><span>Vende peça</span><select id="q4">${opts([["bruta","Bruta (vai banhar)"],["pronta","Pronta (já banhada)"]],f.tipo)}</select></label>`}
+  if(quick==="cat"){t="Nova categoria";corpo=cx("q1","Categoria","m",quickPre)+cx("q2","Prefixo","n","","ex.: CO")+cx("q3","Última peça no sistema","c","","número")}
+  if(quick==="sub"){t=`Nova subcategoria em ${esc(f.v.I||"—")}`;corpo=cx("q1","Subcategoria","m",quickPre)}
+  if(quick==="forn"){t="Novo fornecedor";corpo=cx("q1","Fornecedor","m",quickPre)+cx("q2","Código do Fornecedor","s")+cx("q3","Desconto %","n","0")+`<label class="fq w-s"><span>Vende peça</span><select id="q4">${opts([["bruta","Bruta (vai banhar)"],["pronta","Pronta (já banhada)"]],f.tipo)}</select></label>`}
   if(quick==="obs"){t="Nova observação";corpo=cx("q1","Observação","l","","Ex.: Link 212 - Xangai Brutos Banho Scarlat 2026 outubro")}
   if(quick==="multi"){t="Várias peças de uma vez";corpo=`<label class="fq w-l" style="flex:1 1 460px"><span>Uma peça por linha: Descrição; Peso; Custo de compra — o resto vem do formulário (categoria, fornecedor, banhos, tamanhos, quantidades…)</span><textarea id="q1" rows="4" placeholder="Brinco gota; 2,1; 3,60&#10;Argola lisa; 1,7; 3,36" style="width:100%;font:13px var(--mono);border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface);color:var(--ink)"></textarea></label>`}
   if(quick==="cor"){const bb=quickB&&bh.banhos.find(x=>x.id===quickB);t=bb?`Nova cor · banho ${esc(bb.letra)} (${esc(bb.nome)})`:"Nova cor";corpo=cx("q1","Cor","m")}
@@ -4039,6 +4041,10 @@ function fotoRemover(lid){
     const row=selR&&G&&G.linhas[selR.fr],lid=editId||(row&&row.lancId);
     if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
     else fotoDoFormulario(fl[0])},true)})();
+/* fornecedor e subcategoria digitados à mão passam a existir no cadastro (o fornecedor leva o código, o desconto e o tipo que estão no formulário) */
+function registrarLivres(l){const C=cfg(),h=String(val(l,"H")||"").replace(/\s+/g," ").trim(),j=String(val(l,"J")||"").replace(/\s+/g," ").trim(),c=catBy(val(l,"I"));
+  if(h&&!C.fornecedores.some(x=>x.nome.toLowerCase()===h.toLowerCase()))C.fornecedores.push({nome:h,codigo:String(val(l,"G")||""),desconto:String(l.desconto||"0"),tipo:l.tipo==="pronta"?"pronta":"bruta"});
+  if(j&&c&&Array.isArray(c.subs)&&!c.subs.some(x=>String(x).toLowerCase()===j.toLowerCase()))c.subs.push(j)}
 function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";
@@ -4059,7 +4065,7 @@ function adicionar(limpar,quiet){
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
   {const gr=gradeBy(f.grade);if(gr&&!f.semGrade&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
   if(!vazio(f.v.E))f.v.E=String(f.v.E).replace(/\s+/g,"").toUpperCase();Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object"&&!vazio(o.E))o.E=String(o.E).replace(/\s+/g,"").toUpperCase()});
-  const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);
+  const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
   if(!novo.conj){delete novo.comp;delete novo.fConj}
   if(novo.tipo==="pronta"){const bp=bonP(novo);
@@ -4421,7 +4427,7 @@ document.addEventListener("click",e=>{
     case "tg-min":abertos.min=!abertos.min;guardarAbertos();renderForm();break;
     case "tg-det":abertos.det=!abertos.det;guardarAbertos();renderForm();break;
     case "rom-q":{const f=S.form,i=t.dataset.i!=null?+t.dataset.i:null,r=i!=null&&ROM?ROM.rows[i]:null;romQ0={I:f.v.I,J:f.v.J};romQRow=i;if(r&&["sub","gi","cv"].includes(t.dataset.q)){if(r.cat)f.v.I=r.cat;if(t.dataset.q!=="sub"){if(r.sub)f.v.J=r.sub;else delete f.v.J}}quick=t.dataset.q;quickB=null;renderForm();const el=document.querySelector("#formWrap .nf");if(el)el.scrollIntoView({block:"center"});refocar("#q1");break}
-    case "q":quick=quick===t.dataset.q&&(t.dataset.qb||null)===quickB?null:t.dataset.q;quickB=quick?(t.dataset.qb||null):null;renderForm();break;
+    case "q":quickPre="";quick=quick===t.dataset.q&&(t.dataset.qb||null)===quickB?null:t.dataset.q;quickB=quick?(t.dataset.qb||null):null;renderForm();break;
     case "q-salvar":salvarRapido();break;
     case "multi-mais":{MULTI.push({F:"",N:"",P:""});renderForm();const ins=document.querySelectorAll('#multiPanel [data-mf="F"]');if(ins.length)ins[ins.length-1].focus();break}
     case "multi-del":{MULTI.splice(+t.dataset.i,1);renderForm();break}
@@ -4714,6 +4720,9 @@ function onField(t,isChange){
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
+      const nome=t.value.replace(/\s+/g," ").trim(),ant=t.dataset.prev!=null?t.dataset.prev:"";if(ant&&catBy(ant))f.v.I=ant;else delete f.v.I;
+      quickPre=nome;quick="cat";quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
     if(L==="I"&&isChange){f.csel=[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
     if(L==="V"&&isChange)fatorDoPreco("p");
@@ -4800,6 +4809,10 @@ function onField(t,isChange){
   if(cce&&t.dataset.ccf){const c=C.colcfg[cce.dataset.cc],k=t.dataset.ccf;c[k]=t.type==="checkbox"?t.checked:t.value;salvar(true,false);
     if(k==="opcoes")renderListas();renderTopo();if(isChange||t.type==="checkbox")renderForm();else atualizarGera();return}
 }
+
+/* campos mistos (categoria, subcategoria, fornecedor): ao focar, a lista mostra TODAS as opções (o navegador filtra pelo texto atual); se sair sem escolher nada, o valor volta */
+document.addEventListener("focusin",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("misto")&&t.dataset.col&&!t.disabled&&!t.readOnly){t.dataset.prev=t.value;t.dataset.ph0=t.placeholder;if(t.value){t.placeholder=t.value;t.value=""}}});
+document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("misto")&&t.dataset.prev!==undefined){if(t.value===""&&t.dataset.prev){t.value=t.dataset.prev}t.placeholder=t.dataset.ph0||t.placeholder;delete t.dataset.prev}});
 document.addEventListener("input",e=>{const t=e.target;
   if(t.id==="catBusca"){const q=semAc(t.value);document.querySelectorAll("#cfg .cards>.card[data-cat]").forEach(c=>{const n=c.querySelector('[data-cf="nome"]');c.hidden=!!q&&!semAc(n?n.value:"").includes(q)});return}if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.type==="file")return;onField(t,false)});
 document.addEventListener("change",e=>{const t=e.target;

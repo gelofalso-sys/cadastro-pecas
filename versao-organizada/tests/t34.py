@@ -14,7 +14,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");ctx=b.new_context(viewport={"width":1500,"height":1000},accept_downloads=True);pg=ctx.new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto(URL);pg.wait_for_timeout(800)
-    pg.select_option("#f-I","Brincos");pg.fill("#f-F","Argola");pg.fill("#f-N","2");pg.fill("#f-P","3")
+    (pg.fill("#f-I","Brincos"),pg.press("#f-I","Tab"));pg.fill("#f-F","Argola");pg.fill("#f-N","2");pg.fill("#f-P","3")
     pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(600)
     # monta uma peça de anel com 2 tamanhos x 1 cor x 1 banho e recarrega
     pg.evaluate("""()=>{const o=JSON.parse(localStorage.getItem('cadpecas4'));const cat=o.config.categorias.find(c=>c.grade&&c.grade.itens&&c.grade.itens.length>2);

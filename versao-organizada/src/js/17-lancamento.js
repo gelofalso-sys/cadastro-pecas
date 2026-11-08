@@ -1,18 +1,20 @@
 /* ===== lançamento (parte de baixo) ===== */
 /* campo com o nome da coluna em cima; w = largura (n: número, c: valor, s: curto, m: médio, l: ocupa o resto) */
+/* colunas com cadastro prévio: escolher da lista OU digitar livre (como Observação). Categoria nova pede o prefixo; fornecedor e subcategoria digitados entram no cadastro ao adicionar a peça */
+const MISTO=new Set(["H","I","J"]);
 function campoHTML(L,f,opt){
   opt=opt||{};const C=cfg(),cc=C.colcfg[L],bid=opt.banho;
   const v=bid?((f.ov[bid]||{})[L]??""):(f.v[L]??"");
   const attr=bid?`data-bo="${bid}" data-k="${L}"`:`data-col="${L}"`,id=bid?`f-${bid}-${L}`:`f-${L}`;
-  const lista=listaDe(L,f.v.I),ph=opt.ph!=null?opt.ph:(padraoDe(f.v.I,L)||"");
+  const lista=listaDe(L,f.v.I),ph=opt.ph!=null?opt.ph:(padraoDe(f.v.I,L)||(!bid&&MISTO.has(L)?"escolha…":""));
   const calc=FORMULA.has(L)?" calc":"";
   let inp;
-  if(!bid&&(L==="H"||L==="I"||L==="J"||L==="AD"||L==="AE")&&!opcoesDe(L).length)inp=`<select id="${id}" ${attr}>${opts(lista,v,ph?`(${ph})`:"—")}</select>`;
-  else inp=`<input id="${id}" ${attr} value="${esc(v)}" class="${NUM.has(L)?"n":""}${calc}" ${NUM.has(L)?'inputmode="decimal"':""} ${lista.length?`list="dl-${L}"`:""} placeholder="${esc(ph)}" data-ph="${bid?bid+"-":""}${L}" autocomplete="off" ${opt.dis?"disabled":""}>`;
+  if(!bid&&(L==="AD"||L==="AE")&&!opcoesDe(L).length)inp=`<select id="${id}" ${attr}>${opts(lista,v,ph?`(${ph})`:"—")}</select>`;
+  else inp=`<input id="${id}" ${attr} value="${esc(v)}" class="${NUM.has(L)?"n":""}${calc}${!bid&&MISTO.has(L)?" misto":""}" ${NUM.has(L)?'inputmode="decimal"':""} ${lista.length?`list="dl-${L}"`:""} placeholder="${esc(ph)}" data-ph="${bid?bid+"-":""}${L}" autocomplete="off" ${opt.dis?"disabled":""}>`;
   const w=opt.w||(NUM.has(L)?"n":"m"),mais=opt.q?`<button type="button" class="plus" data-act="q" data-q="${opt.q}"${opt.qb?` data-qb="${opt.qb}"`:""} title="Cadastrar ${esc(opt.qn||NOME[L])}">＋</button>`:"";
   return `<label class="fq w-${w}${cc.obrig?" req":""}" for="${id}" title="${esc(NOME[L])} (coluna ${L})"><span>${esc(opt.nome||NOME[L])}${opt.extra||""}</span><div class="ip">${inp}${mais}</div></label>`;
 }
-let quick=null,quickB=null,romQRow=null,romQ0=null;
+let quick=null,quickB=null,romQRow=null,romQ0=null,quickPre="";
 function romQFim(){const f=S.form;if(romQ0){f.v.I=romQ0.I;if(romQ0.J==null)delete f.v.J;else f.v.J=romQ0.J}romQ0=null;romQRow=null}
 let MULTI=[];
 function painelMulti(){if(!MULTI.length)return "";
@@ -23,9 +25,9 @@ function painelRapido(){
   const C=cfg(),f=S.form,bh=banhistaBy(f.banhista);if(!quick)return "";
   const cx=(id,rot,w,val,ph)=>`<label class="fq w-${w}"><span>${rot}</span><input id="${id}" value="${esc(val||"")}" placeholder="${esc(ph||"")}" ${w==="n"||w==="c"?'class="n" inputmode="decimal"':""}></label>`;
   let t="",corpo="";
-  if(quick==="cat"){t="Nova categoria";corpo=cx("q1","Categoria","m")+cx("q2","Prefixo","n","","ex.: CO")+cx("q3","Última peça no sistema","c","","número")}
-  if(quick==="sub"){t=`Nova subcategoria em ${esc(f.v.I||"—")}`;corpo=cx("q1","Subcategoria","m")}
-  if(quick==="forn"){t="Novo fornecedor";corpo=cx("q1","Fornecedor","m")+cx("q2","Código do Fornecedor","s")+cx("q3","Desconto %","n","0")+`<label class="fq w-s"><span>Vende peça</span><select id="q4">${opts([["bruta","Bruta (vai banhar)"],["pronta","Pronta (já banhada)"]],f.tipo)}</select></label>`}
+  if(quick==="cat"){t="Nova categoria";corpo=cx("q1","Categoria","m",quickPre)+cx("q2","Prefixo","n","","ex.: CO")+cx("q3","Última peça no sistema","c","","número")}
+  if(quick==="sub"){t=`Nova subcategoria em ${esc(f.v.I||"—")}`;corpo=cx("q1","Subcategoria","m",quickPre)}
+  if(quick==="forn"){t="Novo fornecedor";corpo=cx("q1","Fornecedor","m",quickPre)+cx("q2","Código do Fornecedor","s")+cx("q3","Desconto %","n","0")+`<label class="fq w-s"><span>Vende peça</span><select id="q4">${opts([["bruta","Bruta (vai banhar)"],["pronta","Pronta (já banhada)"]],f.tipo)}</select></label>`}
   if(quick==="obs"){t="Nova observação";corpo=cx("q1","Observação","l","","Ex.: Link 212 - Xangai Brutos Banho Scarlat 2026 outubro")}
   if(quick==="multi"){t="Várias peças de uma vez";corpo=`<label class="fq w-l" style="flex:1 1 460px"><span>Uma peça por linha: Descrição; Peso; Custo de compra — o resto vem do formulário (categoria, fornecedor, banhos, tamanhos, quantidades…)</span><textarea id="q1" rows="4" placeholder="Brinco gota; 2,1; 3,60&#10;Argola lisa; 1,7; 3,36" style="width:100%;font:13px var(--mono);border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface);color:var(--ink)"></textarea></label>`}
   if(quick==="cor"){const bb=quickB&&bh.banhos.find(x=>x.id===quickB);t=bb?`Nova cor · banho ${esc(bb.letra)} (${esc(bb.nome)})`:"Nova cor";corpo=cx("q1","Cor","m")}

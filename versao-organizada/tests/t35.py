@@ -15,7 +15,7 @@ with sync_playwright() as p:
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto(URL);pg.wait_for_timeout(800)
     for nome in ("Argola A","Argola B"):
-        pg.select_option("#f-I","Brincos");pg.fill("#f-F",nome);pg.fill("#f-N","2");pg.fill("#f-P","3")
+        (pg.fill("#f-I","Brincos"),pg.press("#f-I","Tab"));pg.fill("#f-F",nome);pg.fill("#f-N","2");pg.fill("#f-P","3")
         pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(500)
     n0=pg.locator("#sheet tr[data-l]").count();ok(n0>=2,"peças lançadas (%d linhas)"%n0)
     with pg.expect_download(timeout=15000):

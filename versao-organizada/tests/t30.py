@@ -45,7 +45,7 @@ with sync_playwright() as p:
     ok(pg.locator('#cfg [data-bnf="fator"]').count()>=1,"banhos têm coluna Fator ×")
     pg.fill('#cfg [data-bnf="fator"] >> nth=0',"2,5");pg.press('#cfg [data-bnf="fator"] >> nth=0',"Tab");pg.wait_for_timeout(300)
     pg.click('#side [data-vis="tudo"]');pg.wait_for_timeout(500)
-    pg.select_option("#f-I","Brincos");pg.wait_for_timeout(300)
+    (pg.fill("#f-I","Brincos"),pg.press("#f-I","Tab"));pg.wait_for_timeout(300)
     ph=pg.eval_on_selector_all("[data-mk]","e=>e.map(x=>x.placeholder)")
     ok("2,5" in ph,"fator padrão do banho aparece no lançamento (%s)"%ph[:3])
     ok("anhista" not in pg.inner_text("#side")+pg.inner_text("#cfg"),"textos usam Galvânica")

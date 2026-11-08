@@ -95,6 +95,9 @@ function onField(t,isChange){
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
+      const nome=t.value.replace(/\s+/g," ").trim(),ant=t.dataset.prev!=null?t.dataset.prev:"";if(ant&&catBy(ant))f.v.I=ant;else delete f.v.I;
+      quickPre=nome;quick="cat";quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
     if(L==="I"&&isChange){f.csel=[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
     if(L==="V"&&isChange)fatorDoPreco("p");
@@ -181,3 +184,7 @@ function onField(t,isChange){
   if(cce&&t.dataset.ccf){const c=C.colcfg[cce.dataset.cc],k=t.dataset.ccf;c[k]=t.type==="checkbox"?t.checked:t.value;salvar(true,false);
     if(k==="opcoes")renderListas();renderTopo();if(isChange||t.type==="checkbox")renderForm();else atualizarGera();return}
 }
+
+/* campos mistos (categoria, subcategoria, fornecedor): ao focar, a lista mostra TODAS as opções (o navegador filtra pelo texto atual); se sair sem escolher nada, o valor volta */
+document.addEventListener("focusin",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("misto")&&t.dataset.col&&!t.disabled&&!t.readOnly){t.dataset.prev=t.value;t.dataset.ph0=t.placeholder;if(t.value){t.placeholder=t.value;t.value=""}}});
+document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("misto")&&t.dataset.prev!==undefined){if(t.value===""&&t.dataset.prev){t.value=t.dataset.prev}t.placeholder=t.dataset.ph0||t.placeholder;delete t.dataset.prev}});
