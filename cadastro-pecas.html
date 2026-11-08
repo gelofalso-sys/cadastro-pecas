@@ -1617,7 +1617,7 @@ function gerar(list){
           });
         }else{
           const vars=itensGrade(l),bp=bonP(l);
-          if(bp.length){const bh=banhistaBy(l.banhista),qvk=k=>num(((l.ov||{})[k]||{}).W)>0,soComQ=vars.length&&bp.some(b=>vars.some(it=>qvk(b.id+"~"+it.id)));let kk=0;refs[l.id]=[];
+          if(bp.length){const bh=banhistaBy(l.banhista),qvk=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.length&&bp.some(b=>vars.some(it=>qvk(b.id+"~"+it.id)));let kk=0;refs[l.id]=[];
             bh.banhos.forEach((b,i)=>{if(!bp.includes(b))return;(vars.length?vars:[null]).forEach(it=>{if(it&&soComQ&&!qvk(b.id+"~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}
               const letra=refParte(b,it);kk++;
               const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
@@ -1829,10 +1829,10 @@ async function flush(){
     return}
   setStatus(db?"Salvo na sua conta":"Salvo neste navegador");
   if(candFoto.size)varrerFotos();
-  if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){}}})}
+  if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){}}})}
 }
 const PONTOS_MAX=15,PONTO_INTERVALO=30*60*1000;
-async function pontoSalvar(motivo){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:S.lanc.length,json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);return true}catch(e){return false}}
+async function pontoSalvar(motivo){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:S.lanc.length,json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
 async function pontoAuto(motivo,forcar){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return;if(!S.lanc.length&&!forcar)return;await pontoSalvar(motivo)}catch(e){}}
 setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)")},5*60*1000);
 const BK_DIAS=7,BK_INTERVALO=30*60*1000;
@@ -2171,7 +2171,8 @@ function gravarCel(ri,L,valor){
 /* célula editada na tabela de uma peça que está aberta no formulário: o formulário recebe o valor novo (senão "Salvar" apagaria a edição) */
 function sincFormCelula(id,L){
   if(editId!==id)return;const l=S.lanc.find(x=>x.id===id);if(!l)return;
-  const f2=clone(l);dobrarOv(f2,id);const f=S.form;f.v=f.v||{};f.ov=f.ov||{};
+  const f2=clone(l),G0=G;try{G=gerar()}catch(e){}   /* linhas recalculadas com o valor novo (as de G são de antes da edição) */
+  try{dobrarOv(f2,id)}finally{G=G0}const f=S.form;f.v=f.v||{};f.ov=f.ov||{};
   if(vazio(f2.v[L]))delete f.v[L];else f.v[L]=f2.v[L];
   Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!(f2.ov&&f2.ov[k]&&L in f2.ov[k]))delete f.ov[k][L]});
   Object.keys(f2.ov||{}).forEach(k=>{if(f2.ov[k]&&typeof f2.ov[k]==="object"&&L in f2.ov[k]){f.ov[k]=f.ov[k]||{};f.ov[k][L]=f2.ov[k][L]}});
@@ -2391,7 +2392,8 @@ function salvarRapido(){
     linhas.forEach(ln=>{const q=ln.split(/[;\t]/).map(x=>x.trim());MULTI.push({F:q[0]||"",N:q[1]||"",P:q[2]||""})});
     quick=null;renderForm();toast(`${linhas.length} linha(s) no formulário: ajuste o que precisar e clique em “Adicionar”.`);
     {const pn=document.getElementById("multiPanel");if(pn)rolarPane(pn)}return}
-  if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
+  if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=c&&c.prefixo?String(c.prefixo).toUpperCase():(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
+    if(!c){const er=nomeCatErro(C,n,null);if(er){toast(er);document.getElementById("q1").focus();return}}
     if(!c&&!pr){toast("Informe o prefixo da categoria (só letras, ex.: BR).");{const e2=document.getElementById("q2");if(e2)e2.focus()}return}
     if(!c){c={nome:n,prefixo:pr,subs:[]};C.categorias.push(c)}
     /* contador: prefixo novo começa onde foi pedido; prefixo que já existe só pode SUBIR (nunca volta atrás, senão repete referência já exportada) */
@@ -2983,10 +2985,12 @@ function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.
 /* fotos órfãs: ao excluir uma peça/tabela, a foto (e a miniatura) some do IndexedDB — mas só quando nenhuma peça atual,
    tabela salva ou passo do "desfazer/refazer" ainda precisa dela */
 const candFoto=new Set();
-function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
+const PONTO_IDS=new Set();   /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
+async function pontosIds(){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await idbGet("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
+function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(PONTO_IDS.has(id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
   if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
 function varrerFotos(){[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
-async function varrerTudo(){if(!S.lanc.length&&!TABS.length)return;const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
+async function varrerTudo(){if(!S.lanc.length&&!TABS.length)return;await pontosIds();const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
   for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await idbDel("fotos",k)}}
 /* tabelas salvas antes desta versão não guardavam cód.+fornecedor no índice: lê do IndexedDB uma vez */
 async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await idbGet("tabs",t.id);if(rec===null)continue;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou)gravarIdx("cadpecas-tabs",TABS,TABDEL);
@@ -3340,7 +3344,7 @@ const ROM_PAPEIS=[["cod","Código"],["desc","Descrição"],["qtd","Quantidade"],
 const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|mercadoria|artigo/i,qtd:/qtd|quant|^qt$|^un/i,preco:/unit|pre[cç]o|vlr un|valor un|^valor$/i,total:/total|subtotal/i};
 async function romPlanilha(file){if(!(await impPrepara(file)))return;return romPlanilha0(file)}
 async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha");if(typeof XLSX==="undefined")throw new Error("A biblioteca de planilha não carregou.");
-  const buf=await file.arrayBuffer(),wb=XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]],aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""});
+  const buf=await file.arrayBuffer(),wb=XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""});
   if(aoa.length>MAX_PLANILHA_LINHAS)throw new Error(`A planilha tem ${aoa.length} linhas e o limite é ${MAX_PLANILHA_LINHAS}.`);
   let hi=0,best=-1;for(let i=0;i<Math.min(15,aoa.length);i++){let n=0;aoa[i].forEach(c=>{if(Object.values(ROM_SIN).some(rx=>rx.test(String(c))))n++});if(n>best){best=n;hi=i}}
   const head=(aoa[hi]||[]).map((c,j)=>String(c||"").trim()||("Coluna "+(j+1))),map={};
@@ -4184,7 +4188,7 @@ function gerarExport(){const g0=gerar(),fil=filtroOn();
   const peca=!!(fil&&modeloAtual().agrupar==="sim");
   return {g0,fil,peca,g:fil?(()=>{if(peca){const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}}return {...g0,linhas:g0.linhas.filter(casa)}})():g0}}
 async function baixar(forcar){
-  const GE=gerarExport(),g=GE.g;if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
+  const GE=gerarExport(),g=GE.g,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc();if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de baixar.");return}
   const cols=colunasExport(),mo=modeloAtual(),csv=mo.formato==="csv";
   if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
@@ -4196,7 +4200,7 @@ async function baixar(forcar){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:S.lanc.map(l=>l.id)};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
+  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -4214,7 +4218,7 @@ function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.
 const LOC=(()=>{let l="pt-br",dec=",";try{l=String(navigator.language||"pt-br").toLowerCase();dec=(1.1).toLocaleString(navigator.language||"pt-BR").includes(",")?",":"."}catch(e){}return {dec,pt:l.startsWith("pt")}})();
 const fLocal=f=>LOC.dec==="."?f:LOC.pt?f.replace(/,/g,";").replace(/(\d)\.(\d)/g,"$1,$2").replace(/\bROUND\(/g,"ARRED("):null;
 async function copiar(ids,forcar){
-  const GE=gerarExport(),g0=GE.g0,g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
+  const GE=gerarExport(),g0=GE.g0,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de copiar.");return}
   const cols=colunasExport();if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
   if(!forcar&&abrirConferencia(g,cols,{tipo:"copiar",ids:ids||null}))return;
@@ -4226,13 +4230,14 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
     const s=txtSaida(x,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:S.lanc.map(l=>l.id)};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
+function sigLanc(){const o={};S.lanc.forEach(l=>{o[l.id]=JSON.stringify(l)});return o}
 function gravarExport(limpar){
   if(!lastExport)return;Object.entries(lastExport.cont).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});
   S.lanc.forEach(l=>{const o=val(l,"M");if(o&&!cfg().observacoes.includes(o))cfg().observacoes.unshift(o)});cfg().observacoes=cfg().observacoes.slice(0,30);
-  if(limpar){const fei=new Set(lastExport.ids||S.lanc.map(l=>l.id));S.lanc=S.lanc.filter(l=>!fei.has(l.id));sel.clear()}   /* só some o que foi exportado: peça lançada depois do download fica */
+  if(limpar){const fei=new Set(lastExport.ids||S.lanc.map(l=>l.id)),sg=lastExport.sig||{};let alt=0;S.lanc=S.lanc.filter(l=>{if(!fei.has(l.id))return true;if(sg[l.id]!==undefined&&sg[l.id]!==JSON.stringify(l)){alt++;return true}return false});sel.clear();if(alt)setTimeout(()=>toast(alt+" peça(s) foram editadas depois da planilha e ficaram na lista."),50)}   /* só some o que foi exportado: peça lançada depois do download fica */
   lastExport=null;salvar(true);render();toast("Última peça do sistema atualizada.");
 }
 
@@ -4576,9 +4581,10 @@ document.addEventListener("click",e=>{
       C.categorias.forEach(c=>add(c.nome,c.nome,""));C.categorias.forEach(c=>(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,c.nome,sb)}));
       T.mapa=mapaStr(a);salvar(true,false);renderCfg();toast(n?`${n} palavra(s) criadas a partir das suas categorias.`:"Todas as suas categorias já estão no mapa.",{t:"Desfazer",fn:desfazer});break}
     case "rom-plan-ok":{const P=ROM&&ROM.plan;if(!P)break;const m=P.map,nn=v=>{const x=String(v==null?"":v).replace(/[R$\s]/g,"");return x===""?null:num(x)},rows=[];
-      P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc)return;const qtd=m.qtd==null?1:Math.trunc(nn(r[m.qtd])||0);if(!(qtd>0))return;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
+      const ruim=[],zero=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc)return;const qn=m.qtd==null?1:nn(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
+      if(ruim.length){ROM.msg=`${ruim.length} linha(s) com quantidade vazia, decimal ou inválida, não importei nada: ${ruim.slice(0,5).join("; ")}${ruim.length>5?"…":""}. Corrija a planilha ou a coluna de quantidade.`;renderRom();break}
       if(!rows.length){ROM.msg="Nenhuma linha com descrição e quantidade. Confira as colunas.";renderRom();break}
-      ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças`,erro:""});break}
+      ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças${zero.length?` · ${zero.length} linha(s) com quantidade 0 ficaram de fora: ${zero.slice(0,5).join("; ")}${zero.length>5?"…":""}`:""}`,erro:""});break}
     case "rom-plan-no":ROM.plan=null;renderRom();break;
     case "rom-ex-abrir":romUI.ex=true;renderCfg();refocar("#romExTx");break;
     case "rom-ex-fechar":romUI.ex=false;renderCfg();break;
