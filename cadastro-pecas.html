@@ -3090,11 +3090,11 @@ async function bkMontar(){
   const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
   return {o,falhas,hoje}}
 async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");const {o,falhas,hoje}=await bkMontar();let bl=new Blob([JSON.stringify(o)],{type:"application/json"});
-  if(bl.size>MAX_BACKUP_BYTES&&confirm(`Esse backup tem ${Math.round(bl.size/1048576)} MB e o aplicativo só restaura até ${Math.round(MAX_BACKUP_BYTES/1048576)} MB.
+  let leve=false;if(bl.size>MAX_BACKUP_BYTES&&confirm(`Esse backup tem ${Math.round(bl.size/1048576)} MB e o aplicativo só restaura até ${Math.round(MAX_BACKUP_BYTES/1048576)} MB.
 
 OK = salvar uma versão LEVE (sem as fotos originais grandes; ficam as miniaturas), que dá para restaurar.
-Cancelar = salvar completo mesmo assim (só restauraria por fora do aplicativo).`)){const lev={};Object.keys(o.fotos||{}).forEach(k=>{if(/^[mr]:/.test(k))lev[k]=o.fotos[k]});bl=new Blob([JSON.stringify({...o,fotos:lev,leve:true})],{type:"application/json"})}
-  try{await dl.save({filename:"cadastro-pecas-backup-completo"+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});if(bl.size>MAX_BACKUP_BYTES){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. Apague fotos que não usa ou faça o backup em partes.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
+Cancelar = salvar completo mesmo assim (só restauraria por fora do aplicativo).`)){const lev={};Object.keys(o.fotos||{}).forEach(k=>{if(/^[mr]:/.test(k))lev[k]=o.fotos[k]});bl=new Blob([JSON.stringify({...o,fotos:lev,leve:true})],{type:"application/json"});leve=true}
+  try{await dl.save({filename:"cadastro-pecas-backup-"+(leve?"LEVE-sem-fotos-originais":"completo")+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});if(!leve&&bl.size>MAX_BACKUP_BYTES){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. Apague fotos que não usa ou faça o backup em partes.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:leve?"Backup LEVE salvo: tem as peças, cadastros, romaneios e miniaturas, mas NÃO as fotos originais grandes.":"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
 /* restaurar backup completo: valida TUDO e monta objetos novos antes de mexer em qualquer coisa. Semântica: SUBSTITUI peças,
    cadastros e formulário atuais pelos do backup (confirmação antes); romaneios, tabelas e fotos do backup são adicionados
    (mesmo id = sobrescreve; o que só existe aqui é mantido). Se algo falhar, nada muda (nem no IndexedDB). */
@@ -3540,17 +3540,17 @@ let fotosEnv=false;
 async function enviarFotos(soIds){if(fotosEnv)return;
   if(!fotoKey()){if(!Array.isArray(soIds)){toast("Cole a chave do imgbb em Cadastros › Fotos (link).");irPara("foto")}return}
   const ls=S.lanc.filter(l=>l.ft&&vazio(l.v.B)&&(!Array.isArray(soIds)||soIds.includes(l.id)));if(!ls.length){if(!Array.isArray(soIds))toast("Nenhuma foto esperando link.");return}
-  fotosEnv=true;let ok=0,falhas=0,sumiu=0,erro=null,chaveRuim=false;
+  fotosEnv=true;let ok=0,falhas=0,sumiu=0,trocou=0,erro=null,chaveRuim=false;
   try{for(let i=0;i<ls.length;i++){toast(`Enviando foto ${i+1} de ${ls.length}…`);
     try{const ft0=ls[i].ft,u=await enviarFoto(ls[i]);
       /* a peça pode ter sido excluída (ou já ganhado link) durante o envio: só grava se ainda existe e continua sem link */
-      const viva=S.lanc.find(x=>x.id===ls[i].id);if(!viva||viva.ft!==ft0){sumiu++;continue}   /* sumiu ou a foto foi trocada durante o envio: o link seria da foto antiga */
+      const viva=S.lanc.find(x=>x.id===ls[i].id);if(!viva){sumiu++;continue}if(viva.ft!==ft0){trocou++;continue}   /* sumiu ou a foto foi trocada durante o envio: o link seria da foto antiga */
       if(!vazio(viva.v.B))continue;
       viva.v.B=u;ok++;salvar(false)}
     catch(e){falhas++;erro=(e&&e.message)||"erro desconhecido";if(/chave|key|autoriz|unauthor/i.test(erro)&&!/memória/i.test(erro)){chaveRuim=true;break}}}}   /* chave errada falharia em todas: aí sim para */
   finally{fotosEnv=false}
   renderTopo();
-  const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}.`;
+  const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
 function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a edição antes.");return}
   const snap=clone(f),feitas=[],ign=[];let sem=0,err=0,un=0;const naLista=ROM.rows.filter(r=>!r.skip).reduce((t,r)=>t+r.qtd,0);
@@ -3946,8 +3946,8 @@ function renderCfg0(){
     <p class="d"><b>Desfazer / Refazer</b> (botões no topo ou Ctrl+Z / Ctrl+Y) voltam até 60 alterações desta sessão: peças, cadastros e formulário. Se você fechar o app, esse histórico recomeça — por isso existem os <b>pontos de restauração</b>: o app guarda uma cópia dos seus dados ao abrir, a cada 30 minutos de uso e antes de excluir várias linhas (os últimos 15). Escolha um para voltar àquele momento; o estado de agora também fica guardado como ponto. Para o que é mais antigo ou para guardar fora do navegador, baixe a cópia completa.</p>
     <div id="pontosLista" class="pts" aria-live="polite"></div>
     <div class="row"><button type="button" class="btn sm" data-act="ponto-novo">Criar ponto agora</button></div>
-    <div class="row"><button class="btn sm" type="button" data-act="backup">Baixar cópia dos cadastros</button><label class="btn sm" style="cursor:pointer">Restaurar cópia<input type="file" id="fileBk" accept=".json" hidden></label></div>
-    <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><label class="btn sm" style="cursor:pointer">Restaurar backup completo<input type="file" id="fileBkT" accept=".json" hidden></label></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
+    <div class="row"><button class="btn sm" type="button" data-act="backup">Baixar cópia dos cadastros</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBk">Restaurar cópia</button><input type="file" id="fileBk" accept=".json" hidden></div>
+    <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBkT">Restaurar backup completo</button><input type="file" id="fileBkT" accept=".json" hidden></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
   {const T={banho:"Galvânicas e banhos",cor:"Cores, tamanhos e variações",cat:"Categorias",forn:"Fornecedores",col:"Padrões das colunas",mod:"Modelo da planilha",rom:"Leitura de romaneios",roml:"Romaneios lançados",foto:"Fotos",opc:"Importar e backup"},O=Object.keys(T);SECS.forEach(x=>{if(T[x.id])x.titulo=T[x.id]});SECS.sort((a,b)=>O.indexOf(a.id)-O.indexOf(b.id))}
   const at=abaCfg(),cur=SECS.find(s=>s.id===at);
   document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]?`<span class="cgrp">${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]}</span>`:""}<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" tabindex="${s.id===at?0:-1}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
@@ -4591,7 +4591,7 @@ document.addEventListener("click",e=>{
       C.categorias.forEach(c=>add(c.nome,c.nome,""));C.categorias.forEach(c=>(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,c.nome,sb)}));
       T.mapa=mapaStr(a);salvar(true,false);renderCfg();toast(n?`${n} palavra(s) criadas a partir das suas categorias.`:"Todas as suas categorias já estão no mapa.",{t:"Desfazer",fn:desfazer});break}
     case "rom-plan-ok":{const P=ROM&&ROM.plan;if(!P)break;const m=P.map,nn=v=>{const x=String(v==null?"":v).replace(/[R$\s]/g,"");return x===""?null:num(x)},rows=[];
-      const ruim=[],zero=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc){const cd=m.cod==null?"":String(r[m.cod]||"").trim();if(cd&&m.qtd!=null&&nn(r[m.qtd])>0)ruim.push(cd.slice(0,30)+" (sem descrição)");return}const qn=m.qtd==null?1:nn(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
+      const ruim=[],zero=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc){const cd=m.cod==null?"":String(r[m.cod]||"").trim();if(cd&&(m.qtd==null||nn(r[m.qtd])>0))ruim.push(cd.slice(0,30)+" (sem descrição)");return}const qn=m.qtd==null?1:nn(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
       if(ruim.length){ROM.msg=`${ruim.length} linha(s) com quantidade vazia/decimal/inválida ou sem descrição, não importei nada: ${ruim.slice(0,5).join("; ")}${ruim.length>5?"…":""}. Corrija a planilha ou a coluna de quantidade.`;renderRom();break}
       if(!rows.length){ROM.msg="Nenhuma linha com descrição e quantidade. Confira as colunas.";renderRom();break}
       ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças${zero.length?` · ${zero.length} linha(s) com quantidade 0 ficaram de fora: ${zero.slice(0,5).join("; ")}${zero.length>5?"…":""}`:""}`,erro:""});break}
@@ -4606,6 +4606,7 @@ document.addEventListener("click",e=>{
     case "rom-testar":{const card=t.closest("[data-rom]"),T=C.romaneios[+card.dataset.rom],R=lerRomaneioAuto(card.querySelector("[data-rtest]").value,T),o=card.querySelector(".rtres");
       o.textContent=R.erro||`${R.rows.length} peças lidas${R.conf?" · "+R.conf:""} · 1ª: ${R.rows[0].desc} (${R.rows[0].cod||"sem código"}) ${R.rows[0].qtd} un.`;break}
     case "imp-ok":aplicarImp();break;
+    case "abrir-arq":{const i=document.getElementById(t.dataset.alvo);if(i)i.click();break}
     case "backup":backup();break;
   }
   if(snapCfg&&JSON.stringify(S.config)!==JSON.stringify(snapCfg))toast("Cadastro alterado.",{t:"Desfazer",fn:()=>{S.config=snapCfg;salvar(true);render()}});
@@ -4797,11 +4798,11 @@ document.addEventListener("input",e=>{const t=e.target;
   if(t.id==="catBusca"){const q=semAc(t.value);document.querySelectorAll("#cfg .cards>.card[data-cat]").forEach(c=>{const n=c.querySelector('[data-cf="nome"]');c.hidden=!!q&&!semAc(n?n.value:"").includes(q)});return}if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.type==="file")return;onField(t,false)});
 document.addEventListener("change",e=>{const t=e.target;
   if(t.closest&&t.closest("#form")&&((t.dataset.bo&&t.dataset.k==="V")||t.id==="f-V")){fatorDoPreco(t.dataset.bo||"p")}
-  if(t.id==="fileImp"&&t.files[0])return importar(t.files[0]);
+  if(t.id==="fileImp"&&t.files[0]){const fl=t.files[0];t.value="";return importar(fl)}
   if(t.id==="fileNovo"&&t.files[0]){const fl=t.files[0];t.value="";return lerNovo(fl)}
   if(t.id==="fileModJ"&&t.files[0]){const fl=t.files[0];t.value="";return modeloDeJson(fl)}
-  if(t.id==="fileBk"&&t.files[0])return restaurar(t.files[0]);
-  if(t.id==="fileBkT"&&t.files[0])return restaurarTotal(t.files[0]);
+  if(t.id==="fileBk"&&t.files[0]){const fl=t.files[0];t.value="";return restaurar(fl)}
+  if(t.id==="fileBkT"&&t.files[0]){const fl=t.files[0];t.value="";return restaurarTotal(fl)}
   if(t.id==="impFile"){const fl=[...t.files];t.value="";impAdd(fl);return}
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
   if(t.id==="romXls"&&t.files[0]){const fl=t.files[0];t.value="";return romPlanilha(fl)}
