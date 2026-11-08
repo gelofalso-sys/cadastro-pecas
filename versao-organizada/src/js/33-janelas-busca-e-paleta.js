@@ -26,7 +26,11 @@
       if(e.shiftKey&&i===0){e.preventDefault();it[it.length-1].focus()}else if(!e.shiftKey&&i===it.length-1){e.preventDefault();it[0].focus()}}},true)}
 {const ai=document.getElementById("autorIn");if(ai){ai.value=AUTOR;ai.addEventListener("change",()=>setAutor(ai.value))}}
 {const shj=document.getElementById("sheet");if(shj)shj.addEventListener("scroll",()=>{if(!JAN)return;cancelAnimationFrame(janRaf);janRaf=requestAnimationFrame(()=>janRepintar(false))},{passive:true})}
-carregar().then(()=>tabsMigrar()).then(()=>varrerTudo()).catch(()=>{});
+/* lembrete de backup: os dados ficam só neste navegador; passada uma semana sem backup completo (e com peças lançadas), avisa uma vez por abertura */
+function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!localStorage.getItem(u))localStorage.setItem(u,String(Date.now()));
+  const ult=+localStorage.getItem(k)||+localStorage.getItem(u)||Date.now();
+  if(S.lanc.length>=5&&Date.now()-ult>7*864e5)setTimeout(()=>toast("Faz mais de uma semana que você não baixa um backup completo. Seus dados ficam só neste navegador.",{t:"Fazer backup",fn:backupTotal}),2500)}catch(e){}}
+carregar().then(()=>tabsMigrar()).then(()=>{lembreteBackup();return varrerTudo()}).catch(()=>{});
 /* duas abas abertas: se a outra gravou, esta avisa (e para de gravar) em vez de sobrescrever */
 window.addEventListener("storage",e=>{
   if(e.key!=="cadpecas4"||e.newValue==null||e.storageArea!==localStorage)return;

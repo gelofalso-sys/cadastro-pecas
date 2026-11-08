@@ -197,3 +197,4 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
   #cfg table.cfg:not(.bnt) td:first-child{grid-column:1/-1}
   #cfg table.cfg:not(.bnt) td input:not([type=checkbox]),#cfg table.cfg:not(.bnt) td select{width:100%!important;min-width:0!important}
 }
+@media (max-width:700px){#formWrap h2{display:none}}   /* o título da gaveta já diz "Lançar peça" */
