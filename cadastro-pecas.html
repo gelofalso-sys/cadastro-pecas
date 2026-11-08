@@ -1600,7 +1600,7 @@ function gerar(list){
         const meta={lancId:l.id,desconto:num(l.desconto)||0},mk=l.mk||{};
         if(l.tipo==="bruta"){
           const bh=banhistaBy(l.banhista);refs[l.id]=[];
-          const vars=itensGrade(l),bon=bh.banhos.filter(b=>l.on&&l.on[b.id]),qv=k=>num(((l.ov||{})[k]||{}).W)>0;let kk=0;
+          const vars=itensGrade(l),bon=bh.banhos.filter(b=>l.on&&l.on[b.id]),qv=k=>qtdPos(((l.ov||{})[k]||{}).W);let kk=0;
           /* com variação: se alguma combinação tem quantidade, as que ficaram sem quantidade não viram linha */
           const soComQ=vars.length&&bon.some(b=>vars.some(it=>qv(b.id+"~"+it.id)));
           bh.banhos.forEach((b,i)=>{
@@ -1623,9 +1623,9 @@ function gerar(list){
               const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
               const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna,v},l);refs[l.id].push(row.v.E);
               if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row)})});return}
-          if(vars.length){refs[l.id]=[];const qv=k=>num(((l.ov||{})[k]||{}).W)>0,soComQ=vars.some(it=>qv("p~"+it.id));vars.forEach(it=>{if(soComQ&&!qv("p~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}const v={...comum,E:base+refParte(null,it),F:descVar(comSufixoCat(comum.F,cat),it),W:""};if(it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it.extra)Object.assign(v,it.extra);
+          if(vars.length){refs[l.id]=[];const qv=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.some(it=>qv("p~"+it.id));vars.forEach(it=>{if(soComQ&&!qv("p~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}const v={...comum,E:base+refParte(null,it),F:descVar(comSufixoCat(comum.F,cat),it),W:""};if(it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it.extra)Object.assign(v,it.extra);
             const row=aplicaOv({...meta,mk:num(mk.p),key:"p~"+it.id,bid:"p",gi:it.id,part:refParte(null,it),v},l);refs[l.id].push(row.v.E);if(C.ordem==="ab")prontas.push(row);else seq.push(row)});return}
-          const ref=ov&&g.length===1?ov:base+(g.length>1?String.fromCharCode(65+k):"");
+          const ref=ov&&g.length===1?ov:base+(g.length>1?letraN(k):"");
           const row=aplicaOv({...meta,mk:num(mk.p),key:"p",part:"",v:{...comum,E:ref,F:comSufixoCat(comum.F,cat)}},l);
           refs[l.id]=[row.v.E];
           if(C.ordem==="ab")prontas.push(row);else seq.push(row);
@@ -1645,6 +1645,8 @@ function gerar(list){
 const VALIDA_NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","AB","AC"]);
 /* fórmula aceita: só números, células (ex.: P2, AB10), + - * / e parênteses — nenhum nome de função (=RAND(), =HYPERLINK(...) etc.) */
 const FORM_SEGURA=/^=(?:[0-9+\-*\/().,\s]|\b[A-Za-z]{1,2}[0-9]+\b)*$/;
+/* quantidade da variação: número maior que zero, ou fórmula (ex.: =1) — a fórmula não pode fazer a linha sumir da exportação */
+function qtdPos(v){const t=String(v==null?"":v).trim();return t[0]==="="?t.length>1:num(t)>0}
 function checaCel(L,v){
   v=String(v==null?"":v).trim();if(v==="")return {v};
   if(!VALIDA_NUM.has(L))return {v};
@@ -1680,7 +1682,8 @@ function valorCol(c,x){
   if(vaz){if(vazio(c.padrao))return null;o={v:String(c.padrao)}}
   const t=c.tipo||"";
   if(t==="texto")return {v:o.v==null?(o.txt||(o.f?"="+o.f:"")):String(o.v)};
-  if(o.v==null&&o.f)return o;
+  if(o.v==null&&o.f){const fz0=(t==="numero"||t==="inteiro"||t==="dinheiro")?num(c.fator):null;   /* fórmula também recebe o fator da coluna */
+    return fz0!=null&&fz0>0&&fz0!==1?{...o,f:"("+o.f+")*"+String(fz0)}:o}
   if(t==="numero"||t==="inteiro"||t==="dinheiro"){
     const n=typeof o.v==="number"?o.v:num(o.v);
     if(n==null)return {v:o.v,erro:1};
@@ -1793,7 +1796,8 @@ function histNota(){
 }
 function salvar(c,l){if(c)dirty.c=true;if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
 /* grava já (ao fechar a aba, trocar de aba ou sair): não deixa a última edição dentro dos 600 ms se perder */
-function flushJa(){if(sT){clearTimeout(sT);sT=null}if(dirty.c||dirty.l){try{flush()}catch(e){}}}
+function flushJa(){if(romST){clearTimeout(romST);romST=null;try{romSalvar()}catch(e){}}   /* romaneio: o salvamento de 800 ms também não pode ficar para trás */
+  if(sT){clearTimeout(sT);sT=null}if(dirty.c||dirty.l){try{flush()}catch(e){}}}
 window.addEventListener("pagehide",flushJa);
 window.addEventListener("beforeunload",flushJa);
 /* só avisa quando há uma célula aberta com texto digitado que ainda não foi confirmado (Enter/Tab) */
@@ -1849,8 +1853,8 @@ async function bkStatus(){const el=document.getElementById("bkStatus");if(!el)re
 async function pontosCarregar(){bkStatus();const el=document.getElementById("pontosLista");if(!el)return;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort().reverse(),out=[];for(const k of ks){const v=await idbGet("pontos",k);if(v&&typeof v==="object")out.push({k,t:v.t,motivo:v.motivo,n:v.n})}
   const el2=document.getElementById("pontosLista");if(!el2)return;el2.innerHTML=out.length?out.map(p=>`<div class="pt"><span><b>${esc(new Date(p.t).toLocaleString("pt-BR"))}</b> · ${p.n} peça(s) <small>${esc(p.motivo)}</small></span><button type="button" class="btn sm" data-act="ponto-voltar" data-k="${esc(p.k)}">Voltar para este ponto</button></div>`).join(""):`<span class="hint">Ainda não há pontos. Um é criado ao abrir o app e a cada 30 minutos de uso, e antes de excluir várias linhas.</span>`}
 async function pontoRestaurar(k){const v=await idbGet("pontos",k);if(!v||typeof v!=="object"||!v.json){toast("Esse ponto não pode ser lido.");return}
-  const q=new Date(v.t).toLocaleString("pt-BR");if(!confirm(`Voltar para ${q} (${v.n} peça(s))?\n\nO que está agora fica guardado como outro ponto, e dá para voltar a ele.`))return;
-  await pontoSalvar("antes de voltar no tempo");
+  const q=new Date(v.t).toLocaleString("pt-BR");if(!confirm(`Voltar para ${q} (${v.n} peça(s))?\n\nO que está agora fica guardado como outro ponto, e dá para voltar a ele.\n\nAs fotos não voltam no tempo: ficam as que estão guardadas agora.`))return;
+  if(!(await pontoSalvar("antes de voltar no tempo"))&&!confirm("NÃO consegui guardar o que está agora como ponto (memória do navegador cheia ou bloqueada).\n\nSe continuar, o estado atual será perdido. Voltar mesmo assim?"))return;
   try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();editId=null;rascunho=null;sel.clear();selR=null;ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
 async function carregarMinis(){setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
   for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await idbGet("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
@@ -1869,6 +1873,7 @@ async function migrarFotos(){let mexeu=0;
 function lerConfig(c){
   const o=clone(DEFAULT_CONFIG);if(!c)return o;
   ["seqs","categorias","cores","observacoes","ordem","grades","modelos","modelo","romaneios"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
+  o.categorias.forEach(x=>{if(x&&!Array.isArray(x.subs))x.subs=[]});   /* cópia/backup com categoria sem lista de subcategorias não pode quebrar a tela */
   o.romaneios.forEach(t=>{if(t.id==="carlinha"&&!/Corrente=/.test(t.mapa||"")){const d=ROMS0()[0];t.mapa=d.mapa;t.valorRe=d.valorRe}});
   if(c.colcfg){LET.forEach(L=>{const x=c.colcfg[L]||{};const pad=o.colcfg[L].form;o.colcfg[L]={...o.colcfg[L],...x};if(!c.v6)o.colcfg[L].form=pad})}
   else{const fx=c.fixos||{};if(c.insumos!=null)o.colcfg.Q.padrao=c.insumos;if(fx.ncm!=null)o.colcfg.Y.padrao=fx.ncm;if(fx.cfop!=null)o.colcfg.AA.padrao=fx.cfop;if(fx.fcp!=null)o.colcfg.AB.padrao=fx.fcp;if(fx.catalogo)o.colcfg.AD.padrao=fx.catalogo;if(fx.status)o.colcfg.AE.padrao=fx.status}
@@ -2161,6 +2166,7 @@ function gravarCel(ri,L,valor){
   const base=row.banho&&FORMULA.has(L)?"":String(row.v0[L]??"");
   if(String(valor)===base)delete o[L];else o[L]=valor;
   if(!Object.keys(o).length)delete l.ov[row.key];
+  if(editId===l.id)sincFormCelula(l.id,L);   /* colar/limpar/preencher em massa numa peça aberta no formulário: o formulário recebe o valor (senão Salvar desfaz) */
 }
 /* célula editada na tabela de uma peça que está aberta no formulário: o formulário recebe o valor novo (senão "Salvar" apagaria a edição) */
 function sincFormCelula(id,L){
@@ -2208,7 +2214,7 @@ function colarCel(texto,inicio){
     const v={};cels.forEach((x,j)=>{const LL=keyAt(j);if(LL&&!vazio(x)&&aceita(LL,x,alvo[i])){v[LL]=x.trim();n++}});
     if(Object.keys(v).length){const l=novaLivre(v);S.lanc.push(l);ids.push(l.id)}
   });
-  undo={tipo:"cola",antes,ids};salvar(false);renderTopo();
+  undo={tipo:"cola",antes,ids};salvar(false);renderTopo();if(editId)renderForm();
   recus.slice(0,20).forEach(z=>marcaRuim(z.ri,z.L));
   toast(`${n} célula(s) coladas${ids.length?` · ${ids.length} linha(s) nova(s)`:""}${recus.length?` · ${recus.length} RECUSADA(S): ${recus[0].msg}`:""}.`,n?{t:"Desfazer",fn:desfazer}:null);
 }
@@ -2235,11 +2241,11 @@ function copiarSel(){const b=selBox();if(!b)return;const lin=[];for(let r=b.r1;r
 function limparSel(){const b=selBox();if(!b)return;const antes={};let n=0;
   for(let r=b.r1;r<=Math.min(b.r2,G.linhas.length-1);r++){if(!vis(r))continue;const row=G.linhas[r],l=S.lanc.find(x=>x.id===row.lancId);if(!l)continue;if(!(l.id in antes))antes[l.id]=clone(l.ov||{});
     for(let c=b.c1;c<=b.c2;c++){const L=LET[c];if(L==="E")continue;gravarCel(r,L,"");n++}}
-  if(!n)return;undo={tipo:"multi",antes};salvar(false);renderTopo();toast(`${n} célula(s) limpa(s).`,{t:"Desfazer",fn:desfazer})}
+  if(!n)return;undo={tipo:"multi",antes};salvar(false);renderTopo();if(editId)renderForm();toast(`${n} célula(s) limpa(s).`,{t:"Desfazer",fn:desfazer})}
 function preencherAbaixo(){const b=selBox();if(!b||b.r2<=b.r1||!G.linhas[b.r1])return;const antes={},src=G.linhas[b.r1];
   for(let r=b.r1+1;r<=Math.min(b.r2,G.linhas.length-1);r++){if(!vis(r))continue;const row=G.linhas[r],l=S.lanc.find(x=>x.id===row.lancId);if(!l)continue;if(!(l.id in antes))antes[l.id]=clone(l.ov||{});
     for(let c=b.c1;c<=b.c2;c++){const L=LET[c];if(L==="E")continue;const v=src.banho&&FORMULA.has(L)&&!src.ovs.includes(L)?"":String(src.v[L]??"");gravarCel(r,L,v)}}
-  undo={tipo:"multi",antes};salvar(false);renderTopo();toast("Preenchido para baixo.",{t:"Desfazer",fn:desfazer})}
+  undo={tipo:"multi",antes};salvar(false);renderTopo();if(editId)renderForm();toast("Preenchido para baixo.",{t:"Desfazer",fn:desfazer})}
 function renderSelBar(){
   const el=document.getElementById("selbar");if(!el)return;const b=selBox();
   if(!b){el.innerHTML=vista()==="lista"?"":G&&G.linhas.length?`<span class="hint">Clique numa célula para selecionar · arraste ou <kbd>Shift</kbd>+clique para várias · clique no nome da coluna ou na margem esquerda da linha para selecionar inteira · duplo clique, <kbd>Enter</kbd> ou comece a digitar para editar</span>`:"";return}
@@ -2386,7 +2392,11 @@ function salvarRapido(){
     quick=null;renderForm();toast(`${linhas.length} linha(s) no formulário: ajuste o que precisar e clique em “Adicionar”.`);
     {const pn=document.getElementById("multiPanel");if(pn)rolarPane(pn)}return}
   if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
-    if(!c){c={nome:n,prefixo:pr,subs:[]};C.categorias.push(c)}if(!(pr in C.seqs)||g("q3"))C.seqs[pr]=g("q3").replace(/\D/g,"")||C.seqs[pr]||"0";f.v.I=c.nome;delete f.v.J;sincGrade(f)}
+    if(!c&&!pr){toast("Informe o prefixo da categoria (só letras, ex.: BR).");{const e2=document.getElementById("q2");if(e2)e2.focus()}return}
+    if(!c){c={nome:n,prefixo:pr,subs:[]};C.categorias.push(c)}
+    /* contador: prefixo novo começa onde foi pedido; prefixo que já existe só pode SUBIR (nunca volta atrás, senão repete referência já exportada) */
+    {const q3=g("q3").replace(/\D/g,"");if(!(pr in C.seqs))C.seqs[pr]=q3||"0";else if(q3&&!(ultimo(pr)>=+q3))C.seqs[pr]=q3}
+    f.v.I=c.nome;delete f.v.J;sincGrade(f)}
   if(quick==="sub"){const c=catBy(f.v.I);if(c&&!c.subs.includes(n))c.subs.push(n);f.v.J=n;sincGrade(f)}
   if(quick==="forn"){let fo=C.fornecedores.find(x=>lo(x.nome)===lo(n));if(!fo){fo={nome:n,codigo:g("q2"),desconto:g("q3")||"0",tipo:document.getElementById("q4").value};C.fornecedores.push(fo)}
     if(rq!=null&&ROM&&ROM.rows[rq]){ROM.rows[rq].forn=fo.nome;romReset(ROM.rows[rq])}else{f.v.H=fo.nome;f.desconto=fo.desconto||"0";if(fo.codigo)f.v.G=fo.codigo;if(!editId)banhistaDoFornecedor(f)}}
@@ -3066,13 +3076,13 @@ async function bkMontar(){
   const falhas=[],chaves=async n=>{const k=await idbOp(n,"readonly",st=>st.getAllKeys());if(k===null){falhas.push(n);return []}return k},valor=async(n,k)=>{const v=await idbGet(n,k);if(v===null)falhas.push(n+":"+k);return v};
   const rk=await chaves("roms"),roms={};for(const k of rk)roms[k]=await valor("roms",k);
   const tk=await chaves("tabs"),tabs={};for(const k of tk)tabs[k]=await valor("tabs",k);
-  const fk=await chaves("fotos"),fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));for(const k of fk)if(vivos.has(k))fotos[k]=await valor("fotos",k);
+  const fk=await chaves("fotos"),fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));for(const k of fk)if(vivos.has(String(k).replace(/^[mr]:/,"")))fotos[k]=await valor("fotos",k);   /* inclui as miniaturas (m:) e as de romaneio (r:), não só a original */
   let rel=null;try{rel=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){}
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
   return {o,falhas,hoje}}
-async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");const {o,falhas,hoje}=await bkMontar();
-  try{await dl.save({filename:"cadastro-pecas-backup-completo"+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:new Blob([JSON.stringify(o)],{type:"application/json"})});toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
+async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");const {o,falhas,hoje}=await bkMontar();const bl=new Blob([JSON.stringify(o)],{type:"application/json"});
+  try{await dl.save({filename:"cadastro-pecas-backup-completo"+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});if(bl.size>MAX_BACKUP_BYTES){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. Apague fotos que não usa ou faça o backup em partes.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
 /* restaurar backup completo: valida TUDO e monta objetos novos antes de mexer em qualquer coisa. Semântica: SUBSTITUI peças,
    cadastros e formulário atuais pelos do backup (confirmação antes); romaneios, tabelas e fotos do backup são adicionados
    (mesmo id = sobrescreve; o que só existe aqui é mantido). Se algo falhar, nada muda (nem no IndexedDB). */
@@ -3181,7 +3191,7 @@ async function aplicarBackupTotal(n,quieto){
   }catch(e){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;await reverter();toast("Backup NÃO restaurado — erro ao aplicar os cadastros. Nada foi alterado.");return}
   Object.values(n.roms).forEach(r=>{try{romIndex(r)}catch(e){}});Object.values(n.tabs).forEach(r=>{try{tabIndex(r)}catch(e){}});arqRef();
   if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
-  ftSalvas.clear();resolverCorrompido();salvar(true);render();
+  ftSalvas.clear();ftRSalvas.clear();resolverCorrompido();salvar(true);render();
   if(!quieto)toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.`,{t:"Desfazer",fn:desfazer});return true}
 const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
@@ -3520,9 +3530,10 @@ async function enviarFotos(soIds){if(fotosEnv)return;
   const ls=S.lanc.filter(l=>l.ft&&vazio(l.v.B)&&(!Array.isArray(soIds)||soIds.includes(l.id)));if(!ls.length){if(!Array.isArray(soIds))toast("Nenhuma foto esperando link.");return}
   fotosEnv=true;let ok=0,falhas=0,sumiu=0,erro=null,chaveRuim=false;
   try{for(let i=0;i<ls.length;i++){toast(`Enviando foto ${i+1} de ${ls.length}…`);
-    try{const u=await enviarFoto(ls[i]);
+    try{const ft0=ls[i].ft,u=await enviarFoto(ls[i]);
       /* a peça pode ter sido excluída (ou já ganhado link) durante o envio: só grava se ainda existe e continua sem link */
-      const viva=S.lanc.find(x=>x.id===ls[i].id);if(!viva){sumiu++;continue}if(!vazio(viva.v.B))continue;
+      const viva=S.lanc.find(x=>x.id===ls[i].id);if(!viva||viva.ft!==ft0){sumiu++;continue}   /* sumiu ou a foto foi trocada durante o envio: o link seria da foto antiga */
+      if(!vazio(viva.v.B))continue;
       viva.v.B=u;ok++;salvar(false)}
     catch(e){falhas++;erro=(e&&e.message)||"erro desconhecido";if(/chave|key|autoriz|unauthor/i.test(erro)&&!/memória/i.test(erro)){chaveRuim=true;break}}}}   /* chave errada falharia em todas: aí sim para */
   finally{fotosEnv=false}
@@ -4165,7 +4176,7 @@ function montarCsv(g,cols,mo,slx){
   const sl=slx||saidaLinhas(g,mo);
   sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{const r=valorCol(c,celCol(c,cs,e));let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
   return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
-/* com filtro ativo, baixar e copiar levam só as linhas que o filtro está mostrando */
+/* com filtro ativo, baixar e copiar levam as PEÇAS que o filtro mostra, sempre com todas as variações (pai e filhos não se separam) */
 function gerarExport(){const g0=gerar(),fil=filtroOn();return {g0,fil,g:fil?(()=>{const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}})():g0}}
 async function baixar(forcar){
   const GE=gerarExport(),g=GE.g;if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
@@ -4180,7 +4191,7 @@ async function baixar(forcar){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa};renderTopo();if(GE.fil)toast(`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
+  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:S.lanc.map(l=>l.id)};renderTopo();if(GE.fil)toast(`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça.`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -4210,13 +4221,14 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
     const s=txtSaida(x,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?` do filtro, de ${g0.linhas.length}`:""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g)};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:S.lanc.map(l=>l.id)};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
 function gravarExport(limpar){
   if(!lastExport)return;Object.entries(lastExport.cont).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});
   S.lanc.forEach(l=>{const o=val(l,"M");if(o&&!cfg().observacoes.includes(o))cfg().observacoes.unshift(o)});cfg().observacoes=cfg().observacoes.slice(0,30);
-  if(limpar){S.lanc=[];sel.clear()}lastExport=null;salvar(true);render();toast("Última peça do sistema atualizada.");
+  if(limpar){const fei=new Set(lastExport.ids||S.lanc.map(l=>l.id));S.lanc=S.lanc.filter(l=>!fei.has(l.id));sel.clear()}   /* só some o que foi exportado: peça lançada depois do download fica */
+  lastExport=null;salvar(true);render();toast("Última peça do sistema atualizada.");
 }
 
 /* ===== importar / cópia ===== */
@@ -4229,7 +4241,7 @@ function importar(file){
     const iR=ix("referência"),iF=ix("fornecedor"),iC=ix("categoria"),iS=ix("subcategoria"),iCor=ix("cor"),iO=ix("observação");if(iR<0)throw 0;
     const max={},pad={},forn=new Set(),cats={},cores=new Set(),obs=new Set();
     aoa.slice(1).forEach(r=>{const m=String(r[iR]||"").trim().toUpperCase().match(/^([A-Z]+)(\d+)[A-Z]*$/);if(m&&!(max[m[1]]>=+m[2]))max[m[1]]=+m[2];if(m&&m[2].length>1&&m[2][0]==="0")pad[m[1]]=Math.max(pad[m[1]]||0,m[2].length);
-      if(iF>=0&&r[iF])forn.add(String(r[iF]).trim());if(iC>=0&&r[iC]){const c=String(r[iC]).trim();cats[c]=cats[c]||{subs:new Set(),pref:m?m[1]:null};if(iS>=0&&r[iS])cats[c].subs.add(String(r[iS]).trim())}
+      if(iF>=0&&r[iF])forn.add(String(r[iF]).trim());if(iC>=0&&r[iC]){const c=String(r[iC]).trim();cats[c]=cats[c]||{subs:new Set(),pref:null};if(!cats[c].pref&&m)cats[c].pref=m[1];if(iS>=0&&r[iS])cats[c].subs.add(String(r[iS]).trim())}
       if(iCor>=0&&r[iCor])cores.add(String(r[iCor]).trim());if(iO>=0&&r[iO])obs.add(String(r[iO]).trim())});
     impPend={max,pad,forn,cats,cores,obs};
     document.getElementById("impRes").innerHTML=`<div class="banner"><p>Última peça encontrada: ${Object.entries(max).map(([p,n])=>`<b class="mono">${p}${n}</b>`).join(", ")||"nenhuma"} · ${forn.size} fornecedor(es) · ${Object.keys(cats).length} categoria(s) · ${cores.size} cor(es).</p><button class="btn pri sm" type="button" data-act="imp-ok">Aplicar</button></div>`;
@@ -4778,7 +4790,10 @@ document.addEventListener("paste",e=>{const cb=e.clipboardData||window.clipboard
   const pt=e.target;
   /* colar várias linhas num campo de uma linha só: as quebras viram ";" (senão o navegador junta tudo num texto só) */
   if(pt.dataset&&pt.dataset.enter!==undefined&&pt.setRangeText){const tx=(e.clipboardData||window.clipboardData).getData("text");if(/[\r\n]/.test(tx)){e.preventDefault();const j=tx.replace(/\s*[\r\n]+\s*/g,"; ").replace(/^[;\s]+|[;\s]+$/g,"");pt.setRangeText(j,pt.selectionStart,pt.selectionEnd,"end");return}}
-  if(e.target.id!=="celIn"&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&tx.trim()){e.preventDefault();const b=selBox();colarCel(tx,b?{ri:b.r1,L:LET[b.c1]}:{ri:G.linhas.length,L:"A"})}return}if(e.target.id!=="celIn"||!celEd)return;const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&(tx.includes("\t")||tx.replace(/\n+$/,"").includes("\n"))){e.preventDefault();colarCel(tx)}});
+  if(e.target.id!=="celIn"&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){
+    /* só cola na tabela quando o foco está nela (ou solto na página); em botão, menu ou painel o Ctrl+V não pode criar/alterar peças */
+    if(!(e.target===document.body||e.target===document.documentElement||(e.target.closest&&e.target.closest("#sheet"))))return;
+    const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&tx.trim()){e.preventDefault();const b=selBox();colarCel(tx,b?{ri:b.r1,L:LET[b.c1]}:{ri:G.linhas.length,L:"A"})}return}if(e.target.id!=="celIn"||!celEd)return;const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&(tx.includes("\t")||tx.replace(/\n+$/,"").includes("\n"))){e.preventDefault();colarCel(tx)}});
 document.addEventListener("keydown",e=>{
   const t=e.target;
   if(t.dataset&&(t.dataset.subren!==undefined||t.dataset.dup!==undefined||t.dataset.ncor!==undefined||t.dataset.colar!==undefined||t.id==="novaCat")){const k=e.key;
