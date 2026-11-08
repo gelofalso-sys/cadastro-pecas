@@ -5,7 +5,7 @@ document.addEventListener("submit",e=>{e.preventDefault();adicionar()});
 /* digitação rápida: ao entrar num campo numérico do lançamento, o conteúdo fica selecionado e o que for digitado substitui */
 document.addEventListener("focusin",e=>{const t=e.target;if(t.tagName==="INPUT"&&t.classList.contains("n")&&t.closest("#form")&&!t.disabled)try{t.select()}catch(x){}});
 document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.open){abertos[d.dataset.open]=d.open;guardarAbertos()}},true);
-let mdTd=null;
+let mdTd=null,mdJa=false;
 document.addEventListener("mousedown",e=>{
   if(e.target.classList&&e.target.classList.contains("rz")){e.preventDefault();e.stopPropagation();
     const L=e.target.dataset.rz,col=document.querySelector(`#sheet col[data-cw="${L}"]`),tb=document.querySelector("#sheet table"),x0=e.clientX,w0=cw(L),t0=tb.offsetWidth;
@@ -20,13 +20,14 @@ document.addEventListener("mousedown",e=>{
   const kc=e.target.closest("#sheet td.k");
   if(kc&&!e.target.closest("input,button")){const r=+kc.closest("tr").dataset.ri;if(isNaN(r))return;e.preventDefault();if(celEd)fecharCel(true);if(e.shiftKey&&selR)selecionar(selR.ar,0,r,LET.length-1);else selecionar(r,0,r,LET.length-1);sh.focus({preventScroll:true});return}
   const td=e.target.closest("#sheet td[data-c]");
-  if(td){e.preventDefault();if(celEd)fecharCel(true);const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);mdTd=td;if(e.shiftKey&&selR)selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);arrastando=true;sh.focus({preventScroll:true});return}
+  if(td){e.preventDefault();if(celEd)fecharCel(true);const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);mdTd=td;mdJa=!!selR&&selR.ar===r&&selR.fr===r&&selR.ac===c&&selR.fc===c;if(e.shiftKey&&selR)selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);arrastando=true;sh.focus({preventScroll:true});return}
   if(celEd)fecharCel(true);
 });
 document.addEventListener("mousemove",e=>{if(!arrastando||!selR)return;const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td)return;const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r!==selR.fr||c!==selR.fc){selR.fr=r;selR.fc=c;pintarSel();renderSelBar()}});
 document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
   /* um clique simples numa célula já abre para digitar (sem duplo clique); arrastar ou Shift só seleciona */
   if(!was||e.shiftKey||e.button||celEd||!selR||selR.ar!==selR.fr||selR.ac!==selR.fc)return;
+  if(toque()&&!mdJa){mdTd=null;return}   /* no celular o primeiro toque só MARCA a célula; tocar de novo na marcada abre para digitar (senão o teclado abre e a tabela pula) */
   const td=mdTd&&mdTd.isConnected?mdTd:(e.target.closest&&e.target.closest("#sheet td[data-c]"));mdTd=null;if(!td||td.classList.contains("ed"))return;
   const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r===selR.fr&&c===selR.fc){
     /* clique numa célula: abre a peça no formulário (se o formulário não tem alterações por salvar) e já deixa a célula pronta para digitar */

@@ -9,6 +9,7 @@ const guardarFil=()=>{try{localStorage.setItem("cadpecas-filtro",JSON.stringify(
 const filtroOn=()=>!!(FIL.q.trim()||FIL.cat||FIL.forn||FIL.ban||FIL.sit);
 const low=x=>String(x??"").trim().toLowerCase();
 const celular=()=>matchMedia("(max-width:900px)").matches;
+const toque=()=>matchMedia("(pointer:coarse)").matches;   /* dedo, não mouse */
 /* celular: o formulário vira uma gaveta embaixo; a tabela continua aparecendo em cima */
 const ALT_GAVETA=[42,60,80];
 function gavetaAlt(){const i=Math.min(2,Math.max(0,Number(abertos.malt==null?1:abertos.malt)||0));document.documentElement.style.setProperty("--msh",ALT_GAVETA[i]+"dvh");return i}
@@ -156,7 +157,7 @@ function abrirCel(ri,L,cursorFim){
   const ph=formulaVazia?(()=>{const x=calcBanho(row,L,ri+2);return x?(x.f?"="+x.f:String(x.v)):"(vazio)"})():(!row?"digite ou cole (Ctrl+V)":"");
   selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=Math.max(td2.offsetWidth,150);td2.classList.add("ed");
   td2.innerHTML=`<input id="celIn" value="${esc(raw)}" list="dl-cel" ${NUM.has(L)?'class="n"':""} placeholder="${esc(ph)}" aria-label="${esc(NOME[L])}" autocomplete="off">`;
-  const i=document.getElementById("celIn");i.style.width=w+"px";i.focus();if(cursorFim){const n=i.value.length;try{i.setSelectionRange(n,n)}catch(x){}}else i.select();
+  const i=document.getElementById("celIn");i.style.width=w+"px";i.focus({preventScroll:true});try{td2.scrollIntoView({block:"nearest",inline:"nearest"})}catch(x){}if(cursorFim){const n=i.value.length;try{i.setSelectionRange(n,n)}catch(x){}}else i.select();
 }
 let w=150;
 /* linha colada ou digitada direto na tabela: vira uma peça pronta com os valores dados */
