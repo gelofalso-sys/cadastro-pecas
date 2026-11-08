@@ -1,30 +1,62 @@
 """Gera a pasta para publicar no Netlify (versão COMPLETA, sem travas de demonstração, sem dados de exemplo).
-Uso:  python tools/publicar.py [pasta_saida]     (padrão: publicar-netlify/)
-Os dados de cada pessoa ficam só no navegador dela (localStorage + IndexedDB); não há servidor."""
-import os, subprocess, sys, shutil
+Uso:  python tools/publicar.py [pasta_saida] [rotulo_do_cliente]
+Os dados de cada pessoa ficam só no navegador dela (localStorage + IndexedDB); não há servidor.
+
+Cada publicação recebe uma marca-d'água própria (um id), invisível na tela: só aparece para quem abrir o
+código-fonte. Serve para identificar de qual cópia veio um site clonado. O registro (id, data, rótulo) fica em
+marcas-dagua.csv, fora da pasta publicada e fora do Git."""
+import os, re, shutil, subprocess, sys, time, random, csv
+
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(RAIZ, "publicar-netlify")
+out = (sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else os.path.join(RAIZ, "publicar-netlify"))
+rotulo = sys.argv[2] if len(sys.argv) > 2 else ""
+
 subprocess.run([sys.executable, os.path.join(RAIZ, "tools", "montar.py")], check=True, capture_output=True)
 s = open(os.path.join(RAIZ, "cadastro-pecas.html"), encoding="utf-8").read()
 a = '(function(){\n"use strict";'
 assert s.count(a) == 1
-# fora do claude.ai o download é um link direto
+
+# marca-d'água: um id só desta publicação, gravado num ponto do código que o minificador não remove
+# (atribuição a propriedade do window conta como efeito colateral real, então sobrevive)
+wm = "%06x%04x" % (int(time.time()), random.randrange(0, 0xFFFF))
+os.makedirs(os.path.dirname(os.path.join(RAIZ, "marcas-dagua.csv")), exist_ok=True)
+novo = not os.path.exists(os.path.join(RAIZ, "marcas-dagua.csv"))
+with open(os.path.join(RAIZ, "marcas-dagua.csv"), "a", encoding="utf-8", newline="") as f:
+    w = csv.writer(f)
+    if novo:
+        w.writerow(["id", "quando", "rotulo", "pasta"])
+    w.writerow([wm, time.strftime("%Y-%m-%d %H:%M"), rotulo, out])
+
+# fora do claude.ai o download é um link direto; window.__wm é a marca-d'água (efeito colateral: não é removido)
 s = s.replace(a, a + '''
-const DL={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};''')
+window.__wm="%s";
+const DL={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};''' % wm)
+
 os.makedirs(out, exist_ok=True)
 i = s.index('<script>\n(function(){'); j = s.index('</script>', i)
 js = s[i + 8:j]
 try:
     tmp = os.path.join(out, "_tmp.js"); open(tmp, "w", encoding="utf-8").write(js)
-    r = subprocess.run(['npx.cmd' if os.name == 'nt' else 'npx', '--yes', 'terser', tmp, '--compress', '--mangle'], capture_output=True, text=True, encoding='utf-8', timeout=180)
+    r = subprocess.run(
+        ['npx.cmd' if os.name == 'nt' else 'npx', '--yes', 'terser', tmp,
+         '--compress', 'passes=3,toplevel=true,unsafe=false,drop_debugger=true',
+         '--mangle', 'toplevel=true',
+         '--format', 'comments=false'],
+        capture_output=True, text=True, encoding='utf-8', timeout=180)
     if r.returncode == 0 and len(r.stdout) > 1000:
         s = s[:i] + '<script>' + r.stdout + s[j:]; print("minificado", len(js), "->", len(r.stdout))
     else: print("sem minificar:", r.stderr[:200])
     os.remove(tmp)
 except Exception as e:
     print("sem minificar:", e)
+
+# aviso de direitos autorais: comentário HTML, não aparece na tela, só em "ver código-fonte"
+aviso = ('<!-- © Cadastro de Peças — sistema desenvolvido sob encomenda; uso e cópia não autorizados. '
+         'Cópia nº %s, %s. -->\n') % (wm, time.strftime("%Y-%m-%d"))
 html = ('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-        '<meta name="robots" content="noindex,nofollow"><title>Cadastro de Peças</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23264a7a%27/%3E%3C/svg%3E"><style>html,body{margin:0}</style></head><body>\n' + s + '\n</body></html>\n')
+        '<meta name="robots" content="noindex,nofollow"><meta name="generator" content="' + wm + '">'
+        '<title>Cadastro de Peças</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23264a7a%27/%3E%3C/svg%3E"><style>html,body{margin:0}</style></head><body>\n'
+        + aviso + s + '\n</body></html>\n')
 open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(html)
 os.makedirs(os.path.join(out, "lib"), exist_ok=True)
 shutil.copy(os.path.join(RAIZ, "lib", "xlsx.full.min.js"), os.path.join(out, "lib", "xlsx.full.min.js"))
@@ -46,4 +78,4 @@ Como funciona: cada pessoa tem os proprios dados, guardados no navegador dela (n
 - Limpar dados do navegador ou usar aba anonima apaga tudo.
 - Por isso: baixar o "Backup completo" (Cadastros > Importar e copia) com frequencia. O app lembra apos 7 dias sem backup.
 ''')
-print("ok", out, os.path.getsize(os.path.join(out, "index.html")))
+print("ok", out, os.path.getsize(os.path.join(out, "index.html")), "marca-dagua", wm)
