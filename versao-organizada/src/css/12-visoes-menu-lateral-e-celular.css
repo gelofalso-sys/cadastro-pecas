@@ -21,6 +21,7 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
   .hin{min-height:0;padding-block:4px 2px}
   .hin .sp{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .hin .sp::-webkit-scrollbar{display:none}
+  .hin .sp{-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent);padding-right:18px}   /* os botões que continuam à direita (Copiar, Baixar) ficam sugeridos */
   .hin .sp .btn,.hin .sp select,.hin .sp input,.udo .btn{min-height:34px!important;height:34px;flex:0 0 auto;white-space:nowrap}
   .hin .sp .autor{flex:0 0 150px;width:150px}
   .udo .btn{min-width:38px;padding:0 8px;font-size:0}

@@ -83,7 +83,8 @@ td.mem span{display:inline-block;max-width:260px;overflow:hidden;text-overflow:e
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .mbar{display:flex;position:fixed;z-index:9;left:0;right:0;bottom:0;gap:8px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--surface) 92%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
   .mbar .btn{flex:1;height:42px;font-size:15px}
-  .mbar .btn:first-child{flex:0 0 auto}
+  .mbar .btn:first-child,.mbar [data-act=xlsx]{flex:0 0 auto}
+  body.formvis .mbar [data-act=xlsx]{display:none}
   body.formvis .mbar [data-act=ir-form]{display:none}
   body.formvis .mbar{left:auto;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:0;background:none;border:0;backdrop-filter:none}
   body.formvis .mbar .btn{height:38px;box-shadow:0 2px 8px color-mix(in srgb,var(--ink) 18%,transparent)}
