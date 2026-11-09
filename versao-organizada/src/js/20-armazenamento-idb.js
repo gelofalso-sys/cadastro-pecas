@@ -171,7 +171,8 @@ let romConflito=false;
 function romSalvar(){if(!ROM||!ROM.rows.length)return true;if(romConflito)return false;romGravarBig();let lsOk=false;const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
   const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now()};
   romInfo=`${f.v.H||""} · ${ROM.rows.length} peças`;try{localStorage.setItem("cadpecas-rom-info",romInfo)}catch(e){}
-  try{localStorage.setItem(ROMKEY,JSON.stringify(snap));romTem=true;lsOk=true}catch(e){try{localStorage.setItem(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true;lsOk=true}catch(x){}}
+  /* as fotos já ficam no IndexedDB (romGravarBig): o rascunho do localStorage vai sem elas, para não serializar dezenas de MB a cada edição */
+  try{localStorage.setItem(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true;lsOk=true}catch(x){}
   if(db){try{const pr=db.doc("dados/romaneio").set({...snap,rows:semFoto(snap.rows),texto:String(ROM.texto||"").slice(0,200000)});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}return lsOk}
 function romRascunho(){try{const j=localStorage.getItem(ROMKEY);return j?JSON.parse(j):null}catch(e){return null}}
 function romLimparRascunho(){romTem=false;romInfo="";try{localStorage.removeItem("cadpecas-rom-info")}catch(e){}clearTimeout(romST);try{localStorage.removeItem(ROMKEY)}catch(e){}if(db){try{const pr=db.doc("dados/romaneio").delete();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}

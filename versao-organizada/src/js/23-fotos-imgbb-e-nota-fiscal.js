@@ -198,7 +198,7 @@ function nfResumo(){const el=document.getElementById("nfSum");if(!el||!NF)return
     ${ok(c.okDesc,`Desconto dos itens ${nfM(c.sD)} ${c.okDesc?"= desconto da nota":"≠ desconto da nota ("+nfM(t.desc)+")"}`)}
     ${ok(c.okNota,t.nota>0?`Total da nota ${nfM(t.nota)} ${c.okNota?"= produtos − desconto"+(t.extra?" + frete/outros":""):"≠ produtos − desconto ("+nfM(c.esperado)+"): pode haver frete, seguro ou impostos na nota"}`:"Não achei o total da nota")}</div>
     <div class="nf-vai"><b>${c.lin.length}</b> peça${c.lin.length===1?"":"s"} · <b>${c.un}</b> unidade${c.un===1?"":"s"} · custo total <b>${nfM(c.custo)}</b>${NF.liq?` (nota com desconto: ${nfM(nfR2(t.prod-t.desc))})`:""}</div>`;
-  const b=document.getElementById("nfGo");if(b){b.textContent=c.lin.length?`Importar ${c.lin.length} peça${c.lin.length===1?"":"s"} para o romaneio`:"Nada para importar";b.disabled=!c.lin.length||!!(NF.dup&&!NF.dupOk)}}
+  const b=document.getElementById("nfGo");if(b){b.textContent=c.lin.length?`Importar ${c.lin.length} peça${c.lin.length===1?"":"s"} para o romaneio`:"Nada para importar";b.disabled=!c.lin.length||!!(NF.dup&&!NF.dupOk)||NF.rows.some(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r)));if(b&&NF.rows.some(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r))))b.title="Há item com custo inválido (use um número maior ou igual a 0)"}}
 function nfRowHTML(r){const C=cfg(),cc=catBy(r.cat),ci=nfCusto(r),dec=r.vUn&&r.vDesc?Math.round(r.vDesc/(r.vProd||1)*100):0,av=[];
   if(!r.cat)av.push("categoria não reconhecida: escolha uma");
   if(Number(r.qtd)%1)av.push("quantidade quebrada: vai ser arredondada para "+nfQtdInt(Number(r.qtd))+" e o custo de cada será ajustado para o total da nota não mudar");
