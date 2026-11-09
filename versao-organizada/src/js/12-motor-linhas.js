@@ -7,8 +7,8 @@ function gerar(list){
   list=list||S.lanc;list.forEach(l=>{if(l&&l.conj&&Array.isArray(l.comp)&&(l.cjSnap===undefined||l.cjSnap===conjSnap(l))){try{conjSync(l)}catch(e){}}});   /* conjunto lançado acompanha o cadastro de galvânicas (a menos que alguém tenha digitado o custo na planilha) */
   const C=cfg(),cont={},usados={},linhas=[],refs={},semQ={};
   /* referências digitadas à mão (no lançamento, coladas ou digitadas na planilha): a numeração automática continua depois da maior */
-  const manual={};let curI=0;const addM=(x,i)=>{const m=String(x||"").replace(/\s+/g,"").toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)return;const u=(usados[m[1]]=usados[m[1]]||new Map());if(!u.has(+m[2])||u.get(+m[2])>i)u.set(+m[2],i);manual[m[1]]=Math.max(manual[m[1]]||0,+m[2])};
-  list.forEach((l,i)=>{if(!vazio(l.v.E))addM(l.v.E,i);Object.values(l.ov||{}).forEach(o=>{if(o&&typeof o==="object")addM(o.E,i)})});
+  const manual={},manualReal={};let curI=0;const addM=(x,i,rf)=>{const m=String(x||"").replace(/\s+/g,"").toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)return;const u=(usados[m[1]]=usados[m[1]]||new Map());if(!u.has(+m[2])||u.get(+m[2])>i)u.set(+m[2],i);manual[m[1]]=Math.max(manual[m[1]]||0,+m[2]);if(!rf)manualReal[m[1]]=Math.max(manualReal[m[1]]||0,+m[2])};
+  list.forEach((l,i)=>{if(!vazio(l.v.E))addM(l.v.E,i,!!l.rf);Object.values(l.ov||{}).forEach(o=>{if(o&&typeof o==="object")addM(o.E,i)})});
   /* uma referência digitada só "reserva" o número para as peças lançadas depois dela; a peça antiga não é empurrada (se coincidir, aparece como repetida) */
   const next=p=>{if(!(p in cont))cont[p]=ultimo(p);do{cont[p]++}while(usados[p]&&usados[p].has(cont[p])&&usados[p].get(cont[p])<=curI);return cont[p]};
   const cats=[null];
@@ -67,7 +67,7 @@ function gerar(list){
     if(Object.keys(ex).length)for(let i=linhas.length-1;i>=0;i--){const r=linhas[i];if(ex[r.lancId]&&ex[r.lancId].has(r.key)){const a=refs[r.lancId];if(a){const j=a.indexOf(r.v.E);if(j>=0)a.splice(j,1)}linhas.splice(i,1)}}}
   const conta={};linhas.forEach(r=>{const k=String(r.v.E||"").toUpperCase();conta[k]=(conta[k]||0)+1});
   linhas.forEach(r=>r.dup=conta[String(r.v.E||"").toUpperCase()]>1);
-  return {linhas,refs,cont,manual,semQ};
+  return {linhas,refs,cont,manual,manualReal,semQ};
 }
 /* validação de número digitado/colado: sem texto, sem negativo; Quantidade = inteiro de 1 em diante */
 const VALIDA_NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","AB","AC"]);
@@ -99,7 +99,7 @@ function checaCel(L,v){
 function marcaRuim(ri,L){const td=document.querySelector(`#sheet tr[data-ri="${ri}"] td[data-c="${L}"]`);if(!td)return;td.style.outline="2px solid #c0392b";td.style.background="#fdecea";setTimeout(()=>{td.style.outline="";td.style.background=""},3000)}
 /* "=" só vira fórmula em coluna numérica e com caracteres seguros; em texto (descrição, código…) vale como texto, nunca como fórmula do Excel */
 function lerValor(v,L,rv){const s=String(v).trim();if(s.startsWith("=")){if(NUM.has(L)&&FORM_SEGURA.test(s)){const f=s.slice(1).toUpperCase().replace(/(\d),(\d)/g,"$1.$2");   /* vírgula decimal vira ponto: no arquivo a vírgula separaria argumentos */
-    if(f.includes(",")||!sintaxeF(f))return {v:s};return {v:null,f,txt:s}}return {v:s}}if(NUM.has(L)&&L!=="Y"&&L!=="AA"){const n=num(s);return n==null?{v:s}:{v:n}}return {v:s}}
+    if(f.includes(",")||!sintaxeF(f))return {v:s};return {v:null,f,txt:s}}return {v:s}}if(NUM.has(L)&&L!=="Y"&&L!=="AA"){const n=num(s);return n==null?{v:s}:{v:DUAS.has(L)?r2c(n):n}}return {v:s}}
 /* avalia uma fórmula segura (números, células, + - * / e parênteses) sem eval/Function (o cabeçalho de segurança do Netlify não permite);
    get(coluna) dá o número da célula referenciada. A linha da referência não conta: vale a própria linha — por isso a exportação reescreve as referências para a linha real */
 function calcExpr(s){s=s.replace(/\s+/g,"").replace(/(\d),(\d)/g,"$1.$2");let i=0;
@@ -122,8 +122,8 @@ const pesoLinha=r=>numRaw(r.v.N,r.v,0,r.desconto);
 /* valor calculado de uma coluna de banho (sem digitação) */
 function calcBanho(row,L,r){
   const peso=pesoLinha(row);
-  if(L===row.banho.coluna){if(row.banho.mult==null)return null;if(row.banho.modo==="fixo")return {v:row.banho.mult};if(peso==null)return null;return {v:r4(peso*row.banho.mult),f:`N${r}*${row.banho.mult}`}}
-  if(L==="U"&&row.verniz!=null&&peso!=null)return {v:r4(peso*row.verniz),f:`N${r}*${row.verniz}`};
+  if(L===row.banho.coluna){if(row.banho.mult==null)return null;if(row.banho.modo==="fixo")return {v:r2c(row.banho.mult)};if(peso==null)return null;return {v:r2c(peso*row.banho.mult),f:`ROUND(N${r}*${row.banho.mult},2)`}}
+  if(L==="U"&&row.verniz!=null&&peso!=null)return {v:r2c(peso*row.verniz),f:`ROUND(N${r}*${row.verniz},2)`};
   return null;
 }
 const modeloAtual=()=>{const C=cfg();return (C.modelos||[]).find(x=>x.id===C.modelo)||C.modelos[0]};

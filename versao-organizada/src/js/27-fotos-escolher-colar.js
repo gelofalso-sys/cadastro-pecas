@@ -63,7 +63,7 @@ function adicionar(limpar,quiet){
   if(!quiet){const meu=editId||"__p",rd=previsao().linhas.filter(r=>r.lancId===meu&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
   {let ck=null,onde=null;
     for(const L of VALIDA_NUM){const r=checaCel(L,f.v[L]);if(r.erro){ck=r.erro;onde=L;break}}
-    if(!ck)for(const o of Object.values(f.ov||{})){if(!o||typeof o!=="object")continue;for(const L of VALIDA_NUM){const r=checaCel(L,o[L]);if(r.erro){ck=r.erro;onde=L;break}}if(ck)break}
+    if(!ck)for(const [ok0,o] of Object.entries(f.ov||{})){if(!o||typeof o!=="object")continue;if(f.tipo==="pronta"&&!bonP(f).length&&ok0!=="p"&&!ok0.startsWith("p~"))continue;for(const L of VALIDA_NUM){const r=checaCel(L,o[L]);if(r.erro){ck=r.erro;onde=L;break}}if(ck)break}
     if(!ck&&!vazio(f.desconto)){const d=num(f.desconto);if(d==null||d<0||d>100)ck="Desconto precisa ser um número de 0 a 100 (%)."}
     if(ck){erro=ck;atualizarGera();const el=onde&&document.getElementById("f-"+onde);if(el)el.focus();return}}
   if(f.conj){const cs=Array.isArray(f.comp)?f.comp:[];
@@ -76,6 +76,7 @@ function adicionar(limpar,quiet){
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
   {const gr=gradeBy(f.grade);if(gr&&!f.semGrade&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
   if(!vazio(f.v.E))f.v.E=String(f.v.E).replace(/\s+/g,"").toUpperCase();Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object"&&!vazio(o.E))o.E=String(o.E).replace(/\s+/g,"").toUpperCase()});
+  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=r2c(n).toFixed(2).replace(".",",")})};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
   const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);if(ant&&ant.rf&&prefDe(val(novo,"I")||"",val(novo,"J"))!==prefDe(val(ant,"I")||"",val(ant,"J"))){delete novo.v.E;delete novo.rf}novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
   if(!novo.conj){delete novo.comp;delete novo.fConj}
@@ -83,6 +84,8 @@ function adicionar(limpar,quiet){
     if(!bp.length){novo.onP={};if(!novo.conj)novo.banhista="";const ov={};Object.keys(novo.ov||{}).forEach(k=>{if(k==="p"||k.startsWith("p~"))ov[k]=novo.ov[k]});novo.ov=ov;novo.mk=novo.mk&&novo.mk.p?{p:novo.mk.p}:{}}
     if(temGrade(novo)||bp.length)delete novo.v.W;["O","R","S","T","U"].forEach(L=>{if(vazio(novo.v[L]))delete novo.v[L]})}
   else if(novo.mk)delete novo.mk.p;
+  /* o Preço de Varejo do formulário só vale para peça pronta simples; numa peça bruta (ou com banhos) ele ficou escondido, vindo da peça anterior, e não pode ir para a planilha */
+  if(!editId&&!quiet&&(novo.tipo=="bruta"||bonP(novo).length))delete novo.v.V;
   if(!quiet)addTrava=Date.now()+500;
   if(quiet)delete novo.ft;
   if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}

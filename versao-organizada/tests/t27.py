@@ -59,7 +59,7 @@ with sync_playwright() as p:
     r2=refs(pg);print("refs 2:",r2)
     ok(r2==r1,"peça refeita mantém as mesmas referências e posição")
     pesos=pg.eval_on_selector_all('tr[data-l] td[data-c="N"]',"e=>e.map(x=>x.textContent.trim())")
-    ok(pesos[0]=="5","peso novo aplicado na peça editada (%s)"%pesos[:3])
+    ok(pesos[0]=="5,00","peso novo aplicado na peça editada (%s)"%pesos[:3])
     # 2) mudar categoria de uma peça lançada: vai para a sequência da categoria nova
     reabrir(pg)
     cats=pg.eval_on_selector_all('#romWrap [data-rp="cat"]',"e=>e.map(x=>x.value)");print("cats:",cats)

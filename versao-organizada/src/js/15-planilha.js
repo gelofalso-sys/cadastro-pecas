@@ -104,7 +104,7 @@ function renderTopo(){try{romResync()}catch(e){}
   {const ms=document.getElementById("modSel");if(ms){const C0=cfg(),tem=r=>C0.modelos.some(x=>r.test(String(x.nome||"")));
     ms.innerHTML=opts([...C0.modelos.map(x=>[x.id,x.nome]),...(tem(/bling/i)?[]:[["@bling","＋ Adicionar Bling"]]),...(tem(/jueri/i)?[]:[["@jueri","＋ Adicionar Jueri"]]),["@novo","＋ Outro sistema…"]],C0.modelo)}
     const bx=document.querySelector('[data-act="xlsx"]');if(bx)bx.textContent=(filtroOn()?"Baixar filtro ":"Baixar ")+(modeloAtual().formato==="csv"?".csv":".xlsx");{const bc=document.querySelector('[data-act="copiar"]');if(bc)bc.textContent=filtroOn()?"Copiar filtro para o Excel":"Copiar para o Excel"}}
-  document.getElementById("seqs").innerHTML=ps.map(p0=>{const p=esc(p0),u=ultimo(p0),m=(g.manual||{})[p0]||0,i0=Math.max(u,m),f=g.cont[p0];return `<span class="seq">${p}: última <b>${p}${u}</b>${m>u?` · à mão até <b>${p}${m}</b>`:""}${f&&f>i0?` → lista <b>${p}${i0+1}${f>i0+1?"–"+f:""}</b>`:""}<span class="px">próxima <b>${p}${esc(proxDe(p0))}</b></span></span>`}).join("");
+  document.getElementById("seqs").innerHTML=ps.map(p0=>{const p=esc(p0),u=ultimo(p0),m=(g.manualReal||{})[p0]||0,i0=Math.max(u,m),f=g.cont[p0];return `<span class="seq">${p}: última <b>${p}${u}</b>${m>u?` · à mão até <b>${p}${m}</b>`:""}${f&&f>i0?` → lista <b>${p}${i0+1}${f>i0+1?"–"+f:""}</b>`:""}<span class="px">próxima <b>${p}${esc(proxDe(p0))}</b></span></span>`}).join("");
   document.getElementById("banner").innerHTML=lastExport?`<div class="banner"><p>Planilha gerada com <b class="mono">${esc(lastExport.faixa)}</b>. Gravar como última peça do sistema?</p>
     <button class="btn pri sm" type="button" data-act="exp-limpar">Gravar e limpar a lista</button><button class="btn sm" type="button" data-act="exp-so">Só gravar o número</button><button class="btn ghost sm" type="button" data-act="exp-nao">Agora não</button></div>`:"";
   const ns=[...sel].filter(id=>S.lanc.some(l=>l.id===id)).length,av=avisos(g);
@@ -125,7 +125,7 @@ function renderTopo(){try{romResync()}catch(e){}
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
-      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(MONEY.has(L)?brl(x.v):fmt(x.v)):x.v;
+      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(DUAS.has(L)?brl(x.v):fmt(x.v)):x.v;
       h+=`<td class="${isN?"n":""}${x.f?" fx":""}${ov}" data-c="${L}" title="${x.f?"="+esc(x.f):esc(x.v)}">${esc(txt)}</td>`});
     h+=`</tr>`;return h};
   const nb=Math.max(6,30-g.linhas.length);
@@ -160,7 +160,7 @@ function abrirCel(ri,L,cursorFim){
   document.getElementById("dl-cel").innerHTML=listaDe(L,row?row.v.I:S.form.v.I).map(o=>`<option value="${esc(o)}">`).join("");
   const formulaVazia=row&&row.banho&&FORMULA.has(L)&&!row.ovs.includes(L);
   /* célula calculada (custo do banho, verniz…): o campo abre com o VALOR atual (não vazio); se você não mudar nada, nada é gravado */
-  const calc=formulaVazia?calcBanho(row,L,ri+2):null,calcTxt=calc&&typeof calc.v==="number"?String(r4(calc.v)).replace(".",","):"";
+  const calc=formulaVazia?calcBanho(row,L,ri+2):null,calcTxt=calc&&typeof calc.v==="number"?r2c(calc.v).toFixed(2).replace(".",","):"";
   const raw=!row?"":formulaVazia?calcTxt:(row.v[L]??"");celEd={ri,L,orig:String(raw),nova:!row,setas:!!cursorFim};
   const ph=formulaVazia?(calc?(calc.f?"="+calc.f:String(calc.v)):"(vazio)"):(!row?"digite ou cole (Ctrl+V)":"");
   selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=Math.max(td2.offsetWidth,150);td2.classList.add("ed");

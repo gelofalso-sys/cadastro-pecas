@@ -42,7 +42,7 @@ with sync_playwright() as p:
     # edita o peso da 1ª peça direto na peça lançada
     pg.click('tr[data-l] [data-act="editar"] >> nth=0');pg.wait_for_timeout(600)
     pg.fill("#f-N","8");pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(900)
-    ok(col(pg,"N")[0]=="8","peso da peça editado para 8 na tabela: %s"%col(pg,"N")[:2])
+    ok(col(pg,"N")[0]=="8,00","peso da peça editado para 8 na tabela: %s"%col(pg,"N")[:2])
     # refazer sem mudar o card: deve avisar; cancelando, o peso 8 fica
     reabrir(pg)
     pg.click('[data-act="rom-refazer-todas"]');pg.wait_for_timeout(500)
@@ -50,7 +50,7 @@ with sync_playwright() as p:
     criar(pg)
     ok(any("SOBRESCREVER" in m for m in msgs),"aviso de sobrescrita aparece: %s"%[m[:60] for m in msgs])
     fechar(pg)
-    ok(col(pg,"N")[0]=="8","cancelar mantém o peso editado: %s"%col(pg,"N")[:2])
+    ok(col(pg,"N")[0]=="8,00","cancelar mantém o peso editado: %s"%col(pg,"N")[:2])
     ok(not errs,"sem erros de script: %s"%errs[:2])
     b.close()
 print("\nFalhas:",len(f))

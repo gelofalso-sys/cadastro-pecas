@@ -60,7 +60,7 @@ window.addEventListener("storage",e=>{
 /* ===== v19: romaneio — busca e filtro por situação (só esconde os cartões; nada é remontado) ===== */
 let ROMF={q:"",m:"todas"};
 function romSit(r){if(r.feito&&!r.refaz)return "lancadas";if(r.skip)return "ignoradas";
-  if(!(num(r.peso)>0)||romSomaDe(r,romColsR(r))!==r.qtd||r.catq)return "pendentes";return "prontas"}
+  if(num(r.peso)==null||romSomaDe(r,romColsR(r))!==r.qtd||r.catq)return "pendentes";return "prontas"}
 function romFiltroAplicar(){
   const w=document.getElementById("romWrap");if(!w||!ROM)return;
   const q=semAc(ROMF.q),m=ROMF.m;let n=0;

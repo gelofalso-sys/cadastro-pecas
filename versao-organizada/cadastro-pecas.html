@@ -1394,6 +1394,8 @@ const LET=HEAD.map((_,i)=>{let s="",n=i+1;while(n>0){const m=(n-1)%26;s=String.f
 const NOME=Object.fromEntries(LET.map((l,i)=>[l,HEAD[i]]));
 const COLW=[5.71,57.14,22.29,15.14,11,39.57,10.57,9.71,11.29,7.86,7.43,9,40,7,9,12,10,12,12,12,12,10,9,10,11,10,7,6,8,10,8];
 const NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","Y","AA","AB","AC"]);
+/* peso e dinheiro: só duas casas depois da vírgula (centavos exatos, para os totais fecharem) */
+const DUAS=new Set(["N","P","Q","R","S","T","U","V"]);
 const MONEY=new Set(["P","Q","R","S","T","U","V"]);
 const milDe=(b,cat)=>{const m=b&&b.milCat&&cat!=null?b.milCat[cat]:undefined;return (m!==undefined&&m!==null&&m!=='')?m:(b?b.mil:"")};
 const multDe=(b,cat)=>{const m=b&&b.multCat&&cat!=null?b.multCat[cat]:undefined;return (m!==undefined&&m!==null&&m!=='')?m:(b?b.mult:"")};
@@ -1598,8 +1600,8 @@ function gerar(list){
   list=list||S.lanc;list.forEach(l=>{if(l&&l.conj&&Array.isArray(l.comp)&&(l.cjSnap===undefined||l.cjSnap===conjSnap(l))){try{conjSync(l)}catch(e){}}});   /* conjunto lançado acompanha o cadastro de galvânicas (a menos que alguém tenha digitado o custo na planilha) */
   const C=cfg(),cont={},usados={},linhas=[],refs={},semQ={};
   /* referências digitadas à mão (no lançamento, coladas ou digitadas na planilha): a numeração automática continua depois da maior */
-  const manual={};let curI=0;const addM=(x,i)=>{const m=String(x||"").replace(/\s+/g,"").toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)return;const u=(usados[m[1]]=usados[m[1]]||new Map());if(!u.has(+m[2])||u.get(+m[2])>i)u.set(+m[2],i);manual[m[1]]=Math.max(manual[m[1]]||0,+m[2])};
-  list.forEach((l,i)=>{if(!vazio(l.v.E))addM(l.v.E,i);Object.values(l.ov||{}).forEach(o=>{if(o&&typeof o==="object")addM(o.E,i)})});
+  const manual={},manualReal={};let curI=0;const addM=(x,i,rf)=>{const m=String(x||"").replace(/\s+/g,"").toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)return;const u=(usados[m[1]]=usados[m[1]]||new Map());if(!u.has(+m[2])||u.get(+m[2])>i)u.set(+m[2],i);manual[m[1]]=Math.max(manual[m[1]]||0,+m[2]);if(!rf)manualReal[m[1]]=Math.max(manualReal[m[1]]||0,+m[2])};
+  list.forEach((l,i)=>{if(!vazio(l.v.E))addM(l.v.E,i,!!l.rf);Object.values(l.ov||{}).forEach(o=>{if(o&&typeof o==="object")addM(o.E,i)})});
   /* uma referência digitada só "reserva" o número para as peças lançadas depois dela; a peça antiga não é empurrada (se coincidir, aparece como repetida) */
   const next=p=>{if(!(p in cont))cont[p]=ultimo(p);do{cont[p]++}while(usados[p]&&usados[p].has(cont[p])&&usados[p].get(cont[p])<=curI);return cont[p]};
   const cats=[null];
@@ -1658,7 +1660,7 @@ function gerar(list){
     if(Object.keys(ex).length)for(let i=linhas.length-1;i>=0;i--){const r=linhas[i];if(ex[r.lancId]&&ex[r.lancId].has(r.key)){const a=refs[r.lancId];if(a){const j=a.indexOf(r.v.E);if(j>=0)a.splice(j,1)}linhas.splice(i,1)}}}
   const conta={};linhas.forEach(r=>{const k=String(r.v.E||"").toUpperCase();conta[k]=(conta[k]||0)+1});
   linhas.forEach(r=>r.dup=conta[String(r.v.E||"").toUpperCase()]>1);
-  return {linhas,refs,cont,manual,semQ};
+  return {linhas,refs,cont,manual,manualReal,semQ};
 }
 /* validação de número digitado/colado: sem texto, sem negativo; Quantidade = inteiro de 1 em diante */
 const VALIDA_NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","AB","AC"]);
@@ -1690,7 +1692,7 @@ function checaCel(L,v){
 function marcaRuim(ri,L){const td=document.querySelector(`#sheet tr[data-ri="${ri}"] td[data-c="${L}"]`);if(!td)return;td.style.outline="2px solid #c0392b";td.style.background="#fdecea";setTimeout(()=>{td.style.outline="";td.style.background=""},3000)}
 /* "=" só vira fórmula em coluna numérica e com caracteres seguros; em texto (descrição, código…) vale como texto, nunca como fórmula do Excel */
 function lerValor(v,L,rv){const s=String(v).trim();if(s.startsWith("=")){if(NUM.has(L)&&FORM_SEGURA.test(s)){const f=s.slice(1).toUpperCase().replace(/(\d),(\d)/g,"$1.$2");   /* vírgula decimal vira ponto: no arquivo a vírgula separaria argumentos */
-    if(f.includes(",")||!sintaxeF(f))return {v:s};return {v:null,f,txt:s}}return {v:s}}if(NUM.has(L)&&L!=="Y"&&L!=="AA"){const n=num(s);return n==null?{v:s}:{v:n}}return {v:s}}
+    if(f.includes(",")||!sintaxeF(f))return {v:s};return {v:null,f,txt:s}}return {v:s}}if(NUM.has(L)&&L!=="Y"&&L!=="AA"){const n=num(s);return n==null?{v:s}:{v:DUAS.has(L)?r2c(n):n}}return {v:s}}
 /* avalia uma fórmula segura (números, células, + - * / e parênteses) sem eval/Function (o cabeçalho de segurança do Netlify não permite);
    get(coluna) dá o número da célula referenciada. A linha da referência não conta: vale a própria linha — por isso a exportação reescreve as referências para a linha real */
 function calcExpr(s){s=s.replace(/\s+/g,"").replace(/(\d),(\d)/g,"$1.$2");let i=0;
@@ -1713,8 +1715,8 @@ const pesoLinha=r=>numRaw(r.v.N,r.v,0,r.desconto);
 /* valor calculado de uma coluna de banho (sem digitação) */
 function calcBanho(row,L,r){
   const peso=pesoLinha(row);
-  if(L===row.banho.coluna){if(row.banho.mult==null)return null;if(row.banho.modo==="fixo")return {v:row.banho.mult};if(peso==null)return null;return {v:r4(peso*row.banho.mult),f:`N${r}*${row.banho.mult}`}}
-  if(L==="U"&&row.verniz!=null&&peso!=null)return {v:r4(peso*row.verniz),f:`N${r}*${row.verniz}`};
+  if(L===row.banho.coluna){if(row.banho.mult==null)return null;if(row.banho.modo==="fixo")return {v:r2c(row.banho.mult)};if(peso==null)return null;return {v:r2c(peso*row.banho.mult),f:`ROUND(N${r}*${row.banho.mult},2)`}}
+  if(L==="U"&&row.verniz!=null&&peso!=null)return {v:r2c(peso*row.verniz),f:`ROUND(N${r}*${row.verniz},2)`};
   return null;
 }
 const modeloAtual=()=>{const C=cfg();return (C.modelos||[]).find(x=>x.id===C.modelo)||C.modelos[0]};
@@ -1828,7 +1830,7 @@ function celulaBase(row,r,L){
 function avisos(g){
   const out=[],cc=cfg().colcfg,ps=new Set(S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))));
   ps.forEach(p=>{if(!(ultimo(p)>0)&&!((g.manual||{})[p]>0))out.push({bad:1,t:`Falta a última peça de ${p} no sistema.`})});
-  Object.entries(g.manual||{}).forEach(([p,n])=>{if(n>ultimo(p))out.push({t:`${p}${fnum(p,n)} foi digitada à mão (a última do sistema é ${p}${fnum(p,ultimo(p))}): as próximas automáticas continuam em ${p}${fnum(p,n+1)}`})});
+  Object.entries(g.manualReal||{}).forEach(([p,n])=>{if(n>ultimo(p))out.push({t:`${p}${fnum(p,n)} foi digitada à mão (a última do sistema é ${p}${fnum(p,ultimo(p))}): as próximas automáticas continuam em ${p}${fnum(p,n+1)}`})});
   const d=new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E));if(d.size)out.push({bad:1,t:`Referência repetida: ${[...d].join(", ")}`});
   LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!qtdPos(r.v.W,r.v,r.desconto):vazio(r.v[L])).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
   const sp=g.linhas.filter(r=>r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo").length;if(sp)out.push({t:`${sp} bruta(s) sem Peso`});
@@ -2173,7 +2175,7 @@ function renderTopo(){try{romResync()}catch(e){}
   {const ms=document.getElementById("modSel");if(ms){const C0=cfg(),tem=r=>C0.modelos.some(x=>r.test(String(x.nome||"")));
     ms.innerHTML=opts([...C0.modelos.map(x=>[x.id,x.nome]),...(tem(/bling/i)?[]:[["@bling","＋ Adicionar Bling"]]),...(tem(/jueri/i)?[]:[["@jueri","＋ Adicionar Jueri"]]),["@novo","＋ Outro sistema…"]],C0.modelo)}
     const bx=document.querySelector('[data-act="xlsx"]');if(bx)bx.textContent=(filtroOn()?"Baixar filtro ":"Baixar ")+(modeloAtual().formato==="csv"?".csv":".xlsx");{const bc=document.querySelector('[data-act="copiar"]');if(bc)bc.textContent=filtroOn()?"Copiar filtro para o Excel":"Copiar para o Excel"}}
-  document.getElementById("seqs").innerHTML=ps.map(p0=>{const p=esc(p0),u=ultimo(p0),m=(g.manual||{})[p0]||0,i0=Math.max(u,m),f=g.cont[p0];return `<span class="seq">${p}: última <b>${p}${u}</b>${m>u?` · à mão até <b>${p}${m}</b>`:""}${f&&f>i0?` → lista <b>${p}${i0+1}${f>i0+1?"–"+f:""}</b>`:""}<span class="px">próxima <b>${p}${esc(proxDe(p0))}</b></span></span>`}).join("");
+  document.getElementById("seqs").innerHTML=ps.map(p0=>{const p=esc(p0),u=ultimo(p0),m=(g.manualReal||{})[p0]||0,i0=Math.max(u,m),f=g.cont[p0];return `<span class="seq">${p}: última <b>${p}${u}</b>${m>u?` · à mão até <b>${p}${m}</b>`:""}${f&&f>i0?` → lista <b>${p}${i0+1}${f>i0+1?"–"+f:""}</b>`:""}<span class="px">próxima <b>${p}${esc(proxDe(p0))}</b></span></span>`}).join("");
   document.getElementById("banner").innerHTML=lastExport?`<div class="banner"><p>Planilha gerada com <b class="mono">${esc(lastExport.faixa)}</b>. Gravar como última peça do sistema?</p>
     <button class="btn pri sm" type="button" data-act="exp-limpar">Gravar e limpar a lista</button><button class="btn sm" type="button" data-act="exp-so">Só gravar o número</button><button class="btn ghost sm" type="button" data-act="exp-nao">Agora não</button></div>`:"";
   const ns=[...sel].filter(id=>S.lanc.some(l=>l.id===id)).length,av=avisos(g);
@@ -2194,7 +2196,7 @@ function renderTopo(){try{romResync()}catch(e){}
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
-      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(MONEY.has(L)?brl(x.v):fmt(x.v)):x.v;
+      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(DUAS.has(L)?brl(x.v):fmt(x.v)):x.v;
       h+=`<td class="${isN?"n":""}${x.f?" fx":""}${ov}" data-c="${L}" title="${x.f?"="+esc(x.f):esc(x.v)}">${esc(txt)}</td>`});
     h+=`</tr>`;return h};
   const nb=Math.max(6,30-g.linhas.length);
@@ -2229,7 +2231,7 @@ function abrirCel(ri,L,cursorFim){
   document.getElementById("dl-cel").innerHTML=listaDe(L,row?row.v.I:S.form.v.I).map(o=>`<option value="${esc(o)}">`).join("");
   const formulaVazia=row&&row.banho&&FORMULA.has(L)&&!row.ovs.includes(L);
   /* célula calculada (custo do banho, verniz…): o campo abre com o VALOR atual (não vazio); se você não mudar nada, nada é gravado */
-  const calc=formulaVazia?calcBanho(row,L,ri+2):null,calcTxt=calc&&typeof calc.v==="number"?String(r4(calc.v)).replace(".",","):"";
+  const calc=formulaVazia?calcBanho(row,L,ri+2):null,calcTxt=calc&&typeof calc.v==="number"?r2c(calc.v).toFixed(2).replace(".",","):"";
   const raw=!row?"":formulaVazia?calcTxt:(row.v[L]??"");celEd={ri,L,orig:String(raw),nova:!row,setas:!!cursorFim};
   const ph=formulaVazia?(calc?(calc.f?"="+calc.f:String(calc.v)):"(vazio)"):(!row?"digite ou cole (Ctrl+V)":"");
   selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=Math.max(td2.offsetWidth,150);td2.classList.add("ed");
@@ -2330,7 +2332,7 @@ function pintarSel(){
   for(let c=b.c1;c<=b.c2;c++){const th=document.querySelector(`#sheet th[data-hc="${LET[c]}"]`);if(th)th.classList.add('sl')}
 }
 function rolarAte(){if(JAN&&selR)janGarantir(selR.fr);const a=document.querySelector('#sheet td.sa');if(a)a.scrollIntoView({block:'nearest',inline:'nearest'})}
-function textoCel(ri,ci){const row=G.linhas[ri];if(!row)return "";const x=celulas(row,ri+2)[ci];if(!x)return "";if(typeof x.v==="number")return String(r4(x.v)).replace(".",",");if(x.v==null)return x.txt||("="+x.f);return String(x.v)}
+function textoCel(ri,ci){const row=G.linhas[ri];if(!row)return "";const x=celulas(row,ri+2)[ci];if(!x)return "";if(typeof x.v==="number")return (DUAS.has(LET[ci])?r2c(x.v).toFixed(2):String(r4(x.v))).replace(".",",");if(x.v==null)return x.txt||("="+x.f);return String(x.v)}
 function idsDaSel(){const b=selBox();if(!b)return [];const s=new Set();for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const row=G.linhas[r];if(row)s.add(row.lancId)}return [...s]}
 function copiarSel(){const b=selBox();if(!b)return;const lin=[];for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const l=[];for(let c=b.c1;c<=b.c2;c++)l.push(textoCel(r,c));lin.push(l.join("\t"))}
   navigator.clipboard.writeText(lin.join("\n")).then(()=>toast(`${(b.r2-b.r1+1)*(b.c2-b.c1+1)} célula(s) copiada(s).`)).catch(()=>toast("O navegador não liberou a cópia. Use Copiar para o Excel."))}
@@ -3342,7 +3344,7 @@ function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==
       ${fq("Subcategoria",`<select data-rp="rb" data-k="sub">${opts(cc?cc.subs:[],b.sub||"","(manter)")}</select>`)}${fq("Tipo",`<select data-rp="rb" data-k="tipo"><option value="">(manter)</option><option value="bruta" ${b.tipo==="bruta"?"selected":""}>Bruta (vai banhar)</option><option value="pronta" ${b.tipo==="pronta"?"selected":""}>Pronta (já banhada)</option></select>`)}${fq("Galvânica",`<select data-rp="rb" data-k="bh">${opts(C.banhistas.map(x=>[x.id,x.nome]),b.bh||"","(manter)")}</select>`)}
       ${fq("Observação",`<input data-rp="rb" data-k="obs" value="${esc(b.obs??"")}" placeholder="(manter)">`,"w-l")}
       <button type="button" class="btn pri" data-act="rom-lote">Aplicar</button></div></div></details>`}
-function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhuma"?false:m==="sempeso"?!(num(r.peso)>0):m.startsWith("cat:")?r.cat===m.slice(4):r.sel});
+function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhuma"?false:m==="sempeso"?num(r.peso)==null:m.startsWith("cat:")?r.cat===m.slice(4):r.sel});
   document.querySelectorAll("#romWrap .rc").forEach((rc,i)=>{const c=rc.querySelector("[data-rp=sel]");if(c)c.checked=!!ROM.rows[i].sel});romSelN()}
 function romSelN(){const e=document.getElementById("romSelN");if(e)e.textContent=`${ROM.rows.filter(r=>r.sel).length} selecionada(s) — sem seleção, vale para todas`}
 function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r=>r.sel);if(!alvo.length)alvo=ROM.rows.filter(r=>!r.skip);
@@ -3361,7 +3363,7 @@ function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r
 function romRevisar(){const pv=romPreview(),it=[];
   ROM.rows.forEach((r,i)=>{if(r.skip)return;const p=pv[i],q=romForm(r).q,cols=romColsR(r),al=[],cria=q.length>0;
     if(!cria)al.push("sem quantidade — não será criada");else if(romSomaDe(r,cols)!==r.qtd)al.push(`divisão ${romSomaDe(r,cols)} de ${r.qtd}`);
-    if(r.catq)al.push("categoria não confirmada");if(!(num(r.peso)>0))al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
+    if(r.catq)al.push("categoria não confirmada");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
     if(p&&p.rows.some(x=>x.dup))al.push("referência repetida");if(cria&&p&&p.rows.some(x=>x.v==null))al.push("sem preço de varejo");if(ROM.pdf&&!r.foto)al.push("sem foto");
     it.push({r,i,p,cria,al})});
   const cr=it.filter(x=>x.cria),nal=it.filter(x=>x.al.length).length,zeros=[...new Set(cr.map(x=>prefDe(x.r.cat,x.r.sub)))].filter(pf=>!(ultimo(pf)>0));let un=0,cus=0,vr=0,nl=0;
@@ -3435,7 +3437,7 @@ function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();const pv=romPre
     const fill=(sel,v,k)=>rc.querySelectorAll(sel).forEach(e=>{if(e.tagName!=="INPUT"||document.activeElement===e)return;const bo=(r.bo||{})[e.dataset.b]||{},ov=e.dataset.rp==="vp"?r.vp:bo[k];if(!vazio(ov))return;e.value=v==null?"":(k==="F"?v:brl(v));e.classList.add("isauto")});
     if(p){if(romTipo(r)==="bruta"||(cols[0]&&cols[0].id!=="p"))cols.forEach(c=>{const x=p.rows.find(y=>y.bid===c.id);if(!x)return;{const sp=rc.querySelector(`[data-cb="${CSS.escape(String(c.id))}"]`);if(sp)sp.textContent=x.cb!=null?"banho R$ "+brl(x.cb):(num(r.peso)>0?"":"⚠ informe o peso")}fill(`[data-auto="C:${c.id}"]`,x.cb,"C");fill(`[data-auto="U:${c.id}"]`,x.u,"U");fill(`[data-auto="V:${c.id}"]`,x.v,"V");fill(`[data-auto="F:${c.id}"]`,x.desc,"F");baseTxt(c.id,x)});
       else{const x=p.rows[0];if(x){fill('[data-auto="V:p"]',x.v,"V");baseTxt("p",x)}}}});
-  const chk=document.getElementById("romChk");if(chk){const at=ROM.rows.filter(r=>!r.skip),sp=at.filter(r=>!(num(r.peso)>0)).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=pv.filter(x=>x&&x.rows.some(y=>y.dup)).length,pt=[];
+  const chk=document.getElementById("romChk");if(chk){const at=ROM.rows.filter(r=>!r.skip),sp=at.filter(r=>num(r.peso)==null).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=pv.filter(x=>x&&x.rows.some(y=>y.dup)).length,pt=[];
     if(sp)pt.push(`⚠ ${sp} sem peso`);if(dv)pt.push(`⚠ ${dv} com divisão diferente da lista`);if(dp)pt.push(`⚠ ${dp} com referência repetida`);
     if(ROM.pdf){const ft=at.filter(r=>r.foto).length;pt.push(`${ft===at.length?"✓":"⚠"} fotos ${ft}/${at.length}`)}
     if(!sp&&!dv&&!dp)pt.push("✓ pronto para criar");chk.textContent="Antes de criar: "+pt.join(" · ");chk.className="rom-c "+((sp||dv||dp)?"bad":"")}
@@ -3475,7 +3477,8 @@ async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planil
   if(aoa.length>MAX_PLANILHA_LINHAS)throw new Error(`A planilha tem ${aoa.length} linhas e o limite é ${MAX_PLANILHA_LINHAS}.`);
   let hi=0,best=-1;for(let i=0;i<Math.min(15,aoa.length);i++){let n=0;aoa[i].forEach(c=>{if(Object.values(ROM_SIN).some(rx=>rx.test(String(c))))n++});if(n>best){best=n;hi=i}}
   const head=(aoa[hi]||[]).map((c,j)=>String(c||"").trim()||("Coluna "+(j+1))),map={};
-  Object.entries(ROM_SIN).forEach(([k,rx])=>{const j=head.findIndex((h,q)=>rx.test(h)&&!Object.values(map).includes(q));if(j>=0)map[k]=j});
+  const dados=aoa.slice(hi+1);   /* só sugere coluna que tem dado: coluna vazia (ex.: ID em branco) não preenche nada */
+  Object.entries(ROM_SIN).forEach(([k,rx])=>{const j=head.findIndex((h,q)=>rx.test(h)&&!Object.values(map).includes(q)&&dados.some(r=>String(r[q]==null?"":r[q]).trim()!==""));if(j>=0)map[k]=j});
   ROM.doc=file.name;ROM.hash=IMPH.get(file)||"";ROM.plan={nome:file.name,head,rows:aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=="")),map};ROM.msg="";renderRom()}catch(e){ROM.msg=e.message||"Não consegui ler a planilha.";renderRom()}}
 function romPlanHTML(){const P=ROM&&ROM.plan;if(!P)return "";
   const sel=(k,n)=>`<label class="fq w-m"><span>${n}</span><select data-rp="planmap" data-k="${k}"><option value="">— não tem —</option>${P.head.map((h,j)=>`<option value="${j}" ${P.map[k]===j?"selected":""}>${letraN(j)} · ${esc(h)}</option>`).join("")}</select></label>`;
@@ -3791,7 +3794,7 @@ function nfIniciar(nota){const forma={};nota.itens.forEach(i=>{if(i.cod){const s
     return {i,inc:true,cod:it.cod,desc:it.desc,cat:ct.cat,sub:ct.sub,qtd:it.qtd,vUn:it.vUn,vProd:it.vProd,vDesc:it.vDesc,ncm:it.ncm,cfop:it.cfop,un:it.un,gen,gmode:gen.length?"lote":"",gN:2,custoMan:""}});
   const ach=nfAcharForn(nota.emit);
   NF={nota,rows,liq:true,dup:null,dupOk:false,forn:ach.f?ach.f.nome:"__novo",fornPor:ach.por||"",novoNome:nfTitulo(nota.emit.nome)}}
-const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return r4(((r.vProd||r.vUn*q)-r.vDesc)/q);return r.vUn};
+const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return r2c(((r.vProd||r.vUn*q)-r.vDesc)/q);return r.vUn};
 /* quantidade positiva nunca some: 0,4 kg vira 1 unidade com o custo do total da nota */
 const nfQtdInt=q=>q>0?Math.max(1,Math.round(q)):0;
 async function nfBuscaDup(ch){if(!ch)return null;const ix=nfIdx()[ch];if(ix)return {em:ix.em,n:ix.n,numero:ix.numero};
@@ -3817,7 +3820,7 @@ async function nfRotear0(f){if(/xml/i.test(f.type+f.name))return nfAbrir(f);
   try{const its=await nfPdfItens(f);if(nfPareceDanfe(its))return nfAbrir(f,its)}catch(e){if(e&&e.lim){nfErro(e.message+". Divida o arquivo ou use o XML da nota.");return}}
   romPdf(f)}
 function nfLinhas(){const out=[],N=NF.nota;
-  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=nfQtdInt(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?r4(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:String(r4(ci)).replace(".",","),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
+  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=nfQtdInt(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?r2c(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:String(r4(ci)).replace(".",","),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
     if(!r.cat){base.catq=true;base.aviso="· categoria não reconhecida: confira"}
     if(r.gmode==="dividir"){const n=Math.max(2,Math.min(Math.round(Number(r.gN)||2),Math.max(2,nfQtdInt(q))));let resto=nfQtdInt(q)%n;const b=Math.floor(nfQtdInt(q)/n);
       for(let k=0;k<n;k++){const qq=b+(resto-->0?1:0);if(qq>0)out.push({...base,desc:`${r.desc} (${k+1}/${n})`,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||"· lote dividido: confira cada peça"})}}
@@ -4177,7 +4180,7 @@ function adicionar(limpar,quiet){
   if(!quiet){const meu=editId||"__p",rd=previsao().linhas.filter(r=>r.lancId===meu&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
   {let ck=null,onde=null;
     for(const L of VALIDA_NUM){const r=checaCel(L,f.v[L]);if(r.erro){ck=r.erro;onde=L;break}}
-    if(!ck)for(const o of Object.values(f.ov||{})){if(!o||typeof o!=="object")continue;for(const L of VALIDA_NUM){const r=checaCel(L,o[L]);if(r.erro){ck=r.erro;onde=L;break}}if(ck)break}
+    if(!ck)for(const [ok0,o] of Object.entries(f.ov||{})){if(!o||typeof o!=="object")continue;if(f.tipo==="pronta"&&!bonP(f).length&&ok0!=="p"&&!ok0.startsWith("p~"))continue;for(const L of VALIDA_NUM){const r=checaCel(L,o[L]);if(r.erro){ck=r.erro;onde=L;break}}if(ck)break}
     if(!ck&&!vazio(f.desconto)){const d=num(f.desconto);if(d==null||d<0||d>100)ck="Desconto precisa ser um número de 0 a 100 (%)."}
     if(ck){erro=ck;atualizarGera();const el=onde&&document.getElementById("f-"+onde);if(el)el.focus();return}}
   if(f.conj){const cs=Array.isArray(f.comp)?f.comp:[];
@@ -4190,6 +4193,7 @@ function adicionar(limpar,quiet){
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
   {const gr=gradeBy(f.grade);if(gr&&!f.semGrade&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
   if(!vazio(f.v.E))f.v.E=String(f.v.E).replace(/\s+/g,"").toUpperCase();Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object"&&!vazio(o.E))o.E=String(o.E).replace(/\s+/g,"").toUpperCase()});
+  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=r2c(n).toFixed(2).replace(".",",")})};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
   const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);if(ant&&ant.rf&&prefDe(val(novo,"I")||"",val(novo,"J"))!==prefDe(val(ant,"I")||"",val(ant,"J"))){delete novo.v.E;delete novo.rf}novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
   if(!novo.conj){delete novo.comp;delete novo.fConj}
@@ -4197,6 +4201,8 @@ function adicionar(limpar,quiet){
     if(!bp.length){novo.onP={};if(!novo.conj)novo.banhista="";const ov={};Object.keys(novo.ov||{}).forEach(k=>{if(k==="p"||k.startsWith("p~"))ov[k]=novo.ov[k]});novo.ov=ov;novo.mk=novo.mk&&novo.mk.p?{p:novo.mk.p}:{}}
     if(temGrade(novo)||bp.length)delete novo.v.W;["O","R","S","T","U"].forEach(L=>{if(vazio(novo.v[L]))delete novo.v[L]})}
   else if(novo.mk)delete novo.mk.p;
+  /* o Preço de Varejo do formulário só vale para peça pronta simples; numa peça bruta (ou com banhos) ele ficou escondido, vindo da peça anterior, e não pode ir para a planilha */
+  if(!editId&&!quiet&&(novo.tipo=="bruta"||bonP(novo).length))delete novo.v.V;
   if(!quiet)addTrava=Date.now()+500;
   if(quiet)delete novo.ft;
   if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
@@ -4361,7 +4367,7 @@ function dividirLotes(sl,lote){if(!(lote>0)||sl.length<=lote)return [sl];
   const grupos=[];sl.forEach(e=>{if(e.t==="filho"&&grupos.length)grupos[grupos.length-1].push(e);else grupos.push([e])});
   const out=[];let cur=[];grupos.forEach(gp=>{if(cur.length&&cur.length+gp.length>lote){out.push(cur);cur=[]}cur.push(...gp)});if(cur.length)out.push(cur);return out}
 function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.h)]);
-  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);cols.forEach((c,j)=>{const r=valorCol(c,celCol(c,cs,e));if(!r)return;const cel=celulaXlsx(r,cols);if(r.z&&cel.t==="n")cel.z=r.z;ws[letraN(j)+(i+2)]=cel})});
+  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);cols.forEach((c,j)=>{const r=valorCol(c,celCol(c,cs,e));if(!r)return;const cel=celulaXlsx(r,cols);if(r.z&&cel.t==="n")cel.z=r.z;else if(cel.t==="n"&&DUAS.has(c.k)&&!c.fator&&!c.tipo)cel.z="0.00";ws[letraN(j)+(i+2)]=cel})});
   ws["!ref"]="A1:"+letraN(Math.max(cols.length,1)-1)+(sl.length+1);ws["!cols"]=cols.map(c=>({wch:COLW[LET.indexOf(c.k)]||14}));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,abaNome(mo));
   return new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])}
@@ -4717,7 +4723,7 @@ document.addEventListener("click",e=>{
     case "rel-copy":{const R=relLer();if(R)navigator.clipboard.writeText(relTexto(R)).then(()=>toast("Resumo copiado.")).catch(()=>toast("O navegador não liberou a cópia."));break}
     case "rel-csv":{const R=relLer();if(R)arqSalvar("Relatorio romaneio "+new Date(R.em).toISOString().slice(0,10)+".csv",relCsv(R));break}
     case "rel-undo":{const o=document.querySelector(".rep");if(o)o.remove();desfazer();break}
-    case "rom-pend":{let ri=-1,cmp=0;ROM.rows.forEach((r,i)=>{if(ri>=0||r.skip)return;if(!(num(r.peso)>0)){ri=i;cmp=1}else if(romSomaDe(r,romColsR(r))!==r.qtd){ri=i;cmp=2}else if(gradeDaCat(r.cat,r.sub)&&!r.semG&&!(r.gsel||[]).length&&!(r.csel||[]).length){ri=i;cmp=3}else if(r.catq){ri=i;cmp=4}});
+    case "rom-pend":{let ri=-1,cmp=0;ROM.rows.forEach((r,i)=>{if(ri>=0||r.skip)return;if(num(r.peso)==null){ri=i;cmp=1}else if(romSomaDe(r,romColsR(r))!==r.qtd){ri=i;cmp=2}else if(gradeDaCat(r.cat,r.sub)&&!r.semG&&!(r.gsel||[]).length&&!(r.csel||[]).length){ri=i;cmp=3}else if(r.catq){ri=i;cmp=4}});
       if(ri<0){toast("Nenhuma pendência: tudo preenchido.");break}const rc=document.querySelector(`#romWrap .rc[data-i="${ri}"]`);if(rc){rolarPane(rc);if(cmp===3){const r3=ROM.rows[ri];if(!r3.open){r3.open=true;rc.classList.add("op");const bd=rc.querySelector("[data-body]");if(bd&&!bd.innerHTML.trim()){bd.innerHTML=romBodyHTML(r3);romAtual()}}}const el=cmp>=3?rc.querySelector("[data-rp=cat]"):cmp===1?rc.querySelector("[data-rp=peso]"):(rc.querySelector("[data-rp=q]")||rc.querySelector("[data-act=rom-x]"));if(el)setTimeout(()=>el.focus({preventScroll:true}),250)}break}
     case "rev-fechar":{const o=document.querySelector(".rev");if(o)o.remove();break}
     case "rev-ok":{const o=document.querySelector(".rev");if(o)o.remove();romCriar();break}
@@ -5114,7 +5120,7 @@ window.addEventListener("storage",e=>{
 /* ===== v19: romaneio — busca e filtro por situação (só esconde os cartões; nada é remontado) ===== */
 let ROMF={q:"",m:"todas"};
 function romSit(r){if(r.feito&&!r.refaz)return "lancadas";if(r.skip)return "ignoradas";
-  if(!(num(r.peso)>0)||romSomaDe(r,romColsR(r))!==r.qtd||r.catq)return "pendentes";return "prontas"}
+  if(num(r.peso)==null||romSomaDe(r,romColsR(r))!==r.qtd||r.catq)return "pendentes";return "prontas"}
 function romFiltroAplicar(){
   const w=document.getElementById("romWrap");if(!w||!ROM)return;
   const q=semAc(ROMF.q),m=ROMF.m;let n=0;

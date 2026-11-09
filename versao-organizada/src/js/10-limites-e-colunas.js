@@ -33,6 +33,8 @@ const LET=HEAD.map((_,i)=>{let s="",n=i+1;while(n>0){const m=(n-1)%26;s=String.f
 const NOME=Object.fromEntries(LET.map((l,i)=>[l,HEAD[i]]));
 const COLW=[5.71,57.14,22.29,15.14,11,39.57,10.57,9.71,11.29,7.86,7.43,9,40,7,9,12,10,12,12,12,12,10,9,10,11,10,7,6,8,10,8];
 const NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","Y","AA","AB","AC"]);
+/* peso e dinheiro: só duas casas depois da vírgula (centavos exatos, para os totais fecharem) */
+const DUAS=new Set(["N","P","Q","R","S","T","U","V"]);
 const MONEY=new Set(["P","Q","R","S","T","U","V"]);
 const milDe=(b,cat)=>{const m=b&&b.milCat&&cat!=null?b.milCat[cat]:undefined;return (m!==undefined&&m!==null&&m!=='')?m:(b?b.mil:"")};
 const multDe=(b,cat)=>{const m=b&&b.multCat&&cat!=null?b.multCat[cat]:undefined;return (m!==undefined&&m!==null&&m!=='')?m:(b?b.mult:"")};

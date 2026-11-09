@@ -12,7 +12,7 @@ function pintarSel(){
   for(let c=b.c1;c<=b.c2;c++){const th=document.querySelector(`#sheet th[data-hc="${LET[c]}"]`);if(th)th.classList.add('sl')}
 }
 function rolarAte(){if(JAN&&selR)janGarantir(selR.fr);const a=document.querySelector('#sheet td.sa');if(a)a.scrollIntoView({block:'nearest',inline:'nearest'})}
-function textoCel(ri,ci){const row=G.linhas[ri];if(!row)return "";const x=celulas(row,ri+2)[ci];if(!x)return "";if(typeof x.v==="number")return String(r4(x.v)).replace(".",",");if(x.v==null)return x.txt||("="+x.f);return String(x.v)}
+function textoCel(ri,ci){const row=G.linhas[ri];if(!row)return "";const x=celulas(row,ri+2)[ci];if(!x)return "";if(typeof x.v==="number")return (DUAS.has(LET[ci])?r2c(x.v).toFixed(2):String(r4(x.v))).replace(".",",");if(x.v==null)return x.txt||("="+x.f);return String(x.v)}
 function idsDaSel(){const b=selBox();if(!b)return [];const s=new Set();for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const row=G.linhas[r];if(row)s.add(row.lancId)}return [...s]}
 function copiarSel(){const b=selBox();if(!b)return;const lin=[];for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const l=[];for(let c=b.c1;c<=b.c2;c++)l.push(textoCel(r,c));lin.push(l.join("\t"))}
   navigator.clipboard.writeText(lin.join("\n")).then(()=>toast(`${(b.r2-b.r1+1)*(b.c2-b.c1+1)} célula(s) copiada(s).`)).catch(()=>toast("O navegador não liberou a cópia. Use Copiar para o Excel."))}

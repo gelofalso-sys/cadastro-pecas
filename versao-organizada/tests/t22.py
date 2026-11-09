@@ -38,5 +38,5 @@ with sync_playwright() as p:
     n2=pg.locator("tr[data-l]").count();print("linhas depois:",n2)
     ok(n2==n1,"editar de novo substitui as peças (sem duplicar): %d -> %d"%(n1,n2))
     pesos=set(pg.eval_on_selector_all('tr[data-l] td[data-c="N"]',"e=>e.map(x=>x.textContent.trim())"))
-    ok(pesos=={"3"},"pesos novos aplicados: %s"%pesos)
+    ok(pesos=={"3,00"},"pesos novos aplicados: %s"%pesos)
     print("erros",errs,"FALHAS",f)

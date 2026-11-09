@@ -9,7 +9,7 @@ function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==
       ${fq("Subcategoria",`<select data-rp="rb" data-k="sub">${opts(cc?cc.subs:[],b.sub||"","(manter)")}</select>`)}${fq("Tipo",`<select data-rp="rb" data-k="tipo"><option value="">(manter)</option><option value="bruta" ${b.tipo==="bruta"?"selected":""}>Bruta (vai banhar)</option><option value="pronta" ${b.tipo==="pronta"?"selected":""}>Pronta (já banhada)</option></select>`)}${fq("Galvânica",`<select data-rp="rb" data-k="bh">${opts(C.banhistas.map(x=>[x.id,x.nome]),b.bh||"","(manter)")}</select>`)}
       ${fq("Observação",`<input data-rp="rb" data-k="obs" value="${esc(b.obs??"")}" placeholder="(manter)">`,"w-l")}
       <button type="button" class="btn pri" data-act="rom-lote">Aplicar</button></div></div></details>`}
-function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhuma"?false:m==="sempeso"?!(num(r.peso)>0):m.startsWith("cat:")?r.cat===m.slice(4):r.sel});
+function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhuma"?false:m==="sempeso"?num(r.peso)==null:m.startsWith("cat:")?r.cat===m.slice(4):r.sel});
   document.querySelectorAll("#romWrap .rc").forEach((rc,i)=>{const c=rc.querySelector("[data-rp=sel]");if(c)c.checked=!!ROM.rows[i].sel});romSelN()}
 function romSelN(){const e=document.getElementById("romSelN");if(e)e.textContent=`${ROM.rows.filter(r=>r.sel).length} selecionada(s) — sem seleção, vale para todas`}
 function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r=>r.sel);if(!alvo.length)alvo=ROM.rows.filter(r=>!r.skip);
@@ -28,7 +28,7 @@ function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r
 function romRevisar(){const pv=romPreview(),it=[];
   ROM.rows.forEach((r,i)=>{if(r.skip)return;const p=pv[i],q=romForm(r).q,cols=romColsR(r),al=[],cria=q.length>0;
     if(!cria)al.push("sem quantidade — não será criada");else if(romSomaDe(r,cols)!==r.qtd)al.push(`divisão ${romSomaDe(r,cols)} de ${r.qtd}`);
-    if(r.catq)al.push("categoria não confirmada");if(!(num(r.peso)>0))al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
+    if(r.catq)al.push("categoria não confirmada");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
     if(p&&p.rows.some(x=>x.dup))al.push("referência repetida");if(cria&&p&&p.rows.some(x=>x.v==null))al.push("sem preço de varejo");if(ROM.pdf&&!r.foto)al.push("sem foto");
     it.push({r,i,p,cria,al})});
   const cr=it.filter(x=>x.cria),nal=it.filter(x=>x.al.length).length,zeros=[...new Set(cr.map(x=>prefDe(x.r.cat,x.r.sub)))].filter(pf=>!(ultimo(pf)>0));let un=0,cus=0,vr=0,nl=0;
@@ -102,7 +102,7 @@ function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();const pv=romPre
     const fill=(sel,v,k)=>rc.querySelectorAll(sel).forEach(e=>{if(e.tagName!=="INPUT"||document.activeElement===e)return;const bo=(r.bo||{})[e.dataset.b]||{},ov=e.dataset.rp==="vp"?r.vp:bo[k];if(!vazio(ov))return;e.value=v==null?"":(k==="F"?v:brl(v));e.classList.add("isauto")});
     if(p){if(romTipo(r)==="bruta"||(cols[0]&&cols[0].id!=="p"))cols.forEach(c=>{const x=p.rows.find(y=>y.bid===c.id);if(!x)return;{const sp=rc.querySelector(`[data-cb="${CSS.escape(String(c.id))}"]`);if(sp)sp.textContent=x.cb!=null?"banho R$ "+brl(x.cb):(num(r.peso)>0?"":"⚠ informe o peso")}fill(`[data-auto="C:${c.id}"]`,x.cb,"C");fill(`[data-auto="U:${c.id}"]`,x.u,"U");fill(`[data-auto="V:${c.id}"]`,x.v,"V");fill(`[data-auto="F:${c.id}"]`,x.desc,"F");baseTxt(c.id,x)});
       else{const x=p.rows[0];if(x){fill('[data-auto="V:p"]',x.v,"V");baseTxt("p",x)}}}});
-  const chk=document.getElementById("romChk");if(chk){const at=ROM.rows.filter(r=>!r.skip),sp=at.filter(r=>!(num(r.peso)>0)).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=pv.filter(x=>x&&x.rows.some(y=>y.dup)).length,pt=[];
+  const chk=document.getElementById("romChk");if(chk){const at=ROM.rows.filter(r=>!r.skip),sp=at.filter(r=>num(r.peso)==null).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=pv.filter(x=>x&&x.rows.some(y=>y.dup)).length,pt=[];
     if(sp)pt.push(`⚠ ${sp} sem peso`);if(dv)pt.push(`⚠ ${dv} com divisão diferente da lista`);if(dp)pt.push(`⚠ ${dp} com referência repetida`);
     if(ROM.pdf){const ft=at.filter(r=>r.foto).length;pt.push(`${ft===at.length?"✓":"⚠"} fotos ${ft}/${at.length}`)}
     if(!sp&&!dv&&!dp)pt.push("✓ pronto para criar");chk.textContent="Antes de criar: "+pt.join(" · ");chk.className="rom-c "+((sp||dv||dp)?"bad":"")}
@@ -142,7 +142,8 @@ async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planil
   if(aoa.length>MAX_PLANILHA_LINHAS)throw new Error(`A planilha tem ${aoa.length} linhas e o limite é ${MAX_PLANILHA_LINHAS}.`);
   let hi=0,best=-1;for(let i=0;i<Math.min(15,aoa.length);i++){let n=0;aoa[i].forEach(c=>{if(Object.values(ROM_SIN).some(rx=>rx.test(String(c))))n++});if(n>best){best=n;hi=i}}
   const head=(aoa[hi]||[]).map((c,j)=>String(c||"").trim()||("Coluna "+(j+1))),map={};
-  Object.entries(ROM_SIN).forEach(([k,rx])=>{const j=head.findIndex((h,q)=>rx.test(h)&&!Object.values(map).includes(q));if(j>=0)map[k]=j});
+  const dados=aoa.slice(hi+1);   /* só sugere coluna que tem dado: coluna vazia (ex.: ID em branco) não preenche nada */
+  Object.entries(ROM_SIN).forEach(([k,rx])=>{const j=head.findIndex((h,q)=>rx.test(h)&&!Object.values(map).includes(q)&&dados.some(r=>String(r[q]==null?"":r[q]).trim()!==""));if(j>=0)map[k]=j});
   ROM.doc=file.name;ROM.hash=IMPH.get(file)||"";ROM.plan={nome:file.name,head,rows:aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=="")),map};ROM.msg="";renderRom()}catch(e){ROM.msg=e.message||"Não consegui ler a planilha.";renderRom()}}
 function romPlanHTML(){const P=ROM&&ROM.plan;if(!P)return "";
   const sel=(k,n)=>`<label class="fq w-m"><span>${n}</span><select data-rp="planmap" data-k="${k}"><option value="">— não tem —</option>${P.head.map((h,j)=>`<option value="${j}" ${P.map[k]===j?"selected":""}>${letraN(j)} · ${esc(h)}</option>`).join("")}</select></label>`;
