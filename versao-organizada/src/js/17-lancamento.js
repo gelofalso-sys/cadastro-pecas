@@ -126,7 +126,7 @@ function salvarRapido(){
     linhas.forEach(ln=>{const q=ln.split(/[;\t]/).map(x=>x.trim());MULTI.push({F:q[0]||"",N:q[1]||"",P:q[2]||""})});
     quick=null;renderForm();toast(`${linhas.length} linha(s) no formulário: ajuste o que precisar e clique em “Adicionar”.`);
     {const pn=document.getElementById("multiPanel");if(pn)rolarPane(pn)}return}
-  if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=c&&c.prefixo?String(c.prefixo).toUpperCase():(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
+  if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=c&&c.prefixo?String(c.prefixo).toUpperCase():semAc(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
     if(!c){const er=nomeCatErro(C,n,null);if(er){toast(er);document.getElementById("q1").focus();return}}
     if(!c&&!pr){toast("Informe o prefixo da categoria (só letras, ex.: BR).");{const e2=document.getElementById("q2");if(e2)e2.focus()}return}
     if(!c){c={nome:n,prefixo:pr,subs:[]};C.categorias.push(c)}

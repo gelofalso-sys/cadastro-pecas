@@ -5,7 +5,7 @@
   const nomeDe=el=>{const h=el.querySelector(".rep-t,.rev-h b,.lbt");return h&&h.textContent.trim()?h.textContent.trim():"Janela"};
   const focaveis=el=>[...el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]):not([hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(x=>x.getClientRects().length&&getComputedStyle(x).visibility!=="hidden");
   const sujo=m=>{if(m.classList.contains("lbox"))return false;if(m.id==="nfRev")return !!(NF&&NF.dirty);if(m.classList.contains("rev"))return false;
-    return [...m.querySelectorAll("input,textarea,select")].some(x=>{if(x.type==="file"||x.type==="button")return false;
+    return [...m.querySelectorAll("input,textarea,select")].some(x=>{if(x.type==="file"||x.type==="button"||x.type==="search")return false;
       if(x.tagName==="SELECT")return [...x.options].some(o=>o.selected!==o.defaultSelected);
       if(x.type==="checkbox"||x.type==="radio")return x.checked!==x.defaultChecked;return x.value!==x.defaultValue})};
   const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep){tabArm=null;romArm=null;renderForm()}};

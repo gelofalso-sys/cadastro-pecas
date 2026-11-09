@@ -43,7 +43,7 @@ async function bkMontar(){
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
   return {o,falhas,hoje}}
-async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");const {o,falhas,hoje}=await bkMontar();let bl=new Blob([JSON.stringify(o)],{type:"application/json"});
+async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");let o,falhas,hoje,bl;try{({o,falhas,hoje}=await bkMontar());bl=new Blob([JSON.stringify(o)],{type:"application/json"})}catch(e){toast("Não consegui montar o backup completo (muitas fotos ou arquivo grande demais). Use Baixar cópia dos cadastros.");return}
   let leve=false;if(bl.size>MAX_BACKUP_BYTES&&confirm(`Esse backup tem ${Math.round(bl.size/1048576)} MB e o aplicativo só restaura até ${Math.round(MAX_BACKUP_BYTES/1048576)} MB.
 
 OK = salvar uma versão LEVE (sem as fotos originais grandes; ficam as miniaturas), que dá para restaurar.

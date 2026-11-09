@@ -2490,7 +2490,7 @@ function salvarRapido(){
     linhas.forEach(ln=>{const q=ln.split(/[;\t]/).map(x=>x.trim());MULTI.push({F:q[0]||"",N:q[1]||"",P:q[2]||""})});
     quick=null;renderForm();toast(`${linhas.length} linha(s) no formulário: ajuste o que precisar e clique em “Adicionar”.`);
     {const pn=document.getElementById("multiPanel");if(pn)rolarPane(pn)}return}
-  if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=c&&c.prefixo?String(c.prefixo).toUpperCase():(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
+  if(quick==="cat"){let c=C.categorias.find(x=>lo(x.nome)===lo(n));const pr=c&&c.prefixo?String(c.prefixo).toUpperCase():semAc(g("q2")||n.slice(0,2)).toUpperCase().replace(/[^A-Z]/g,"");
     if(!c){const er=nomeCatErro(C,n,null);if(er){toast(er);document.getElementById("q1").focus();return}}
     if(!c&&!pr){toast("Informe o prefixo da categoria (só letras, ex.: BR).");{const e2=document.getElementById("q2");if(e2)e2.focus()}return}
     if(!c){c={nome:n,prefixo:pr,subs:[]};C.categorias.push(c)}
@@ -2929,7 +2929,7 @@ function padraoRegex(pad){const ordem=[];let src="";
     else src+=p.split(/\s+/).map(z=>z.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")).join("\\s*")});
   return {re:new RegExp(src,"g"),ordem}}
 /* padrão com quantificador dentro de grupo também quantificado, ex.: (a+)+ ou (\d*)* , pode travar a aba: não é aceito */
-const rxPerigo=x=>/\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d)/.test(String(x));
+const rxPerigo=x=>/\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d)/.test(String(x))||/\((?:\?:)?[^()]*\|[^()]*\)\s*[+*{]/.test(String(x));
 const rxs=(x,f)=>{try{if(rxPerigo(x))return null;return new RegExp(x,f||"i")}catch(e){return null}};
 function mapaCat(desc,T){const d=semAc(desc);
   for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a))&&catBy(b.split(">")[0].trim()))return b}
@@ -3194,7 +3194,7 @@ async function bkMontar(){
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
   return {o,falhas,hoje}}
-async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");const {o,falhas,hoje}=await bkMontar();let bl=new Blob([JSON.stringify(o)],{type:"application/json"});
+async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");let o,falhas,hoje,bl;try{({o,falhas,hoje}=await bkMontar());bl=new Blob([JSON.stringify(o)],{type:"application/json"})}catch(e){toast("Não consegui montar o backup completo (muitas fotos ou arquivo grande demais). Use Baixar cópia dos cadastros.");return}
   let leve=false;if(bl.size>MAX_BACKUP_BYTES&&confirm(`Esse backup tem ${Math.round(bl.size/1048576)} MB e o aplicativo só restaura até ${Math.round(MAX_BACKUP_BYTES/1048576)} MB.
 
 OK = salvar uma versão LEVE (sem as fotos originais grandes; ficam as miniaturas), que dá para restaurar.
@@ -5053,7 +5053,7 @@ document.addEventListener("input",e=>{if(e.target&&e.target.id==="celIn"&&celEd)
   const nomeDe=el=>{const h=el.querySelector(".rep-t,.rev-h b,.lbt");return h&&h.textContent.trim()?h.textContent.trim():"Janela"};
   const focaveis=el=>[...el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]):not([hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(x=>x.getClientRects().length&&getComputedStyle(x).visibility!=="hidden");
   const sujo=m=>{if(m.classList.contains("lbox"))return false;if(m.id==="nfRev")return !!(NF&&NF.dirty);if(m.classList.contains("rev"))return false;
-    return [...m.querySelectorAll("input,textarea,select")].some(x=>{if(x.type==="file"||x.type==="button")return false;
+    return [...m.querySelectorAll("input,textarea,select")].some(x=>{if(x.type==="file"||x.type==="button"||x.type==="search")return false;
       if(x.tagName==="SELECT")return [...x.options].some(o=>o.selected!==o.defaultSelected);
       if(x.type==="checkbox"||x.type==="radio")return x.checked!==x.defaultChecked;return x.value!==x.defaultValue})};
   const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep){tabArm=null;romArm=null;renderForm()}};
