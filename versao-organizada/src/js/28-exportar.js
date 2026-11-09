@@ -46,7 +46,7 @@ function gerarExport(){const g0=gerar(),fil=filtroOn();
   const peca=!!(fil&&modeloAtual().agrupar==="sim");
   return {g0,fil,peca,g:fil?(()=>{if(peca){const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}}return {...g0,linhas:g0.linhas.filter(casa)}})():g0}}
 async function baixar(forcar){
-  const GE=gerarExport(),g=GE.g,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc();if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
+  const GE=gerarExport(),g=GE.g,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),cfgExp=sigCfg();if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de baixar.");return}
   const cols=colunasExport(),mo=modeloAtual(),csv=mo.formato==="csv";
   if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
@@ -58,7 +58,7 @@ async function baixar(forcar){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
+  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -76,7 +76,7 @@ function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.
 const LOC=(()=>{let l="pt-br",dec=",";try{l=String(navigator.language||"pt-br").toLowerCase();dec=(1.1).toLocaleString(navigator.language||"pt-BR").includes(",")?",":"."}catch(e){}return {dec,pt:l.startsWith("pt")}})();
 const fLocal=f=>LOC.dec==="."?f:LOC.pt?f.replace(/,/g,";").replace(/(\d)\.(\d)/g,"$1,$2").replace(/\bROUND\(/g,"ARRED("):null;
 async function copiar(ids,forcar){
-  const GE=gerarExport(),g0=GE.g0,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
+  const GE=gerarExport(),g0=GE.g0,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),cfgExp=sigCfg(),g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de copiar.");return}
   const cols=colunasExport();if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
   if(!forcar&&abrirConferencia(g,cols,{tipo:"copiar",ids:ids||null}))return;
@@ -88,7 +88,7 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
     const xv=x.v==null&&typeof x.calc==="number"?{...x,v:x.calc}:x,s=txtSaida(xv,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof xv.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
 function sigCfg(){const c={...S.config};delete c.seqs;delete c.observacoes;return JSON.stringify(c)}

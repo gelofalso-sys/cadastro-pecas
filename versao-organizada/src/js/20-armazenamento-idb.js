@@ -48,7 +48,8 @@ async function backupTotal(){const dl=await obterDL();toast("Preparando o backup
 
 OK = salvar uma versão LEVE (sem as fotos originais grandes; ficam as miniaturas), que dá para restaurar.
 Cancelar = salvar completo mesmo assim (só restauraria por fora do aplicativo).`)){const lev={};Object.keys(o.fotos||{}).forEach(k=>{if(/^[mr]:/.test(k))lev[k]=o.fotos[k]});bl=new Blob([JSON.stringify({...o,fotos:lev,leve:true})],{type:"application/json"});leve=true}
-  try{await dl.save({filename:"cadastro-pecas-backup-"+(leve?"LEVE-sem-fotos-originais":"completo")+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});try{localStorage.setItem("cadpecas-bk-em",String(Date.now()))}catch(e){}if(!leve&&bl.size>MAX_BACKUP_BYTES){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. Apague fotos que não usa ou faça o backup em partes.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:leve?"Backup LEVE salvo: tem as peças, cadastros, romaneios e miniaturas, mas NÃO as fotos originais grandes.":"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
+  const grande=bl.size>MAX_BACKUP_BYTES;
+  try{await dl.save({filename:"cadastro-pecas-backup-"+(leve?"LEVE-sem-fotos-originais":"completo")+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});if(!falhas.length&&!grande){try{localStorage.setItem("cadpecas-bk-em",String(Date.now()))}catch(e){}}if(grande){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB${leve?" mesmo na versão leve":""} e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. ${leve?"Apague romaneios e tabelas antigos que não usa":"Apague fotos que não usa"} ou faça o backup em partes. O lembrete de backup continua ligado.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:leve?"Backup LEVE salvo: tem as peças, cadastros, romaneios e miniaturas, mas NÃO as fotos originais grandes.":"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
 /* restaurar backup completo: valida TUDO e monta objetos novos antes de mexer em qualquer coisa. Semântica: SUBSTITUI peças,
    cadastros e formulário atuais pelos do backup (confirmação antes); romaneios, tabelas e fotos do backup são adicionados
    (mesmo id = sobrescreve; o que só existe aqui é mantido). Se algo falhar, nada muda (nem no IndexedDB). */
@@ -127,7 +128,7 @@ function validarBackup(o){
   if(o.autor!=null&&!ehTxt(o.autor))erro("o nome de quem montou está em formato errado");
   /* objetos novos (nada é aplicado aqui) */
   let cfgNova;try{cfgNova=lerConfig(clone(o.config))}catch(e){erro("não consegui ler os cadastros do backup")}
-  const r={config:cfgNova,lanc:clone(o.lanc).map(lerLanc),form:null,roms:{},tabs:{},fotos:{},descartadas:0};
+  const r={config:cfgNova,lanc:clone(o.lanc).map(lerLanc),form:null,roms:{},tabs:{},fotos:{},descartadas:0,incompleto:Array.isArray(o.incompleto)?o.incompleto.map(x=>String(x).slice(0,40)).slice(0,50):null,leve:o.leve===true};
   if(o.form&&o.form.v)r.form=lerForm(clone(o.form));
   Object.entries(roms).forEach(([k,x])=>{const l=romLimpo(k,x,true);r.roms[k]={...l,id:ehTxt(l.id)&&l.id?l.id:k}});
   Object.entries(tabs).forEach(([k,x])=>{const l=tabLimpa(k,x);r.tabs[k]={...l,id:ehTxt(l.id)&&l.id?l.id:k}});
@@ -136,7 +137,7 @@ function validarBackup(o){
   return r}
 function restaurarTotal(file){try{checaTam(file,MAX_BACKUP_BYTES,"O backup")}catch(e){toast("Backup NÃO restaurado — "+e.message+". Nada foi alterado.");return}const fr=new FileReader();fr.onload=async()=>{
   let n;try{n=validarBackup(JSON.parse(fr.result))}catch(e){toast("Backup NÃO restaurado — "+(e instanceof SyntaxError?"o arquivo está danificado ou não é um backup (não consegui ler o texto dele)":e&&e.message?e.message:"arquivo inválido")+". Nada foi alterado.");return}
-  if(!confirm(`Restaurar o backup?\n\nIsto SUBSTITUI as ${S.lanc.length} peça(s), os cadastros e o formulário atuais por ${n.lanc.length} peça(s) do backup.\nRomaneios (${Object.keys(n.roms).length}), tabelas salvas (${Object.keys(n.tabs).length}) e fotos (${Object.keys(n.fotos).length}) do backup são ADICIONADOS (o que só existe aqui é mantido).\n\nDepois dá para desfazer as peças e os cadastros com Ctrl+Z.`))return;
+  if(!confirm(`Restaurar o backup?\n\nIsto SUBSTITUI as ${S.lanc.length} peça(s), os cadastros e o formulário atuais por ${n.lanc.length} peça(s) do backup.\nRomaneios (${Object.keys(n.roms).length}), tabelas salvas (${Object.keys(n.tabs).length}) e fotos (${Object.keys(n.fotos).length}) do backup são ADICIONADOS (o que só existe aqui é mantido).\n\nDepois dá para desfazer as peças e os cadastros com Ctrl+Z.${n.incompleto&&n.incompleto.length?`\n\n⚠ ATENÇÃO: este backup foi marcado como INCOMPLETO quando foi criado (não leu: ${[...new Set(n.incompleto.map(x=>x.split(":")[0]))].join(", ")}). Pode estar faltando coisa.`:""}${n.leve?"\n\nÉ um backup LEVE: não tem as fotos originais grandes, só as miniaturas.":""}`))return;
   aplicarBackupTotal(n)};fr.readAsText(file)}
 async function aplicarBackupTotal(n,quieto){
   const antLS={},escritas=[],ant={config:S.config,lanc:S.lanc,form:S.form};
@@ -164,7 +165,7 @@ async function aplicarBackupTotal(n,quieto){
   Object.values(n.roms).forEach(r=>{try{romIndex(r)}catch(e){}});Object.values(n.tabs).forEach(r=>{try{tabIndex(r)}catch(e){}});arqRef();
   if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
   render();
-  if(!quieto)toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.`,{t:"Desfazer",fn:desfazer});return true}
+  if(!quieto)toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""}`,{t:"Desfazer",fn:desfazer});return true}
 const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 let romConflito=false;

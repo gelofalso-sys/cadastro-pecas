@@ -24,6 +24,7 @@ for n in sorted(f for f in os.listdir(AQUI) if f.startswith("t") and f.endswith(
     r=subprocess.run([sys.executable,os.path.join(AQUI,n)],capture_output=True,text=True,encoding="utf-8",errors="replace",env={**os.environ,"PYTHONIOENCODING":"utf-8"})
     ruim=[l for l in r.stdout.splitlines() if l.startswith("FALHA ")]
     if r.returncode and r.stderr.strip():ruim.append(r.stderr.strip().splitlines()[-1])
+    if r.returncode and not ruim:ruim.append(f"saiu com codigo {r.returncode} sem mensagem de erro: "+((r.stdout.strip().splitlines() or [''])[-1]))   # nenhum retorno nao-zero pode passar como OK
     print(f"{n}: {'OK' if not ruim else 'FALHOU'}")
     for l in ruim:print("   ",l)
     falhas+=bool(ruim)

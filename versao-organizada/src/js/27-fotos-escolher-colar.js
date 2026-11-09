@@ -164,7 +164,7 @@ function duplicarLinha(ri){
 }
 /* exclui só as linhas pedidas; se a peça ficar sem nenhuma linha, ela some inteira. Desfazer volta tudo. */
 function excluirLinhas(ris){
-  if(ris.length>=3){if(!confirm(`Excluir ${ris.length} linhas de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAuto("antes de excluir "+ris.length+" linhas",true)}
+  if(ris.length>=3){if(!confirm(`Excluir ${ris.length} linhas de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAviso(pontoAuto("antes de excluir "+ris.length+" linhas",true))}
   const por={};ris.forEach(ri=>{const r=G.linhas[ri];if(r)(por[r.lancId]=por[r.lancId]||[]).push(r.key)});
   const ids=Object.keys(por);if(!ids.length)return;
   const antes=ids.map(id=>({id,excl:((S.lanc.find(x=>x.id===id)||{}).excl)||null})),del=[];let n=0;
@@ -175,7 +175,7 @@ function excluirLinhas(ris){
   del.forEach(d=>candFoto.add(d.item.id));undo={tipo:"linhas",antes,del};selR=null;salvar(false);renderTopo();toast(`${n} linha(s) excluída(s).`,{t:"Desfazer",fn:desfazer});
 }
 function excluir(ids){
-  if(ids.length>=3){if(!confirm(`Excluir ${ids.length} peças de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAuto("antes de excluir "+ids.length+" peças",true)}
+  if(ids.length>=3){if(!confirm(`Excluir ${ids.length} peças de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAviso(pontoAuto("antes de excluir "+ids.length+" peças",true))}
   const itens=ids.map(id=>{const idx=S.lanc.findIndex(l=>l.id===id);return {idx,item:S.lanc[idx]}}).filter(x=>x.idx>=0);
   S.lanc=S.lanc.filter(l=>!ids.includes(l.id));ids.forEach(id=>sel.delete(id));if(ids.includes(editId)){editId=null;if(rascunho)S.form=rascunho;rascunho=null;renderForm()}
   ids.forEach(i=>candFoto.add(i));undo={tipo:"del",itens};salvar(false);renderTopo();toast(`${itens.length} peça(s) excluída(s).`,{t:"Desfazer",fn:desfazer});

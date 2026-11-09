@@ -1905,7 +1905,8 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
 const PONTOS_MAX=15,PONTO_INTERVALO=30*60*1000;
 async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
 async function pontoAuto(motivo,forcar){const snap={n:S.lanc.length,json:jsonLocal(false)};   /* estado de ANTES da operação, capturado já */
-  try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return;if(!snap.n&&!forcar)return;await pontoSalvar(motivo,snap)}catch(e){}}
+  try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return true;if(!snap.n&&!forcar)return true;return await pontoSalvar(motivo,snap)}catch(e){return false}}
+const pontoAviso=p=>p.then(ok=>{if(ok===false)toast("Atenção: NÃO consegui guardar o ponto de restauração (memória do navegador cheia?). Se precisar, use Desfazer agora.",{t:"Desfazer",fn:desfazer})})
 setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)")},5*60*1000);
 const BK_DIAS=7,BK_INTERVALO=30*60*1000;
 async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
@@ -2258,7 +2259,8 @@ function sincFormCelula(id,L,key){
   if(vazio(f2.v[L]))delete f.v[L];else f.v[L]=f2.v[L];
   const dobrou=!vazio(f2.v[L])&&f2.v[L]!==l.v[L];   /* valor igual em todas as linhas virou valor da peça: aí vale para todas */
   Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!(f2.ov&&f2.ov[k]&&L in f2.ov[k])&&(dobrou||key===undefined||k===key))delete f.ov[k][L]});   /* edições não salvas das outras variações ficam */
-  Object.keys(f2.ov||{}).forEach(k=>{if(f2.ov[k]&&typeof f2.ov[k]==="object"&&L in f2.ov[k]){f.ov[k]=f.ov[k]||{};f.ov[k][L]=f2.ov[k][L]}});
+  Object.keys(f2.ov||{}).forEach(k=>{if(k!==key&&key!==undefined&&!dobrou)return;   /* só a variação editada: as outras mantêm o que está no formulário */
+    if(f2.ov[k]&&typeof f2.ov[k]==="object"&&L in f2.ov[k]){f.ov[k]=f.ov[k]||{};f.ov[k][L]=f2.ov[k][L]}});
   Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!Object.keys(f.ov[k]).length)delete f.ov[k]});
 }
 /* diz o que a edição de uma célula fez: só aquela linha, a peça toda, ou (referência) que deixou de seguir a numeração */
@@ -2949,7 +2951,7 @@ function lerRomaneio(texto,T){
   if(T.fim){const i=flat.toLowerCase().indexOf(String(T.fim).toLowerCase());if(i>=0)flat=flat.slice(0,i)}
   let P;try{P=padraoRegex(T.padrao)}catch(e){R.erro="O padrão da linha é inválido.";return R}
   if(!P.ordem.includes("desc")||!(P.ordem.includes("qtd")||P.ordem.includes("qv"))){R.erro="O padrão precisa ter pelo menos {desc} e {qtd}.";return R}
-  let fimLido=0;
+  let fimLido=0,corte=false;
   const colhe=P=>{let m,g=0;
   while((m=P.re.exec(flat))&&g++<3000){if(!m[0].length){P.re.lastIndex++;continue}fimLido=P.re.lastIndex;
     const o={};P.ordem.forEach((k,i)=>o[k]=m[i+1]);
@@ -2957,7 +2959,8 @@ function lerRomaneio(texto,T){
     const un=String(o.u||"").toUpperCase().replace(/[.]/g,""),porPeso=/^(GR|G|KG)$/.test(un),pr=o.preco||o.pu,qn=o.qtd||o.qv;
     let loteG=null,precoG=null;if(porPeso){const fk=un==="KG"?1000:1;loteG=(numQtd(qn)||0)*fk;precoG=(num(pr)||0)/fk}
     R.rows.push({cod:o.cod||"",desc,preco:pr?num(pr):null,precod:o.precod?num(o.precod):null,total:o.total?num(o.total):null,qtd:porPeso?1:Math.trunc(numQtd(qn)||0),peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":"",
-      ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}};
+      ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}
+    if(m&&g>3000)corte=true};   /* saiu do laço com mais uma linha reconhecida: a lista passou do limite */
   colhe(P);if(!R.rows.length&&String(T.padrao).includes("R$ {precod}")){try{colhe(padraoRegex(String(T.padrao).replace("R$ {precod}","").replace(/ {2,}/g," ")))}catch(e){}}
   {const r0=R.rows[0];if(r0){const m=r0.desc.match(/^\s*(?:total(?:\s+geral)?|qtd\.?\s*total|quantidade\s+total|romaneio|pedido|resumo)\b[^\d]{0,20}\d[0-9.,]*\s*(?:pe[cç]as?|itens?|unidades?|un\.?|produtos?|volumes?)?\s*/i);
       if(m&&m[0].length<r0.desc.length){R.cab=m[0].trim();r0.desc=r0.desc.slice(m[0].length).replace(/^[\s,;:-]+/,"")}}}
@@ -2965,6 +2968,7 @@ function lerRomaneio(texto,T){
   const sq=R.rows.reduce((t,r)=>t+r.qtd,0),sv=R.rows.reduce((t,r)=>t+(r.lote?(r.total||0):(r.preco!=null?r.preco*r.qtd:(r.total||0))),0),pt=[];
   if(T.qtdRe){const r=rxs(T.qtdRe),m2=r&&full.match(r);if(m2){const n=+String(m2[1]).replace(/\D/g,"");pt.push(n===sq?`✓ ${sq} peças conferem`:`⚠ a lista diz ${n} peças e li ${sq}`)}}
   if(T.valorRe){const r=rxs(T.valorRe),m2=r&&full.match(r);if(m2){const v=num(m2[1]);pt.push(v!=null&&Math.abs(v-sv)<0.05?`✓ valor R$ ${brl(sv)} confere`:`⚠ a lista diz R$ ${brl(v||0)} e li R$ ${brl(sv)}`)}}
+  if(corte)pt.push("⚠ A LISTA FOI CORTADA: li só as primeiras 3.000 peças e ainda havia mais linhas. Divida o texto em partes e cole de novo.");
   if(R.cab)pt.push(`⚠ ignorei o cabeçalho “${R.cab}” antes da 1ª peça`);
   {const cont={};R.rows.forEach(r=>{if(r.cod)cont[r.cod]=(cont[r.cod]||0)+1});const rep=Object.keys(cont).filter(k=>cont[k]>1);
     if(rep.length){R.rows.forEach(r=>{if(r.cod&&cont[r.cod]>1)r.aviso=(r.aviso?r.aviso+" ":"")+"· código repetido na lista: confira"});pt.push(`⚠ código repetido na lista: ${rep.slice(0,5).join(", ")}${rep.length>5?"…":""}`)}}
@@ -3201,7 +3205,8 @@ async function backupTotal(){const dl=await obterDL();toast("Preparando o backup
 
 OK = salvar uma versão LEVE (sem as fotos originais grandes; ficam as miniaturas), que dá para restaurar.
 Cancelar = salvar completo mesmo assim (só restauraria por fora do aplicativo).`)){const lev={};Object.keys(o.fotos||{}).forEach(k=>{if(/^[mr]:/.test(k))lev[k]=o.fotos[k]});bl=new Blob([JSON.stringify({...o,fotos:lev,leve:true})],{type:"application/json"});leve=true}
-  try{await dl.save({filename:"cadastro-pecas-backup-"+(leve?"LEVE-sem-fotos-originais":"completo")+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});try{localStorage.setItem("cadpecas-bk-em",String(Date.now()))}catch(e){}if(!leve&&bl.size>MAX_BACKUP_BYTES){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. Apague fotos que não usa ou faça o backup em partes.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:leve?"Backup LEVE salvo: tem as peças, cadastros, romaneios e miniaturas, mas NÃO as fotos originais grandes.":"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
+  const grande=bl.size>MAX_BACKUP_BYTES;
+  try{await dl.save({filename:"cadastro-pecas-backup-"+(leve?"LEVE-sem-fotos-originais":"completo")+(falhas.length?"-INCOMPLETO-":"-")+hoje+".json",data:bl});if(!falhas.length&&!grande){try{localStorage.setItem("cadpecas-bk-em",String(Date.now()))}catch(e){}}if(grande){toast(`Backup salvo, mas tem ${Math.round(bl.size/1048576)} MB${leve?" mesmo na versão leve":""} e o limite para RESTAURAR é ${Math.round(MAX_BACKUP_BYTES/1048576)} MB: este arquivo seria recusado. ${leve?"Apague romaneios e tabelas antigos que não usa":"Apague fotos que não usa"} ou faça o backup em partes. O lembrete de backup continua ligado.`);return}toast(falhas.length?`Backup salvo, mas INCOMPLETO: não consegui ler ${falhas.length} item(ns) do armazenamento do navegador (${[...new Set(falhas.map(x=>x.split(":")[0]))].join(", ")}). Não conte com ele para restaurar tudo.`:leve?"Backup LEVE salvo: tem as peças, cadastros, romaneios e miniaturas, mas NÃO as fotos originais grandes.":"Backup completo salvo.")}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o backup.")}}
 /* restaurar backup completo: valida TUDO e monta objetos novos antes de mexer em qualquer coisa. Semântica: SUBSTITUI peças,
    cadastros e formulário atuais pelos do backup (confirmação antes); romaneios, tabelas e fotos do backup são adicionados
    (mesmo id = sobrescreve; o que só existe aqui é mantido). Se algo falhar, nada muda (nem no IndexedDB). */
@@ -3280,7 +3285,7 @@ function validarBackup(o){
   if(o.autor!=null&&!ehTxt(o.autor))erro("o nome de quem montou está em formato errado");
   /* objetos novos (nada é aplicado aqui) */
   let cfgNova;try{cfgNova=lerConfig(clone(o.config))}catch(e){erro("não consegui ler os cadastros do backup")}
-  const r={config:cfgNova,lanc:clone(o.lanc).map(lerLanc),form:null,roms:{},tabs:{},fotos:{},descartadas:0};
+  const r={config:cfgNova,lanc:clone(o.lanc).map(lerLanc),form:null,roms:{},tabs:{},fotos:{},descartadas:0,incompleto:Array.isArray(o.incompleto)?o.incompleto.map(x=>String(x).slice(0,40)).slice(0,50):null,leve:o.leve===true};
   if(o.form&&o.form.v)r.form=lerForm(clone(o.form));
   Object.entries(roms).forEach(([k,x])=>{const l=romLimpo(k,x,true);r.roms[k]={...l,id:ehTxt(l.id)&&l.id?l.id:k}});
   Object.entries(tabs).forEach(([k,x])=>{const l=tabLimpa(k,x);r.tabs[k]={...l,id:ehTxt(l.id)&&l.id?l.id:k}});
@@ -3289,7 +3294,7 @@ function validarBackup(o){
   return r}
 function restaurarTotal(file){try{checaTam(file,MAX_BACKUP_BYTES,"O backup")}catch(e){toast("Backup NÃO restaurado — "+e.message+". Nada foi alterado.");return}const fr=new FileReader();fr.onload=async()=>{
   let n;try{n=validarBackup(JSON.parse(fr.result))}catch(e){toast("Backup NÃO restaurado — "+(e instanceof SyntaxError?"o arquivo está danificado ou não é um backup (não consegui ler o texto dele)":e&&e.message?e.message:"arquivo inválido")+". Nada foi alterado.");return}
-  if(!confirm(`Restaurar o backup?\n\nIsto SUBSTITUI as ${S.lanc.length} peça(s), os cadastros e o formulário atuais por ${n.lanc.length} peça(s) do backup.\nRomaneios (${Object.keys(n.roms).length}), tabelas salvas (${Object.keys(n.tabs).length}) e fotos (${Object.keys(n.fotos).length}) do backup são ADICIONADOS (o que só existe aqui é mantido).\n\nDepois dá para desfazer as peças e os cadastros com Ctrl+Z.`))return;
+  if(!confirm(`Restaurar o backup?\n\nIsto SUBSTITUI as ${S.lanc.length} peça(s), os cadastros e o formulário atuais por ${n.lanc.length} peça(s) do backup.\nRomaneios (${Object.keys(n.roms).length}), tabelas salvas (${Object.keys(n.tabs).length}) e fotos (${Object.keys(n.fotos).length}) do backup são ADICIONADOS (o que só existe aqui é mantido).\n\nDepois dá para desfazer as peças e os cadastros com Ctrl+Z.${n.incompleto&&n.incompleto.length?`\n\n⚠ ATENÇÃO: este backup foi marcado como INCOMPLETO quando foi criado (não leu: ${[...new Set(n.incompleto.map(x=>x.split(":")[0]))].join(", ")}). Pode estar faltando coisa.`:""}${n.leve?"\n\nÉ um backup LEVE: não tem as fotos originais grandes, só as miniaturas.":""}`))return;
   aplicarBackupTotal(n)};fr.readAsText(file)}
 async function aplicarBackupTotal(n,quieto){
   const antLS={},escritas=[],ant={config:S.config,lanc:S.lanc,form:S.form};
@@ -3317,7 +3322,7 @@ async function aplicarBackupTotal(n,quieto){
   Object.values(n.roms).forEach(r=>{try{romIndex(r)}catch(e){}});Object.values(n.tabs).forEach(r=>{try{tabIndex(r)}catch(e){}});arqRef();
   if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
   render();
-  if(!quieto)toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.`,{t:"Desfazer",fn:desfazer});return true}
+  if(!quieto)toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""}`,{t:"Desfazer",fn:desfazer});return true}
 const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 let romConflito=false;
@@ -3473,7 +3478,7 @@ const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|merc
 function decTexto(buf){try{return new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){return new TextDecoder("windows-1252").decode(buf)}}
 async function romPlanilha(file){if(!(await impPrepara(file)))return;return romPlanilha0(file)}
 async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha");if(typeof XLSX==="undefined")throw new Error("A biblioteca de planilha não carregou.");
-  const buf=await file.arrayBuffer(),ehCsv=/\.(csv|txt)$/i.test(file.name||""),wb=ehCsv?XLSX.read(decTexto(buf),{type:"string"}):XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});   /* raw:true: número formatado (1.000 / 1,234) vem como número, não como texto */
+  const buf=await file.arrayBuffer(),ehCsv=/\.(csv|txt)$/i.test(file.name||""),wb=ehCsv?XLSX.read(decTexto(buf),{type:"string",raw:true}):XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});   /* raw:true: número formatado (1.000 / 1,234) vem como número, não como texto */
   if(aoa.length>MAX_PLANILHA_LINHAS)throw new Error(`A planilha tem ${aoa.length} linhas e o limite é ${MAX_PLANILHA_LINHAS}.`);
   let hi=0,best=-1;for(let i=0;i<Math.min(15,aoa.length);i++){let n=0;aoa[i].forEach(c=>{if(Object.values(ROM_SIN).some(rx=>rx.test(String(c))))n++});if(n>best){best=n;hi=i}}
   const head=(aoa[hi]||[]).map((c,j)=>String(c||"").trim()||("Coluna "+(j+1))),map={};
@@ -4281,7 +4286,7 @@ function duplicarLinha(ri){
 }
 /* exclui só as linhas pedidas; se a peça ficar sem nenhuma linha, ela some inteira. Desfazer volta tudo. */
 function excluirLinhas(ris){
-  if(ris.length>=3){if(!confirm(`Excluir ${ris.length} linhas de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAuto("antes de excluir "+ris.length+" linhas",true)}
+  if(ris.length>=3){if(!confirm(`Excluir ${ris.length} linhas de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAviso(pontoAuto("antes de excluir "+ris.length+" linhas",true))}
   const por={};ris.forEach(ri=>{const r=G.linhas[ri];if(r)(por[r.lancId]=por[r.lancId]||[]).push(r.key)});
   const ids=Object.keys(por);if(!ids.length)return;
   const antes=ids.map(id=>({id,excl:((S.lanc.find(x=>x.id===id)||{}).excl)||null})),del=[];let n=0;
@@ -4292,7 +4297,7 @@ function excluirLinhas(ris){
   del.forEach(d=>candFoto.add(d.item.id));undo={tipo:"linhas",antes,del};selR=null;salvar(false);renderTopo();toast(`${n} linha(s) excluída(s).`,{t:"Desfazer",fn:desfazer});
 }
 function excluir(ids){
-  if(ids.length>=3){if(!confirm(`Excluir ${ids.length} peças de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAuto("antes de excluir "+ids.length+" peças",true)}
+  if(ids.length>=3){if(!confirm(`Excluir ${ids.length} peças de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAviso(pontoAuto("antes de excluir "+ids.length+" peças",true))}
   const itens=ids.map(id=>{const idx=S.lanc.findIndex(l=>l.id===id);return {idx,item:S.lanc[idx]}}).filter(x=>x.idx>=0);
   S.lanc=S.lanc.filter(l=>!ids.includes(l.id));ids.forEach(id=>sel.delete(id));if(ids.includes(editId)){editId=null;if(rascunho)S.form=rascunho;rascunho=null;renderForm()}
   ids.forEach(i=>candFoto.add(i));undo={tipo:"del",itens};salvar(false);renderTopo();toast(`${itens.length} peça(s) excluída(s).`,{t:"Desfazer",fn:desfazer});
@@ -4346,7 +4351,7 @@ function gerarExport(){const g0=gerar(),fil=filtroOn();
   const peca=!!(fil&&modeloAtual().agrupar==="sim");
   return {g0,fil,peca,g:fil?(()=>{if(peca){const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}}return {...g0,linhas:g0.linhas.filter(casa)}})():g0}}
 async function baixar(forcar){
-  const GE=gerarExport(),g=GE.g,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc();if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
+  const GE=gerarExport(),g=GE.g,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),cfgExp=sigCfg();if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de baixar.");return}
   const cols=colunasExport(),mo=modeloAtual(),csv=mo.formato==="csv";
   if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
@@ -4358,7 +4363,7 @@ async function baixar(forcar){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
+  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -4376,7 +4381,7 @@ function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.
 const LOC=(()=>{let l="pt-br",dec=",";try{l=String(navigator.language||"pt-br").toLowerCase();dec=(1.1).toLocaleString(navigator.language||"pt-BR").includes(",")?",":"."}catch(e){}return {dec,pt:l.startsWith("pt")}})();
 const fLocal=f=>LOC.dec==="."?f:LOC.pt?f.replace(/,/g,";").replace(/(\d)\.(\d)/g,"$1,$2").replace(/\bROUND\(/g,"ARRED("):null;
 async function copiar(ids,forcar){
-  const GE=gerarExport(),g0=GE.g0,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
+  const GE=gerarExport(),g0=GE.g0,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),cfgExp=sigCfg(),g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
   if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de copiar.");return}
   const cols=colunasExport();if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
   if(!forcar&&abrirConferencia(g,cols,{tipo:"copiar",ids:ids||null}))return;
@@ -4388,7 +4393,7 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
     const xv=x.v==null&&typeof x.calc==="number"?{...x,v:x.calc}:x,s=txtSaida(xv,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof xv.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
 function sigCfg(){const c={...S.config};delete c.seqs;delete c.observacoes;return JSON.stringify(c)}
@@ -4750,10 +4755,10 @@ document.addEventListener("click",e=>{
       C.categorias.forEach(c=>add(c.nome,c.nome,""));C.categorias.forEach(c=>(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,c.nome,sb)}));
       T.mapa=mapaStr(a);salvar(true,false);renderCfg();toast(n?`${n} palavra(s) criadas a partir das suas categorias.`:"Todas as suas categorias já estão no mapa.",{t:"Desfazer",fn:desfazer});break}
     case "rom-plan-ok":{const P=ROM&&ROM.plan;if(!P)break;const m=P.map,nn=v=>{const x=String(v==null?"":v).replace(/[R$\s]/g,"");return x===""?null:num(x)},rows=[];
-      const ruim=[],zero=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc){const cd=m.cod==null?"":String(r[m.cod]||"").trim();if(cd&&(m.qtd==null||nn(r[m.qtd])>0))ruim.push(cd.slice(0,30)+" (sem descrição)");return}const qn=m.qtd==null?1:nn(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
+      const ruim=[],zero=[],semd=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc){const cd=m.cod==null?"":String(r[m.cod]||"").trim();if(cd&&(m.qtd==null||nn(r[m.qtd])>0))ruim.push(cd.slice(0,30)+" (sem descrição)");else{const qv=m.qtd==null?null:nn(r[m.qtd]),pv=m.preco==null?null:nn(r[m.preco]),tv=m.total==null?null:nn(r[m.total]);if((qv!=null&&qv!==0)||(pv!=null&&pv!==0)||(tv!=null&&tv!==0))semd.push("qtd "+(m.qtd==null?"?":String(r[m.qtd]).trim()||"vazia")+(pv?" · R$ "+pv:""))}return}const qn=m.qtd==null?1:nn(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
       if(ruim.length){ROM.msg=`${ruim.length} linha(s) com quantidade vazia/decimal/inválida ou sem descrição, não importei nada: ${ruim.slice(0,5).join("; ")}${ruim.length>5?"…":""}. Corrija a planilha ou a coluna de quantidade.`;renderRom();break}
       if(!rows.length){ROM.msg="Nenhuma linha com descrição e quantidade. Confira as colunas.";renderRom();break}
-      ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças${zero.length?` · ${zero.length} linha(s) com quantidade 0 ficaram de fora: ${zero.slice(0,5).join("; ")}${zero.length>5?"…":""}`:""}`,erro:""});break}
+      ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças${zero.length?` · ${zero.length} linha(s) com quantidade 0 ficaram de fora: ${zero.slice(0,5).join("; ")}${zero.length>5?"…":""}`:""}${semd.length?` · ⚠ ${semd.length} linha(s) SEM DESCRIÇÃO e com quantidade/valor ficaram de fora (pode ser a linha de total): ${semd.slice(0,5).join("; ")}${semd.length>5?"…":""}. Confira a planilha.`:""}`,erro:""});break}
     case "rom-plan-no":ROM.plan=null;renderRom();break;
     case "rom-ex-abrir":romUI.ex=true;renderCfg();refocar("#romExTx");break;
     case "rom-ex-fechar":romUI.ex=false;renderCfg();break;

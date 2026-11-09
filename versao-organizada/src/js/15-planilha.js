@@ -187,7 +187,8 @@ function sincFormCelula(id,L,key){
   if(vazio(f2.v[L]))delete f.v[L];else f.v[L]=f2.v[L];
   const dobrou=!vazio(f2.v[L])&&f2.v[L]!==l.v[L];   /* valor igual em todas as linhas virou valor da peça: aí vale para todas */
   Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!(f2.ov&&f2.ov[k]&&L in f2.ov[k])&&(dobrou||key===undefined||k===key))delete f.ov[k][L]});   /* edições não salvas das outras variações ficam */
-  Object.keys(f2.ov||{}).forEach(k=>{if(f2.ov[k]&&typeof f2.ov[k]==="object"&&L in f2.ov[k]){f.ov[k]=f.ov[k]||{};f.ov[k][L]=f2.ov[k][L]}});
+  Object.keys(f2.ov||{}).forEach(k=>{if(k!==key&&key!==undefined&&!dobrou)return;   /* só a variação editada: as outras mantêm o que está no formulário */
+    if(f2.ov[k]&&typeof f2.ov[k]==="object"&&L in f2.ov[k]){f.ov[k]=f.ov[k]||{};f.ov[k][L]=f2.ov[k][L]}});
   Object.keys(f.ov).forEach(k=>{if(f.ov[k]&&typeof f.ov[k]==="object"&&!Object.keys(f.ov[k]).length)delete f.ov[k]});
 }
 /* diz o que a edição de uma célula fez: só aquela linha, a peça toda, ou (referência) que deixou de seguir a numeração */

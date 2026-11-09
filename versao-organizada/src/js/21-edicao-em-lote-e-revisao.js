@@ -138,7 +138,7 @@ const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|merc
 function decTexto(buf){try{return new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){return new TextDecoder("windows-1252").decode(buf)}}
 async function romPlanilha(file){if(!(await impPrepara(file)))return;return romPlanilha0(file)}
 async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha");if(typeof XLSX==="undefined")throw new Error("A biblioteca de planilha não carregou.");
-  const buf=await file.arrayBuffer(),ehCsv=/\.(csv|txt)$/i.test(file.name||""),wb=ehCsv?XLSX.read(decTexto(buf),{type:"string"}):XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});   /* raw:true: número formatado (1.000 / 1,234) vem como número, não como texto */
+  const buf=await file.arrayBuffer(),ehCsv=/\.(csv|txt)$/i.test(file.name||""),wb=ehCsv?XLSX.read(decTexto(buf),{type:"string",raw:true}):XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});   /* raw:true: número formatado (1.000 / 1,234) vem como número, não como texto */
   if(aoa.length>MAX_PLANILHA_LINHAS)throw new Error(`A planilha tem ${aoa.length} linhas e o limite é ${MAX_PLANILHA_LINHAS}.`);
   let hi=0,best=-1;for(let i=0;i<Math.min(15,aoa.length);i++){let n=0;aoa[i].forEach(c=>{if(Object.values(ROM_SIN).some(rx=>rx.test(String(c))))n++});if(n>best){best=n;hi=i}}
   const head=(aoa[hi]||[]).map((c,j)=>String(c||"").trim()||("Coluna "+(j+1))),map={};

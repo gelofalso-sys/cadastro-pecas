@@ -64,7 +64,8 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
 const PONTOS_MAX=15,PONTO_INTERVALO=30*60*1000;
 async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
 async function pontoAuto(motivo,forcar){const snap={n:S.lanc.length,json:jsonLocal(false)};   /* estado de ANTES da operação, capturado já */
-  try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return;if(!snap.n&&!forcar)return;await pontoSalvar(motivo,snap)}catch(e){}}
+  try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return true;if(!snap.n&&!forcar)return true;return await pontoSalvar(motivo,snap)}catch(e){return false}}
+const pontoAviso=p=>p.then(ok=>{if(ok===false)toast("Atenção: NÃO consegui guardar o ponto de restauração (memória do navegador cheia?). Se precisar, use Desfazer agora.",{t:"Desfazer",fn:desfazer})})
 setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)")},5*60*1000);
 const BK_DIAS=7,BK_INTERVALO=30*60*1000;
 async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}

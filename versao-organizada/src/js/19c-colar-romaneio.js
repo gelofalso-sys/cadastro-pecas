@@ -26,7 +26,7 @@ function lerRomaneio(texto,T){
   if(T.fim){const i=flat.toLowerCase().indexOf(String(T.fim).toLowerCase());if(i>=0)flat=flat.slice(0,i)}
   let P;try{P=padraoRegex(T.padrao)}catch(e){R.erro="O padrão da linha é inválido.";return R}
   if(!P.ordem.includes("desc")||!(P.ordem.includes("qtd")||P.ordem.includes("qv"))){R.erro="O padrão precisa ter pelo menos {desc} e {qtd}.";return R}
-  let fimLido=0;
+  let fimLido=0,corte=false;
   const colhe=P=>{let m,g=0;
   while((m=P.re.exec(flat))&&g++<3000){if(!m[0].length){P.re.lastIndex++;continue}fimLido=P.re.lastIndex;
     const o={};P.ordem.forEach((k,i)=>o[k]=m[i+1]);
@@ -34,7 +34,8 @@ function lerRomaneio(texto,T){
     const un=String(o.u||"").toUpperCase().replace(/[.]/g,""),porPeso=/^(GR|G|KG)$/.test(un),pr=o.preco||o.pu,qn=o.qtd||o.qv;
     let loteG=null,precoG=null;if(porPeso){const fk=un==="KG"?1000:1;loteG=(numQtd(qn)||0)*fk;precoG=(num(pr)||0)/fk}
     R.rows.push({cod:o.cod||"",desc,preco:pr?num(pr):null,precod:o.precod?num(o.precod):null,total:o.total?num(o.total):null,qtd:porPeso?1:Math.trunc(numQtd(qn)||0),peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":"",
-      ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}};
+      ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}
+    if(m&&g>3000)corte=true};   /* saiu do laço com mais uma linha reconhecida: a lista passou do limite */
   colhe(P);if(!R.rows.length&&String(T.padrao).includes("R$ {precod}")){try{colhe(padraoRegex(String(T.padrao).replace("R$ {precod}","").replace(/ {2,}/g," ")))}catch(e){}}
   {const r0=R.rows[0];if(r0){const m=r0.desc.match(/^\s*(?:total(?:\s+geral)?|qtd\.?\s*total|quantidade\s+total|romaneio|pedido|resumo)\b[^\d]{0,20}\d[0-9.,]*\s*(?:pe[cç]as?|itens?|unidades?|un\.?|produtos?|volumes?)?\s*/i);
       if(m&&m[0].length<r0.desc.length){R.cab=m[0].trim();r0.desc=r0.desc.slice(m[0].length).replace(/^[\s,;:-]+/,"")}}}
@@ -42,6 +43,7 @@ function lerRomaneio(texto,T){
   const sq=R.rows.reduce((t,r)=>t+r.qtd,0),sv=R.rows.reduce((t,r)=>t+(r.lote?(r.total||0):(r.preco!=null?r.preco*r.qtd:(r.total||0))),0),pt=[];
   if(T.qtdRe){const r=rxs(T.qtdRe),m2=r&&full.match(r);if(m2){const n=+String(m2[1]).replace(/\D/g,"");pt.push(n===sq?`✓ ${sq} peças conferem`:`⚠ a lista diz ${n} peças e li ${sq}`)}}
   if(T.valorRe){const r=rxs(T.valorRe),m2=r&&full.match(r);if(m2){const v=num(m2[1]);pt.push(v!=null&&Math.abs(v-sv)<0.05?`✓ valor R$ ${brl(sv)} confere`:`⚠ a lista diz R$ ${brl(v||0)} e li R$ ${brl(sv)}`)}}
+  if(corte)pt.push("⚠ A LISTA FOI CORTADA: li só as primeiras 3.000 peças e ainda havia mais linhas. Divida o texto em partes e cole de novo.");
   if(R.cab)pt.push(`⚠ ignorei o cabeçalho “${R.cab}” antes da 1ª peça`);
   {const cont={};R.rows.forEach(r=>{if(r.cod)cont[r.cod]=(cont[r.cod]||0)+1});const rep=Object.keys(cont).filter(k=>cont[k]>1);
     if(rep.length){R.rows.forEach(r=>{if(r.cod&&cont[r.cod]>1)r.aviso=(r.aviso?r.aviso+" ":"")+"· código repetido na lista: confira"});pt.push(`⚠ código repetido na lista: ${rep.slice(0,5).join(", ")}${rep.length>5?"…":""}`)}}
