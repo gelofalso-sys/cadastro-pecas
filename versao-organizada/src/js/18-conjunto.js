@@ -27,10 +27,12 @@ function conjCalc(f){
 function conjLimpar(f){f.v=f.v||{};["N","P",...CJ_COL].forEach(L=>delete f.v[L]);if(f.fConj&&f.v.F===f.fConj)delete f.v.F;delete f.fConj;
   Object.keys(f.ov||{}).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"){if(k!=="p"&&k.indexOf("~")<0)CJ_COL.forEach(L=>delete o[L]);if(!Object.keys(o).length)delete f.ov[k]}})}
 /* grava as somas na peça: Peso e Compra (iguais em todas as linhas), Banhos e Verniz (de cada banho marcado, em f.ov[banho]) e a Descrição; o Fator × de cada linha dá o Preço de Varejo */
+/* foto dos custos de banho/verniz gravados no conjunto: se continuam iguais à última soma, ninguém digitou por cima e o cadastro de galvânicas pode atualizar */
+const conjSnap=f=>JSON.stringify([CJ_COL.map(L=>(f.v||{})[L]),Object.keys(f.ov||{}).sort().map(k=>[k,f.ov[k]&&typeof f.ov[k]==="object"?CJ_COL.map(L=>f.ov[k][L]):null])]);
 function conjSync(f,dom){
   if(!f.conj||!Array.isArray(f.comp))return;
   const R=conjCalc(f),temComp=f.comp.some(c=>!vazio(c.peso)||!vazio(c.custo));f.v=f.v||{};f.ov=f.ov||{};
-  if(temComp){f.v.N=txtN(R.tot.N);f.v.P=txtN(R.tot.P)}else{delete f.v.N;delete f.v.P}
+  if(temComp){f.v.N=txtN(R.tot.N);f.v.P=txtN(R.tot.P);f.somaNP=1}else if(f.somaNP){delete f.v.N;delete f.v.P;delete f.somaNP}   /* só apaga Peso/Compra se foram as somas do conjunto que os criaram */
   if(R.temBanho){CJ_COL.forEach(L=>delete f.v[L]);
     const ids=R.vars.map(x=>x.b.id);
     R.vars.forEach(x=>{const o=f.ov[x.b.id]=f.ov[x.b.id]||{};CJ_COL.forEach(L=>{if(temComp&&x.tot[L]>0)o[L]=txtN(x.tot[L]);else delete o[L]})});
@@ -40,6 +42,7 @@ function conjSync(f,dom){
   Object.keys(f.ov).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"&&!Object.keys(o).length)delete f.ov[k]});
   const nomes=f.comp.map(c=>String(c.desc||"").trim()).filter(Boolean),auto=nomes.length?"Conjunto "+nomes.join(" + "):"";
   if(vazio(f.v.F)||f.fConj===f.v.F){if(auto)f.v.F=auto;else delete f.v.F;f.fConj=auto}
+  f.cjSnap=conjSnap(f);
   if(dom){["N","P","F"].forEach(L=>{const el=document.getElementById("f-"+L);if(el&&document.activeElement!==el)el.value=f.v[L]??""});
     f.comp.forEach((c,i)=>{const e=document.getElementById("cj-c-"+i);if(e)e.innerHTML=conjLinTxt(R,i,c)});
     const t=document.getElementById("conjTot");if(t)t.innerHTML=conjTotHTML(f);
@@ -50,7 +53,7 @@ const conjLinTxt=(R,i,c)=>{if(c&&!num(c.peso)&&!num(c.custo))return "";return R.
 function conjTotHTML(f){
   const R=conjCalc(f),q=num(vazio(f.v.Q)?padraoDe(f.v.I,"Q"):f.v.Q)||0,mk=f.mk||{},ov=f.ov||{};
   if(!(f.comp||[]).some(c=>!vazio(c.peso)||!vazio(c.custo)))return `<p class="hint">Preencha o peso e o custo das peças para ver a somatória por banho.</p>`;
-  const linhas=R.vars.map(x=>{const id=x.b?x.b.id:"p",t=x.tot,dsc=num(f.desconto)||0,P=dsc>0?Math.round((r4c(t.P)-r4c(t.P)*r4(dsc/100))*100)/100:r4c(t.P),qq=r4c(q),custo=0+P+qq+r4c(t.R)+r4c(t.S)+r4c(t.T)+r4c(t.U),m=num(mk[id]),man=x.b?(ov[id]||{}).V:f.v.V,
+  const linhas=R.vars.map(x=>{const id=x.b?x.b.id:"p",t=x.tot,dsc=num(f.desconto)||0,P=dsc>0?r2c(r4c(t.P)-r4c(t.P)*kDesc(dsc)):r4c(t.P),qq=r4c(q),custo=0+P+qq+r4c(t.R)+r4c(t.S)+r4c(t.T)+r4c(t.U),m=num(mk[id]),man=x.b?(ov[id]||{}).V:f.v.V,
     vr=!vazio(man)&&num(man)!=null?num(man):(m?Math.round(custo*m*100)/100:null);
     return `<tr><th>${x.b?`<span class="dot d-${x.b.coluna}"></span>${esc(x.b.letra)} · ${esc(x.b.nome)}`:"Conjunto"}</th><td>${fmt(t.N)} g</td><td>${brl(P)}</td><td>${brl(r4c(t.R)+r4c(t.S)+r4c(t.T))}</td><td>${brl(r4c(t.U))}</td><td>${q?brl(qq):"–"}</td><td><b>${brl(custo)}</b></td><td>${m?fmt(m):"–"}</td><td><b>${vr!=null?"R$ "+brl(vr):"digite o Fator × abaixo"}</b></td></tr>`}).join("");
   const aviso=R.vars.some(x=>x.semMult)?`<p class="hint cj-w">⚠ Um banho usado aqui está sem o R$ por grama (Cadastros › Galvânicas): o custo dela entra como zero.</p>`:"";
@@ -86,7 +89,7 @@ function atualizarGera(){
   if(g.semQ&&g.semQ[id])h+=`<span class="warn" title="Quando só algumas combinações têm quantidade, as sem quantidade não viram linha">⚠ ${g.semQ[id]} combinação(ões) sem quantidade ficam de fora da tabela.</span>`;
   if(erro&&!h.includes(">"+esc(erro)+"<"))h+=`<span class="err">${esc(erro)}</span>`;
   el.innerHTML=h;
-  {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2,true),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
+  {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2,true),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:x&&x.v==null&&typeof x.calc==="number"?x.calc:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
       if(P==null&&B==null&&U==null)return "";
       if(P!=null)pt.push(`Compra <b>${brl(P)}</b>${r.desconto>0?` <small>(com ${fmt(r.desconto)}% de desconto)</small>`:""}`);
       if(Q!=null)pt.push(`Insumos <b>${brl(Q)}</b>`);
@@ -103,7 +106,7 @@ function atualizarGera(){
     const inc=r.banho&&B==null;if(sp)sp.innerHTML=custo>0?`${inc?`<span class="bfx-n">sem peso: banho e verniz não entram na base (normal em peça pronta/banhada).</span> `:""}Base do fator <b>R$ ${brl(custo)}</b> <span class="bfx-d">= ${partes.map(x=>x[0]+" "+brl(x[1])).join(" + ")}</span>${mk&&V!=null?` · × ${fmt(mk)} = <b>R$ ${brl(V)}</b>`:""}`:"";
     const mi=document.querySelector(`[data-mk="${CSS.escape(kb)}"]`);if(mi&&mi.tagName==="INPUT")mi.placeholder=!r.mk&&mk&&!inc?fmt(mk):(fatorBanho(kb)||"×")})}
   rows.forEach((r,k)=>{if(!r.banho)return;const cel=celulas(r,ri0+k+2)[LET.indexOf(r.banho.coluna)],sp=document.querySelector(`[data-cb="${CSS.escape(String(r.bid||r.key))}"]`);
-    if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(num(r.v.N)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor na galvânica"))});
+    if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(pesoLinha(r)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor na galvânica"))});
   rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2,true)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v)+" (×"+fmt(r.mk)+")":"";
     const kb=r.bid||r.key,i=document.querySelector(kb==="p"?"#f-V":`[data-ph="${kb}-V"]`);if(i&&i.tagName==="INPUT")i.placeholder=ph});
   // dicas (placeholder) com o que vai entrar quando o campo fica vazio

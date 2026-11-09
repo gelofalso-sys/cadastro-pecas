@@ -6,7 +6,9 @@ function padraoRegex(pad){const ordem=[];let src="";
     if(m&&TOK[m[1]]){if(m[1]!=="x"&&m[1]!=="item")ordem.push(m[1]);src+=TOK[m[1]]}
     else src+=p.split(/\s+/).map(z=>z.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")).join("\\s*")});
   return {re:new RegExp(src,"g"),ordem}}
-const rxs=(x,f)=>{try{return new RegExp(x,f||"i")}catch(e){return null}};
+/* padrão com quantificador dentro de grupo também quantificado, ex.: (a+)+ ou (\d*)* , pode travar a aba: não é aceito */
+const rxPerigo=x=>/\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d)/.test(String(x));
+const rxs=(x,f)=>{try{if(rxPerigo(x))return null;return new RegExp(x,f||"i")}catch(e){return null}};
 function mapaCat(desc,T){const d=semAc(desc);
   for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a)))return b}
   const w=d.split(/[\s,]+/)[0];const c=cfg().categorias.find(c=>w&&semAc(c.nome).startsWith(w.slice(0,4)));return c?c.nome:""}
@@ -45,7 +47,7 @@ function lerRomaneio(texto,T){
   if(fimLido&&/R\$\s*\d[0-9.]*,\d{2}/.test(flat.slice(fimLido)))pt.push("⚠ sobrou texto com valores depois da última peça lida (alguma linha sem código ou em outro formato?)");
   R.conf=pt.join(" · ");return R}
 const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(ROM&&ROM.tid))||C.romaneios[0]};
-const virg=n=>n==null?"":(Math.round(n*100)/100).toFixed(2).replace(".",",");
+const virg=n=>n==null?"":(Math.abs(n*100-Math.round(n*100))<1e-6?(Math.round(n*100)/100).toFixed(2):String(Math.round(n*10000)/10000)).replace(".",",");   /* preço com 3-4 casas não é arredondado */
 let ROM=null;
 function padroesAuto(){const cods=["[#{cod}]","[{cod}]","#{cod}","({cod})",""],pre=["R$ {preco} R$ {precod} {qtd} R$ {total}","R$ {preco} {qtd} R$ {total}","{qtd} R$ {preco} R$ {total}","R$ {preco} R$ {total} {qtd}","{preco} {qtd} {total}"],o=[];
   cods.forEach(c=>pre.forEach(q=>o.push("{desc} "+(c?c+" ":"")+q)));return o}
@@ -88,7 +90,7 @@ function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g
   f.ft=r.fotoMini||null;f.ftR=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.csel=(r.csel||[]).slice();f.semGrade=!!r.semG;f.ov={};f.vinc=!bruta&&!!r.vinc&&!romIds(r).length&&(!cols.length||cols[0].id==="p");
   f.mk=clone(snap.mk||{});Object.keys(r.mk||{}).forEach(k=>{if(!vazio(r.mk[k]))f.mk[k]=r.mk[k]});
   f.vz={...(snap.vz||{}),...(r.vz||{})};
-  f.desconto=((T.custo==="precod"&&r.precod!=null)||r.nfSemDesc)?"0":(r.forn&&fornBy(r.forn)?fornBy(r.forn).desconto:snap.desconto);if(!vazio(r.dsc))f.desconto=String(r.dsc);
+  f.desconto=((T.custo==="precod"&&r.precod!=null)||r.nfSemDesc)?"0":(r.forn&&fornBy(r.forn)?fornBy(r.forn).desconto:snap.desconto);if(!vazio(r.dsc)&&num(r.dsc)!=null&&num(r.dsc)>=0&&num(r.dsc)<=100)f.desconto=String(r.dsc);
   const q=romKeys(r,cols).map(k=>[k,Math.trunc(num(r.q[k])||0)]).filter(x=>x[1]>0);
   if(!bruta&&(!cols.length||cols[0].id==="p"))f.onP={};
   if(bruta){f.on={};cols.forEach(c=>{f.on[c.id]=true});q.forEach(([k,n])=>{f.ov[k]={...(f.ov[k]||{}),W:String(n)}});
@@ -117,7 +119,7 @@ function romPreview(){const out=[],base=S.lanc.slice();
   ROM.rows.forEach((r,i)=>{out[i]=null;if(r.skip)return;const {f}=romForm(r,true),t=romMonta(base,r,{...f,id:"__rom"+i});out[i]={rows:[],troca:t.troca}});
   if(!base.some(l=>String(l.id).startsWith("__rom")))return out;let g;try{g=gerar(base)}catch(e){return out}
   g.linhas.forEach((row,ri)=>{const id=String(row.lancId);if(!id.startsWith("__rom"))return;const o=out[+id.slice(5)];if(!o)return;
-    const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
+    const cs=celulas(row,ri+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
     o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),cb:row.banho?n(row.banho.coluna):null,custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
 const fm=n=>n==null?"—":"R$ "+brl(n);
@@ -137,7 +139,7 @@ function renderRom0(){const el=document.getElementById("romWrap");if(!el)return;
     ${true?`${fq("Galvânica",`<select data-rp="bh">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="bh" title="Cadastrar uma galvânica nova agora" aria-label="Nova galvânica">＋</button><div class="fq"><span>${bruta?"Banhos (padrão de todas as peças)":"Banhos (peça pronta: uma linha por banho; nenhum = peça única)"}</span><div class="rom-bn">${bh.banhos.map(b=>`<label class="gi${(bruta?f.on:(f.onP||{}))[b.id]?" on":""}" title="Custo ${esc(b.nome)} por grama: ${esc(b.mult||"—")}"><input type="checkbox" data-rp="bn" data-b="${b.id}" ${(bruta?f.on:(f.onP||{}))[b.id]?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></label>`).join("")}</div></div><button type="button" class="btn ghost sm" data-act="rom-q" data-q="bn" title="Cria um banho novo (ex.: Ródio negro) nesta galvânica">＋ Banho</button><button type="button" class="btn ghost sm" data-act="ir" data-sec="banho" title="Valores por grama, cores e milésimos da galvânica">Editar galvânica</button>`:""}
     ${(bruta?bh.banhos.filter(b=>f.on[b.id]).map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):(()=>{const sl=bh.banhos.filter(b=>(f.onP||{})[b.id]);return sl.length?sl.map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):[{id:"p",nome:"Multiplicador"}]})()).map(m=>fq(m.nome+" (varejo = custos × este valor)",`<input class="n" data-rp="mkg" data-b="${m.id}" value="${esc((f.mk||{})[m.id]??"")}" placeholder="×" inputmode="decimal">`,"w-c")).join("")}
     <span class="hint">Desconto do fornecedor <b>${esc(f.desconto||"0")}%</b></span></div>
-  <div class="rom-t"><textarea data-rp="texto" rows="3" placeholder="Cole aqui o texto da lista do fornecedor, ou use Importar PDF…">${esc(ROM.texto)}</textarea><div class="rom-b"><button type="button" class="btn pri" data-act="rom-ler">Ler lista</button><label class="btn" title="Escolha ou arraste o PDF do romaneio: o sistema lê as peças e recorta as fotos">Importar PDF<input type="file" id="romPdf" accept="application/pdf,.pdf" hidden></label><label class="btn" title="Planilha do fornecedor (.xlsx, .xls ou .csv): você confirma qual coluna é código, descrição, quantidade e valor">Importar planilha<input type="file" id="romXls" accept=".xlsx,.xls,.csv" hidden></label><span class="hint">${esc(ROM.msg||"")}</span></div></div>`;
+  <div class="rom-t"><textarea data-rp="texto" rows="3" placeholder="Cole aqui o texto da lista do fornecedor, ou use Importar PDF…">${esc(ROM.texto)}</textarea><div class="rom-b"><button type="button" class="btn pri" data-act="rom-ler">Ler lista</button><label class="btn" title="Escolha ou arraste o PDF do romaneio: o sistema lê as peças e recorta as fotos">Importar PDF<input type="file" id="romPdf" accept="application/pdf,.pdf" class="vh"></label><label class="btn" title="Planilha do fornecedor (.xlsx, .xls ou .csv): você confirma qual coluna é código, descrição, quantidade e valor">Importar planilha<input type="file" id="romXls" accept=".xlsx,.xls,.csv" class="vh"></label><span class="hint">${esc(ROM.msg||"")}</span></div></div>`;
   h+=romPlanHTML();
   if(ROM.rows.length){
     h+=`<div class="rom-i">${fq("Observação (todas as peças)",`<input data-rp="obs" value="${esc(ROM.obs||"")}">`,"w-l")}<span class="rom-c ${/⚠/.test(ROM.conf)?"bad":""}" title="Conferência com os totais da lista">Lista: ${esc(ROM.conf||"—")}</span></div>

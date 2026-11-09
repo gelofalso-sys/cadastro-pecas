@@ -35,7 +35,7 @@ const dtbr=t=>new Date(t).toLocaleString("pt-BR");
 function repModal(inner){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";ov.innerHTML=`<div class="rep-c">${inner}</div>`;document.body.appendChild(ov)}
 async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabela está vazia.");return null}
   if(por)setAutor(por);const g=gerar(),lancSnap=clone(S.lanc),seqsSnap=clone(cfg().seqs),sigT=sigLanc();   /* versão consistente: tudo abaixo usa esta foto, não o estado de depois das esperas */
-  const linhas=g.linhas.map((x,ri)=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:null},q=num(x.v.W)||0,cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),l=S.lanc.find(z=>z.id===x.lancId)||{};
+  const linhas=g.linhas.map((x,ri)=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:null},q=n("W")??(num(x.v.W)||0),cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),l=S.lanc.find(z=>z.id===x.lancId)||{};
     return {ref:x.v.E,desc:x.v.F||"",cat:x.v.I||"",sub:x.v.J||"",cor:x.v.L||"",forn:x.v.H||"",cod:x.v.G||"",q,custo:cu,varejo:n("V"),lanc:x.lancId,por:l.por||""}});
   const ids=new Set(lancSnap.map(l=>l.id)),ks=(await idbOp("roms","readonly",st=>st.getAllKeys()))||[],roms=[];
   for(const k of ks){const r=await idbGet("roms",k);if(r&&r.rows.some(x=>(x.lancIds||[]).some(i=>ids.has(i))))roms.push(k)}
@@ -56,9 +56,11 @@ function tabSalvarAbrir(){const d=new Date(),nm="Tabela "+String(d.getDate()).pa
 async function tabSalvarOk(){if(editId){toast("Termine ou cancele a edição antes.");return}const nome=(document.getElementById("tsNome").value||"").trim()||("Tabela "+new Date().toLocaleDateString("pt-BR")),por=(document.getElementById("tsPor").value||"").trim(),nova=document.getElementById("tsNova").checked;
   document.querySelectorAll(".rep").forEach(x=>x.remove());await tabSalvar(nome,por,nova);tabListaAbrir()}
 async function tabRestaurar(id){if(editId){toast("Termine ou cancele a edição antes.");return}const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
+  if(!Array.isArray(rec.lanc)){toast("Esta tabela salva está danificada (sem as peças): não restaurei nada.");return}
   if(S.lanc.length){const bk=await tabSalvar("Antes de restaurar · "+dtbr(Date.now()),AUTOR,false,true);if(!bk){toast("Não restaurei: não consegui guardar a tabela atual no histórico antes.");return}}
-  S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();lastExport=null;salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
-  toast(`Tabela “${rec.nome}” restaurada (${S.lanc.length} peças). A tabela que estava aqui foi guardada no histórico. A numeração não voltou atrás: vale o maior número de cada prefixo.`)}
+  S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();lastExport=null;ftSalvas.clear();ftRSalvas.clear();salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
+  let renum="";try{const nv=gerar().linhas.map(r=>r.v.E),vl=(rec.linhas||[]).map(x=>x&&x.ref);if(vl.some((r,i)=>r&&nv[i]&&nv[i]!==r))renum=" ATENÇÃO: algumas referências mudaram em relação à tabela salva (a numeração é refeita a partir da última peça de hoje): confira antes de exportar."}catch(e){}
+  toast(`Tabela “${rec.nome}” restaurada (${S.lanc.length} peças). A tabela que estava aqui foi guardada no histórico. A numeração não voltou atrás: vale o maior número de cada prefixo.${renum}`)}
 async function tabVer(id){const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
   const rs=[];for(const k of rec.roms||[]){const r=await idbGet("roms",k);if(r)rs.push(r)}
   const L=(Array.isArray(rec.linhas)?rec.linhas:[]).filter(ehObj).map(l=>({...l,q:Number(l.q)||0,custo:Number(l.custo)||0,varejo:l.varejo==null?null:(Number(l.varejo)||0)})),tot=L.reduce((t,l)=>({un:t.un+l.q,cu:t.cu+l.custo*l.q,vr:t.vr+(l.varejo||0)*l.q}),{un:0,cu:0,vr:0}),romDe={};rs.forEach(r=>r.rows.forEach(x=>(x.lancIds||[]).forEach(i=>{romDe[i]=r})));

@@ -50,6 +50,8 @@ document.addEventListener("keydown",e=>{
     const mover=(dr,dc)=>{const r=dr?passo(selR.fr,dr,mr):selR.fr,c=Math.min(Math.max(selR.fc+dc,0),LET.length-1);if(e.shiftKey&&k!=="Tab")selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);rolarAte()};
     if(k==="ArrowDown"){e.preventDefault();mover(1,0);return}
     if(k==="ArrowUp"){e.preventDefault();mover(-1,0);return}
+    if(k==="Tab"&&!e.shiftKey&&selR.fc>=LET.length-1&&selR.fr>=mr)return;   /* última célula: Tab deixa o foco sair da planilha */
+    if(k==="Tab"&&e.shiftKey&&selR.fc<=0&&selR.fr<=0)return;   /* primeira célula: Shift+Tab também */
     if(k==="ArrowRight"||(k==="Tab"&&!e.shiftKey)){e.preventDefault();mover(0,1);return}
     if(k==="ArrowLeft"||(k==="Tab"&&e.shiftKey)){e.preventDefault();mover(0,-1);return}
     if(k==="Enter"||k==="F2"){e.preventDefault();abrirCel(selR.fr,LET[selR.fc]);return}

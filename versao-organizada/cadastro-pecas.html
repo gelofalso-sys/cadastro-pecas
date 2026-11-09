@@ -1115,6 +1115,13 @@ select.warn-sel{outline:2px solid var(--warn);outline-offset:-1px}
  table.bnt td.acts{grid-column:1/-1;display:flex;gap:6px;justify-content:flex-end}
 }
 
+
+/* seletor de arquivo escondido mas focável (Tab chega, Enter/Espaço abrem) */
+input.vh{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
+label:has(>input.vh){position:relative}
+label:has(>input.vh:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+
+@media(pointer:coarse){.pc .ca{gap:16px}.pc .ca .btn{min-width:44px;height:40px}}
 /* ===== v19: visões, cabeçalho compacto no celular ===== */
 .vis{flex:none;display:flex;align-items:center;gap:4px;padding:4px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:7}
 .vis button{border:1px solid transparent;background:transparent;color:var(--muted);font:600 13px var(--body);padding:0 12px;height:32px;border-radius:8px;cursor:pointer;white-space:nowrap}
@@ -1349,7 +1356,6 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
 <div id="lists"></div><datalist id="dl-cel"></datalist>
 
 <script src="lib/xlsx.full.min.js"></script>
-<script>if(typeof XLSX==="undefined")document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
 <script>
 (function(){
 "use strict";
@@ -1585,7 +1591,8 @@ function descBanho(l,b,i){const d=comSufixoCat(val(l,"F"),val(l,"I"));if(i===0||
 
 /* ===== motor: lançamentos -> linhas ===== */
 function gerar(list){
-  list=list||S.lanc;const C=cfg(),cont={},usados={},linhas=[],refs={},semQ={};
+  list=list||S.lanc;list.forEach(l=>{if(l&&l.conj&&Array.isArray(l.comp)&&(l.cjSnap===undefined||l.cjSnap===conjSnap(l))){try{conjSync(l)}catch(e){}}});   /* conjunto lançado acompanha o cadastro de galvânicas (a menos que alguém tenha digitado o custo na planilha) */
+  const C=cfg(),cont={},usados={},linhas=[],refs={},semQ={};
   /* referências digitadas à mão (no lançamento, coladas ou digitadas na planilha): a numeração automática continua depois da maior */
   const manual={};let curI=0;const addM=(x,i)=>{const m=String(x||"").replace(/\s+/g,"").toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)return;const u=(usados[m[1]]=usados[m[1]]||new Map());if(!u.has(+m[2])||u.get(+m[2])>i)u.set(+m[2],i);manual[m[1]]=Math.max(manual[m[1]]||0,+m[2])};
   list.forEach((l,i)=>{if(!vazio(l.v.E))addM(l.v.E,i);Object.values(l.ov||{}).forEach(o=>{if(o&&typeof o==="object")addM(o.E,i)})});
@@ -1654,23 +1661,54 @@ const VALIDA_NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","AB","AC"]);
 /* fórmula aceita: só números, células (ex.: P2, AB10), + - * / e parênteses — nenhum nome de função (=RAND(), =HYPERLINK(...) etc.) */
 const FORM_SEGURA=/^=(?:[0-9+\-*\/().,\s]|\b[A-Za-z]{1,2}[0-9]+\b)*$/;
 /* quantidade da variação: número maior que zero, ou fórmula (ex.: =1) — a fórmula não pode fazer a linha sumir da exportação */
-function qtdPos(v){const t=String(v==null?"":v).trim();return t[0]==="="?t.length>1:num(t)>0}
+const QTD_MAX=1e7;   /* teto de quantidade por linha */
+function qtdPos(v,rv,desc){const t=String(v==null?"":v).trim();if(t[0]==="="){if(t.length<=1)return false;if(!rv)return true;const n=numRaw(t,rv,0,desc);return n!=null&&Number.isInteger(n)&&n>=1&&n<=QTD_MAX}const q=num(t);return q>0&&q<=QTD_MAX&&Number.isInteger(q)}
 function checaCel(L,v){
   v=String(v==null?"":v).trim();if(v==="")return {v};
   if(!VALIDA_NUM.has(L))return {v};
-  if(v[0]==="=")return FORM_SEGURA.test(v)?{v}:{erro:`${NOME[L]}: fórmula não aceita (só números, células e + - * / ( ))`};
+  if(v[0]==="="){if(!(FORM_SEGURA.test(v)&&sintaxeF(v.slice(1))))return {erro:`${NOME[L]}: fórmula não aceita (só números, células e + - * / ( ))`};
+    {const rf=[...v.matchAll(/\b([A-Za-z]{1,2})[0-9]+\b/g)].map(m=>m[1].toUpperCase());
+      if(rf.some(a=>!LET.includes(a)))return {erro:`${NOME[L]}: a fórmula cita uma coluna que não existe — “${v.slice(0,20)}”`};
+      if(rf.includes(L))return {erro:`${NOME[L]}: a fórmula não pode citar a própria coluna (referência circular) — “${v.slice(0,20)}”`}}
+    if(!/\b[A-Za-z]{1,2}[0-9]+\b/.test(v)){const n=avalF(v.slice(1),()=>null);
+      if(n==null)return {erro:`${NOME[L]}: a fórmula não dá um número (divisão por zero?) — “${v.slice(0,20)}”`};
+      if(n<0)return {erro:`${NOME[L]} não pode ser negativo — “${v.slice(0,20)}”`};
+      if(n>1e9)return {erro:`${NOME[L]}: valor grande demais — “${v.slice(0,20)}”`};
+      if(L==="W"&&(!Number.isInteger(n)||n<1||n>QTD_MAX))return {erro:`Quantidade precisa ser um número inteiro de 1 a 10.000.000 — “${v.slice(0,20)}” não vale`}}
+    return {v}}
   const n=num(v);
   if(n==null)return {erro:`${NOME[L]} precisa ser um número — “${v.slice(0,20)}” não vale`};
   if(n<0)return {erro:`${NOME[L]} não pode ser negativo — “${v}”`};
-  if(L==="W"&&(!Number.isInteger(n)||n<1))return {erro:`Quantidade precisa ser um número inteiro de 1 em diante — “${v}” não vale`};
+  if(n>1e9)return {erro:`${NOME[L]}: valor grande demais — “${v.slice(0,20)}”`};
+  if(L==="W"&&(!Number.isInteger(n)||n<1||n>QTD_MAX))return {erro:`Quantidade precisa ser um número inteiro de 1 a 10.000.000 — “${v}” não vale`};
   return {v};
 }
 function marcaRuim(ri,L){const td=document.querySelector(`#sheet tr[data-ri="${ri}"] td[data-c="${L}"]`);if(!td)return;td.style.outline="2px solid #c0392b";td.style.background="#fdecea";setTimeout(()=>{td.style.outline="";td.style.background=""},3000)}
 /* "=" só vira fórmula em coluna numérica e com caracteres seguros; em texto (descrição, código…) vale como texto, nunca como fórmula do Excel */
-function lerValor(v,L){const s=String(v).trim();if(s.startsWith("=")){if(NUM.has(L)&&FORM_SEGURA.test(s))return {v:null,f:s.slice(1),txt:s};return {v:s}}if(NUM.has(L)){const n=num(s);return n==null?{v:s}:{v:n}}return {v:s}}
+function lerValor(v,L,rv){const s=String(v).trim();if(s.startsWith("=")){if(NUM.has(L)&&FORM_SEGURA.test(s)){const f=s.slice(1).toUpperCase().replace(/(\d),(\d)/g,"$1.$2");   /* vírgula decimal vira ponto: no arquivo a vírgula separaria argumentos */
+    if(f.includes(",")||!sintaxeF(f))return {v:s};return {v:null,f,txt:s}}return {v:s}}if(NUM.has(L)&&L!=="Y"&&L!=="AA"){const n=num(s);return n==null?{v:s}:{v:n}}return {v:s}}
+/* avalia uma fórmula segura (números, células, + - * / e parênteses) sem eval/Function (o cabeçalho de segurança do Netlify não permite);
+   get(coluna) dá o número da célula referenciada. A linha da referência não conta: vale a própria linha — por isso a exportação reescreve as referências para a linha real */
+function calcExpr(s){s=s.replace(/\s+/g,"").replace(/(\d),(\d)/g,"$1.$2");let i=0;
+  const ex=()=>{let v=te();while(s[i]==="+"||s[i]==="-"){const o=s[i++],r=te();v=o==="+"?v+r:v-r}return v},
+    te=()=>{let v=un();while(s[i]==="*"||s[i]==="/"){const o=s[i++],r=un();v=o==="*"?v*r:v/r}return v},
+    un=()=>{if(s[i]==="-"){i++;return -un()}if(s[i]==="+"){i++;return un()}return at()},
+    at=()=>{if(s[i]==="("){i++;const v=ex();if(s[i]!==")")throw 0;i++;return v}const m=/^(?:\d+\.?\d*|\.\d+)/.exec(s.slice(i));if(!m)throw 0;i+=m[0].length;return parseFloat(m[0])};
+  const r=ex();if(i!==s.length)throw 0;return r}
+function avalF(f,get){let ruim=false;
+  const s=String(f).replace(/\b([A-Za-z]{1,2})[0-9]+\b/g,(m,a)=>{const n=get(a.toUpperCase());if(n==null||!isFinite(n)){ruim=true;return "0"}return "("+(Math.abs(n)<1e-6||Math.abs(n)>=1e21?n.toFixed(12):String(n))+")"});
+  if(ruim)return null;
+  try{const r=calcExpr(s);return typeof r==="number"&&isFinite(r)?r:null}catch(e){return null}}
+/* a fórmula está escrita corretamente? (confere só a forma, com as células valendo 1) */
+function sintaxeF(f){try{calcExpr(String(f).replace(/\b[A-Za-z]{1,2}[0-9]+\b/g,"1"));return true}catch(e){return false}}
+/* número de um valor digitado na linha: aceita fórmula (=2*3, =N2*2) e calcula; rv são os valores digitados da linha */
+/* desc = desconto do fornecedor (%): a referência ao custo (P) vale a compra JÁ com desconto, o mesmo número da célula calculada e do arquivo */
+function numRaw(v,rv,dep,desc){dep=dep||0;const s=String(v==null?"":v).trim();if(s[0]!=="=")return num(v);if(dep>5||!FORM_SEGURA.test(s))return null;
+  return avalF(s.slice(1),L=>{const n=numRaw((rv||{})[L],rv,dep+1,desc);return L==="P"&&desc>0&&n!=null?r2c(n-n*kDesc(desc)):n})}
+const pesoLinha=r=>numRaw(r.v.N,r.v,0,r.desconto);
 /* valor calculado de uma coluna de banho (sem digitação) */
 function calcBanho(row,L,r){
-  const peso=num(row.v.N);
+  const peso=pesoLinha(row);
   if(L===row.banho.coluna){if(row.banho.mult==null)return null;if(row.banho.modo==="fixo")return {v:row.banho.mult};if(peso==null)return null;return {v:r4(peso*row.banho.mult),f:`N${r}*${row.banho.mult}`}}
   if(L==="U"&&row.verniz!=null&&peso!=null)return {v:r4(peso*row.verniz),f:`N${r}*${row.verniz}`};
   return null;
@@ -1682,7 +1720,7 @@ const nomeTela=L=>{const c=modeloAtual().cols.find(x=>x.on!==false&&x.k===L);ret
 const TIPOS_COL=[["","Como vem"],["texto","Texto"],["numero","Número"],["inteiro","Inteiro"],["dinheiro","Dinheiro (2 casas)"]];
 const listaCol=c=>String(c&&c.lista||"").split(";").map(s=>s.trim()).filter(Boolean);
 const maxCol=c=>{const n=Math.trunc(num(c&&c.max)||0);return n>0?n:0};
-const abaNome=mo=>String(mo&&mo.aba||"").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31)||"Worksheet";
+const abaNome=mo=>{let s=String(mo&&mo.aba||"").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31).replace(/^'+|'+$/g,"").trim();if(/^history$/i.test(s))s+="_";return s||"Worksheet"};   /* o Excel recusa apóstrofo nas pontas e o nome History */
 /* valor final de uma célula do arquivo: aplica o valor padrão (se vazia) e o tipo da coluna */
 function valorCol(c,x){
   let o=x||null;
@@ -1691,14 +1729,16 @@ function valorCol(c,x){
   const t=c.tipo||"";
   if(t==="texto")return {v:o.v==null?(o.txt||(o.f?"="+o.f:"")):String(o.v)};
   if(o.v==null&&o.f){const fz0=(t==="numero"||t==="inteiro"||t==="dinheiro")?num(c.fator):null;   /* fórmula também recebe o fator da coluna */
-    return fz0!=null&&fz0>0&&fz0!==1?{...o,f:"("+o.f+")*"+String(fz0)}:o}
+    const fat=fz0!=null&&fz0>0&&fz0!==1;let f=fat?"("+o.f+")*"+String(fz0):o.f,calc=o.calc!=null?(fat?o.calc*fz0:o.calc):undefined;
+    if(t==="dinheiro")return {...o,f:"ROUND("+f+",2)",calc:calc!=null?r2c(calc):undefined,z:"0.00"};
+    return fat?{...o,f,calc}:o}
   if(t==="numero"||t==="inteiro"||t==="dinheiro"){
     const n=typeof o.v==="number"?o.v:num(o.v);
     if(n==null)return {v:o.v,erro:1};
     const fz=num(c.fator);   /* fator: multiplica o número (ex.: peso em gramas × 0,001 = quilos); sem fórmula, o valor já sai convertido */
     const lim=x=>parseFloat(x.toPrecision(12));   /* tira o ruído de ponto flutuante (0,1×3 = 0,30000000000000004) */
     if(fz!=null&&fz>0&&fz!==1){const r=Math.round(lim(n*fz*1e6))/1e6;return {v:t==="dinheiro"?Math.round(lim(r*100))/100:lim(r)}}
-    if(t==="dinheiro")return {v:Math.round(lim(n*100))/100,f:o.f,z:"0.00"};
+    if(t==="dinheiro")return {v:Math.round(lim(n*100))/100,f:o.f?"ROUND("+o.f+",2)":o.f,z:"0.00"};   /* a fórmula também arredonda: o Excel recalcula o mesmo centavo do CSV */
     return {v:n,f:o.f}}
   return o}
 /* ===== variações no arquivo: produto pai + variações (modelo com "Agrupar em produto pai + variações") =====
@@ -1713,7 +1753,7 @@ function saidaLinhas(g,mo){
     if(grp.length<2){out.push({row:grp[0],t:"normal"});return}
     const f=grp[0],l=S.lanc.find(x=>x.id===f.lancId),part0=String(f.part||""),E0=String(f.v.E||""),
       base=(b=>{while(codsE.has(b))b+="P";codsE.add(b);return b})(part0&&E0.endsWith(part0)?E0.slice(0,E0.length-part0.length):E0+"P"),
-      c0=celulas(f,2)[LET.indexOf("V")],pv=c0&&typeof c0.v==="number"?String(c0.v):"",
+      c0=celulas(f,2)[LET.indexOf("V")],pv=c0&&typeof c0.v==="number"?String(c0.v):c0&&typeof c0.calc==="number"?String(c0.calc):"",
       desc=l?comSufixoCat(val(l,"F"),val(l,"I")):"";
     out.push({row:{...f,banho:null,mk:null,ovs:[],bid:null,gi:null,key:"pai",part:"",verniz:null,v:{...f.v,E:base,F:desc||f.v.F,L:"",K:"",O:"",W:"",P:"",R:"",S:"",T:"",U:"",V:pv}},t:"pai"});
     const i0=out.length;const chave=ch=>String(ch.v.K||"")+"|"+semAc(ch.v.L||""),cont={};grp.forEach(ch=>{const k=chave(ch);cont[k]=(cont[k]||0)+1});
@@ -1732,10 +1772,11 @@ function validarModelo(g,cols){const out=[],sl=saidaLinhas(g,modeloAtual()),vz={
     cols.forEach(c=>{const r=valorCol(c,celCol(c,cs,e)),v=r?r.v:null,vaz=!r||(v==null&&!r.f)||String(v==null?"x":v).trim()==="",h=String(c.h||(c.k?NOME[c.k]:"(coluna)"));
       const add=m=>out.push({l:i+2,ref:row.v.E||"",col:h,msg:m});
       if(vaz){if(c.obrig){(vz[h]=vz[h]||[]).push(add)}return}
-      if(v==null)return;
-      const s=String(v);
+      const vv=v==null&&r&&typeof r.calc==="number"?r.calc:v;   /* fórmula: vale o resultado dela */
+      if(vv==null)return;
+      const s=String(vv);
       if(r.erro)add("não é um número: “"+s.slice(0,30)+"”");
-      else if(c.tipo==="inteiro"&&!Number.isInteger(v))add("precisa ser um número inteiro");
+      else if(c.tipo==="inteiro"&&!Number.isInteger(vv))add("precisa ser um número inteiro");
       if(maxCol(c)&&s.length>maxCol(c))add("passa de "+maxCol(c)+" caracteres");
       const L=listaCol(c);if(L.length&&!L.some(z=>semAc(z)===semAc(s)))add("fora da lista permitida ("+L.slice(0,4).join(", ")+(L.length>4?"…":"")+")")})});
   /* coluna obrigatória vazia em quase todas as linhas: um aviso só */
@@ -1749,30 +1790,44 @@ function chaveDoCabecalho(h){const n=normH(h);if(!n)return null;
   const i=HEAD.findIndex(x=>normH(x)===n);if(i>=0)return LET[i];
   for(const k of Object.keys(SIN))if(SIN[k].includes(n))return k;return null}
 /* fórmulas guardam as letras internas (N, P…U); no arquivo viram as letras do modelo. Sem a coluna no modelo, vai só o valor. */
-function traduzF(f,cols){const mapa={};cols.forEach((c,i)=>{if(c.k&&!(c.k in mapa))mapa[c.k]=letraN(i)});let falta=false;
-  const out=String(f).replace(/([A-Z]{1,2})([0-9]+)/g,(m,a,n)=>{if(!(a in mapa)){falta=true;return m}return mapa[a]+n});return falta?null:out}
+function traduzF(f,cols){const mapa={},fat={};cols.forEach((c,i)=>{if(c.k&&!(c.k in mapa)){mapa[c.k]=letraN(i);const z=(c.tipo==="numero"||c.tipo==="inteiro"||c.tipo==="dinheiro")?num(c.fator):null;if(z!=null&&z>0&&z!==1)fat[c.k]=z}});let falta=false;
+  /* a fórmula foi escrita com os valores internos (ex.: peso em gramas); se a coluna sai convertida pelo fator (kg = g × 0,001), a referência volta à unidade interna */
+  const out=String(f).replace(/([A-Za-z]{1,2})([0-9]+)/g,(m,a,n)=>{a=a.toUpperCase();if(!(a in mapa)){falta=true;return m}return fat[a]?"("+mapa[a]+n+"/"+fat[a]+")":mapa[a]+n});return falta?null:out}
 function celulas(row,r,sugestao){
   const c=celulasBase(row,r);
-  if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v});
+  if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v;else if(x&&x.f){const n=typeof x.calc==="number"?x.calc:numRaw(row.v[L],row.v);if(n!=null)soma+=n}});
     c[iv]={v:Math.round(soma*row.mk*100)/100,f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
   return c;
 }
+/* centavos no arredondamento comercial (1,005 → 1,01), sem o erro do ponto flutuante */
+const r2c=x=>Math.round(+(x*100).toPrecision(12))/100;
+/* o percentual de desconto entra no coeficiente com precisão total (1,234% = 0,01234) */
+const kDesc=d=>Math.round(d*1e6)/1e8;
+/* uma fórmula digitada vale para a própria linha: as referências saem apontando para a linha real (no app e no Excel dão o mesmo número) */
+const fLinha=(f,r)=>String(f).replace(/\b([A-Za-z]{1,2})[0-9]+\b/g,"$1"+r);
 function celulasBase(row,r){
-  return LET.map(L=>{
+  const c=LET.map(L=>{const x=celulaBase(row,r,L);if(x&&x.v==null&&x.f&&x.txt)x.f=fLinha(x.f,r);return x});
+  /* resultado das fórmulas digitadas: usa o valor EFETIVO das células referenciadas (compra já com desconto, banho calculado…), o mesmo do arquivo */
+  const val=(L,d)=>{const x=c[LET.indexOf(L)];if(!x)return null;if(typeof x.v==="number")return x.v;if(x.v==null&&x.f&&x.txt&&d<6)return avalF(x.f,K=>val(K,d+1));return null};
+  {const ip=LET.indexOf("P"),x=c[ip];if(x&&x.v==null&&x.f&&x.desc){const n=avalF(x.f,K=>val(K,0));if(n!=null){const In=x.f,k=x.desc;c[ip]={v:r2c(n-n*k),f:`ROUND((${In})-((${In})*${k}),2)`}}}}
+  c.forEach(x=>{if(x&&x.v==null&&x.f&&x.txt){const n=avalF(x.f,K=>val(K,0));if(n!=null)x.calc=n}});
+  return c}
+function celulaBase(row,r,L){
     const v=row.v[L];
-    if(row.banho&&FORMULA.has(L)){if(!vazio(v))return lerValor(v,L);return calcBanho(row,L,r)}
+    if(row.banho&&FORMULA.has(L)){if(!vazio(v))return lerValor(v,L,row.v);return calcBanho(row,L,r)}
     if(vazio(v))return null;
-    if(L==="P"){const c=num(v);if(c==null)return lerValor(v,L);if(row.desconto>0){const k=r4(row.desconto/100);return {v:Math.round((c-c*k)*100)/100,f:`ROUND(${c}-(${c}*${k}),2)`}}return {v:c}}
-    return lerValor(v,L);
-  });
+    if(L==="P"){const c=num(v);if(c==null){const s=String(v).trim();   /* custo em fórmula também recebe o desconto do fornecedor */
+      if(row.desconto>0&&s[0]==="="&&FORM_SEGURA.test(s)){const o=lerValor(v,L,row.v);if(o.f)o.desc=kDesc(row.desconto);return o}   /* o desconto é aplicado em celulasBase, com os valores efetivos das células referenciadas */
+      return lerValor(v,L,row.v)}if(row.desconto>0){const k=kDesc(row.desconto);return {v:r2c(c-c*k),f:`ROUND(${c}-(${c}*${k}),2)`}}return {v:c}}
+    return lerValor(v,L,row.v);
 }
 function avisos(g){
   const out=[],cc=cfg().colcfg,ps=new Set(S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))));
   ps.forEach(p=>{if(!(ultimo(p)>0)&&!((g.manual||{})[p]>0))out.push({bad:1,t:`Falta a última peça de ${p} no sistema.`})});
   Object.entries(g.manual||{}).forEach(([p,n])=>{if(n>ultimo(p))out.push({t:`${p}${fnum(p,n)} foi digitada à mão (a última do sistema é ${p}${fnum(p,ultimo(p))}): as próximas automáticas continuam em ${p}${fnum(p,n+1)}`})});
   const d=new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E));if(d.size)out.push({bad:1,t:`Referência repetida: ${[...d].join(", ")}`});
-  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!(num(r.v.W)>0):vazio(r.v[L])).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
-  const sp=g.linhas.filter(r=>r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo").length;if(sp)out.push({t:`${sp} bruta(s) sem Peso`});
+  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!qtdPos(r.v.W,r.v,r.desconto):vazio(r.v[L])).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
+  const sp=g.linhas.filter(r=>r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo").length;if(sp)out.push({t:`${sp} bruta(s) sem Peso`});
   {const sm=new Set();g.linhas.forEach(r=>{if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))sm.add(r.v.L||r.col||r.banho.coluna)});
    sm.forEach(n=>out.push({t:`Banho “${n}” sem multiplicador: o custo do banho sai vazio — preencha em Banhos e galvânicas`}))}
   return out;
@@ -1809,7 +1864,7 @@ function flushJa(){if(romST){clearTimeout(romST);romST=null;try{romSalvar()}catc
 window.addEventListener("pagehide",flushJa);
 window.addEventListener("beforeunload",flushJa);
 /* só avisa quando há uma célula aberta com texto digitado que ainda não foi confirmado (Enter/Tab) */
-window.addEventListener("beforeunload",e=>{try{const i=document.getElementById("celIn");if(celEd&&i&&i.value!==celEd.orig){e.preventDefault();e.returnValue="";return ""}}catch(x){}});
+window.addEventListener("beforeunload",e=>{try{const i=document.getElementById("celIn");if((celEd&&i&&i.value!==celEd.orig)||dirty.c||dirty.l||conflito||corrompido){e.preventDefault();e.returnValue="";return ""}   /* dirty só fica ligado quando a gravação falhou (memória cheia, outra aba, dados danificados) */}catch(x){}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushJa()});
 /* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do localStorage vão sem elas, para não estourar a memória do navegador */
 const ftRSalvas=new Set();
@@ -1817,16 +1872,16 @@ function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&
   return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
 async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await idbPut("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
     if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await idbPut("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
-async function flush(){
+async function flush(){   /* devolve true só quando a gravação foi confirmada */
   const d={...dirty};dirty={c:false,l:false};
-  if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",true);return}
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return}
+  if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",true);return false}
+  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return false}
   let remoto=true;
   try{
     if(db){if(d.c)await db.doc("dados/config").set({v:4,config:S.config});if(conflito)throw new Error("conflito");if(d.l)await db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
   }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Não consegui salvar agora — tento de novo na próxima alteração",true)}
-  if(!remoto)return;
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return}
+  if(!remoto)return false;
+  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return false}
   let local=true;
   try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){
     local=false;
@@ -1835,10 +1890,11 @@ async function flush(){
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
     setStatus(db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,true);
     if(!db&&Date.now()-avisoMem>20000){avisoMem=Date.now();toast(m)}
-    return}
+    return false}
   setStatus(db?"Salvo na sua conta":"Salvo neste navegador");
   if(candFoto.size)varrerFotos();
   if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){}}})}
+  return true
 }
 const PONTOS_MAX=15,PONTO_INTERVALO=30*60*1000;
 async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
@@ -1975,7 +2031,7 @@ function dadosCorrompidos(raw){
   try{localStorage.setItem("cadpecas4-corrompido",raw);guardou=true}catch(e){}
   const b=document.createElement("div");b.id="dadosRuins";b.setAttribute("role","alert");
   b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:100000;background:#fdecea;color:#7a1c12;border-bottom:3px solid #c0392b;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:14px system-ui,sans-serif";
-  b.innerHTML=`<b>Não consegui ler os dados salvos neste navegador.</b><span>Eles NÃO foram apagados e nada será salvo por cima até você escolher o que fazer. ${guardou?"Uma cópia deles foi guardada à parte no navegador.":"Não coube guardar uma cópia no navegador: baixe uma agora."}</span><button type="button" class="btn sm" id="drBaixar">Baixar cópia dos dados</button><button type="button" class="btn pri sm" id="drRest">Restaurar de um backup…</button><button type="button" class="btn sm danger" id="drVazio" title="Começa do zero. Os dados danificados deixam de ser usados.">Começar vazio</button><input type="file" id="drArq" accept=".json,application/json" hidden>`;
+  b.innerHTML=`<b>Não consegui ler os dados salvos neste navegador.</b><span>Eles NÃO foram apagados e nada será salvo por cima até você escolher o que fazer. ${guardou?"Uma cópia deles foi guardada à parte no navegador.":"Não coube guardar uma cópia no navegador: baixe uma agora."}</span><button type="button" class="btn sm" id="drBaixar">Baixar cópia dos dados</button><button type="button" class="btn pri sm" id="drRest">Restaurar de um backup…</button><button type="button" class="btn sm danger" id="drVazio" title="Começa do zero. Os dados danificados deixam de ser usados.">Começar vazio</button><input type="file" id="drArq" accept=".json,application/json" class="vh">`;
   document.body.appendChild(b);
   document.getElementById("drBaixar").onclick=()=>{try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rawCorrompido],{type:"application/json"}));a.download="cadastro-pecas-dados-danificados.json";document.body.appendChild(a);a.click();baixou=true;setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}catch(e){toast("Não consegui baixar a cópia.")}};
   document.getElementById("drRest").onclick=()=>document.getElementById("drArq").click();
@@ -1986,7 +2042,8 @@ function dadosCorrompidos(raw){
 async function carregar(){
   let raw=null;
   try{raw=localStorage.getItem("cadpecas4")||localStorage.getItem("cadpecas3");if(raw){const o=JSON.parse(raw);if(!ehObj(o)||(o.lanc!=null&&!Array.isArray(o.lanc)))throw new Error("formato");
-    const cf=lerConfig(o.config),la=(o.lanc||[]).map(lerLanc),fo=lerForm(o.form),rc=o.rasc&&ehObj(o.rasc)&&o.rasc.v?lerForm(o.rasc):null;
+    const cf=lerConfig(o.config),la=(o.lanc||[]).map(lerLanc).map((l,i,a)=>(l&&a.findIndex(x=>x&&x.id===l.id)<i)?{...l,id:uid()}:l),   /* id repetido no armazenamento: a repetida ganha id novo */
+      fo=lerForm(o.form),rc=o.rasc&&ehObj(o.rasc)&&o.rasc.v?lerForm(o.rasc):null;
     S.config=cf;S.lanc=la;S.form=fo;
     if(o.edit&&la.some(l=>l.id===o.edit)){editId=o.edit;rascunho=rc||FORM0()}   /* recarregou no meio de uma edição: volta o que estava no formulário antes */
     else if(o.edit&&rc)S.form=rc}}
@@ -2031,9 +2088,9 @@ function formAbrir(abre){
 gavetaAlt();
 function vista(){let v=null;try{v=localStorage.getItem("cadpecas-vista")}catch(e){}return v==="lista"||v==="planilha"?v:(celular()?"lista":"planilha")}
 const banhoDe=r=>r.banho?(BANHO_COLS[r.col]||r.col||"Banho"):"Pronta";
-function pendente(r){const cc=cfg().colcfg;if(r.dup)return "ref. repetida";if(r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo")return "sem peso";
+function pendente(r){const cc=cfg().colcfg;if(r.dup)return "ref. repetida";if(r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo")return "sem peso";
   if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))return "banho sem multiplicador";
-  for(const L of LET){if(cc[L]&&cc[L].obrig&&(L==="W"?!(num(r.v.W)>0):vazio(r.v[L])))return "sem "+NOME[L].toLowerCase()}return ""}
+  for(const L of LET){if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):vazio(r.v[L])))return "sem "+NOME[L].toLowerCase()}return ""}
 function casa(r){
   if(FIL.cat&&(r.v.I||"")!==FIL.cat)return false;
   if(FIL.forn&&(r.v.H||"")!==FIL.forn)return false;
@@ -2064,13 +2121,13 @@ function cartoes(g){
   const nCat=new Set(g.linhas.map(r=>r.v.I)).size;let h=`<div class="pcards">`,prev=null,n=0;
   g.linhas.forEach((row,ri)=>{if(FV&&!FV.has(ri))return;n++;
     if(nCat>1&&row.v.I!==prev)h+=`<div class="ccat">${esc(row.v.I||"Sem categoria")}</div>`;prev=row.v.I;
-    const c=celulas(row,ri+2),gv=L=>{const x=c[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
-    const pv=gv("V"),cu=gv("P"),q=num(row.v.W),pd=pendente(row);
+    const c=celulas(row,ri+2),gv=L=>{const x=c[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.v==null&&typeof x.calc==="number"?x.calc:null};
+    const pv=gv("V"),cus=["P","Q","R","S","T","U"].map(gv),cu=cus.some(x=>x!=null)?cus.reduce((t,x)=>t+(x||0),0):null,q=gv("W"),pd=pendente(row);
     h+=`<div class="pc${row.dup?" dup":""}${editId===row.lancId?" edl":sel.has(row.lancId)?" on":""}" data-l="${row.lancId}" data-ri="${ri}" data-act="editar" role="button" tabindex="0" aria-label="Editar ${esc(row.v.E)}">
       <div class="c1">${(()=>{const lq=S.lanc.find(l=>l.id===row.lancId)||{},ft=lq.ft||lq.ftR;return ft&&ftOk(ft)?`<img class="pc-ft" src="${fs(ft)}" alt="" data-act="tab-foto" data-lid="${row.lancId}">`:`<button type="button" class="pc-ftadd" data-act="foto-add" data-lid="${row.lancId}" aria-label="Adicionar foto" title="Adicionar foto">📷</button>`})()}<b class="mono">${esc(row.v.E)}</b>${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}${pd?`<span class="pd">${esc(pd)}</span>`:""}<span class="q">${q!=null?fmt(q)+" pç":"sem qtd"}</span></div>
       <div class="c2">${esc(row.v.F||"(sem descrição)")}</div>
       <div class="c3">${[(row.v.I||"")+(row.v.J?" › "+row.v.J:""),row.v.H,row.v.L,row.v.K].filter(x=>!vazio(x)).map(esc).join(" · ")}</div>
-      <div class="c4"><span>Custo <b>${cu!=null?"R$ "+brl(cu):"—"}</b></span><span>Varejo <b>${pv!=null?"R$ "+brl(pv):"—"}</b></span>
+      <div class="c4"><span title="Compra + insumos + banhos + verniz">Custo <b>${cu!=null?"R$ "+brl(cu):"—"}</b></span><span>Varejo <b>${pv!=null?"R$ "+brl(pv):"—"}</b></span>
         <span class="ca"><button type="button" class="btn sm" data-act="dup" title="Duplicar (nova referência)" aria-label="Duplicar">⧉</button><button type="button" class="btn sm danger" data-act="del" title="Excluir só esta linha" aria-label="Excluir">×</button></span></div></div>`});
   if(!n)h+=`<p class="vz">${g.linhas.length?`Nenhuma peça com esse filtro. <button type="button" class="btn sm" data-act="fil-limpar">Limpar filtro</button>`:"Nenhuma peça ainda. Lance pelo formulário abaixo ou troque para Planilha e cole do Excel."}</p>`;
   return h+`</div>`;
@@ -2101,7 +2158,11 @@ function janMedir(){const J=JAN;if(!J||J.medido)return;const t1=document.querySe
 function janGarantir(ri){const J=JAN;if(!J)return true;const p=J.lista.indexOf(ri);if(p<0)return false;
   if(p>=J.a&&p<J.b)return true;const sh=document.getElementById("sheet");sh.scrollTop=Math.max(0,J.head+J.cum[p]-sh.clientHeight/2);janRepintar(true);return true}
 function guiaHTML(){if(abertos.guiaX)return "";return `<span class="ok vaz guia" role="note"><b>Guia rápido:</b> <button type="button" class="gi tod" data-act="ir" data-sec="cat" title="Categorias, subcategorias, tamanhos e cores">1 · Cadastros</button> <button type="button" class="gi tod" data-act="ir" data-sec="lancar">2 · Lançar peça</button> <span class="hint">3 · conferir a tabela</span> <span class="hint">4 · “Exportar para…” e baixar</span> <button type="button" class="x" data-act="guia-fechar" aria-label="Fechar o guia" title="Fechar o guia">×</button></span> `}
-function renderTopo(){
+/* apagou (ou voltou) peças da tabela com o romaneio aberto: as linhas dele que já não existem na tabela deixam de ser "já lançada" */
+let romChaveL="",romCriando=false;
+function romResync(){if(romCriando||!ROM||!ROM.rows||!ROM.rows.length)return;const k=S.lanc.map(l=>l.id).join(",");if(k===romChaveL)return;romChaveL=k;
+  const antes=ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("");romMarcar();if(ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("")!==antes){romSalvarSoon();setTimeout(()=>{if(ROM)renderRom()},0)}}
+function renderTopo(){try{romResync()}catch(e){}
   const g=G=gerar(),sh=document.getElementById("sheet"),st=sh.scrollTop,sl=sh.scrollLeft,cc=cfg().colcfg;
   FV=filtroOn()?new Set(g.linhas.map((r,i)=>casa(r)?i:-1).filter(i=>i>=0)):null;renderFiltros(g);
   const ps=[...new Set([...S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))),prefDe(S.form.v.I,S.form.v.J)])];
@@ -2138,16 +2199,18 @@ function renderTopo(){
    const rowHtml=ri=>ri<g.linhas.length?trReal(ri):trBlank(ri);
    if(vista()!=="lista"&&lista.length>JAN_MIN){JAN={lista,nReais:g.linhas.length,ids:g.linhas.map(r=>r.lancId),ft:ftMap,row:rowHtml,rh:JANM.rh,hFt:JANM.hFt,head:JANM.head,medido:false,a:0,b:0};janAlturas();h+=janelaHtml()}
    else{JAN=null;h+=lista.map(rowHtml).join("")}}
-  const soma=new Array(LET.length).fill(0),ext={},nm=x=>x&&typeof x.v==="number"?x.v:0;
-  cel.forEach((cs,ri)=>{if(FV&&!FV.has(ri))return;cs.forEach((x,j)=>{if(x&&typeof x.v==="number")soma[j]+=x.v});const q=nm(cs[LET.indexOf("W")]);ext.W=(ext.W||0)+q;["P","Q","R","S","T","U","V"].forEach(L=>{ext[L]=(ext[L]||0)+nm(cs[LET.indexOf(L)])*q})});
+  const soma=new Array(LET.length).fill(0),ext={cV:0,qSem:0},nm=x=>x&&typeof x.v==="number"?x.v:(x&&x.v==null&&typeof x.calc==="number"?x.calc:0);   /* fórmula digitada entra pelo valor calculado */
+  cel.forEach((cs,ri)=>{if(FV&&!FV.has(ri))return;cs.forEach((x,j)=>{soma[j]+=nm(x)});const q=nm(cs[LET.indexOf("W")]);ext.W=(ext.W||0)+q;["P","Q","R","S","T","U","V"].forEach(L=>{ext[L]=(ext[L]||0)+nm(cs[LET.indexOf(L)])*q});
+    /* lucro só das peças que têm preço de venda; as sem preço ficam de fora (e são avisadas) */
+    if(nm(cs[LET.indexOf("V")])>0)ext.cV+=["P","Q","R","S","T","U"].reduce((t,L)=>t+nm(cs[LET.indexOf(L)]),0)*q;else ext.qSem+=q});
   const somaCols=new Set(["N","P","Q","R","S","T","U","V","W"]);
   h+=`</tbody><tfoot><tr><td class="k"><span class="nb" title="Soma de cada coluna, como na planilha">Σ colunas</span></td><td class="k nm"></td><td></td><td></td>${LET.map((L,j)=>somaCols.has(L)?`<td class="n tot" title="Soma da coluna ${esc(NOME[L])}">${L==="W"?fmt(soma[j]):L==="N"?fmt(soma[j]):brl(soma[j])}</td>`:`<td></td>`).join("")}</tr></tfoot></table>`;
   {const iW2=LET.indexOf("W"),iV=LET.indexOf("V"),D={custo:[["Compra",ext.P||0],["Insumos",ext.Q||0],["Banhos",(ext.R||0)+(ext.S||0)+(ext.T||0)],["Verniz",ext.U||0]],pecas:{},varejo:{},cor:{},forn:{},banho:{},lucro:{}};
     g.linhas.forEach((row,ri)=>{if(FV&&!FV.has(ri))return;const cs=cel[ri],q=nm(cs[iW2]),c=row.v.I||"Sem categoria",cor=row.v.L||"Sem cor";D.pecas[c]=(D.pecas[c]||0)+q;D.varejo[c]=(D.varejo[c]||0)+nm(cs[iV])*q;D.cor[cor]=(D.cor[cor]||0)+q;
       {const fo=row.v.H||"Sem fornecedor",bn=row.banho?(BANHO_COLS[row.col]||"Banho"):"Pronta",cus=["P","Q","R","S","T","U"].reduce((t,L)=>t+nm(cs[LET.indexOf(L)]),0);
-       D.forn[fo]=(D.forn[fo]||0)+cus*q;D.banho[bn]=(D.banho[bn]||0)+q;D.lucro[c]=(D.lucro[c]||0)+(nm(cs[iV])-cus)*q}});renderGraf(D)}
-  {const compra=ext.P||0,ins=ext.Q||0,ban=(ext.R||0)+(ext.S||0)+(ext.T||0),vz=ext.U||0,custo=compra+ins+ban+vz,vj=ext.V||0,luc=vj-custo,mg=vj?luc/vj*100:0,ord=cfg().ordem==="ab";
-    const el=document.getElementById("totais");if(el)el.innerHTML=(FV?`<span class="tt tfil" title="Totais só das linhas que o filtro mostra">Filtro: <b>${FV.size} de ${g.linhas.length}</b></span>`:"")+`<span class="tt" title="Quantidade total de peças">Peças <b>${fmt(ext.W||0)}</b></span><span class="tt" title="Custo de Compra × Quantidade">Compra <b>R$ ${brl(compra)}</b></span><span class="tt" title="Custo de Insumos × Quantidade">Insumos <b>R$ ${brl(ins)}</b></span><span class="tt" title="Custo dos banhos de ouro, ródio e prata × Quantidade">Banhos <b>R$ ${brl(ban)}</b></span><span class="tt" title="Custo do verniz × Quantidade">Verniz <b>R$ ${brl(vz)}</b></span><span class="tt tot-c" title="Compra + Insumos + Banhos + Verniz">Custo total <b>R$ ${brl(custo)}</b></span><span class="tt tot-v" title="Preço de Varejo × Quantidade">Varejo <b>R$ ${brl(vj)}</b></span><span class="tt" title="Varejo − Custo total">Lucro <b>${vj?"R$ "+brl(luc):"—"}</b> <small>${vj?fmt(Math.round(mg*10)/10)+"%":"—"}</small></span>
+       D.forn[fo]=(D.forn[fo]||0)+cus*q;D.banho[bn]=(D.banho[bn]||0)+q;D.lucro[c]=(D.lucro[c]||0)+(nm(cs[iV])>0?(nm(cs[iV])-cus)*q:0)}});renderGraf(D)}
+  {const compra=ext.P||0,ins=ext.Q||0,ban=(ext.R||0)+(ext.S||0)+(ext.T||0),vz=ext.U||0,custo=compra+ins+ban+vz,vj=ext.V||0,luc=vj-ext.cV,mg=vj?luc/vj*100:0,ord=cfg().ordem==="ab";
+    const el=document.getElementById("totais");if(el)el.innerHTML=(FV?`<span class="tt tfil" title="Totais só das linhas que o filtro mostra">Filtro: <b>${FV.size} de ${g.linhas.length}</b></span>`:"")+`<span class="tt" title="Quantidade total de peças">Peças <b>${fmt(ext.W||0)}</b></span><span class="tt" title="Custo de Compra × Quantidade">Compra <b>R$ ${brl(compra)}</b></span><span class="tt" title="Custo de Insumos × Quantidade">Insumos <b>R$ ${brl(ins)}</b></span><span class="tt" title="Custo dos banhos de ouro, ródio e prata × Quantidade">Banhos <b>R$ ${brl(ban)}</b></span><span class="tt" title="Custo do verniz × Quantidade">Verniz <b>R$ ${brl(vz)}</b></span><span class="tt tot-c" title="Compra + Insumos + Banhos + Verniz">Custo total <b>R$ ${brl(custo)}</b></span><span class="tt tot-v" title="Preço de Varejo × Quantidade">Varejo <b>R$ ${brl(vj)}</b></span><span class="tt" title="Varejo − custo das peças que têm preço de venda">Lucro <b>${vj?"R$ "+brl(luc):"—"}</b> <small>${vj?fmt(Math.round(mg*10)/10)+"%":"—"}</small></span>${ext.qSem>0&&vj?`<span class="tt" title="Estas peças ainda não têm Preço de Varejo: o custo delas não entra no lucro ao lado">⚠ ${fmt(ext.qSem)} pç sem preço de venda</span>`:""}
       <span class="ordsel" role="group" aria-label="Ordem da tabela"><span class="hint">Ordem</span><button type="button" class="${ord?"":"on"}" data-act="ordem" data-v="int" title="Cada peça com seus banhos e tamanhos juntos, na ordem em que foi lançada">Por peça</button><button type="button" class="${ord?"on":""}" data-act="ordem" data-v="ab" title="Todas as A (ouro), depois todas as B (prata), depois as prontas">Por banho</button></span>`}
   const li=vista()==="lista";sh.classList.toggle("lista",li);document.body.classList.toggle("vlista",li);if(li){selR=null;h=cartoes(g)}
   sh.innerHTML=h;sh.scrollTop=st;sh.scrollLeft=sl;sh.style.overflowAnchor=JAN?"none":"";if(JAN)janMedir();pintarSel();renderSelBar();
@@ -2208,7 +2271,7 @@ function efeitoCel(antes,lid,L,orig,novo,chave){
 function fecharCel(commit,mover){
   if(!celEd)return;let antesPeca=null;const {ri,L,orig,nova}=celEd,i=document.getElementById("celIn"),lid=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].lancId:null,chaveCel=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].key:undefined;celEd=null;
   let v=i?i.value:orig;if(L==="E"&&commit)v=v.replace(/\s+/g,"").toUpperCase();
-  const rej=commit&&v!==orig?checaCel(L,v).erro:null;
+  const rej=commit&&v!==orig?(checaCel(L,v).erro||(L==="I"&&!vazio(v)&&!catBy(v)?"Essa categoria não está cadastrada (cadastre em Cadastros › Categorias)":null)):null;
   if(commit&&v!==orig&&!rej){
     if(nova){if(!vazio(v)){const l=novaLivre({[L]:v});S.lanc.push(l);undo={tipo:"cola",antes:{},ids:[l.id]};salvar(false)}}
     else{const l=S.lanc.find(x=>x.id===G.linhas[ri].lancId);undo={tipo:"multi",antes:{[l.id]:clone(l.ov||{})}};antesPeca=G.linhas.filter(r=>r.lancId===l.id||L==="E").map(r=>({lid:r.lancId,key:r.key,ref:r.v.E,v:r.v[L]}));gravarCel(ri,L,v);salvar(false)}
@@ -2268,6 +2331,7 @@ function idsDaSel(){const b=selBox();if(!b)return [];const s=new Set();for(let r
 function copiarSel(){const b=selBox();if(!b)return;const lin=[];for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const l=[];for(let c=b.c1;c<=b.c2;c++)l.push(textoCel(r,c));lin.push(l.join("\t"))}
   navigator.clipboard.writeText(lin.join("\n")).then(()=>toast(`${(b.r2-b.r1+1)*(b.c2-b.c1+1)} célula(s) copiada(s).`)).catch(()=>toast("O navegador não liberou a cópia. Use Copiar para o Excel."))}
 function limparSel(){const b=selBox();if(!b)return;const antes={};let n=0;
+  {const lin=b.r2-b.r1+1,col=b.c2-b.c1+1;if(lin>=3||lin*col>20){if(!confirm(`Limpar ${lin} linha(s) × ${col} coluna(s) de células? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAuto("antes de limpar células",true)}}
   for(let r=b.r1;r<=Math.min(b.r2,G.linhas.length-1);r++){if(!vis(r))continue;const row=G.linhas[r],l=S.lanc.find(x=>x.id===row.lancId);if(!l)continue;if(!(l.id in antes))antes[l.id]=clone(l.ov||{});
     for(let c=b.c1;c<=b.c2;c++){const L=LET[c];if(L==="E")continue;gravarCel(r,L,"");n++}}
   if(!n)return;undo={tipo:"multi",antes};salvar(false);renderTopo();if(editId)renderForm();toast(`${n} célula(s) limpa(s).`,{t:"Desfazer",fn:desfazer})}
@@ -2379,10 +2443,11 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   <div class="mfh"><b>${editId?"Editando peça":"Lançar peça"}</b>${editId?"":`<span class="mfp">próxima ${esc(p)}${fnum(p,proxDe(p))}</span>`}<button type="button" class="btn sm" data-act="form-alt" title="Muda a altura da gaveta: mais tabela ou mais formulário" aria-label="Mudar a altura do formulário">⇕</button><button type="button" class="btn sm pri" data-act="form-fechar" title="Esconde o formulário e volta a ver a tabela inteira">▾ Esconder</button></div>
   <div class="fbar">
     <h2>${editId?"Editando":"Lançar peça"}</h2>${editId?"":`<span class="prox" id="proxBig" title="Número que a próxima peça adicionada vai receber (já conta o que está na lista)">Próxima referência <b>${esc(p)}${fnum(p,proxDe(p))}</b></span>`}
+    ${editId&&f.excl&&f.excl.length?`<div class="hint">${f.excl.length} linha(s) desta peça foram excluídas da tabela. <button type="button" class="btn sm" data-act="excl-volta">Trazer de volta</button></div>`:""}
     <div class="seg" role="group" aria-label="Tipo de peça"><button type="button" data-tipo="bruta" aria-pressed="${bruta}" title="Peça ainda sem banho: vai para a galvânica antes de ser vendida">Bruta (vai banhar)</button><button type="button" data-tipo="pronta" aria-pressed="${!bruta&&!f.conj}">Pronta</button><button type="button" data-tipo="conjunto" aria-pressed="${!!f.conj}" title="Peça que é a soma de outras (brincos + colar…): cada uma com seu banho, tudo numa linha só">Conjunto</button></div>
     <div class="gera" id="gera"></div>
     <div id="custos"></div>
-    ${editId?`<button class="btn sm" type="button" data-act="cancel">Cancelar <kbd>Esc</kbd></button>`:`<button class="btn sm" type="button" data-act="repetir" title="Copia a última peça lançada para o formulário (nova referência ao adicionar)">Repetir última</button><button class="btn sm" type="button" data-act="q" data-q="multi" title="Colar ou digitar várias peças, uma por linha">Várias linhas</button><button class="btn sm" type="button" data-act="rom-abrir" title="Colar a lista (romaneio) do fornecedor: o sistema lê as peças e você só digita peso e divisão">${romTem?"Retomar romaneio"+(romInfo?` (${esc(romInfo)})`:""):"Colar romaneio"}</button><label class="btn sm" style="cursor:pointer" title="Para quem não usa romaneio: escolha ou arraste o PDF (DANFE) ou o XML da nota fiscal. O sistema lê os itens e você confere antes de lançar.">Importar nota fiscal (PDF/XML)<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" hidden></label>${ROMS.length?`<button class="btn sm" type="button" data-act="rom-lista" title="Todos os romaneios já colados, com fotos e quantidades: abra para lançar o que faltou ou corrigir">Romaneios salvos (${ROMS.length})</button>`:""}${relTem?`<button class="btn sm" type="button" data-act="rel-abrir" title="Abre o relatório do último romaneio lançado">Último relatório</button>`:""}<button class="btn sm" type="button" data-act="limpar" title="Esvazia Descrição, Peso, Custo e quantidades (o que está marcado como “Fica guardado” em Colunas continua)">Limpar campos</button>`}
+    ${editId?`<button class="btn sm" type="button" data-act="cancel">Cancelar <kbd>Esc</kbd></button>`:`<button class="btn sm" type="button" data-act="repetir" title="Copia a última peça lançada para o formulário (nova referência ao adicionar)">Repetir última</button><button class="btn sm" type="button" data-act="q" data-q="multi" title="Colar ou digitar várias peças, uma por linha">Várias linhas</button><button class="btn sm" type="button" data-act="rom-abrir" title="Colar a lista (romaneio) do fornecedor: o sistema lê as peças e você só digita peso e divisão">${romTem?"Retomar romaneio"+(romInfo?` (${esc(romInfo)})`:""):"Colar romaneio"}</button><label class="btn sm" style="cursor:pointer" title="Para quem não usa romaneio: escolha ou arraste o PDF (DANFE) ou o XML da nota fiscal. O sistema lê os itens e você confere antes de lançar.">Importar nota fiscal (PDF/XML)<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" class="vh"></label>${ROMS.length?`<button class="btn sm" type="button" data-act="rom-lista" title="Todos os romaneios já colados, com fotos e quantidades: abra para lançar o que faltou ou corrigir">Romaneios salvos (${ROMS.length})</button>`:""}${relTem?`<button class="btn sm" type="button" data-act="rel-abrir" title="Abre o relatório do último romaneio lançado">Último relatório</button>`:""}<button class="btn sm" type="button" data-act="limpar" title="Esvazia Descrição, Peso, Custo e quantidades (o que está marcado como “Fica guardado” em Colunas continua)">Limpar campos</button>`}
 
     <span class="zm" role="group" aria-label="Tamanho do formulário"><button type="button" class="btn sm" data-act="zoom" data-z="f" data-d="-1" title="Diminuir o formulário" aria-label="Diminuir o formulário">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="f" data-d="0" id="zvF" title="Voltar ao tamanho normal" aria-label="Tamanho normal do formulário">${Math.round(ZM.f*100)}%</button><button type="button" class="btn sm" data-act="zoom" data-z="f" data-d="1" title="Aumentar o formulário" aria-label="Aumentar o formulário">+</button></span>
     <button type="button" class="tg min" data-act="tg-min"title="${abertos.min?"Mostrar tudo":"Mostrar só o essencial"}">${abertos.min?"▴ Mostrar tudo":"▾ Só o essencial"}</button>
@@ -2429,7 +2494,7 @@ function salvarRapido(){
     {const q3=g("q3").replace(/\D/g,"");if(!(pr in C.seqs))C.seqs[pr]=q3||"0";else if(q3&&!(ultimo(pr)>=+q3))C.seqs[pr]=q3}
     f.v.I=c.nome;delete f.v.J;sincGrade(f)}
   if(quick==="sub"){const c=catBy(f.v.I);if(c&&!c.subs.includes(n))c.subs.push(n);f.v.J=n;sincGrade(f)}
-  if(quick==="forn"){let fo=C.fornecedores.find(x=>lo(x.nome)===lo(n));if(!fo){fo={nome:n,codigo:g("q2"),desconto:g("q3")||"0",tipo:document.getElementById("q4").value};C.fornecedores.push(fo)}
+  if(quick==="forn"){let fo=C.fornecedores.find(x=>lo(x.nome)===lo(n));if(!fo){fo={nome:n,codigo:g("q2"),desconto:String(Math.min(100,Math.max(0,num(g("q3"))||0))),tipo:document.getElementById("q4").value};C.fornecedores.push(fo)}
     if(rq!=null&&ROM&&ROM.rows[rq]){ROM.rows[rq].forn=fo.nome;romReset(ROM.rows[rq])}else{f.v.H=fo.nome;f.desconto=fo.desconto||"0";if(fo.codigo)f.v.G=fo.codigo;if(!editId)banhistaDoFornecedor(f)}}
   if(quick==="obs"){if(!C.observacoes.includes(n))C.observacoes.unshift(n);f.v.M=n}
   if(quick==="cor"){if(!C.cores.includes(n))C.cores.push(n);if(quickB){f.ov=f.ov||{};f.ov[quickB]=f.ov[quickB]||{};f.ov[quickB].L=n}else f.v.L=n}
@@ -2491,10 +2556,12 @@ function conjCalc(f){
 function conjLimpar(f){f.v=f.v||{};["N","P",...CJ_COL].forEach(L=>delete f.v[L]);if(f.fConj&&f.v.F===f.fConj)delete f.v.F;delete f.fConj;
   Object.keys(f.ov||{}).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"){if(k!=="p"&&k.indexOf("~")<0)CJ_COL.forEach(L=>delete o[L]);if(!Object.keys(o).length)delete f.ov[k]}})}
 /* grava as somas na peça: Peso e Compra (iguais em todas as linhas), Banhos e Verniz (de cada banho marcado, em f.ov[banho]) e a Descrição; o Fator × de cada linha dá o Preço de Varejo */
+/* foto dos custos de banho/verniz gravados no conjunto: se continuam iguais à última soma, ninguém digitou por cima e o cadastro de galvânicas pode atualizar */
+const conjSnap=f=>JSON.stringify([CJ_COL.map(L=>(f.v||{})[L]),Object.keys(f.ov||{}).sort().map(k=>[k,f.ov[k]&&typeof f.ov[k]==="object"?CJ_COL.map(L=>f.ov[k][L]):null])]);
 function conjSync(f,dom){
   if(!f.conj||!Array.isArray(f.comp))return;
   const R=conjCalc(f),temComp=f.comp.some(c=>!vazio(c.peso)||!vazio(c.custo));f.v=f.v||{};f.ov=f.ov||{};
-  if(temComp){f.v.N=txtN(R.tot.N);f.v.P=txtN(R.tot.P)}else{delete f.v.N;delete f.v.P}
+  if(temComp){f.v.N=txtN(R.tot.N);f.v.P=txtN(R.tot.P);f.somaNP=1}else if(f.somaNP){delete f.v.N;delete f.v.P;delete f.somaNP}   /* só apaga Peso/Compra se foram as somas do conjunto que os criaram */
   if(R.temBanho){CJ_COL.forEach(L=>delete f.v[L]);
     const ids=R.vars.map(x=>x.b.id);
     R.vars.forEach(x=>{const o=f.ov[x.b.id]=f.ov[x.b.id]||{};CJ_COL.forEach(L=>{if(temComp&&x.tot[L]>0)o[L]=txtN(x.tot[L]);else delete o[L]})});
@@ -2504,6 +2571,7 @@ function conjSync(f,dom){
   Object.keys(f.ov).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"&&!Object.keys(o).length)delete f.ov[k]});
   const nomes=f.comp.map(c=>String(c.desc||"").trim()).filter(Boolean),auto=nomes.length?"Conjunto "+nomes.join(" + "):"";
   if(vazio(f.v.F)||f.fConj===f.v.F){if(auto)f.v.F=auto;else delete f.v.F;f.fConj=auto}
+  f.cjSnap=conjSnap(f);
   if(dom){["N","P","F"].forEach(L=>{const el=document.getElementById("f-"+L);if(el&&document.activeElement!==el)el.value=f.v[L]??""});
     f.comp.forEach((c,i)=>{const e=document.getElementById("cj-c-"+i);if(e)e.innerHTML=conjLinTxt(R,i,c)});
     const t=document.getElementById("conjTot");if(t)t.innerHTML=conjTotHTML(f);
@@ -2514,7 +2582,7 @@ const conjLinTxt=(R,i,c)=>{if(c&&!num(c.peso)&&!num(c.custo))return "";return R.
 function conjTotHTML(f){
   const R=conjCalc(f),q=num(vazio(f.v.Q)?padraoDe(f.v.I,"Q"):f.v.Q)||0,mk=f.mk||{},ov=f.ov||{};
   if(!(f.comp||[]).some(c=>!vazio(c.peso)||!vazio(c.custo)))return `<p class="hint">Preencha o peso e o custo das peças para ver a somatória por banho.</p>`;
-  const linhas=R.vars.map(x=>{const id=x.b?x.b.id:"p",t=x.tot,dsc=num(f.desconto)||0,P=dsc>0?Math.round((r4c(t.P)-r4c(t.P)*r4(dsc/100))*100)/100:r4c(t.P),qq=r4c(q),custo=0+P+qq+r4c(t.R)+r4c(t.S)+r4c(t.T)+r4c(t.U),m=num(mk[id]),man=x.b?(ov[id]||{}).V:f.v.V,
+  const linhas=R.vars.map(x=>{const id=x.b?x.b.id:"p",t=x.tot,dsc=num(f.desconto)||0,P=dsc>0?r2c(r4c(t.P)-r4c(t.P)*kDesc(dsc)):r4c(t.P),qq=r4c(q),custo=0+P+qq+r4c(t.R)+r4c(t.S)+r4c(t.T)+r4c(t.U),m=num(mk[id]),man=x.b?(ov[id]||{}).V:f.v.V,
     vr=!vazio(man)&&num(man)!=null?num(man):(m?Math.round(custo*m*100)/100:null);
     return `<tr><th>${x.b?`<span class="dot d-${x.b.coluna}"></span>${esc(x.b.letra)} · ${esc(x.b.nome)}`:"Conjunto"}</th><td>${fmt(t.N)} g</td><td>${brl(P)}</td><td>${brl(r4c(t.R)+r4c(t.S)+r4c(t.T))}</td><td>${brl(r4c(t.U))}</td><td>${q?brl(qq):"–"}</td><td><b>${brl(custo)}</b></td><td>${m?fmt(m):"–"}</td><td><b>${vr!=null?"R$ "+brl(vr):"digite o Fator × abaixo"}</b></td></tr>`}).join("");
   const aviso=R.vars.some(x=>x.semMult)?`<p class="hint cj-w">⚠ Um banho usado aqui está sem o R$ por grama (Cadastros › Galvânicas): o custo dela entra como zero.</p>`:"";
@@ -2550,7 +2618,7 @@ function atualizarGera(){
   if(g.semQ&&g.semQ[id])h+=`<span class="warn" title="Quando só algumas combinações têm quantidade, as sem quantidade não viram linha">⚠ ${g.semQ[id]} combinação(ões) sem quantidade ficam de fora da tabela.</span>`;
   if(erro&&!h.includes(">"+esc(erro)+"<"))h+=`<span class="err">${esc(erro)}</span>`;
   el.innerHTML=h;
-  {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2,true),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
+  {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2,true),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:x&&x.v==null&&typeof x.calc==="number"?x.calc:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
       if(P==null&&B==null&&U==null)return "";
       if(P!=null)pt.push(`Compra <b>${brl(P)}</b>${r.desconto>0?` <small>(com ${fmt(r.desconto)}% de desconto)</small>`:""}`);
       if(Q!=null)pt.push(`Insumos <b>${brl(Q)}</b>`);
@@ -2567,7 +2635,7 @@ function atualizarGera(){
     const inc=r.banho&&B==null;if(sp)sp.innerHTML=custo>0?`${inc?`<span class="bfx-n">sem peso: banho e verniz não entram na base (normal em peça pronta/banhada).</span> `:""}Base do fator <b>R$ ${brl(custo)}</b> <span class="bfx-d">= ${partes.map(x=>x[0]+" "+brl(x[1])).join(" + ")}</span>${mk&&V!=null?` · × ${fmt(mk)} = <b>R$ ${brl(V)}</b>`:""}`:"";
     const mi=document.querySelector(`[data-mk="${CSS.escape(kb)}"]`);if(mi&&mi.tagName==="INPUT")mi.placeholder=!r.mk&&mk&&!inc?fmt(mk):(fatorBanho(kb)||"×")})}
   rows.forEach((r,k)=>{if(!r.banho)return;const cel=celulas(r,ri0+k+2)[LET.indexOf(r.banho.coluna)],sp=document.querySelector(`[data-cb="${CSS.escape(String(r.bid||r.key))}"]`);
-    if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(num(r.v.N)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor na galvânica"))});
+    if(sp)sp.textContent=cel&&typeof cel.v==="number"?"banho R$ "+brl(cel.v):(cel&&cel.f?"="+cel.f:(pesoLinha(r)==null&&r.banho.modo!=="fixo"?"⚠ informe o peso":"sem valor na galvânica"))});
   rows.forEach((r,k)=>{const x=celulas(r,ri0+k+2,true)[LET.indexOf("V")],ph=r.mk&&x&&x.f&&typeof x.v==="number"?brl(x.v)+" (×"+fmt(r.mk)+")":"";
     const kb=r.bid||r.key,i=document.querySelector(kb==="p"?"#f-V":`[data-ph="${kb}-V"]`);if(i&&i.tagName==="INPUT")i.placeholder=ph});
   // dicas (placeholder) com o que vai entrar quando o campo fica vazio
@@ -2797,7 +2865,7 @@ function secModelo(C){
     <div class="mod-chips" role="group" aria-label="Sistemas de destino"><b class="mod-t">Meus sistemas</b>${C.modelos.map(x=>`<button type="button" class="chipbtn${x.id===m.id?" on":""}" data-act="mod-sel" data-id="${esc(x.id)}" aria-pressed="${x.id===m.id}" title="${x.id===m.id?"Em uso":"Usar este sistema"}">${esc(x.nome)}${x.id===m.id?" ✓":""}</button>`).join("")}<button type="button" class="chipbtn novo" data-act="mod-novo" title="Monta um modelo a partir da planilha de exemplo do outro sistema">＋ Outro sistema…</button></div>
     <div class="row"><label class="fl" style="width:230px"><span>Nome deste sistema</span><input data-mod="nome" value="${esc(m.nome)}"></label>
       <button class="btn sm pri" type="button" data-act="mod-conferir" title="Confere a tabela atual com este modelo, sem exportar">Conferir a tabela</button>
-      <details class="mdl"><summary class="btn sm">Mais ações</summary><div class="row"><button class="btn sm" type="button" data-act="mod-dup">Duplicar este</button><button class="btn sm danger" type="button" data-act="mod-del" ${C.modelos.length>1?"":"disabled"}>Excluir este</button><button class="btn sm" type="button" data-act="mod-salvar" title="Baixa este modelo num arquivo para guardar ou passar a outra pessoa">Salvar modelo (.json)</button><label class="btn sm" style="cursor:pointer" title="Abre um modelo salvo">Abrir modelo (.json)<input type="file" id="fileModJ" accept=".json" hidden></label><button class="btn sm" type="button" data-act="mod-jueri">＋ Modelo Jueri</button><button class="btn sm" type="button" data-act="mod-bling" title="As 59 colunas da planilha modelo oficial do Bling (CSV)">＋ Modelo Bling</button></div></details>
+      <details class="mdl"><summary class="btn sm">Mais ações</summary><div class="row"><button class="btn sm" type="button" data-act="mod-dup">Duplicar este</button><button class="btn sm danger" type="button" data-act="mod-del" ${C.modelos.length>1?"":"disabled"}>Excluir este</button><button class="btn sm" type="button" data-act="mod-salvar" title="Baixa este modelo num arquivo para guardar ou passar a outra pessoa">Salvar modelo (.json)</button><label class="btn sm" style="cursor:pointer" title="Abre um modelo salvo">Abrir modelo (.json)<input type="file" id="fileModJ" accept=".json" class="vh"></label><button class="btn sm" type="button" data-act="mod-jueri">＋ Modelo Jueri</button><button class="btn sm" type="button" data-act="mod-bling" title="As 59 colunas da planilha modelo oficial do Bling (CSV)">＋ Modelo Bling</button></div></details>
       <button class="btn sm ghost" type="button" data-act="mod-av" title="Tipo de dado, valor padrão, lista de valores, tamanho máximo, variações, CSV…">⚙ Regras avançadas ${av?"▴":"▾"}</button></div>
     ${avancado}
     ${nBr?`<div class="hint">${todas?`Mostrando todas as colunas, inclusive ${nBr} que saem em branco.`:`${nBr} coluna(s) do arquivo saem em branco (o app não tem esse dado) e estão escondidas.`} <button class="lnk" type="button" data-act="mod-brancas">${todas?"Esconder as em branco":"Mostrar também"}</button></div>`:""}
@@ -2812,7 +2880,7 @@ const csvLinha=(l,sep)=>{const o=[];let c="",q=false;for(let i=0;i<l.length;i++)
   if(q){if(ch==='"'){if(l[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===sep){o.push(c);c=""}else c+=ch}o.push(c);return o};
 function abrirNovoSistema(){NOVO=null;
   repModal(`<div class="rep-h"><div><b class="rep-t">Exportar para outro sistema</b><div class="hint">Baixe no outro sistema a <b>planilha modelo de importação de produtos</b> (costuma se chamar “planilha modelo” ou “tabela modelo”) e escolha o arquivo aqui. O app lê só a primeira linha, com os nomes das colunas, e não guarda o resto.</div></div><div class="rep-ac"><button type="button" class="btn sm" data-act="rel-fechar">Cancelar</button></div></div>
-  <div class="rep-rf" data-novo style="padding:22px 18px;border:2px dashed var(--line);margin:14px 18px;border-radius:12px;justify-content:center"><label class="btn pri big" style="cursor:pointer">Escolher a planilha modelo<input type="file" id="fileNovo" accept=".xlsx,.xls,.csv" hidden></label><span class="hint">ou solte o arquivo aqui · .xlsx, .xls ou .csv</span></div>`)}
+  <div class="rep-rf" data-novo style="padding:22px 18px;border:2px dashed var(--line);margin:14px 18px;border-radius:12px;justify-content:center"><label class="btn pri big" style="cursor:pointer">Escolher a planilha modelo<input type="file" id="fileNovo" accept=".xlsx,.xls,.csv" class="vh"></label><span class="hint">ou solte o arquivo aqui · .xlsx, .xls ou .csv</span></div>`)}
 async function lerNovo(file){
   try{let hdr,formato="xlsx",sep=";";checaTam(file,MAX_PLANILHA_BYTES,"A planilha");
     if(/[.]csv$/i.test(file.name)){const buf=new Uint8Array(await file.arrayBuffer());if(buf.length>MAX_PLANILHA_LINHAS&&buf.reduce((n,b)=>n+(b===10?1:0),0)+1>MAX_PLANILHA_LINHAS)throw limErr(`Esse CSV tem mais de ${MAX_PLANILHA_LINHAS} linhas, que é o limite`);let t;try{t=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){t=new TextDecoder("windows-1252").decode(buf)}
@@ -2855,7 +2923,9 @@ function padraoRegex(pad){const ordem=[];let src="";
     if(m&&TOK[m[1]]){if(m[1]!=="x"&&m[1]!=="item")ordem.push(m[1]);src+=TOK[m[1]]}
     else src+=p.split(/\s+/).map(z=>z.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")).join("\\s*")});
   return {re:new RegExp(src,"g"),ordem}}
-const rxs=(x,f)=>{try{return new RegExp(x,f||"i")}catch(e){return null}};
+/* padrão com quantificador dentro de grupo também quantificado, ex.: (a+)+ ou (\d*)* , pode travar a aba: não é aceito */
+const rxPerigo=x=>/\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d)/.test(String(x));
+const rxs=(x,f)=>{try{if(rxPerigo(x))return null;return new RegExp(x,f||"i")}catch(e){return null}};
 function mapaCat(desc,T){const d=semAc(desc);
   for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a)))return b}
   const w=d.split(/[\s,]+/)[0];const c=cfg().categorias.find(c=>w&&semAc(c.nome).startsWith(w.slice(0,4)));return c?c.nome:""}
@@ -2894,7 +2964,7 @@ function lerRomaneio(texto,T){
   if(fimLido&&/R\$\s*\d[0-9.]*,\d{2}/.test(flat.slice(fimLido)))pt.push("⚠ sobrou texto com valores depois da última peça lida (alguma linha sem código ou em outro formato?)");
   R.conf=pt.join(" · ");return R}
 const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(ROM&&ROM.tid))||C.romaneios[0]};
-const virg=n=>n==null?"":(Math.round(n*100)/100).toFixed(2).replace(".",",");
+const virg=n=>n==null?"":(Math.abs(n*100-Math.round(n*100))<1e-6?(Math.round(n*100)/100).toFixed(2):String(Math.round(n*10000)/10000)).replace(".",",");   /* preço com 3-4 casas não é arredondado */
 let ROM=null;
 function padroesAuto(){const cods=["[#{cod}]","[{cod}]","#{cod}","({cod})",""],pre=["R$ {preco} R$ {precod} {qtd} R$ {total}","R$ {preco} {qtd} R$ {total}","{qtd} R$ {preco} R$ {total}","R$ {preco} R$ {total} {qtd}","{preco} {qtd} {total}"],o=[];
   cods.forEach(c=>pre.forEach(q=>o.push("{desc} "+(c?c+" ":"")+q)));return o}
@@ -2937,7 +3007,7 @@ function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g
   f.ft=r.fotoMini||null;f.ftR=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.csel=(r.csel||[]).slice();f.semGrade=!!r.semG;f.ov={};f.vinc=!bruta&&!!r.vinc&&!romIds(r).length&&(!cols.length||cols[0].id==="p");
   f.mk=clone(snap.mk||{});Object.keys(r.mk||{}).forEach(k=>{if(!vazio(r.mk[k]))f.mk[k]=r.mk[k]});
   f.vz={...(snap.vz||{}),...(r.vz||{})};
-  f.desconto=((T.custo==="precod"&&r.precod!=null)||r.nfSemDesc)?"0":(r.forn&&fornBy(r.forn)?fornBy(r.forn).desconto:snap.desconto);if(!vazio(r.dsc))f.desconto=String(r.dsc);
+  f.desconto=((T.custo==="precod"&&r.precod!=null)||r.nfSemDesc)?"0":(r.forn&&fornBy(r.forn)?fornBy(r.forn).desconto:snap.desconto);if(!vazio(r.dsc)&&num(r.dsc)!=null&&num(r.dsc)>=0&&num(r.dsc)<=100)f.desconto=String(r.dsc);
   const q=romKeys(r,cols).map(k=>[k,Math.trunc(num(r.q[k])||0)]).filter(x=>x[1]>0);
   if(!bruta&&(!cols.length||cols[0].id==="p"))f.onP={};
   if(bruta){f.on={};cols.forEach(c=>{f.on[c.id]=true});q.forEach(([k,n])=>{f.ov[k]={...(f.ov[k]||{}),W:String(n)}});
@@ -2966,7 +3036,7 @@ function romPreview(){const out=[],base=S.lanc.slice();
   ROM.rows.forEach((r,i)=>{out[i]=null;if(r.skip)return;const {f}=romForm(r,true),t=romMonta(base,r,{...f,id:"__rom"+i});out[i]={rows:[],troca:t.troca}});
   if(!base.some(l=>String(l.id).startsWith("__rom")))return out;let g;try{g=gerar(base)}catch(e){return out}
   g.linhas.forEach((row,ri)=>{const id=String(row.lancId);if(!id.startsWith("__rom"))return;const o=out[+id.slice(5)];if(!o)return;
-    const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
+    const cs=celulas(row,ri+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
     o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),cb:row.banho?n(row.banho.coluna):null,custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
 const fm=n=>n==null?"—":"R$ "+brl(n);
@@ -2986,7 +3056,7 @@ function renderRom0(){const el=document.getElementById("romWrap");if(!el)return;
     ${true?`${fq("Galvânica",`<select data-rp="bh">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="bh" title="Cadastrar uma galvânica nova agora" aria-label="Nova galvânica">＋</button><div class="fq"><span>${bruta?"Banhos (padrão de todas as peças)":"Banhos (peça pronta: uma linha por banho; nenhum = peça única)"}</span><div class="rom-bn">${bh.banhos.map(b=>`<label class="gi${(bruta?f.on:(f.onP||{}))[b.id]?" on":""}" title="Custo ${esc(b.nome)} por grama: ${esc(b.mult||"—")}"><input type="checkbox" data-rp="bn" data-b="${b.id}" ${(bruta?f.on:(f.onP||{}))[b.id]?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></label>`).join("")}</div></div><button type="button" class="btn ghost sm" data-act="rom-q" data-q="bn" title="Cria um banho novo (ex.: Ródio negro) nesta galvânica">＋ Banho</button><button type="button" class="btn ghost sm" data-act="ir" data-sec="banho" title="Valores por grama, cores e milésimos da galvânica">Editar galvânica</button>`:""}
     ${(bruta?bh.banhos.filter(b=>f.on[b.id]).map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):(()=>{const sl=bh.banhos.filter(b=>(f.onP||{})[b.id]);return sl.length?sl.map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):[{id:"p",nome:"Multiplicador"}]})()).map(m=>fq(m.nome+" (varejo = custos × este valor)",`<input class="n" data-rp="mkg" data-b="${m.id}" value="${esc((f.mk||{})[m.id]??"")}" placeholder="×" inputmode="decimal">`,"w-c")).join("")}
     <span class="hint">Desconto do fornecedor <b>${esc(f.desconto||"0")}%</b></span></div>
-  <div class="rom-t"><textarea data-rp="texto" rows="3" placeholder="Cole aqui o texto da lista do fornecedor, ou use Importar PDF…">${esc(ROM.texto)}</textarea><div class="rom-b"><button type="button" class="btn pri" data-act="rom-ler">Ler lista</button><label class="btn" title="Escolha ou arraste o PDF do romaneio: o sistema lê as peças e recorta as fotos">Importar PDF<input type="file" id="romPdf" accept="application/pdf,.pdf" hidden></label><label class="btn" title="Planilha do fornecedor (.xlsx, .xls ou .csv): você confirma qual coluna é código, descrição, quantidade e valor">Importar planilha<input type="file" id="romXls" accept=".xlsx,.xls,.csv" hidden></label><span class="hint">${esc(ROM.msg||"")}</span></div></div>`;
+  <div class="rom-t"><textarea data-rp="texto" rows="3" placeholder="Cole aqui o texto da lista do fornecedor, ou use Importar PDF…">${esc(ROM.texto)}</textarea><div class="rom-b"><button type="button" class="btn pri" data-act="rom-ler">Ler lista</button><label class="btn" title="Escolha ou arraste o PDF do romaneio: o sistema lê as peças e recorta as fotos">Importar PDF<input type="file" id="romPdf" accept="application/pdf,.pdf" class="vh"></label><label class="btn" title="Planilha do fornecedor (.xlsx, .xls ou .csv): você confirma qual coluna é código, descrição, quantidade e valor">Importar planilha<input type="file" id="romXls" accept=".xlsx,.xls,.csv" class="vh"></label><span class="hint">${esc(ROM.msg||"")}</span></div></div>`;
   h+=romPlanHTML();
   if(ROM.rows.length){
     h+=`<div class="rom-i">${fq("Observação (todas as peças)",`<input data-rp="obs" value="${esc(ROM.obs||"")}">`,"w-l")}<span class="rom-c ${/⚠/.test(ROM.conf)?"bad":""}" title="Conferência com os totais da lista">Lista: ${esc(ROM.conf||"—")}</span></div>
@@ -3033,7 +3103,7 @@ const dtbr=t=>new Date(t).toLocaleString("pt-BR");
 function repModal(inner){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";ov.innerHTML=`<div class="rep-c">${inner}</div>`;document.body.appendChild(ov)}
 async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabela está vazia.");return null}
   if(por)setAutor(por);const g=gerar(),lancSnap=clone(S.lanc),seqsSnap=clone(cfg().seqs),sigT=sigLanc();   /* versão consistente: tudo abaixo usa esta foto, não o estado de depois das esperas */
-  const linhas=g.linhas.map((x,ri)=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:null},q=num(x.v.W)||0,cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),l=S.lanc.find(z=>z.id===x.lancId)||{};
+  const linhas=g.linhas.map((x,ri)=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:null},q=n("W")??(num(x.v.W)||0),cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),l=S.lanc.find(z=>z.id===x.lancId)||{};
     return {ref:x.v.E,desc:x.v.F||"",cat:x.v.I||"",sub:x.v.J||"",cor:x.v.L||"",forn:x.v.H||"",cod:x.v.G||"",q,custo:cu,varejo:n("V"),lanc:x.lancId,por:l.por||""}});
   const ids=new Set(lancSnap.map(l=>l.id)),ks=(await idbOp("roms","readonly",st=>st.getAllKeys()))||[],roms=[];
   for(const k of ks){const r=await idbGet("roms",k);if(r&&r.rows.some(x=>(x.lancIds||[]).some(i=>ids.has(i))))roms.push(k)}
@@ -3054,9 +3124,11 @@ function tabSalvarAbrir(){const d=new Date(),nm="Tabela "+String(d.getDate()).pa
 async function tabSalvarOk(){if(editId){toast("Termine ou cancele a edição antes.");return}const nome=(document.getElementById("tsNome").value||"").trim()||("Tabela "+new Date().toLocaleDateString("pt-BR")),por=(document.getElementById("tsPor").value||"").trim(),nova=document.getElementById("tsNova").checked;
   document.querySelectorAll(".rep").forEach(x=>x.remove());await tabSalvar(nome,por,nova);tabListaAbrir()}
 async function tabRestaurar(id){if(editId){toast("Termine ou cancele a edição antes.");return}const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
+  if(!Array.isArray(rec.lanc)){toast("Esta tabela salva está danificada (sem as peças): não restaurei nada.");return}
   if(S.lanc.length){const bk=await tabSalvar("Antes de restaurar · "+dtbr(Date.now()),AUTOR,false,true);if(!bk){toast("Não restaurei: não consegui guardar a tabela atual no histórico antes.");return}}
-  S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();lastExport=null;salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
-  toast(`Tabela “${rec.nome}” restaurada (${S.lanc.length} peças). A tabela que estava aqui foi guardada no histórico. A numeração não voltou atrás: vale o maior número de cada prefixo.`)}
+  S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();lastExport=null;ftSalvas.clear();ftRSalvas.clear();salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
+  let renum="";try{const nv=gerar().linhas.map(r=>r.v.E),vl=(rec.linhas||[]).map(x=>x&&x.ref);if(vl.some((r,i)=>r&&nv[i]&&nv[i]!==r))renum=" ATENÇÃO: algumas referências mudaram em relação à tabela salva (a numeração é refeita a partir da última peça de hoje): confira antes de exportar."}catch(e){}
+  toast(`Tabela “${rec.nome}” restaurada (${S.lanc.length} peças). A tabela que estava aqui foi guardada no histórico. A numeração não voltou atrás: vale o maior número de cada prefixo.${renum}`)}
 async function tabVer(id){const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
   const rs=[];for(const k of rec.roms||[]){const r=await idbGet("roms",k);if(r)rs.push(r)}
   const L=(Array.isArray(rec.linhas)?rec.linhas:[]).filter(ehObj).map(l=>({...l,q:Number(l.q)||0,custo:Number(l.custo)||0,varejo:l.varejo==null?null:(Number(l.varejo)||0)})),tot=L.reduce((t,l)=>({un:t.un+l.q,cu:t.cu+l.custo*l.q,vr:t.vr+(l.varejo||0)*l.q}),{un:0,cu:0,vr:0}),romDe={};rs.forEach(r=>r.rows.forEach(x=>(x.lancIds||[]).forEach(i=>{romDe[i]=r})));
@@ -3077,10 +3149,11 @@ let ROMS=[],romArm=null,TABS=[],ARQ={},AUTOR="",tabArm=null;
 function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.open("cadpecas-big",3);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};rq.onerror=()=>res(null);
   rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(store,mode),st=tx.objectStore(store);let out=null;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>{d.close();res(out)};tx.onerror=tx.onabort=()=>{d.close();res(null)}}catch(e){d.close();res(null)}}}catch(e){res(null)}})}
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
-function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,mk:f.mk,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
+function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
 function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",hash:rec.hash||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);return gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
-function romGravarBig(){if(!ROM||!ROM.rows.length)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=romRec();idbPut("roms",rec.id,rec).then(r=>{if(r===null)avisoIdb("o romaneio");else romIndex(rec)})}
+let romGravP=null;
+function romGravarBig(){romGravP=null;if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=romRec();romGravP=idbPut("roms",rec.id,rec).then(r=>{if(r===null){avisoIdb("o romaneio");return false}romIndex(rec);return true})}
 let avisoIdbT=0;
 function avisoIdb(oque){setStatus("NÃO salvo — memória do navegador cheia ("+oque+"). Baixe o backup.",true);if(Date.now()-avisoIdbT>10000){avisoIdbT=Date.now();toast("NÃO consegui guardar "+oque+" — a memória do navegador pode estar cheia. Baixe o backup completo.")}}
 function romExcluirSalvo(id){idbDel("roms",id);ROMS=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
@@ -3094,7 +3167,7 @@ async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição
   if(ROM&&ROM.rows.length)romSalvar();
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
   const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,rows:rec.rows,pdf:null};
-  if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;f.mk=rec.form.mk||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
+  if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
   romMarcar();const nf=ROM.rows.filter(r=>r.feito).length,np=ROM.rows.filter(r=>!r.skip).length;
   ROM.msg=`Romaneio salvo aberto · ${nf} já lançada(s) · ${np} para lançar. Mude qualquer campo de uma peça já lançada para corrigir (ela é substituída, mantendo posição e referência; só muda de referência se você trocar a categoria; nesse caso as outras peças nunca são renumeradas).`;
   renderTopo();renderForm();renderRom();romSalvar();const w=document.getElementById("romWrap");if(w)rolarPane(w)}
@@ -3109,7 +3182,9 @@ async function bkMontar(){
   const falhas=[],chaves=async n=>{const k=await idbOp(n,"readonly",st=>st.getAllKeys());if(k===null){falhas.push(n);return []}return k},valor=async(n,k)=>{const v=await idbGet(n,k);if(v===null)falhas.push(n+":"+k);return v};
   const rk=await chaves("roms"),roms={};for(const k of rk)roms[k]=await valor("roms",k);
   const tk=await chaves("tabs"),tabs={};for(const k of tk)tabs[k]=await valor("tabs",k);
-  const fk=await chaves("fotos"),fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));for(const k of fk)if(vivos.has(String(k).replace(/^[mr]:/,"")))fotos[k]=await valor("fotos",k);   /* inclui as miniaturas (m:) e as de romaneio (r:), não só a original */
+  const fk=await chaves("fotos"),fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));
+  Object.values(tabs).forEach(t=>{if(!t)return;(t.ids||[]).forEach(i=>vivos.add(i));(t.lanc||[]).forEach(l=>{if(l&&l.id)vivos.add(l.id)})});   /* tabela que está no banco mas não no índice também leva as fotos */
+  Object.values(roms).forEach(r=>{if(!r)return;(r.lancIds||[]).forEach(i=>vivos.add(i));(r.rows||[]).forEach(x=>(x.lancIds||[]).forEach(i=>vivos.add(i)))});for(const k of fk)if(vivos.has(String(k).replace(/^[mr]:/,"")))fotos[k]=await valor("fotos",k);   /* inclui as miniaturas (m:) e as de romaneio (r:), não só a original */
   let rel=null;try{rel=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){}
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
@@ -3226,23 +3301,30 @@ async function aplicarBackupTotal(n,quieto){
     S.config=n.config;S.lanc=n.lanc;if(n.form)S.form=n.form;editId=null;rascunho=null;sel.clear();selR=null;
     migrarJueri();migrarGrades();sincGrade(S.form);
   }catch(e){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;await reverter();toast("Backup NÃO restaurado — erro ao aplicar os cadastros. Nada foi alterado.");return}
+  /* só diz "restaurado" depois de confirmar a gravação dos dados principais (peças e cadastros); se falhar, desfaz tudo */
+  ftSalvas.clear();ftRSalvas.clear();resolverCorrompido();
+  dirty={c:true,l:true};try{histNota()}catch(e){}clearTimeout(sT);sT=null;
+  let okGrav=false;try{okGrav=(await (chain=chain.then(flush)))===true}catch(e){okGrav=false}
+  if(!okGrav){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;editId=null;rascunho=null;await reverter();histIni();salvar(true);render();
+    toast("Backup NÃO restaurado — não consegui gravar as peças e os cadastros (memória do navegador cheia ou bloqueada). Voltei tudo como estava.");return}
   Object.values(n.roms).forEach(r=>{try{romIndex(r)}catch(e){}});Object.values(n.tabs).forEach(r=>{try{tabIndex(r)}catch(e){}});arqRef();
   if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
-  ftSalvas.clear();ftRSalvas.clear();resolverCorrompido();salvar(true);render();
+  render();
   if(!quieto)toast(`Backup restaurado (substituiu tudo): ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.`,{t:"Desfazer",fn:desfazer});return true}
 const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
-function romSalvar(){if(!ROM||!ROM.rows.length)return;romGravarBig();const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
-  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,mk:f.mk,desconto:f.desconto},em:Date.now()};
+let romConflito=false;
+function romSalvar(){if(!ROM||!ROM.rows.length)return true;if(romConflito)return false;romGravarBig();let lsOk=false;const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
+  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,desconto:f.desconto},em:Date.now()};
   romInfo=`${f.v.H||""} · ${ROM.rows.length} peças`;try{localStorage.setItem("cadpecas-rom-info",romInfo)}catch(e){}
-  try{localStorage.setItem(ROMKEY,JSON.stringify(snap));romTem=true}catch(e){try{localStorage.setItem(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true}catch(x){}}
-  if(db){try{const pr=db.doc("dados/romaneio").set({...snap,rows:semFoto(snap.rows),texto:String(ROM.texto||"").slice(0,200000)});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}
+  try{localStorage.setItem(ROMKEY,JSON.stringify(snap));romTem=true;lsOk=true}catch(e){try{localStorage.setItem(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true;lsOk=true}catch(x){}}
+  if(db){try{const pr=db.doc("dados/romaneio").set({...snap,rows:semFoto(snap.rows),texto:String(ROM.texto||"").slice(0,200000)});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}return lsOk}
 function romRascunho(){try{const j=localStorage.getItem(ROMKEY);return j?JSON.parse(j):null}catch(e){return null}}
 function romLimparRascunho(){romTem=false;romInfo="";try{localStorage.removeItem("cadpecas-rom-info")}catch(e){}clearTimeout(romST);try{localStorage.removeItem(ROMKEY)}catch(e){}if(db){try{const pr=db.doc("dados/romaneio").delete();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}
 async function romSync(){if(!db||romTem)return;try{const d=await db.doc("dados/romaneio").get();if(d.exists&&d.data()&&d.data().rows&&d.data().rows.length){localStorage.setItem(ROMKEY,JSON.stringify(d.data()));romTem=true;romInfo=((d.data().form||{}).H||"")+" · "+d.data().rows.length+" peças";renderForm()}}catch(e){}}
 function romRetomar(){const d=romRascunho();if(!d||!d.rows||!d.rows.length)return false;const f=S.form;
   ROM={sid:d.sid,por:d.por,criado:d.criado,log:d.log,tid:d.tid,texto:d.texto||"",obs:d.obs||"",doc:d.doc||"",hash:d.hash||"",conf:d.conf||"",bulk:d.bulk||null,rows:d.rows,msg:`Romaneio em andamento retomado · ${d.rows.length} peças`,pdf:null};
-  if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;f.mk=d.form.mk||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}
+  if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;if(d.form.onP)f.onP=d.form.onP;f.mk=d.form.mk||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}
 /* ===== edição em lote ===== */
 function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),fq=romFq,cc=catBy(b.cat),ns=ROM.rows.filter(r=>r.sel).length;
   const mks=bruta?bh.banhos.filter(x=>f.on[x.id]).map(x=>({id:x.id,nome:"Multiplicador "+x.nome})):[{id:"p",nome:"Multiplicador"}];
@@ -3355,6 +3437,7 @@ const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);
 function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>{const p=num(x.peso);if(p>0)w+=p;v+=num(x.custo)||0});
   const dif=Math.round(((r.loteG||0)-w)*1000)/1000,tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);let cls,txt;
   if(!kids.length){cls="warn";txt="Nenhum item ainda: pese as peças e adicione cada uma abaixo."}
+  else if(Math.abs(dif)<=0.05&&Math.abs(v-tot)>0.01*kids.length+0.05){cls="warn";txt=`o peso fecha (${g3(w)} g), mas os itens somam R$ ${brl(v)} e o lote custou R$ ${brl(tot)}`}
   else if(Math.abs(dif)<=0.05){cls="ok";txt=`✓ a soma bate: ${g3(w)} g de ${g3(r.loteG)} g`}
   else if(dif>0){cls="warn";txt=`faltam ${g3(dif)} g para fechar o lote (${g3(w)} g de ${g3(r.loteG)} g)`}
   else{cls="bad";txt=`passou ${g3(-dif)} g do peso do lote (${g3(w)} g de ${g3(r.loteG)} g)`}
@@ -3375,9 +3458,11 @@ function romLoteDecora(){if(!ROM)return;const cs=document.querySelectorAll("#rom
 function romNovaCat(r){const g=gradeDaCat(r.cat,r.sub);r.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];r.csel=coresPadrao(r.cat,r.sub);r.semG=false;r.open=false;r.q={};if(!romIds(r).length&&!g&&romTipo(r)!=="bruta")r.q.p=String(r.qtd)}
 const ROM_PAPEIS=[["cod","Código"],["desc","Descrição"],["qtd","Quantidade"],["preco","Valor unitário"],["total","Valor total"]];
 const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|mercadoria|artigo/i,qtd:/qtd|quant|^qt$|^un/i,preco:/unit|pre[cç]o|vlr un|valor un|^valor$/i,total:/total|subtotal/i};
+/* texto de arquivo: UTF-8 (com ou sem BOM); se não for UTF-8 válido, Windows-1252 */
+function decTexto(buf){try{return new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){return new TextDecoder("windows-1252").decode(buf)}}
 async function romPlanilha(file){if(!(await impPrepara(file)))return;return romPlanilha0(file)}
 async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha");if(typeof XLSX==="undefined")throw new Error("A biblioteca de planilha não carregou.");
-  const buf=await file.arrayBuffer(),wb=XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:""});
+  const buf=await file.arrayBuffer(),ehCsv=/\.(csv|txt)$/i.test(file.name||""),wb=ehCsv?XLSX.read(decTexto(buf),{type:"string"}):XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});   /* raw:true: número formatado (1.000 / 1,234) vem como número, não como texto */
   if(aoa.length>MAX_PLANILHA_LINHAS)throw new Error(`A planilha tem ${aoa.length} linhas e o limite é ${MAX_PLANILHA_LINHAS}.`);
   let hi=0,best=-1;for(let i=0;i<Math.min(15,aoa.length);i++){let n=0;aoa[i].forEach(c=>{if(Object.values(ROM_SIN).some(rx=>rx.test(String(c))))n++});if(n>best){best=n;hi=i}}
   const head=(aoa[hi]||[]).map((c,j)=>String(c||"").trim()||("Coluna "+(j+1))),map={};
@@ -3414,7 +3499,9 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   if(k==="qall"){const v=t.value;if(!vazio(v)){const n=num(v);if(n==null||n<0||!Number.isInteger(n)){if(fin)toast("Quantidade precisa ser um número inteiro, 0 ou mais.");return}}if(!fin||romBusy)return;romBusy=true;try{romKeys(r,[{id:t.dataset.b}]).forEach(kk=>{r.q[kk]=vazio(v)?"":String(num(v))});renderRom()}finally{romBusy=false}return}
   if(k==="gusar"){if(!fin)return;const c=catBy(r.cat),v=t.value;if(c&&v&&!c.grade){romArma(r);if(v.startsWith("o:")){const og=(cfg().grades||[]).find(x=>x.id===v.slice(2));if(og)c.grade={id:uid(),nome:og.nome,subs:[],usaId:og.id,itens:[]}}else{const src=catBy(v.slice(2));if(src&&src.grade){const o=src.grade.usa?(catBy(src.grade.usa)||src):src;c.grade={id:uid(),nome:o.grade.nome,subs:[],usa:o.nome,itens:[]}}}salvar(true,false);renderRom()}return}
   if(k==="faixa"){if(!fin||romBusy)return;romBusy=true;try{const g0=gradeDaCat(r.cat,r.sub);if(g0){r.gsel=selFaixa(g0,t.value);r.semG=false}renderRom()}finally{romBusy=false}return}
-  if(k==="dscI"){r.dsc=t.value;romAtualSoon();return}
+  if(k==="dscI"){const n=num(t.value);if(!vazio(t.value)&&(n==null||n<0||n>100)){if(fin)toast("Desconto precisa estar entre 0 e 100%.");return}r.dsc=t.value;romAtualSoon();return}
+  if(k==="fornI"||k==="tipoI"||k==="bhI"){const temAj=x=>Object.keys(x.q||{}).some(z=>z!=="p"&&!vazio(x.q[z]))||(x.q&&x.q.p!==undefined&&String(x.q.p).trim()!==String(x.qtd).trim())||["bo","mk","vz"].some(z=>Object.keys(x[z]||{}).length>0);
+    if(temAj(r)&&!confirm("Trocar isto apaga as quantidades distribuídas e os ajustes desta peça (fatores, preços, banhos). Continuar?")){renderRom();return}}
   if(k==="fornI"){r.forn=t.value||undefined;romReset(r);renderRom();return}
   if(k==="tipoI"||k==="bhI"){if(k==="tipoI")r.tipo=t.value||undefined;else r.bh=t.value||undefined;romReset(r);renderRom();return}
   if(k==="sel"){r.sel=t.checked;romSelN();return}
@@ -3453,6 +3540,7 @@ function romLer(){if(ROM&&String(ROM.texto||"").length>MAX_TEXTO_COLADO){ROM.msg
   if(R.erro){const tinha=ROM.rows&&ROM.rows.length;ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg=R.erro+(tinha?" Os cartões da leitura anterior foram removidos.":"");romSalvarSoon();renderRom();return}
   romAplicaR(R)}
 function romAplicaR(R){const f=S.form,T=romT();
+  {const vi=new Set();R.rows.forEach(r=>{if(!r.cod)return;const k=r.cod+"|"+r.qtd;if(vi.has(k)){r.skip=true;r.aviso=(r.aviso?r.aviso+" ":"")+"· linha repetida na lista — desmarcada"}else vi.add(k)})}
   R.rows.forEach(r=>{const mc=String(mapaCat(r.desc,T)||"").split(">");r.cat=mc[0]||f.v.I||"";if(!mc[0]){r.catq=true;r.aviso=(r.aviso?r.aviso+" ":"")+"· categoria não reconhecida: confira"}r.sub=(mc[1]||"").trim();const cc=catBy(r.cat);if(r.sub&&!(cc&&cc.subs.includes(r.sub)))r.sub="";
     const c=T.custo==="preco"?(r.preco??r.precod):(r.precod??r.preco);r.custo=virg(c!=null?c:(r.total!=null&&r.qtd?r.total/r.qtd:null));
     r.mk={};r.bo={};r.on={};r.vz={};r.ex={};romNovaCat(r);
@@ -3548,7 +3636,7 @@ async function fotoReduzida(src,max){
   const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.imageSmoothingQuality="high";x.drawImage(im,0,0,c.width,c.height);
   return new Promise(ok=>c.toBlob(ok,"image/jpeg",0.85))}
 async function enviarFoto(l){const key=fotoKey();if(!key)throw new Error("falta a chave do imgbb");
-  const src=(await idbGet("fotos",l.id))||l.ft;if(typeof src!=="string"||!/^data:image\//.test(src))throw new Error("a peça não tem foto");
+  const src=await idbGet("fotos",l.id);if(typeof src!=="string"||!/^data:image\//.test(src))throw new Error(l.ft?"a foto original não está mais guardada neste aparelho (só a miniatura); anexe a foto de novo":"a peça não tem foto");
   const blob=await fotoReduzida(src,1200);if(!blob)throw new Error("não consegui preparar a foto");
   const nome=String(((G&&G.refs[l.id])||[])[0]||l.id).replace(/[^A-Za-z0-9_-]/g,"-"),fd=new FormData();fd.append("image",blob,nome+".jpg");fd.append("name",nome);
   /* a chave vai no corpo do envio (não no endereço da requisição, que fica em históricos e registros); sem resposta em 30 s, desiste */
@@ -3578,12 +3666,15 @@ async function enviarFotos(soIds){if(fotosEnv)return;
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
 function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a edição antes.");return}
-  const snap=clone(f),feitas=[],ign=[];let sem=0,err=0,un=0;const naLista=ROM.rows.filter(r=>!r.skip).reduce((t,r)=>t+r.qtd,0);
+  if(romConflito){toast("Outra aba alterou este romaneio. Use “Recarregar” ou “Manter esta aba” no aviso amarelo antes de criar as peças.");return}
+  romCriando=true;setTimeout(()=>{romCriando=false},0);   /* durante a criação o romaneio não é ressincronizado com a tabela */
+  const snap=clone(f),feitas=[],ign=[];let sem=0,err=0,un=0,ultErro="";const naLista=ROM.rows.filter(r=>!r.skip).reduce((t,r)=>t+r.qtd,0);
   ROM.rows.forEach(r=>{if(r.skip){if(!(r.feito&&!r.refaz))ign.push({desc:r.desc,cod:r.cod,motivo:r.aviso?String(r.aviso).replace("· ",""):"desmarcada"});return}
     S.form=clone(snap);const {f:f2,q}=romForm(r);if(!q.length){sem++;ign.push({desc:r.desc,cod:r.cod,motivo:"sem quantidade"});return}
     S.form=f2;let pos=-1,velhos=null;if(r.refaz&&r.lancIds&&r.lancIds.length){pos=S.lanc.findIndex(l=>l.id===r.lancIds[0]);if(pos>=0&&romPrefDe(S.lanc[pos])!==prefDe(f2.v.I||"",f2.v.J))romFixaRefs(S.lanc,pos,romPrefDe(S.lanc[pos]),r.lancIds,false);velhos=S.lanc.filter(l=>r.lancIds.includes(l.id));S.lanc=S.lanc.filter(l=>!r.lancIds.includes(l.id))}
-    if(adicionar(false,true)){const nl=S.lanc[S.lanc.length-1];if(pos>=0&&velhos&&velhos[0]&&romPrefDe(velhos[0])===romPrefDe(nl)){S.lanc.pop();S.lanc.splice(Math.min(pos,S.lanc.length),0,nl)}feitas.push({r,id:nl.id});un+=q.reduce((t,x)=>t+x[1],0)}else{if(velhos)S.lanc.splice(Math.max(0,pos),0,...velhos);err++;ign.push({desc:r.desc,cod:r.cod,motivo:"erro ao criar"})}});
+    if(adicionar(false,true)){const nl=S.lanc[S.lanc.length-1];if(pos>=0&&velhos&&velhos[0]&&romPrefDe(velhos[0])===romPrefDe(nl)){S.lanc.pop();S.lanc.splice(Math.min(pos,S.lanc.length),0,nl)}feitas.push({r,id:nl.id});un+=q.reduce((t,x)=>t+x[1],0)}else{if(velhos)S.lanc.splice(Math.max(0,pos),0,...velhos);err++;ultErro=erro||ultErro;ign.push({desc:r.desc,cod:r.cod,motivo:"erro ao criar"+(erro?": "+erro:"")})}});
   S.form=snap;erro="";
+  if(!feitas.length){renderRom();renderForm();toast("Nenhuma peça foi criada"+(ultErro?": "+ultErro:sem?" (nenhuma tem quantidade)":"")+". O romaneio continua aberto para você corrigir.");return}
   const ids=feitas.map(x=>x.id);
   const meta={forn:snap.v.H||"",banhista:snap.tipo==="bruta"?banhistaBy(snap.banhista).nome:"",tipo:snap.tipo,obs:ROM.obs||"",modelo:(romT()||{}).nome||"",conf:ROM.conf||"",naLista,un};
   {const g2=gerar(),corr=feitas.filter(({r})=>r.refaz).length;
@@ -3687,7 +3778,9 @@ function nfIniciar(nota){const forma={};nota.itens.forEach(i=>{if(i.cod){const s
     return {i,inc:true,cod:it.cod,desc:it.desc,cat:ct.cat,sub:ct.sub,qtd:it.qtd,vUn:it.vUn,vProd:it.vProd,vDesc:it.vDesc,ncm:it.ncm,cfop:it.cfop,un:it.un,gen,gmode:gen.length?"lote":"",gN:2,custoMan:""}});
   const ach=nfAcharForn(nota.emit);
   NF={nota,rows,liq:true,dup:null,dupOk:false,forn:ach.f?ach.f.nome:"__novo",fornPor:ach.por||"",novoNome:nfTitulo(nota.emit.nome)}}
-const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return nfR2(((r.vProd||r.vUn*q)-r.vDesc)/q);return r.vUn};
+const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return r4(((r.vProd||r.vUn*q)-r.vDesc)/q);return r.vUn};
+/* quantidade positiva nunca some: 0,4 kg vira 1 unidade com o custo do total da nota */
+const nfQtdInt=q=>q>0?Math.max(1,Math.round(q)):0;
 async function nfBuscaDup(ch){if(!ch)return null;const ix=nfIdx()[ch];if(ix)return {em:ix.em,n:ix.n,numero:ix.numero};
   if(S.lanc.some(l=>l.nfChave===ch))return {em:Date.now(),n:S.lanc.filter(l=>l.nfChave===ch).length};
   if(ROM&&ROM.rows.some(r=>r.nfChave===ch))return {rascunho:true};
@@ -3697,25 +3790,25 @@ async function nfBuscaDup(ch){if(!ch)return null;const ix=nfIdx()[ch];if(ix)retu
 function nfOv(html){let el=document.getElementById("nfRev");if(!el){el=document.createElement("div");el.id="nfRev";el.className="rev nfm";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Importar nota fiscal");el.innerHTML='<div class="rev-c"></div>';document.body.appendChild(el)}
   const c=el.querySelector(".rev-c");if(html!=null)c.innerHTML=html;return el}
 function nfFechar(){const el=document.getElementById("nfRev");if(el)el.remove();NF=null}
-function nfErro(msg){nfOv(`<div class="rev-h"><b>Importar nota fiscal</b></div><div class="nf-body"><div class="nf-al bad" role="alert">${esc(msg)}</div></div><div class="rev-f"><label class="btn" style="cursor:pointer">Escolher outro arquivo<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" hidden></label><button type="button" class="btn pri" data-nfa="fechar">Fechar</button></div>`)}
+function nfErro(msg){nfOv(`<div class="rev-h"><b>Importar nota fiscal</b></div><div class="nf-body"><div class="nf-al bad" role="alert">${esc(msg)}</div></div><div class="rev-f"><label class="btn" style="cursor:pointer">Escolher outro arquivo<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" class="vh"></label><button type="button" class="btn pri" data-nfa="fechar">Fechar</button></div>`)}
 async function nfAbrir(f,its){
   if(editId){toast("Termine ou cancele a edição antes.");return}
   const eXml=/xml/i.test(f.type)||/\.xml$/i.test(f.name),ePdf=/pdf/i.test(f.type)||/\.pdf$/i.test(f.name);
   if(!eXml&&!ePdf){nfErro("Esse arquivo não é uma nota fiscal. Escolha o PDF (DANFE) ou o XML da nota.");return}
   nfOv(`<div class="rev-h"><b>Importar nota fiscal</b></div><div class="nf-body"><p class="hint">Lendo a nota fiscal…</p></div>`);
   try{const nota=eXml?nfLerXml(await nfTextoXml(f)):nfPdfParse(its||await nfPdfItens(f));
-    nfIniciar(nota);NF.dup=await nfBuscaDup(nota.chave);if(!nota.chave)NF.semChave=true;nfRender()}
+    nfIniciar(nota);NF.arq=f;NF.dup=await nfBuscaDup(nota.chave);if(!nota.chave)NF.semChave=true;nfRender()}
   catch(e){nfErro(e&&e.message==="NAODANFE"?"Esse PDF não parece ser uma nota fiscal (DANFE). Se for um romaneio, use “Colar romaneio”. Se for uma nota, tente o arquivo XML dela.":(e&&e.message)||"Não consegui ler esse arquivo.")}}
 async function nfRotear(f){if(!(await impPrepara(f)))return;return nfRotear0(f)}
 async function nfRotear0(f){if(/xml/i.test(f.type+f.name))return nfAbrir(f);
   try{const its=await nfPdfItens(f);if(nfPareceDanfe(its))return nfAbrir(f,its)}catch(e){if(e&&e.lim){nfErro(e.message+". Divida o arquivo ou use o XML da nota.");return}}
   romPdf(f)}
 function nfLinhas(){const out=[],N=NF.nota;
-  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=Math.round(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?nfR2(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:virg(ci),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
+  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=nfQtdInt(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?r4(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:String(r4(ci)).replace(".",","),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
     if(!r.cat){base.catq=true;base.aviso="· categoria não reconhecida: confira"}
-    if(r.gmode==="dividir"){const n=Math.max(2,Math.min(Math.round(Number(r.gN)||2),Math.max(2,Math.round(q))));let resto=Math.round(q)%n;const b=Math.floor(Math.round(q)/n);
+    if(r.gmode==="dividir"){const n=Math.max(2,Math.min(Math.round(Number(r.gN)||2),Math.max(2,nfQtdInt(q))));let resto=nfQtdInt(q)%n;const b=Math.floor(nfQtdInt(q)/n);
       for(let k=0;k<n;k++){const qq=b+(resto-->0?1:0);if(qq>0)out.push({...base,desc:`${r.desc} (${k+1}/${n})`,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||"· lote dividido: confira cada peça"})}}
-    else{const qq=Math.max(0,Math.round(q));if(qq>0)out.push({...base,desc:r.desc,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||(r.gmode==="lote"?"· lote misto lançado como 1 peça":(qq!==q?"· quantidade quebrada: arredondei e ajustei o custo de cada para manter o total da nota":""))})}});
+    else{const qq=nfQtdInt(q);if(qq>0)out.push({...base,desc:r.desc,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||(r.gmode==="lote"?"· lote misto lançado como 1 peça":(qq!==q?"· quantidade quebrada: arredondei e ajustei o custo de cada para manter o total da nota":""))})}});
   return out}
 function nfCalc(){const N=NF.nota,t=N.totais,sP=nfR2(N.itens.reduce((a,i)=>a+i.vProd,0)),sD=nfR2(N.itens.reduce((a,i)=>a+i.vDesc,0)),lin=nfLinhas(),un=lin.reduce((a,l)=>a+l.qtd,0),custo=nfR2(lin.reduce((a,l)=>a+(num(l.custo)||0)*l.qtd,0));
   const esperado=nfR2(t.prod-t.desc+t.extra);return {sP,sD,lin,un,custo,esperado,okProd:t.prod>0&&Math.abs(sP-t.prod)<0.05,okDesc:Math.abs(sD-t.desc)<0.05,okNota:t.nota>0&&Math.abs(esperado-t.nota)<0.05}}
@@ -3727,7 +3820,7 @@ function nfResumo(){const el=document.getElementById("nfSum");if(!el||!NF)return
   const b=document.getElementById("nfGo");if(b){b.textContent=c.lin.length?`Importar ${c.lin.length} peça${c.lin.length===1?"":"s"} para o romaneio`:"Nada para importar";b.disabled=!c.lin.length||!!(NF.dup&&!NF.dupOk)}}
 function nfRowHTML(r){const C=cfg(),cc=catBy(r.cat),ci=nfCusto(r),dec=r.vUn&&r.vDesc?Math.round(r.vDesc/(r.vProd||1)*100):0,av=[];
   if(!r.cat)av.push("categoria não reconhecida: escolha uma");
-  if(Number(r.qtd)%1)av.push("quantidade quebrada: vai ser arredondada para "+Math.round(r.qtd)+" e o custo de cada será ajustado para o total da nota não mudar");
+  if(Number(r.qtd)%1)av.push("quantidade quebrada: vai ser arredondada para "+nfQtdInt(Number(r.qtd))+" e o custo de cada será ajustado para o total da nota não mudar");
   if(!(Number(r.qtd)>0))av.push("sem quantidade");
   const gen=r.gen.length?`<div class="nf-gen"><span class="nf-av">⚠ Atenção neste item: ${esc(r.gen.join("; "))}</span><label>O que fazer <select data-nf="gmode"><option value="lote"${r.gmode==="lote"?" selected":""}>Lançar como 1 peça (lote)</option><option value="dividir"${r.gmode==="dividir"?" selected":""}>Dividir em várias peças</option><option value="ignorar"${r.gmode==="ignorar"?" selected":""}>Ignorar este item</option></select></label>${r.gmode==="dividir"?`<label>Quantas peças <input class="n" data-nf="gN" value="${esc(r.gN)}" inputmode="numeric" style="width:60px"></label>`:""}</div>`:"";
   return `<div class="nf-r${r.inc&&r.gmode!=="ignorar"?"":" off"}" data-i="${r.i}">
@@ -3771,7 +3864,7 @@ function nfConfirmar(){if(!NF)return;const N=NF.nota;
   else{const fo=fornBy(nome);if(fo&&!fo.cnpj&&N.emit.cnpj){fo.cnpj=N.emit.cnpj;salvar(true,false)}}
   ROM={tid:abertos.romT&&C.romaneios.some(x=>x.id===abertos.romT)?abertos.romT:C.romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};romSetForn(nome);
   lin.forEach(r=>{r.mk={};r.bo={};r.on={};r.vz={};r.ex={};{const nc=String(r.nfNcm||"").replace(/\D/g,""),cf=String(r.nfCfop||"").replace(/\D/g,"");if(nc.length===8)r.ex.Y=nc;if(cf.length===4)r.ex.AA=cf}romNovaCat(r);if(r.cod&&S.lanc.some(l=>String(l.v.G||"")===r.cod&&(l.v.H||"")===(S.form.v.H||""))){r.skip=true;r.aviso="· já lançada"}});
-  const c=nfCalc();ROM.doc=f.name||"";ROM.hash=IMPH.get(f)||"";ROM.rows=lin;ROM.obs=`NF ${N.numero}${N.emit.nome?" · "+N.emit.nome:""}`;
+  const c=nfCalc();ROM.doc=(NF.arq&&NF.arq.name)||"";ROM.hash=(NF.arq&&IMPH.get(NF.arq))||"";ROM.rows=lin;ROM.obs=`NF ${N.numero}${N.emit.nome?" · "+N.emit.nome:""}`;
   {const nImp=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar").length,nTot=N.itens.length;ROM.conf=c.okProd?(nImp===nTot?`✓ ${nTot} itens conferem com a nota (${nfM(c.sP)})`:`✓ a nota confere (${nTot} itens somam ${nfM(c.sP)}); você está importando só ${nImp} de ${nTot} itens`):`⚠ a soma dos itens (${nfM(c.sP)}) não bate com o total dos produtos da nota (${nfM(N.totais.prod)})`}
   ROM.msg=`${lin.length} peça${lin.length===1?"":"s"} importada${lin.length===1?"":"s"} da nota ${N.numero}. Falta informar o peso (e os banhos).`;
   nfFechar();romSalvarSoon();renderRom();const w=document.getElementById("romWrap");if(w)rolarPane(w);toast(ROM.msg)}
@@ -3835,7 +3928,7 @@ function relTexto(R){const m=R.meta,tot=R.itens.reduce((t,i)=>({un:t.un+i.un,cu:
     `${R.itens.length} peças · ${tot.l} linhas · ${tot.un} unidades (lista: ${m.naLista}) · Custo ${fm(tot.cu)} · Varejo ${fm(tot.vr)}`,`Referências criadas: ${relFaixas(R).join(" · ")||"—"}`,m.conf?`Conferência da lista: ${m.conf}`:"",""];
   R.itens.forEach(i=>L.push(`${i.linhas.map(l=>l.ref).join(" + ")} | ${i.desc} | ${i.cat}${i.sub?" › "+i.sub:""} | ${i.un} un. | compra ${i.compra||"—"} | cód. forn. ${i.cod||"—"}`));
   if(R.ign.length){L.push("","Não lançadas:");R.ign.forEach(g=>L.push(`${g.desc} (${g.cod||"sem código"}) — ${g.motivo}`))}return L.filter((x,i)=>x!==""||i>4).join("\n")}
-function relCsv(R){const q=csvq,v=n=>n==null?"":String(Math.round(n*100)/100).replace(".",","),o=[["Referência","Descrição","Categoria","Subcategoria","Cód. fornecedor","Cor","Quantidade","Custo de Compra","Custo total unit.","Preço de Varejo"].map(q).join(";")];
+function relCsv(R){const q=csvq,v=n=>n==null?"":(Math.round(n*100)/100).toFixed(2).replace(".",","),o=[["Referência","Descrição","Categoria","Subcategoria","Cód. fornecedor","Cor","Quantidade","Custo de Compra","Custo total unit.","Preço de Varejo"].map(q).join(";")];
   R.itens.forEach(i=>i.linhas.forEach(l=>o.push([l.ref,i.desc,i.cat,i.sub,i.cod,l.cor,l.q,i.compra,v(l.cu),v(l.v)].map(q).join(";"))));return "﻿"+o.join("\r\n")}
 async function arqSalvar(nome,txt){const dl=await obterDL();
   try{await dl.save({filename:nome,data:new Blob([txt],{type:"text/csv;charset=utf-8"})})}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o arquivo.")}}
@@ -3971,8 +4064,8 @@ function renderCfg0(){
     <p class="d"><b>Desfazer / Refazer</b> (botões no topo ou Ctrl+Z / Ctrl+Y) voltam até 60 alterações desta sessão: peças, cadastros e formulário. Se você fechar o app, esse histórico recomeça — por isso existem os <b>pontos de restauração</b>: o app guarda uma cópia dos seus dados ao abrir, a cada 30 minutos de uso e antes de excluir várias linhas (os últimos 15). Escolha um para voltar àquele momento; o estado de agora também fica guardado como ponto. Para o que é mais antigo ou para guardar fora do navegador, baixe a cópia completa.</p>
     <div id="pontosLista" class="pts" aria-live="polite"></div>
     <div class="row"><button type="button" class="btn sm" data-act="ponto-novo">Criar ponto agora</button></div>
-    <div class="row"><button class="btn sm" type="button" data-act="backup">Baixar cópia dos cadastros</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBk">Restaurar cópia</button><input type="file" id="fileBk" accept=".json" hidden></div>
-    <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBkT">Restaurar backup completo</button><input type="file" id="fileBkT" accept=".json" hidden></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
+    <div class="row"><button class="btn sm" type="button" data-act="backup">Baixar cópia dos cadastros</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBk">Restaurar cópia</button><input type="file" id="fileBk" accept=".json" class="vh"></div>
+    <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBkT">Restaurar backup completo</button><input type="file" id="fileBkT" accept=".json" class="vh"></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
   {const T={banho:"Galvânicas e banhos",cor:"Cores, tamanhos e variações",cat:"Categorias",forn:"Fornecedores",col:"Padrões das colunas",mod:"Modelo da planilha",rom:"Leitura de romaneios",roml:"Romaneios lançados",foto:"Fotos",opc:"Importar e backup"},O=Object.keys(T);SECS.forEach(x=>{if(T[x.id])x.titulo=T[x.id]});SECS.sort((a,b)=>O.indexOf(a.id)-O.indexOf(b.id))}
   const at=abaCfg(),cur=SECS.find(s=>s.id===at);
   document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]?`<span class="cgrp">${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]}</span>`:""}<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" tabindex="${s.id===at?0:-1}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
@@ -4029,7 +4122,7 @@ async function fotosEmLote(files,lidIni){
   for(const f of arqs){
     const exato=f.name.replace(/\.[^.]+$/,"").toUpperCase(),base=exato.replace(/[\s_-]*\(?\d+\)?$/,"");
     const alvo=porNome.get(exato)||porNome.get(base)||null;
-    if(alvo&&!usados.has(alvo)){try{await fotoNaPeca(alvo,await lerFotoArquivo(f));usados.add(alvo);nNome++}catch(e){erros.push(e.message)}}else semNome.push(f)}
+    if(alvo&&!usados.has(alvo)){try{await fotoNaPeca(alvo,await lerFotoArquivo(f));usados.add(alvo);nNome++}catch(e){erros.push(e.message)}}else if(alvo)erros.push(`“${f.name}”: já há uma foto para essa peça neste envio (ignorada)`);else semNome.push(f)}
   let pos=Math.max(0,ordem.indexOf(lidIni));
   for(const f of semNome){
     while(pos<ordem.length&&(usados.has(ordem[pos])||(arqs.length>1&&((S.lanc.find(l=>l.id===ordem[pos])||{}).ft))))pos++;
@@ -4067,7 +4160,7 @@ function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";
   if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro();return}
-  if(!quiet&&!editId){const rd=previsao().linhas.filter(r=>r.lancId==="__p"&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
+  if(!quiet){const meu=editId||"__p",rd=previsao().linhas.filter(r=>r.lancId===meu&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
   {let ck=null,onde=null;
     for(const L of VALIDA_NUM){const r=checaCel(L,f.v[L]);if(r.erro){ck=r.erro;onde=L;break}}
     if(!ck)for(const o of Object.values(f.ov||{})){if(!o||typeof o!=="object")continue;for(const L of VALIDA_NUM){const r=checaCel(L,o[L]);if(r.erro){ck=r.erro;onde=L;break}}if(ck)break}
@@ -4132,13 +4225,14 @@ function dobrarOv(f,id){const ov=f.ov||{};
   const per=new Set(["W","E","F","V","L","O","R","S","T","U"]),Ls=new Set();ks.forEach(k=>Object.keys(ov[k]).forEach(L=>{if(!per.has(L))Ls.add(L)}));if(f.conj){Ls.delete("N");Ls.delete("P")}
   const gr=temGrade(f);let avisa=false;
   Ls.forEach(L=>{const com=rows.filter(r=>r.ovs&&r.ovs.includes(L));if(!com.length||!com.every(r=>r.v[L]===com[0].v[L]))return;
-    if(com.length<rows.length){if(gr)return;avisa=true}
+    if(com.length<rows.length)return;   /* valor só de algumas linhas continua só nelas */
     f.v[L]=com[0].v[L];ks.forEach(k=>{delete ov[k][L]})});
   if(avisa)setTimeout(()=>toast("Valor digitado à mão numa linha agora vale para todas as linhas desta peça (aparece nos campos abaixo)."),50);
   ks.forEach(k=>{if(!Object.keys(ov[k]).length)delete ov[k]})}
 let editSnap=null;
 const formSujo=()=>!!editId&&JSON.stringify(S.form)!==editSnap;
 function editar(id){
+  if(editId&&editId!==id&&formSujo()&&!confirm("Há alterações não salvas na peça aberta. Descartar e abrir esta outra?"))return;
   const l=S.lanc.find(x=>x.id===id);if(!l)return;
   if(!editId)rascunho=clone(S.form);editId=id;S.form=clone(l);delete S.form.id;erro="";
   dobrarOv(S.form,id);if(S.form.conj)conjSync(S.form);editSnap=JSON.stringify(S.form);
@@ -4147,14 +4241,16 @@ function editar(id){
   salvar(false);renderTopo();renderForm();focarPrimeiro();editSnap=JSON.stringify(S.form);
 }
 function cancelar(){editId=null;if(rascunho)S.form=rascunho;rascunho=null;erro="";salvar(false);renderTopo();renderForm()}
+/* a cópia leva a foto original (qualidade cheia) do banco, não só a miniatura */
+function fotoCopia(de,para){try{idbGet("fotos",de).then(v=>{if(v)idbPut("fotos",para,v)}).catch(()=>{})}catch(e){}}
 function duplicar(ids){
-  const novos=ids.map(id=>{const c=clone(S.lanc.find(x=>x.id===id));c.id=uid();delete c.v.E;c.vinc=false;delete c.excl;if(c.ov)Object.values(c.ov).forEach(o=>delete o.E);return c});
+  const novos=ids.map(id=>{const c=clone(S.lanc.find(x=>x.id===id));c.id=uid();fotoCopia(id,c.id);delete c.v.E;c.vinc=false;delete c.excl;if(c.ov)Object.values(c.ov).forEach(o=>delete o.E);return c});
   S.lanc.push(...novos);undo={tipo:"dup",ids:novos.map(n=>n.id)};salvar(false);renderTopo();
   toast(`Duplicado no fim da lista: ${novos.map(n=>(G.refs[n.id]||[]).join("/")).join(", ")}`,{t:"Desfazer",fn:desfazer});
 }
 function duplicarLinha(ri){
   const row=G.linhas[ri];if(!row)return;const l=S.lanc.find(x=>x.id===row.lancId);if(!l)return;
-  const c=clone(l);c.id=uid();delete c.v.E;c.vinc=false;delete c.excl;
+  const c=clone(l);c.id=uid();fotoCopia(l.id,c.id);delete c.v.E;c.vinc=false;delete c.excl;
   if(c.tipo==="bruta"||(row.bid&&row.bid!=="p")){const bid=row.bid||row.key;if(c.tipo==="bruta")c.on={[bid]:true};else c.onP={[bid]:true};const o=(c.ov||{})[bid],o2=row.gi?(c.ov||{})[row.key]:null;c.ov={};if(o)c.ov[bid]=o;if(o2)c.ov[row.key]=o2}
   if(row.gi){   /* a linha pode ser tamanho, cor ou tamanho+cor (id "a17+c_L:azul"): a cópia fica só com aquela combinação */
     const ps=String(row.gi).split("+"),tam=ps.find(x=>!x.startsWith("c_")),cor=ps.find(x=>x.startsWith("c_"));
@@ -4185,15 +4281,18 @@ function excluir(ids){
 /* ===== exportar ===== */
 function faixaRefs(g){const c=contFinal(g);return Object.keys(c).filter(p=>c[p]>ultimo(p)).map(p=>{const i=ultimo(p)+1,A=p+fnum(p,i),B=p+fnum(p,c[p]);return i===c[p]?A:`${A}–${B}`}).join(", ")}
 function faixaFiltro(g){const bs=[...new Set(g.linhas.map(r=>refBase(r.v.E)).filter(Boolean))].sort();return bs.length<=4?bs.join(", "):bs[0]+"–"+bs[bs.length-1]}
-function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){const c={t:"n",f:tf};if(typeof x.v==="number")c.v=x.v;return c}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:"="+x.f}}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:String(x.v)}}
+function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){const c={t:"n",f:tf};if(typeof x.v==="number")c.v=x.v;else if(typeof x.calc==="number")c.v=x.calc;return c}return typeof x.v==="number"?{t:"n",v:x.v}:typeof x.calc==="number"?{t:"n",v:x.calc}:{t:"s",v:"="+x.f}}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:String(x.v)}}
 const DLNAV={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};
 async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}return dl||DLNAV}
 /* pendências antes de exportar: obrigatório vazio, peso faltando (banho sem custo) e banho sem multiplicador */
 function pendenciasExport(g){
   const cc=cfg().colcfg,pend=[];
   g.linhas.forEach((r,i)=>{const falta=[];
-    LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!(num(r.v.W)>0):(vazio(r.v[L])&&!(L==="V"&&num(r.mk)>0))))falta.push(NOME[L])});
-    if(r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo"&&!falta.includes(NOME.N))falta.push("Peso (sem ele o custo do banho fica vazio)");
+    LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):(vazio(r.v[L]))))falta.push(NOME[L])});
+    {const cs=celulas(r,i+2);Object.keys(r.v).forEach(L=>{if(!VALIDA_NUM.has(L)||L==="W")return;const x=cs[LET.indexOf(L)];if(!x||x.v!=null||!x.f||!x.txt)return;
+      if(typeof x.calc!=="number")falta.push(NOME[L]+": a fórmula não dá resultado (divisão por zero ou célula vazia)");else if(x.calc<0)falta.push(NOME[L]+": a fórmula dá número negativo")})}
+    if(!vazio(r.v.W)&&!qtdPos(r.v.W,r.v,r.desconto)&&!falta.includes(NOME.W))falta.push("Quantidade precisa ser um número inteiro de 1 em diante (a fórmula não dá isso)");
+    if(r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo"&&!falta.includes(NOME.N))falta.push("Peso (sem ele o custo do banho fica vazio)");
     if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))falta.push("multiplicador do banho (custo do banho fica vazio)");
     if(falta.length)pend.push({i,r,falta})});
   /* o mesmo campo faltando em (quase) todas as peças vira UMA linha de aviso, não dezenas (ex.: sem Preço de Varejo definido) */
@@ -4217,7 +4316,9 @@ function montarCsv(g,cols,mo,slx){
   const q=s=>{s=String(s);return (s.includes(sep)||s.includes(Q)||/[\r\n]/.test(s))?Q+s.split(Q).join(Q+Q)+Q:s};
   const lin=[cols.map(c=>q(protegeTxt(c.h))).join(sep)];
   const sl=slx||saidaLinhas(g,mo);
-  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{const r=valorCol(c,celCol(c,cs,e));let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
+  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{let r=valorCol(c,celCol(c,cs,e));
+    if(r&&r.v==null&&r.f){const gv=(L,d)=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.f&&d<5?avalF(x.f,K=>gv(K,d+1)):null},n0=typeof r.calc==="number"?r.calc:avalF(r.f,L=>gv(L,0)),n=n0;if(n!=null)r={...r,v:c.tipo==="dinheiro"?Math.round(n*100)/100:parseFloat(n.toPrecision(12))}}   /* CSV não tem fórmula: sai o valor calculado */
+    let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
   return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
 /* com filtro ativo, baixar e copiar levam as PEÇAS que o filtro mostra, sempre com todas as variações (pai e filhos não se separam) */
 function gerarExport(){const g0=gerar(),fil=filtroOn();
@@ -4265,8 +4366,8 @@ async function copiar(ids,forcar){
   const cel=s=>{s=String(s).replace(/[\t\r\n]+/g," ");return s.includes('"')?'"'+s.split('"').join('""')+'"':s};
   const txt=[cols.map(c=>cel(protegeTxt(String(c.h==null?"":c.h).replace(/[\t\r\n]+/g," ")))).join(TAB),...sl.map((e,i)=>{const cs=celulas(e.row,i+2);return cols.map(c=>{const x=valorCol(c,celCol(c,cs,e));if(!x)return "";
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
-    const s=txtSaida(x,c,LOC.dec).replace(/[\t\r\n]+/g," ");
-    return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
+    const xv=x.v==null&&typeof x.calc==="number"?{...x,v:x.calc}:x,s=txtSaida(xv,c,LOC.dec).replace(/[\t\r\n]+/g," ");
+    return cel(typeof xv.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
   try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
@@ -4310,6 +4411,8 @@ async function backup(){const dl=await obterDL();
 function restaurar(file){try{checaTam(file,MAX_BACKUP_BYTES,"O arquivo")}catch(e){toast("Cadastros NÃO restaurados — "+e.message+". Nada foi alterado.");return}const fr=new FileReader();fr.onload=()=>{
   let nova;try{const o=JSON.parse(fr.result);if(!ehObj(o)||!ehObj(o.config))throw new Error("o arquivo não tem os cadastros");checarConfig(o.config);nova=lerConfig(clone(o.config))}
   catch(e){toast("Cadastros NÃO restaurados — "+(e instanceof SyntaxError?"o arquivo está danificado ou não é uma cópia dos cadastros":e&&e.message?e.message:"arquivo inválido")+". Nada foi alterado.");return}
+  if(!confirm("Restaurar a cópia substitui TODOS os cadastros (categorias, fornecedores, banhos, modelos…). A numeração nunca volta atrás: vale a maior de cada prefixo. Continuar?"))return;
+  {const so=(S.config&&S.config.seqs)||{};nova.seqs=nova.seqs||{};Object.keys(so).forEach(p=>{if(num(so[p])>num(nova.seqs[p]))nova.seqs[p]=so[p]})}
   const antes=S.config,antesL=clone(S.lanc),antesF=clone(S.form);
   try{S.config=nova;migrarJueri();migrarGrades();sincGrade(S.form)}
   catch(e){S.config=antes;S.lanc=antesL;S.form=antesF;try{render()}catch(e2){}toast("Cadastros NÃO restaurados — deu erro ao aplicar. Nada foi alterado.");return}
@@ -4403,11 +4506,13 @@ document.addEventListener("click",e=>{
     case "b-copy":copiar(new Set(sel));break;
     case "b-none":sel.clear();renderTopo();break;
     case "b-set":{const L=document.getElementById("bCol").value,v=document.getElementById("bVal").value;const antes=[];
+      {const ch=checaCel(L,v);if(ch.erro){toast(ch.erro+" (não aplicado)");break}if(vazio(v)&&(L==="F"||L==="I")){toast(NOME[L]+" não pode ficar vazio (não aplicado).");break}}
       S.lanc.forEach(l=>{if(!sel.has(l.id))return;antes.push({id:l.id,v:clone(l.v),ov:clone(l.ov||{})});
         if(L==="W"&&temGrade(l)){l.ov=l.ov||{};const ks=l.tipo==="bruta"?banhistaBy(l.banhista).banhos.filter(b=>l.on[b.id]).map(b=>b.id):(bonP(l).length?bonP(l).map(b=>b.id):["p"]);ks.forEach(k=>itensGrade(l).forEach(it=>{(l.ov[k+"~"+it.id]=l.ov[k+"~"+it.id]||{}).W=v}))}
         else if(l.tipo==="bruta"&&POR_BANHO.has(L)){l.ov=l.ov||{};banhistaBy(l.banhista).banhos.forEach(b=>{if(l.on[b.id])(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
         else{l.v[L]=v;if(l.ov)Object.values(l.ov).forEach(o=>delete o[L])}});
       undo={tipo:"bulk",antes};salvar(false);renderTopo();toast(`${NOME[L]} = “${v}” em ${antes.length} peça(s).`,{t:"Desfazer",fn:desfazer});break}
+    case "excl-volta":S.form.excl=[];salvar(false);renderForm();toast("As linhas excluídas voltam quando você clicar em Salvar.");break;
     case "cancel":cancelar();break;
     case "limpar":limparForm();salvar(false);renderTopo();renderForm();focarPrimeiro();break;
     case "s-edit":{const r=G.linhas[selR.fr];if(r)editar(r.lancId);break}
@@ -4513,12 +4618,12 @@ document.addEventListener("click",e=>{
 
     case "cat-del":catUI.dup=null;delCat=C.categorias[ci].nome;renderCfg();break;
     case "cat-del-no":delCat=null;renderCfg();break;
-    case "cat-del-ok":{const nome=C.categorias[ci].nome;C.categorias.splice(ci,1);delCat=null;
+    case "cat-del-ok":{const nome=C.categorias[ci].nome;const nUso=S.lanc.filter(l=>val(l,"I")===nome).length;if(nUso){delCat=null;toast(`Não excluí “${nome}”: ${nUso} peça(s) lançadas usam esta categoria (a referência delas mudaria). Mude a categoria dessas peças antes.`);render();return}C.categorias.splice(ci,1);delCat=null;
       if(S.form.v.I===nome){S.form.v.I=C.categorias.length?C.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}
       salvar(true);render();toast(`Categoria “${nome}” excluída.`);break}
     case "lote-add":{const r=ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));break}
     case "lote-resto":{const r=ROM.rows[+t.dataset.i];if(!r)break;const R=romLoteResumo(r);if(R.dif>0.05)romLoteAdd(r,1,R.dif);else toast("O peso do lote já fechou.");break}
-    case "lote-del":{ROM.rows.splice(+t.dataset.i,1);romSalvarSoon();renderRom();break}
+    case "lote-del":{ROM.rows.splice(+t.dataset.i,1);if(ROM.rows.length)romSalvarSoon();else romLimparRascunho();renderRom();break}   /* lista vazia: apaga o rascunho, senão o anterior reaparece */
     case "imp-pick":{document.getElementById("impFile").click();break}
     case "imp-up":{const i=+t.dataset.i;if(i>0){[IMPQ[i-1],IMPQ[i]]=[IMPQ[i],IMPQ[i-1]];renderImp()}break}
     case "imp-down":{const i=+t.dataset.i;if(i<IMPQ.length-1){[IMPQ[i+1],IMPQ[i]]=[IMPQ[i],IMPQ[i+1]];renderImp()}break}
@@ -4560,8 +4665,10 @@ document.addEventListener("click",e=>{
       if(!romRetomar()){ROM={tid:abertos.romT&&C.romaneios.some(x=>x.id===abertos.romT)?abertos.romT:C.romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};
       {const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}}
       renderRom();const w=document.getElementById("romWrap");if(w){rolarPane(w);const ta=w.querySelector("textarea");if(ta)ta.focus({preventScroll:true})}break}
-    case "rom-fechar":romSalvar();ROM=null;renderRom();renderForm();toast("Romaneio guardado — use “Retomar romaneio” quando quiser continuar.");break;
-    case "rom-descartar":{romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito);romLimparRascunho();if(sid0&&!jaFeito)romExcluirSalvo(sid0);ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{localStorage.setItem(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null);break}
+    case "rom-fechar":{const lsOk=romSalvar(),pr=romGravP;ROM=null;renderRom();renderForm();
+      Promise.resolve(pr).then(idbOk=>toast(lsOk?"Romaneio guardado — use “Retomar romaneio” quando quiser continuar.":idbOk?"O rascunho rápido não gravou, mas o romaneio ficou em “Romaneios salvos” (Cadastros): abra por lá para continuar.":"ATENÇÃO: não consegui guardar o romaneio (memória do navegador cheia, bloqueada ou outra aba alterou). Baixe o backup antes de sair."));break}
+    case "rom-descartar":{if(romConflito){const b=document.getElementById("outraAbaRom");if(b)b.remove();romConflito=false;ROM=null;renderRom();renderForm();toast("Fechei este romaneio sem apagar nada: outra aba alterou o rascunho e a versão dela foi mantida.");break}
+      romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito);romLimparRascunho();if(sid0&&!jaFeito)romExcluirSalvo(sid0);ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{localStorage.setItem(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null);break}
     case "rom-lote":romLote();break;
     case "gr-novo-pmg":{const c=catBy(S.form.v.I);if(!c)break;if(!c.grade)c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};const gr=effGrade(c);if(gr.itens.length&&(gr.subs||[]).length&&!(gr.subs||[]).includes(S.form.v.J)){toast(`Os tamanhos desta categoria valem só para: ${gr.subs.join(", ")}. Para usar P M G aqui, tire essa restrição em Cadastros › Categorias.`);break}addTamanhos(gr,"P M G");sincGrade(S.form);S.form.gsel=gr.itens.map(x=>x.id);S.form.semGrade=false;salvar(true,false);renderForm();renderCfg();toast("Tamanhos P, M e G criados: a letra de cada um entra na referência.");break}
     case "gi-pmg":{const gr=gradeBy(S.form.grade);if(gr){const novos=addTamanhos(gr,"P M G");S.form.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(S.form.gsel||[]).includes(id));S.form.semGrade=false;salvar(true,false);renderForm();toast("Tamanhos P, M e G prontos: a letra de cada um entra na referência.")}break}
@@ -4589,7 +4696,7 @@ document.addEventListener("click",e=>{
     case "tab-csv":idbGet("tabs",t.dataset.id).then(rc=>{if(rc)arqSalvar("tabela-"+String(rc.nome).replace(/[^A-Za-z0-9 _-]/g,"-")+".csv",tabCsv(rc))});break;
     case "rom-ver":romVer(t.dataset.id,t.dataset.de);break;
     case "rel-abrir":relAbrir();break;
-    case "rel-fechar":{const o=document.querySelector(".rep");if(o)o.remove();renderForm();break}
+    case "rel-fechar":{tabArm=null;romArm=null;const o=document.querySelector(".rep");if(o)o.remove();renderForm();break}
     case "rel-print":window.print();break;
     case "rel-copy":{const R=relLer();if(R)navigator.clipboard.writeText(relTexto(R)).then(()=>toast("Resumo copiado.")).catch(()=>toast("O navegador não liberou a cópia."));break}
     case "rel-csv":{const R=relLer();if(R)arqSalvar("Relatorio romaneio "+new Date(R.em).toISOString().slice(0,10)+".csv",relCsv(R));break}
@@ -4733,7 +4840,7 @@ function onField(t,isChange){
     if(re&&t.dataset.rf){const T=C.romaneios[+re.dataset.rom];if(T){T[t.dataset.rf]=t.type==="checkbox"?t.checked:t.value;salvar(true,false)}return}}
   if(t.id==="fBusca"){FIL.q=t.value;guardarFil();renderTopo();return}
   if(t.dataset&&t.dataset.fil){if(!isChange)return;FIL[t.dataset.fil]=t.value;guardarFil();renderTopo();return}
-  if(t.id==="selAll"){if(t.checked)S.lanc.forEach(l=>sel.add(l.id));else sel.clear();renderTopo();return}
+  if(t.id==="selAll"){if(t.checked)G.linhas.forEach((r,ri)=>{if(vis(ri))sel.add(r.lancId)});else sel.clear();renderTopo();return}
   if(t.hasAttribute&&t.hasAttribute("data-sel")){const id=t.closest("tr").dataset.l;if(t.checked)sel.add(id);else sel.delete(id);renderTopo();return}
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";
@@ -4741,7 +4848,7 @@ function onField(t,isChange){
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
       const nome=t.value.replace(/\s+/g," ").trim(),ant=t.dataset.prev!=null?t.dataset.prev:"";if(ant&&catBy(ant))f.v.I=ant;else delete f.v.I;
       quickPre=nome;quick="cat";quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
-    if(L==="I"&&isChange){f.csel=[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange){f.csel=editId?(f.csel||[]).filter(id=>coresDaCat(t.value).some(x=>x.id===id)):[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
     if(L==="V"&&isChange)fatorDoPreco("p");
     atualizarGera();salvar(false);return;
@@ -4749,10 +4856,7 @@ function onField(t,isChange){
   if(t.dataset.mk){f.mk=f.mk||{};
     if(!vazio(t.value)){const n=num(t.value);if(n==null||n<=0||n>1e5){if(isChange){t.value=f.mk[t.dataset.mk]??"";toast("O Fator × precisa ser um número maior que 0 (ex.: 2,5).")}return}}
     if(vazio(t.value))delete f.mk[t.dataset.mk];else f.mk[t.dataset.mk]=t.value;
-    /* mudou o fator: o Preço de Varejo digitado à mão sai e volta a ser calculado pelo novo fator */
-    {const k=t.dataset.mk,vi=k==="p"?document.getElementById("f-V"):document.querySelector(`[data-bo="${k}"][data-k="V"]`);
-      if(k==="p")delete f.v.V;else if(f.ov&&f.ov[k])delete f.ov[k].V;
-      if(vi&&vi.value!=="")vi.value=""}
+    /* o fator é só sugestão: o Preço de Varejo digitado à mão fica como está */
     if(f.conj)conjSync(f,true);
     atualizarGera();salvar(false);return}
   if(t.dataset.bo){const b=t.dataset.bo,L=t.dataset.k;f.ov=f.ov||{};f.ov[b]=f.ov[b]||{};if(vazio(t.value))delete f.ov[b][L];else f.ov[b][L]=t.value;if(L==="V"&&isChange)fatorDoPreco(b);if(f.conj&&L==="V")conjSync(f,true);atualizarGera();salvar(false);return}
@@ -4883,6 +4987,8 @@ document.addEventListener("keydown",e=>{
     const mover=(dr,dc)=>{const r=dr?passo(selR.fr,dr,mr):selR.fr,c=Math.min(Math.max(selR.fc+dc,0),LET.length-1);if(e.shiftKey&&k!=="Tab")selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);rolarAte()};
     if(k==="ArrowDown"){e.preventDefault();mover(1,0);return}
     if(k==="ArrowUp"){e.preventDefault();mover(-1,0);return}
+    if(k==="Tab"&&!e.shiftKey&&selR.fc>=LET.length-1&&selR.fr>=mr)return;   /* última célula: Tab deixa o foco sair da planilha */
+    if(k==="Tab"&&e.shiftKey&&selR.fc<=0&&selR.fr<=0)return;   /* primeira célula: Shift+Tab também */
     if(k==="ArrowRight"||(k==="Tab"&&!e.shiftKey)){e.preventDefault();mover(0,1);return}
     if(k==="ArrowLeft"||(k==="Tab"&&e.shiftKey)){e.preventDefault();mover(0,-1);return}
     if(k==="Enter"||k==="F2"){e.preventDefault();abrirCel(selR.fr,LET[selR.fc]);return}
@@ -4940,7 +5046,7 @@ document.addEventListener("input",e=>{if(e.target&&e.target.id==="celIn"&&celEd)
     return [...m.querySelectorAll("input,textarea,select")].some(x=>{if(x.type==="file"||x.type==="button")return false;
       if(x.tagName==="SELECT")return [...x.options].some(o=>o.selected!==o.defaultSelected);
       if(x.type==="checkbox"||x.type==="radio")return x.checked!==x.defaultChecked;return x.value!==x.defaultValue})};
-  const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep)renderForm()};
+  const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep){tabArm=null;romArm=null;renderForm()}};
   window.__modais={topo,sujo,fechar};
   new MutationObserver(ms=>{let herdado=null,novos=[],saiu=false;
     ms.forEach(m=>{m.removedNodes.forEach(n=>{if(!eM(n))return;const i=pilha.findIndex(p=>p.el===n);if(i>=0){herdado=pilha[i].opener||herdado;pilha.splice(i,1);saiu=true}});m.addedNodes.forEach(n=>{if(eM(n)&&n.isConnected)novos.push(n)})});
@@ -4976,6 +5082,19 @@ window.addEventListener("storage",e=>{
   document.getElementById("oaMan").onclick=()=>{conflito=false;b.remove();salvar(true)};
 });
 
+/* o rascunho do romaneio tem chave própria: se outra aba o regravou, esta para de gravar o romaneio em vez de sobrescrever */
+window.addEventListener("storage",e=>{
+  if(e.key!==ROMKEY||e.storageArea!==localStorage||!ROM||!ROM.rows.length||romConflito)return;
+  romConflito=true;clearTimeout(romST);romST=null;
+  if(document.getElementById("outraAbaRom"))return;
+  const b=document.createElement("div");b.id="outraAbaRom";b.setAttribute("role","alert");
+  b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff3cd;color:#664d03;border-bottom:2px solid #c9a227;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:14px system-ui,sans-serif";
+  b.innerHTML=`<b>Outra aba alterou este romaneio.</b><span>Esta aba parou de salvar o romaneio para não sobrescrever o trabalho da outra.</span><button type="button" id="orRec" class="btn pri sm">Recarregar</button><button type="button" id="orMan" class="btn sm" title="Descarta o que a outra aba gravou e salva o romaneio desta aba">Manter esta aba</button>`;
+  document.body.appendChild(b);
+  document.getElementById("orRec").onclick=()=>{location.reload()};
+  document.getElementById("orMan").onclick=()=>{romConflito=false;b.remove();romSalvar()};
+});
+
 /* ===== v19: romaneio — busca e filtro por situação (só esconde os cartões; nada é remontado) ===== */
 let ROMF={q:"",m:"todas"};
 function romSit(r){if(r.feito&&!r.refaz)return "lancadas";if(r.skip)return "ignoradas";
@@ -5008,7 +5127,7 @@ function romNav(d){const cs=[...document.querySelectorAll("#romWrap .rc")].filte
 document.getElementById("romWrap").addEventListener("click",e=>{
   if(e.target.closest("#romfC")){abertos.romc=!abertos.romc;guardarAbertos();romCompacto(!!abertos.romc);return}
   const c=e.target.closest(".rcs.compacto .rc");if(c&&!c.classList.contains("aberto")&&!e.target.closest("input,select,button,label,summary,a")){document.querySelectorAll("#romWrap .rc.aberto").forEach(x=>x.classList.remove("aberto"));c.classList.add("aberto")}});
-document.addEventListener("keydown",e=>{if((e.key==="["||e.key==="]")&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&document.querySelector("#romWrap .rc")&&!/TEXTAREA/.test(e.target.tagName)&&!(e.target.type==="search")){
+document.addEventListener("keydown",e=>{if((e.key==="["||e.key==="]")&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&document.querySelector("#romWrap .rc")&&!/TEXTAREA|SELECT/.test(e.target.tagName)&&!(e.target.tagName==="INPUT"&&!/^(checkbox|radio|button)$/.test(e.target.type))&&!e.target.isContentEditable){   /* em campo de digitação, [ e ] são caracteres */
   const t=e.target;if(/INPUT|SELECT/.test(t.tagName)&&!t.closest("#romWrap .rc"))return;e.preventDefault();romNav(e.key==="]"?1:-1)}});
 /* romaneios lançados: busca por fornecedor, documento ou observação */
 {const _rl=romListaAbrir;romListaAbrir=function(){const r=_rl.apply(this,arguments);try{
@@ -5071,7 +5190,7 @@ async function impAbrirArq(f){
   if(ROM&&ROM.rows&&ROM.rows.length){romSalvar();ROM=null;renderRom()}
   const n=f.name||"";
   if(/[.](xlsx?|csv)$/i.test(n)){romGaranteRom();renderRom();rolarPane(document.getElementById("romWrap"));return romPlanilha(f)}
-  if(/[.]txt$/i.test(n)){if(!(await impPrepara(f)))return;romGaranteRom();ROM.doc=n;ROM.hash=IMPH.get(f)||"";ROM.texto=await f.text();romLer();renderRom();rolarPane(document.getElementById("romWrap"));return}
+  if(/[.]txt$/i.test(n)){if(!(await impPrepara(f)))return;romGaranteRom();ROM.doc=n;ROM.hash=IMPH.get(f)||"";ROM.texto=await(async()=>{const b=await f.arrayBuffer();try{return new TextDecoder("utf-8",{fatal:true}).decode(b)}catch(e){return new TextDecoder("windows-1252").decode(b)}})();romLer();renderRom();rolarPane(document.getElementById("romWrap"));return}
   return nfRotear(f)}
 async function impAdd(files){const ok=[],ign=[];
   for(const f of files){if(!/[.](pdf|xml|xlsx?|csv|txt)$/i.test(f.name||"")){ign.push(f.name);continue}

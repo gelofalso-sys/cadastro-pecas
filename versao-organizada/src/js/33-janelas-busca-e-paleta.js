@@ -8,7 +8,7 @@
     return [...m.querySelectorAll("input,textarea,select")].some(x=>{if(x.type==="file"||x.type==="button")return false;
       if(x.tagName==="SELECT")return [...x.options].some(o=>o.selected!==o.defaultSelected);
       if(x.type==="checkbox"||x.type==="radio")return x.checked!==x.defaultChecked;return x.value!==x.defaultValue})};
-  const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep)renderForm()};
+  const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep){tabArm=null;romArm=null;renderForm()}};
   window.__modais={topo,sujo,fechar};
   new MutationObserver(ms=>{let herdado=null,novos=[],saiu=false;
     ms.forEach(m=>{m.removedNodes.forEach(n=>{if(!eM(n))return;const i=pilha.findIndex(p=>p.el===n);if(i>=0){herdado=pilha[i].opener||herdado;pilha.splice(i,1);saiu=true}});m.addedNodes.forEach(n=>{if(eM(n)&&n.isConnected)novos.push(n)})});
@@ -44,6 +44,19 @@ window.addEventListener("storage",e=>{
   document.getElementById("oaMan").onclick=()=>{conflito=false;b.remove();salvar(true)};
 });
 
+/* o rascunho do romaneio tem chave própria: se outra aba o regravou, esta para de gravar o romaneio em vez de sobrescrever */
+window.addEventListener("storage",e=>{
+  if(e.key!==ROMKEY||e.storageArea!==localStorage||!ROM||!ROM.rows.length||romConflito)return;
+  romConflito=true;clearTimeout(romST);romST=null;
+  if(document.getElementById("outraAbaRom"))return;
+  const b=document.createElement("div");b.id="outraAbaRom";b.setAttribute("role","alert");
+  b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff3cd;color:#664d03;border-bottom:2px solid #c9a227;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:14px system-ui,sans-serif";
+  b.innerHTML=`<b>Outra aba alterou este romaneio.</b><span>Esta aba parou de salvar o romaneio para não sobrescrever o trabalho da outra.</span><button type="button" id="orRec" class="btn pri sm">Recarregar</button><button type="button" id="orMan" class="btn sm" title="Descarta o que a outra aba gravou e salva o romaneio desta aba">Manter esta aba</button>`;
+  document.body.appendChild(b);
+  document.getElementById("orRec").onclick=()=>{location.reload()};
+  document.getElementById("orMan").onclick=()=>{romConflito=false;b.remove();romSalvar()};
+});
+
 /* ===== v19: romaneio — busca e filtro por situação (só esconde os cartões; nada é remontado) ===== */
 let ROMF={q:"",m:"todas"};
 function romSit(r){if(r.feito&&!r.refaz)return "lancadas";if(r.skip)return "ignoradas";
@@ -76,7 +89,7 @@ function romNav(d){const cs=[...document.querySelectorAll("#romWrap .rc")].filte
 document.getElementById("romWrap").addEventListener("click",e=>{
   if(e.target.closest("#romfC")){abertos.romc=!abertos.romc;guardarAbertos();romCompacto(!!abertos.romc);return}
   const c=e.target.closest(".rcs.compacto .rc");if(c&&!c.classList.contains("aberto")&&!e.target.closest("input,select,button,label,summary,a")){document.querySelectorAll("#romWrap .rc.aberto").forEach(x=>x.classList.remove("aberto"));c.classList.add("aberto")}});
-document.addEventListener("keydown",e=>{if((e.key==="["||e.key==="]")&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&document.querySelector("#romWrap .rc")&&!/TEXTAREA/.test(e.target.tagName)&&!(e.target.type==="search")){
+document.addEventListener("keydown",e=>{if((e.key==="["||e.key==="]")&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&document.querySelector("#romWrap .rc")&&!/TEXTAREA|SELECT/.test(e.target.tagName)&&!(e.target.tagName==="INPUT"&&!/^(checkbox|radio|button)$/.test(e.target.type))&&!e.target.isContentEditable){   /* em campo de digitação, [ e ] são caracteres */
   const t=e.target;if(/INPUT|SELECT/.test(t.tagName)&&!t.closest("#romWrap .rc"))return;e.preventDefault();romNav(e.key==="]"?1:-1)}});
 /* romaneios lançados: busca por fornecedor, documento ou observação */
 {const _rl=romListaAbrir;romListaAbrir=function(){const r=_rl.apply(this,arguments);try{

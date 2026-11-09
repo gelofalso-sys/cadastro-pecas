@@ -1,15 +1,18 @@
 /* ===== exportar ===== */
 function faixaRefs(g){const c=contFinal(g);return Object.keys(c).filter(p=>c[p]>ultimo(p)).map(p=>{const i=ultimo(p)+1,A=p+fnum(p,i),B=p+fnum(p,c[p]);return i===c[p]?A:`${A}–${B}`}).join(", ")}
 function faixaFiltro(g){const bs=[...new Set(g.linhas.map(r=>refBase(r.v.E)).filter(Boolean))].sort();return bs.length<=4?bs.join(", "):bs[0]+"–"+bs[bs.length-1]}
-function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){const c={t:"n",f:tf};if(typeof x.v==="number")c.v=x.v;return c}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:"="+x.f}}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:String(x.v)}}
+function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){const c={t:"n",f:tf};if(typeof x.v==="number")c.v=x.v;else if(typeof x.calc==="number")c.v=x.calc;return c}return typeof x.v==="number"?{t:"n",v:x.v}:typeof x.calc==="number"?{t:"n",v:x.calc}:{t:"s",v:"="+x.f}}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:String(x.v)}}
 const DLNAV={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};
 async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}return dl||DLNAV}
 /* pendências antes de exportar: obrigatório vazio, peso faltando (banho sem custo) e banho sem multiplicador */
 function pendenciasExport(g){
   const cc=cfg().colcfg,pend=[];
   g.linhas.forEach((r,i)=>{const falta=[];
-    LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!(num(r.v.W)>0):(vazio(r.v[L])&&!(L==="V"&&num(r.mk)>0))))falta.push(NOME[L])});
-    if(r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo"&&!falta.includes(NOME.N))falta.push("Peso (sem ele o custo do banho fica vazio)");
+    LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):(vazio(r.v[L]))))falta.push(NOME[L])});
+    {const cs=celulas(r,i+2);Object.keys(r.v).forEach(L=>{if(!VALIDA_NUM.has(L)||L==="W")return;const x=cs[LET.indexOf(L)];if(!x||x.v!=null||!x.f||!x.txt)return;
+      if(typeof x.calc!=="number")falta.push(NOME[L]+": a fórmula não dá resultado (divisão por zero ou célula vazia)");else if(x.calc<0)falta.push(NOME[L]+": a fórmula dá número negativo")})}
+    if(!vazio(r.v.W)&&!qtdPos(r.v.W,r.v,r.desconto)&&!falta.includes(NOME.W))falta.push("Quantidade precisa ser um número inteiro de 1 em diante (a fórmula não dá isso)");
+    if(r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo"&&!falta.includes(NOME.N))falta.push("Peso (sem ele o custo do banho fica vazio)");
     if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))falta.push("multiplicador do banho (custo do banho fica vazio)");
     if(falta.length)pend.push({i,r,falta})});
   /* o mesmo campo faltando em (quase) todas as peças vira UMA linha de aviso, não dezenas (ex.: sem Preço de Varejo definido) */
@@ -33,7 +36,9 @@ function montarCsv(g,cols,mo,slx){
   const q=s=>{s=String(s);return (s.includes(sep)||s.includes(Q)||/[\r\n]/.test(s))?Q+s.split(Q).join(Q+Q)+Q:s};
   const lin=[cols.map(c=>q(protegeTxt(c.h))).join(sep)];
   const sl=slx||saidaLinhas(g,mo);
-  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{const r=valorCol(c,celCol(c,cs,e));let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
+  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{let r=valorCol(c,celCol(c,cs,e));
+    if(r&&r.v==null&&r.f){const gv=(L,d)=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.f&&d<5?avalF(x.f,K=>gv(K,d+1)):null},n0=typeof r.calc==="number"?r.calc:avalF(r.f,L=>gv(L,0)),n=n0;if(n!=null)r={...r,v:c.tipo==="dinheiro"?Math.round(n*100)/100:parseFloat(n.toPrecision(12))}}   /* CSV não tem fórmula: sai o valor calculado */
+    let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
   return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
 /* com filtro ativo, baixar e copiar levam as PEÇAS que o filtro mostra, sempre com todas as variações (pai e filhos não se separam) */
 function gerarExport(){const g0=gerar(),fil=filtroOn();
@@ -81,8 +86,8 @@ async function copiar(ids,forcar){
   const cel=s=>{s=String(s).replace(/[\t\r\n]+/g," ");return s.includes('"')?'"'+s.split('"').join('""')+'"':s};
   const txt=[cols.map(c=>cel(protegeTxt(String(c.h==null?"":c.h).replace(/[\t\r\n]+/g," ")))).join(TAB),...sl.map((e,i)=>{const cs=celulas(e.row,i+2);return cols.map(c=>{const x=valorCol(c,celCol(c,cs,e));if(!x)return "";
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
-    const s=txtSaida(x,c,LOC.dec).replace(/[\t\r\n]+/g," ");
-    return cel(typeof x.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
+    const xv=x.v==null&&typeof x.calc==="number"?{...x,v:x.calc}:x,s=txtSaida(xv,c,LOC.dec).replace(/[\t\r\n]+/g," ");
+    return cel(typeof xv.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
   try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`);if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:sigCfg()};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }

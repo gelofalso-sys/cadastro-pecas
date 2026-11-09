@@ -17,6 +17,7 @@ function idsDaSel(){const b=selBox();if(!b)return [];const s=new Set();for(let r
 function copiarSel(){const b=selBox();if(!b)return;const lin=[];for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const l=[];for(let c=b.c1;c<=b.c2;c++)l.push(textoCel(r,c));lin.push(l.join("\t"))}
   navigator.clipboard.writeText(lin.join("\n")).then(()=>toast(`${(b.r2-b.r1+1)*(b.c2-b.c1+1)} célula(s) copiada(s).`)).catch(()=>toast("O navegador não liberou a cópia. Use Copiar para o Excel."))}
 function limparSel(){const b=selBox();if(!b)return;const antes={};let n=0;
+  {const lin=b.r2-b.r1+1,col=b.c2-b.c1+1;if(lin>=3||lin*col>20){if(!confirm(`Limpar ${lin} linha(s) × ${col} coluna(s) de células? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAuto("antes de limpar células",true)}}
   for(let r=b.r1;r<=Math.min(b.r2,G.linhas.length-1);r++){if(!vis(r))continue;const row=G.linhas[r],l=S.lanc.find(x=>x.id===row.lancId);if(!l)continue;if(!(l.id in antes))antes[l.id]=clone(l.ov||{});
     for(let c=b.c1;c<=b.c2;c++){const L=LET[c];if(L==="E")continue;gravarCel(r,L,"");n++}}
   if(!n)return;undo={tipo:"multi",antes};salvar(false);renderTopo();if(editId)renderForm();toast(`${n} célula(s) limpa(s).`,{t:"Desfazer",fn:desfazer})}

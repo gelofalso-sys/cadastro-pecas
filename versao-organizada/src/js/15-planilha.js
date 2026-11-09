@@ -23,9 +23,9 @@ function formAbrir(abre){
 gavetaAlt();
 function vista(){let v=null;try{v=localStorage.getItem("cadpecas-vista")}catch(e){}return v==="lista"||v==="planilha"?v:(celular()?"lista":"planilha")}
 const banhoDe=r=>r.banho?(BANHO_COLS[r.col]||r.col||"Banho"):"Pronta";
-function pendente(r){const cc=cfg().colcfg;if(r.dup)return "ref. repetida";if(r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo")return "sem peso";
+function pendente(r){const cc=cfg().colcfg;if(r.dup)return "ref. repetida";if(r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo")return "sem peso";
   if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))return "banho sem multiplicador";
-  for(const L of LET){if(cc[L]&&cc[L].obrig&&(L==="W"?!(num(r.v.W)>0):vazio(r.v[L])))return "sem "+NOME[L].toLowerCase()}return ""}
+  for(const L of LET){if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):vazio(r.v[L])))return "sem "+NOME[L].toLowerCase()}return ""}
 function casa(r){
   if(FIL.cat&&(r.v.I||"")!==FIL.cat)return false;
   if(FIL.forn&&(r.v.H||"")!==FIL.forn)return false;
@@ -56,13 +56,13 @@ function cartoes(g){
   const nCat=new Set(g.linhas.map(r=>r.v.I)).size;let h=`<div class="pcards">`,prev=null,n=0;
   g.linhas.forEach((row,ri)=>{if(FV&&!FV.has(ri))return;n++;
     if(nCat>1&&row.v.I!==prev)h+=`<div class="ccat">${esc(row.v.I||"Sem categoria")}</div>`;prev=row.v.I;
-    const c=celulas(row,ri+2),gv=L=>{const x=c[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
-    const pv=gv("V"),cu=gv("P"),q=num(row.v.W),pd=pendente(row);
+    const c=celulas(row,ri+2),gv=L=>{const x=c[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.v==null&&typeof x.calc==="number"?x.calc:null};
+    const pv=gv("V"),cus=["P","Q","R","S","T","U"].map(gv),cu=cus.some(x=>x!=null)?cus.reduce((t,x)=>t+(x||0),0):null,q=gv("W"),pd=pendente(row);
     h+=`<div class="pc${row.dup?" dup":""}${editId===row.lancId?" edl":sel.has(row.lancId)?" on":""}" data-l="${row.lancId}" data-ri="${ri}" data-act="editar" role="button" tabindex="0" aria-label="Editar ${esc(row.v.E)}">
       <div class="c1">${(()=>{const lq=S.lanc.find(l=>l.id===row.lancId)||{},ft=lq.ft||lq.ftR;return ft&&ftOk(ft)?`<img class="pc-ft" src="${fs(ft)}" alt="" data-act="tab-foto" data-lid="${row.lancId}">`:`<button type="button" class="pc-ftadd" data-act="foto-add" data-lid="${row.lancId}" aria-label="Adicionar foto" title="Adicionar foto">📷</button>`})()}<b class="mono">${esc(row.v.E)}</b>${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}${pd?`<span class="pd">${esc(pd)}</span>`:""}<span class="q">${q!=null?fmt(q)+" pç":"sem qtd"}</span></div>
       <div class="c2">${esc(row.v.F||"(sem descrição)")}</div>
       <div class="c3">${[(row.v.I||"")+(row.v.J?" › "+row.v.J:""),row.v.H,row.v.L,row.v.K].filter(x=>!vazio(x)).map(esc).join(" · ")}</div>
-      <div class="c4"><span>Custo <b>${cu!=null?"R$ "+brl(cu):"—"}</b></span><span>Varejo <b>${pv!=null?"R$ "+brl(pv):"—"}</b></span>
+      <div class="c4"><span title="Compra + insumos + banhos + verniz">Custo <b>${cu!=null?"R$ "+brl(cu):"—"}</b></span><span>Varejo <b>${pv!=null?"R$ "+brl(pv):"—"}</b></span>
         <span class="ca"><button type="button" class="btn sm" data-act="dup" title="Duplicar (nova referência)" aria-label="Duplicar">⧉</button><button type="button" class="btn sm danger" data-act="del" title="Excluir só esta linha" aria-label="Excluir">×</button></span></div></div>`});
   if(!n)h+=`<p class="vz">${g.linhas.length?`Nenhuma peça com esse filtro. <button type="button" class="btn sm" data-act="fil-limpar">Limpar filtro</button>`:"Nenhuma peça ainda. Lance pelo formulário abaixo ou troque para Planilha e cole do Excel."}</p>`;
   return h+`</div>`;
@@ -93,7 +93,11 @@ function janMedir(){const J=JAN;if(!J||J.medido)return;const t1=document.querySe
 function janGarantir(ri){const J=JAN;if(!J)return true;const p=J.lista.indexOf(ri);if(p<0)return false;
   if(p>=J.a&&p<J.b)return true;const sh=document.getElementById("sheet");sh.scrollTop=Math.max(0,J.head+J.cum[p]-sh.clientHeight/2);janRepintar(true);return true}
 function guiaHTML(){if(abertos.guiaX)return "";return `<span class="ok vaz guia" role="note"><b>Guia rápido:</b> <button type="button" class="gi tod" data-act="ir" data-sec="cat" title="Categorias, subcategorias, tamanhos e cores">1 · Cadastros</button> <button type="button" class="gi tod" data-act="ir" data-sec="lancar">2 · Lançar peça</button> <span class="hint">3 · conferir a tabela</span> <span class="hint">4 · “Exportar para…” e baixar</span> <button type="button" class="x" data-act="guia-fechar" aria-label="Fechar o guia" title="Fechar o guia">×</button></span> `}
-function renderTopo(){
+/* apagou (ou voltou) peças da tabela com o romaneio aberto: as linhas dele que já não existem na tabela deixam de ser "já lançada" */
+let romChaveL="",romCriando=false;
+function romResync(){if(romCriando||!ROM||!ROM.rows||!ROM.rows.length)return;const k=S.lanc.map(l=>l.id).join(",");if(k===romChaveL)return;romChaveL=k;
+  const antes=ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("");romMarcar();if(ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("")!==antes){romSalvarSoon();setTimeout(()=>{if(ROM)renderRom()},0)}}
+function renderTopo(){try{romResync()}catch(e){}
   const g=G=gerar(),sh=document.getElementById("sheet"),st=sh.scrollTop,sl=sh.scrollLeft,cc=cfg().colcfg;
   FV=filtroOn()?new Set(g.linhas.map((r,i)=>casa(r)?i:-1).filter(i=>i>=0)):null;renderFiltros(g);
   const ps=[...new Set([...S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))),prefDe(S.form.v.I,S.form.v.J)])];
@@ -130,16 +134,18 @@ function renderTopo(){
    const rowHtml=ri=>ri<g.linhas.length?trReal(ri):trBlank(ri);
    if(vista()!=="lista"&&lista.length>JAN_MIN){JAN={lista,nReais:g.linhas.length,ids:g.linhas.map(r=>r.lancId),ft:ftMap,row:rowHtml,rh:JANM.rh,hFt:JANM.hFt,head:JANM.head,medido:false,a:0,b:0};janAlturas();h+=janelaHtml()}
    else{JAN=null;h+=lista.map(rowHtml).join("")}}
-  const soma=new Array(LET.length).fill(0),ext={},nm=x=>x&&typeof x.v==="number"?x.v:0;
-  cel.forEach((cs,ri)=>{if(FV&&!FV.has(ri))return;cs.forEach((x,j)=>{if(x&&typeof x.v==="number")soma[j]+=x.v});const q=nm(cs[LET.indexOf("W")]);ext.W=(ext.W||0)+q;["P","Q","R","S","T","U","V"].forEach(L=>{ext[L]=(ext[L]||0)+nm(cs[LET.indexOf(L)])*q})});
+  const soma=new Array(LET.length).fill(0),ext={cV:0,qSem:0},nm=x=>x&&typeof x.v==="number"?x.v:(x&&x.v==null&&typeof x.calc==="number"?x.calc:0);   /* fórmula digitada entra pelo valor calculado */
+  cel.forEach((cs,ri)=>{if(FV&&!FV.has(ri))return;cs.forEach((x,j)=>{soma[j]+=nm(x)});const q=nm(cs[LET.indexOf("W")]);ext.W=(ext.W||0)+q;["P","Q","R","S","T","U","V"].forEach(L=>{ext[L]=(ext[L]||0)+nm(cs[LET.indexOf(L)])*q});
+    /* lucro só das peças que têm preço de venda; as sem preço ficam de fora (e são avisadas) */
+    if(nm(cs[LET.indexOf("V")])>0)ext.cV+=["P","Q","R","S","T","U"].reduce((t,L)=>t+nm(cs[LET.indexOf(L)]),0)*q;else ext.qSem+=q});
   const somaCols=new Set(["N","P","Q","R","S","T","U","V","W"]);
   h+=`</tbody><tfoot><tr><td class="k"><span class="nb" title="Soma de cada coluna, como na planilha">Σ colunas</span></td><td class="k nm"></td><td></td><td></td>${LET.map((L,j)=>somaCols.has(L)?`<td class="n tot" title="Soma da coluna ${esc(NOME[L])}">${L==="W"?fmt(soma[j]):L==="N"?fmt(soma[j]):brl(soma[j])}</td>`:`<td></td>`).join("")}</tr></tfoot></table>`;
   {const iW2=LET.indexOf("W"),iV=LET.indexOf("V"),D={custo:[["Compra",ext.P||0],["Insumos",ext.Q||0],["Banhos",(ext.R||0)+(ext.S||0)+(ext.T||0)],["Verniz",ext.U||0]],pecas:{},varejo:{},cor:{},forn:{},banho:{},lucro:{}};
     g.linhas.forEach((row,ri)=>{if(FV&&!FV.has(ri))return;const cs=cel[ri],q=nm(cs[iW2]),c=row.v.I||"Sem categoria",cor=row.v.L||"Sem cor";D.pecas[c]=(D.pecas[c]||0)+q;D.varejo[c]=(D.varejo[c]||0)+nm(cs[iV])*q;D.cor[cor]=(D.cor[cor]||0)+q;
       {const fo=row.v.H||"Sem fornecedor",bn=row.banho?(BANHO_COLS[row.col]||"Banho"):"Pronta",cus=["P","Q","R","S","T","U"].reduce((t,L)=>t+nm(cs[LET.indexOf(L)]),0);
-       D.forn[fo]=(D.forn[fo]||0)+cus*q;D.banho[bn]=(D.banho[bn]||0)+q;D.lucro[c]=(D.lucro[c]||0)+(nm(cs[iV])-cus)*q}});renderGraf(D)}
-  {const compra=ext.P||0,ins=ext.Q||0,ban=(ext.R||0)+(ext.S||0)+(ext.T||0),vz=ext.U||0,custo=compra+ins+ban+vz,vj=ext.V||0,luc=vj-custo,mg=vj?luc/vj*100:0,ord=cfg().ordem==="ab";
-    const el=document.getElementById("totais");if(el)el.innerHTML=(FV?`<span class="tt tfil" title="Totais só das linhas que o filtro mostra">Filtro: <b>${FV.size} de ${g.linhas.length}</b></span>`:"")+`<span class="tt" title="Quantidade total de peças">Peças <b>${fmt(ext.W||0)}</b></span><span class="tt" title="Custo de Compra × Quantidade">Compra <b>R$ ${brl(compra)}</b></span><span class="tt" title="Custo de Insumos × Quantidade">Insumos <b>R$ ${brl(ins)}</b></span><span class="tt" title="Custo dos banhos de ouro, ródio e prata × Quantidade">Banhos <b>R$ ${brl(ban)}</b></span><span class="tt" title="Custo do verniz × Quantidade">Verniz <b>R$ ${brl(vz)}</b></span><span class="tt tot-c" title="Compra + Insumos + Banhos + Verniz">Custo total <b>R$ ${brl(custo)}</b></span><span class="tt tot-v" title="Preço de Varejo × Quantidade">Varejo <b>R$ ${brl(vj)}</b></span><span class="tt" title="Varejo − Custo total">Lucro <b>${vj?"R$ "+brl(luc):"—"}</b> <small>${vj?fmt(Math.round(mg*10)/10)+"%":"—"}</small></span>
+       D.forn[fo]=(D.forn[fo]||0)+cus*q;D.banho[bn]=(D.banho[bn]||0)+q;D.lucro[c]=(D.lucro[c]||0)+(nm(cs[iV])>0?(nm(cs[iV])-cus)*q:0)}});renderGraf(D)}
+  {const compra=ext.P||0,ins=ext.Q||0,ban=(ext.R||0)+(ext.S||0)+(ext.T||0),vz=ext.U||0,custo=compra+ins+ban+vz,vj=ext.V||0,luc=vj-ext.cV,mg=vj?luc/vj*100:0,ord=cfg().ordem==="ab";
+    const el=document.getElementById("totais");if(el)el.innerHTML=(FV?`<span class="tt tfil" title="Totais só das linhas que o filtro mostra">Filtro: <b>${FV.size} de ${g.linhas.length}</b></span>`:"")+`<span class="tt" title="Quantidade total de peças">Peças <b>${fmt(ext.W||0)}</b></span><span class="tt" title="Custo de Compra × Quantidade">Compra <b>R$ ${brl(compra)}</b></span><span class="tt" title="Custo de Insumos × Quantidade">Insumos <b>R$ ${brl(ins)}</b></span><span class="tt" title="Custo dos banhos de ouro, ródio e prata × Quantidade">Banhos <b>R$ ${brl(ban)}</b></span><span class="tt" title="Custo do verniz × Quantidade">Verniz <b>R$ ${brl(vz)}</b></span><span class="tt tot-c" title="Compra + Insumos + Banhos + Verniz">Custo total <b>R$ ${brl(custo)}</b></span><span class="tt tot-v" title="Preço de Varejo × Quantidade">Varejo <b>R$ ${brl(vj)}</b></span><span class="tt" title="Varejo − custo das peças que têm preço de venda">Lucro <b>${vj?"R$ "+brl(luc):"—"}</b> <small>${vj?fmt(Math.round(mg*10)/10)+"%":"—"}</small></span>${ext.qSem>0&&vj?`<span class="tt" title="Estas peças ainda não têm Preço de Varejo: o custo delas não entra no lucro ao lado">⚠ ${fmt(ext.qSem)} pç sem preço de venda</span>`:""}
       <span class="ordsel" role="group" aria-label="Ordem da tabela"><span class="hint">Ordem</span><button type="button" class="${ord?"":"on"}" data-act="ordem" data-v="int" title="Cada peça com seus banhos e tamanhos juntos, na ordem em que foi lançada">Por peça</button><button type="button" class="${ord?"on":""}" data-act="ordem" data-v="ab" title="Todas as A (ouro), depois todas as B (prata), depois as prontas">Por banho</button></span>`}
   const li=vista()==="lista";sh.classList.toggle("lista",li);document.body.classList.toggle("vlista",li);if(li){selR=null;h=cartoes(g)}
   sh.innerHTML=h;sh.scrollTop=st;sh.scrollLeft=sl;sh.style.overflowAnchor=JAN?"none":"";if(JAN)janMedir();pintarSel();renderSelBar();
@@ -200,7 +206,7 @@ function efeitoCel(antes,lid,L,orig,novo,chave){
 function fecharCel(commit,mover){
   if(!celEd)return;let antesPeca=null;const {ri,L,orig,nova}=celEd,i=document.getElementById("celIn"),lid=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].lancId:null,chaveCel=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].key:undefined;celEd=null;
   let v=i?i.value:orig;if(L==="E"&&commit)v=v.replace(/\s+/g,"").toUpperCase();
-  const rej=commit&&v!==orig?checaCel(L,v).erro:null;
+  const rej=commit&&v!==orig?(checaCel(L,v).erro||(L==="I"&&!vazio(v)&&!catBy(v)?"Essa categoria não está cadastrada (cadastre em Cadastros › Categorias)":null)):null;
   if(commit&&v!==orig&&!rej){
     if(nova){if(!vazio(v)){const l=novaLivre({[L]:v});S.lanc.push(l);undo={tipo:"cola",antes:{},ids:[l.id]};salvar(false)}}
     else{const l=S.lanc.find(x=>x.id===G.linhas[ri].lancId);undo={tipo:"multi",antes:{[l.id]:clone(l.ov||{})}};antesPeca=G.linhas.filter(r=>r.lancId===l.id||L==="E").map(r=>({lid:r.lancId,key:r.key,ref:r.v.E,v:r.v[L]}));gravarCel(ri,L,v);salvar(false)}

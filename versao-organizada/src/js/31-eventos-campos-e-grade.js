@@ -90,7 +90,7 @@ function onField(t,isChange){
     if(re&&t.dataset.rf){const T=C.romaneios[+re.dataset.rom];if(T){T[t.dataset.rf]=t.type==="checkbox"?t.checked:t.value;salvar(true,false)}return}}
   if(t.id==="fBusca"){FIL.q=t.value;guardarFil();renderTopo();return}
   if(t.dataset&&t.dataset.fil){if(!isChange)return;FIL[t.dataset.fil]=t.value;guardarFil();renderTopo();return}
-  if(t.id==="selAll"){if(t.checked)S.lanc.forEach(l=>sel.add(l.id));else sel.clear();renderTopo();return}
+  if(t.id==="selAll"){if(t.checked)G.linhas.forEach((r,ri)=>{if(vis(ri))sel.add(r.lancId)});else sel.clear();renderTopo();return}
   if(t.hasAttribute&&t.hasAttribute("data-sel")){const id=t.closest("tr").dataset.l;if(t.checked)sel.add(id);else sel.delete(id);renderTopo();return}
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";
@@ -98,7 +98,7 @@ function onField(t,isChange){
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
       const nome=t.value.replace(/\s+/g," ").trim(),ant=t.dataset.prev!=null?t.dataset.prev:"";if(ant&&catBy(ant))f.v.I=ant;else delete f.v.I;
       quickPre=nome;quick="cat";quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
-    if(L==="I"&&isChange){f.csel=[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange){f.csel=editId?(f.csel||[]).filter(id=>coresDaCat(t.value).some(x=>x.id===id)):[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
     if(L==="V"&&isChange)fatorDoPreco("p");
     atualizarGera();salvar(false);return;
@@ -106,10 +106,7 @@ function onField(t,isChange){
   if(t.dataset.mk){f.mk=f.mk||{};
     if(!vazio(t.value)){const n=num(t.value);if(n==null||n<=0||n>1e5){if(isChange){t.value=f.mk[t.dataset.mk]??"";toast("O Fator × precisa ser um número maior que 0 (ex.: 2,5).")}return}}
     if(vazio(t.value))delete f.mk[t.dataset.mk];else f.mk[t.dataset.mk]=t.value;
-    /* mudou o fator: o Preço de Varejo digitado à mão sai e volta a ser calculado pelo novo fator */
-    {const k=t.dataset.mk,vi=k==="p"?document.getElementById("f-V"):document.querySelector(`[data-bo="${k}"][data-k="V"]`);
-      if(k==="p")delete f.v.V;else if(f.ov&&f.ov[k])delete f.ov[k].V;
-      if(vi&&vi.value!=="")vi.value=""}
+    /* o fator é só sugestão: o Preço de Varejo digitado à mão fica como está */
     if(f.conj)conjSync(f,true);
     atualizarGera();salvar(false);return}
   if(t.dataset.bo){const b=t.dataset.bo,L=t.dataset.k;f.ov=f.ov||{};f.ov[b]=f.ov[b]||{};if(vazio(t.value))delete f.ov[b][L];else f.ov[b][L]=t.value;if(L==="V"&&isChange)fatorDoPreco(b);if(f.conj&&L==="V")conjSync(f,true);atualizarGera();salvar(false);return}

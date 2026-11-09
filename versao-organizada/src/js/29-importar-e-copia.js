@@ -28,6 +28,8 @@ async function backup(){const dl=await obterDL();
 function restaurar(file){try{checaTam(file,MAX_BACKUP_BYTES,"O arquivo")}catch(e){toast("Cadastros NÃO restaurados — "+e.message+". Nada foi alterado.");return}const fr=new FileReader();fr.onload=()=>{
   let nova;try{const o=JSON.parse(fr.result);if(!ehObj(o)||!ehObj(o.config))throw new Error("o arquivo não tem os cadastros");checarConfig(o.config);nova=lerConfig(clone(o.config))}
   catch(e){toast("Cadastros NÃO restaurados — "+(e instanceof SyntaxError?"o arquivo está danificado ou não é uma cópia dos cadastros":e&&e.message?e.message:"arquivo inválido")+". Nada foi alterado.");return}
+  if(!confirm("Restaurar a cópia substitui TODOS os cadastros (categorias, fornecedores, banhos, modelos…). A numeração nunca volta atrás: vale a maior de cada prefixo. Continuar?"))return;
+  {const so=(S.config&&S.config.seqs)||{};nova.seqs=nova.seqs||{};Object.keys(so).forEach(p=>{if(num(so[p])>num(nova.seqs[p]))nova.seqs[p]=so[p]})}
   const antes=S.config,antesL=clone(S.lanc),antesF=clone(S.form);
   try{S.config=nova;migrarJueri();migrarGrades();sincGrade(S.form)}
   catch(e){S.config=antes;S.lanc=antesL;S.form=antesF;try{render()}catch(e2){}toast("Cadastros NÃO restaurados — deu erro ao aplicar. Nada foi alterado.");return}

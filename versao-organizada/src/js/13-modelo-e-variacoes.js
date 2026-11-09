@@ -2,7 +2,7 @@
 const TIPOS_COL=[["","Como vem"],["texto","Texto"],["numero","Número"],["inteiro","Inteiro"],["dinheiro","Dinheiro (2 casas)"]];
 const listaCol=c=>String(c&&c.lista||"").split(";").map(s=>s.trim()).filter(Boolean);
 const maxCol=c=>{const n=Math.trunc(num(c&&c.max)||0);return n>0?n:0};
-const abaNome=mo=>String(mo&&mo.aba||"").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31)||"Worksheet";
+const abaNome=mo=>{let s=String(mo&&mo.aba||"").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31).replace(/^'+|'+$/g,"").trim();if(/^history$/i.test(s))s+="_";return s||"Worksheet"};   /* o Excel recusa apóstrofo nas pontas e o nome History */
 /* valor final de uma célula do arquivo: aplica o valor padrão (se vazia) e o tipo da coluna */
 function valorCol(c,x){
   let o=x||null;
@@ -11,14 +11,16 @@ function valorCol(c,x){
   const t=c.tipo||"";
   if(t==="texto")return {v:o.v==null?(o.txt||(o.f?"="+o.f:"")):String(o.v)};
   if(o.v==null&&o.f){const fz0=(t==="numero"||t==="inteiro"||t==="dinheiro")?num(c.fator):null;   /* fórmula também recebe o fator da coluna */
-    return fz0!=null&&fz0>0&&fz0!==1?{...o,f:"("+o.f+")*"+String(fz0)}:o}
+    const fat=fz0!=null&&fz0>0&&fz0!==1;let f=fat?"("+o.f+")*"+String(fz0):o.f,calc=o.calc!=null?(fat?o.calc*fz0:o.calc):undefined;
+    if(t==="dinheiro")return {...o,f:"ROUND("+f+",2)",calc:calc!=null?r2c(calc):undefined,z:"0.00"};
+    return fat?{...o,f,calc}:o}
   if(t==="numero"||t==="inteiro"||t==="dinheiro"){
     const n=typeof o.v==="number"?o.v:num(o.v);
     if(n==null)return {v:o.v,erro:1};
     const fz=num(c.fator);   /* fator: multiplica o número (ex.: peso em gramas × 0,001 = quilos); sem fórmula, o valor já sai convertido */
     const lim=x=>parseFloat(x.toPrecision(12));   /* tira o ruído de ponto flutuante (0,1×3 = 0,30000000000000004) */
     if(fz!=null&&fz>0&&fz!==1){const r=Math.round(lim(n*fz*1e6))/1e6;return {v:t==="dinheiro"?Math.round(lim(r*100))/100:lim(r)}}
-    if(t==="dinheiro")return {v:Math.round(lim(n*100))/100,f:o.f,z:"0.00"};
+    if(t==="dinheiro")return {v:Math.round(lim(n*100))/100,f:o.f?"ROUND("+o.f+",2)":o.f,z:"0.00"};   /* a fórmula também arredonda: o Excel recalcula o mesmo centavo do CSV */
     return {v:n,f:o.f}}
   return o}
 /* ===== variações no arquivo: produto pai + variações (modelo com "Agrupar em produto pai + variações") =====
@@ -33,7 +35,7 @@ function saidaLinhas(g,mo){
     if(grp.length<2){out.push({row:grp[0],t:"normal"});return}
     const f=grp[0],l=S.lanc.find(x=>x.id===f.lancId),part0=String(f.part||""),E0=String(f.v.E||""),
       base=(b=>{while(codsE.has(b))b+="P";codsE.add(b);return b})(part0&&E0.endsWith(part0)?E0.slice(0,E0.length-part0.length):E0+"P"),
-      c0=celulas(f,2)[LET.indexOf("V")],pv=c0&&typeof c0.v==="number"?String(c0.v):"",
+      c0=celulas(f,2)[LET.indexOf("V")],pv=c0&&typeof c0.v==="number"?String(c0.v):c0&&typeof c0.calc==="number"?String(c0.calc):"",
       desc=l?comSufixoCat(val(l,"F"),val(l,"I")):"";
     out.push({row:{...f,banho:null,mk:null,ovs:[],bid:null,gi:null,key:"pai",part:"",verniz:null,v:{...f.v,E:base,F:desc||f.v.F,L:"",K:"",O:"",W:"",P:"",R:"",S:"",T:"",U:"",V:pv}},t:"pai"});
     const i0=out.length;const chave=ch=>String(ch.v.K||"")+"|"+semAc(ch.v.L||""),cont={};grp.forEach(ch=>{const k=chave(ch);cont[k]=(cont[k]||0)+1});
@@ -52,10 +54,11 @@ function validarModelo(g,cols){const out=[],sl=saidaLinhas(g,modeloAtual()),vz={
     cols.forEach(c=>{const r=valorCol(c,celCol(c,cs,e)),v=r?r.v:null,vaz=!r||(v==null&&!r.f)||String(v==null?"x":v).trim()==="",h=String(c.h||(c.k?NOME[c.k]:"(coluna)"));
       const add=m=>out.push({l:i+2,ref:row.v.E||"",col:h,msg:m});
       if(vaz){if(c.obrig){(vz[h]=vz[h]||[]).push(add)}return}
-      if(v==null)return;
-      const s=String(v);
+      const vv=v==null&&r&&typeof r.calc==="number"?r.calc:v;   /* fórmula: vale o resultado dela */
+      if(vv==null)return;
+      const s=String(vv);
       if(r.erro)add("não é um número: “"+s.slice(0,30)+"”");
-      else if(c.tipo==="inteiro"&&!Number.isInteger(v))add("precisa ser um número inteiro");
+      else if(c.tipo==="inteiro"&&!Number.isInteger(vv))add("precisa ser um número inteiro");
       if(maxCol(c)&&s.length>maxCol(c))add("passa de "+maxCol(c)+" caracteres");
       const L=listaCol(c);if(L.length&&!L.some(z=>semAc(z)===semAc(s)))add("fora da lista permitida ("+L.slice(0,4).join(", ")+(L.length>4?"…":"")+")")})});
   /* coluna obrigatória vazia em quase todas as linhas: um aviso só */
@@ -69,30 +72,44 @@ function chaveDoCabecalho(h){const n=normH(h);if(!n)return null;
   const i=HEAD.findIndex(x=>normH(x)===n);if(i>=0)return LET[i];
   for(const k of Object.keys(SIN))if(SIN[k].includes(n))return k;return null}
 /* fórmulas guardam as letras internas (N, P…U); no arquivo viram as letras do modelo. Sem a coluna no modelo, vai só o valor. */
-function traduzF(f,cols){const mapa={};cols.forEach((c,i)=>{if(c.k&&!(c.k in mapa))mapa[c.k]=letraN(i)});let falta=false;
-  const out=String(f).replace(/([A-Z]{1,2})([0-9]+)/g,(m,a,n)=>{if(!(a in mapa)){falta=true;return m}return mapa[a]+n});return falta?null:out}
+function traduzF(f,cols){const mapa={},fat={};cols.forEach((c,i)=>{if(c.k&&!(c.k in mapa)){mapa[c.k]=letraN(i);const z=(c.tipo==="numero"||c.tipo==="inteiro"||c.tipo==="dinheiro")?num(c.fator):null;if(z!=null&&z>0&&z!==1)fat[c.k]=z}});let falta=false;
+  /* a fórmula foi escrita com os valores internos (ex.: peso em gramas); se a coluna sai convertida pelo fator (kg = g × 0,001), a referência volta à unidade interna */
+  const out=String(f).replace(/([A-Za-z]{1,2})([0-9]+)/g,(m,a,n)=>{a=a.toUpperCase();if(!(a in mapa)){falta=true;return m}return fat[a]?"("+mapa[a]+n+"/"+fat[a]+")":mapa[a]+n});return falta?null:out}
 function celulas(row,r,sugestao){
   const c=celulasBase(row,r);
-  if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v});
+  if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v;else if(x&&x.f){const n=typeof x.calc==="number"?x.calc:numRaw(row.v[L],row.v);if(n!=null)soma+=n}});
     c[iv]={v:Math.round(soma*row.mk*100)/100,f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
   return c;
 }
+/* centavos no arredondamento comercial (1,005 → 1,01), sem o erro do ponto flutuante */
+const r2c=x=>Math.round(+(x*100).toPrecision(12))/100;
+/* o percentual de desconto entra no coeficiente com precisão total (1,234% = 0,01234) */
+const kDesc=d=>Math.round(d*1e6)/1e8;
+/* uma fórmula digitada vale para a própria linha: as referências saem apontando para a linha real (no app e no Excel dão o mesmo número) */
+const fLinha=(f,r)=>String(f).replace(/\b([A-Za-z]{1,2})[0-9]+\b/g,"$1"+r);
 function celulasBase(row,r){
-  return LET.map(L=>{
+  const c=LET.map(L=>{const x=celulaBase(row,r,L);if(x&&x.v==null&&x.f&&x.txt)x.f=fLinha(x.f,r);return x});
+  /* resultado das fórmulas digitadas: usa o valor EFETIVO das células referenciadas (compra já com desconto, banho calculado…), o mesmo do arquivo */
+  const val=(L,d)=>{const x=c[LET.indexOf(L)];if(!x)return null;if(typeof x.v==="number")return x.v;if(x.v==null&&x.f&&x.txt&&d<6)return avalF(x.f,K=>val(K,d+1));return null};
+  {const ip=LET.indexOf("P"),x=c[ip];if(x&&x.v==null&&x.f&&x.desc){const n=avalF(x.f,K=>val(K,0));if(n!=null){const In=x.f,k=x.desc;c[ip]={v:r2c(n-n*k),f:`ROUND((${In})-((${In})*${k}),2)`}}}}
+  c.forEach(x=>{if(x&&x.v==null&&x.f&&x.txt){const n=avalF(x.f,K=>val(K,0));if(n!=null)x.calc=n}});
+  return c}
+function celulaBase(row,r,L){
     const v=row.v[L];
-    if(row.banho&&FORMULA.has(L)){if(!vazio(v))return lerValor(v,L);return calcBanho(row,L,r)}
+    if(row.banho&&FORMULA.has(L)){if(!vazio(v))return lerValor(v,L,row.v);return calcBanho(row,L,r)}
     if(vazio(v))return null;
-    if(L==="P"){const c=num(v);if(c==null)return lerValor(v,L);if(row.desconto>0){const k=r4(row.desconto/100);return {v:Math.round((c-c*k)*100)/100,f:`ROUND(${c}-(${c}*${k}),2)`}}return {v:c}}
-    return lerValor(v,L);
-  });
+    if(L==="P"){const c=num(v);if(c==null){const s=String(v).trim();   /* custo em fórmula também recebe o desconto do fornecedor */
+      if(row.desconto>0&&s[0]==="="&&FORM_SEGURA.test(s)){const o=lerValor(v,L,row.v);if(o.f)o.desc=kDesc(row.desconto);return o}   /* o desconto é aplicado em celulasBase, com os valores efetivos das células referenciadas */
+      return lerValor(v,L,row.v)}if(row.desconto>0){const k=kDesc(row.desconto);return {v:r2c(c-c*k),f:`ROUND(${c}-(${c}*${k}),2)`}}return {v:c}}
+    return lerValor(v,L,row.v);
 }
 function avisos(g){
   const out=[],cc=cfg().colcfg,ps=new Set(S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))));
   ps.forEach(p=>{if(!(ultimo(p)>0)&&!((g.manual||{})[p]>0))out.push({bad:1,t:`Falta a última peça de ${p} no sistema.`})});
   Object.entries(g.manual||{}).forEach(([p,n])=>{if(n>ultimo(p))out.push({t:`${p}${fnum(p,n)} foi digitada à mão (a última do sistema é ${p}${fnum(p,ultimo(p))}): as próximas automáticas continuam em ${p}${fnum(p,n+1)}`})});
   const d=new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E));if(d.size)out.push({bad:1,t:`Referência repetida: ${[...d].join(", ")}`});
-  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!(num(r.v.W)>0):vazio(r.v[L])).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
-  const sp=g.linhas.filter(r=>r.banho&&num(r.v.N)==null&&r.banho.modo!=="fixo").length;if(sp)out.push({t:`${sp} bruta(s) sem Peso`});
+  LET.forEach(L=>{if(!cc[L].obrig)return;const k=g.linhas.filter(r=>L==="W"?!qtdPos(r.v.W,r.v,r.desconto):vazio(r.v[L])).length;if(k)out.push({t:`${k} sem ${NOME[L]}`})});
+  const sp=g.linhas.filter(r=>r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo").length;if(sp)out.push({t:`${sp} bruta(s) sem Peso`});
   {const sm=new Set();g.linhas.forEach(r=>{if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))sm.add(r.v.L||r.col||r.banho.coluna)});
    sm.forEach(n=>out.push({t:`Banho “${n}” sem multiplicador: o custo do banho sai vazio — preencha em Banhos e galvânicas`}))}
   return out;

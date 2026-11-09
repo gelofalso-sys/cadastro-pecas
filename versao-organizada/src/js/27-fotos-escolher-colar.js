@@ -22,7 +22,7 @@ async function fotosEmLote(files,lidIni){
   for(const f of arqs){
     const exato=f.name.replace(/\.[^.]+$/,"").toUpperCase(),base=exato.replace(/[\s_-]*\(?\d+\)?$/,"");
     const alvo=porNome.get(exato)||porNome.get(base)||null;
-    if(alvo&&!usados.has(alvo)){try{await fotoNaPeca(alvo,await lerFotoArquivo(f));usados.add(alvo);nNome++}catch(e){erros.push(e.message)}}else semNome.push(f)}
+    if(alvo&&!usados.has(alvo)){try{await fotoNaPeca(alvo,await lerFotoArquivo(f));usados.add(alvo);nNome++}catch(e){erros.push(e.message)}}else if(alvo)erros.push(`“${f.name}”: já há uma foto para essa peça neste envio (ignorada)`);else semNome.push(f)}
   let pos=Math.max(0,ordem.indexOf(lidIni));
   for(const f of semNome){
     while(pos<ordem.length&&(usados.has(ordem[pos])||(arqs.length>1&&((S.lanc.find(l=>l.id===ordem[pos])||{}).ft))))pos++;
@@ -60,7 +60,7 @@ function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";
   if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro();return}
-  if(!quiet&&!editId){const rd=previsao().linhas.filter(r=>r.lancId==="__p"&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
+  if(!quiet){const meu=editId||"__p",rd=previsao().linhas.filter(r=>r.lancId===meu&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
   {let ck=null,onde=null;
     for(const L of VALIDA_NUM){const r=checaCel(L,f.v[L]);if(r.erro){ck=r.erro;onde=L;break}}
     if(!ck)for(const o of Object.values(f.ov||{})){if(!o||typeof o!=="object")continue;for(const L of VALIDA_NUM){const r=checaCel(L,o[L]);if(r.erro){ck=r.erro;onde=L;break}}if(ck)break}
@@ -125,13 +125,14 @@ function dobrarOv(f,id){const ov=f.ov||{};
   const per=new Set(["W","E","F","V","L","O","R","S","T","U"]),Ls=new Set();ks.forEach(k=>Object.keys(ov[k]).forEach(L=>{if(!per.has(L))Ls.add(L)}));if(f.conj){Ls.delete("N");Ls.delete("P")}
   const gr=temGrade(f);let avisa=false;
   Ls.forEach(L=>{const com=rows.filter(r=>r.ovs&&r.ovs.includes(L));if(!com.length||!com.every(r=>r.v[L]===com[0].v[L]))return;
-    if(com.length<rows.length){if(gr)return;avisa=true}
+    if(com.length<rows.length)return;   /* valor só de algumas linhas continua só nelas */
     f.v[L]=com[0].v[L];ks.forEach(k=>{delete ov[k][L]})});
   if(avisa)setTimeout(()=>toast("Valor digitado à mão numa linha agora vale para todas as linhas desta peça (aparece nos campos abaixo)."),50);
   ks.forEach(k=>{if(!Object.keys(ov[k]).length)delete ov[k]})}
 let editSnap=null;
 const formSujo=()=>!!editId&&JSON.stringify(S.form)!==editSnap;
 function editar(id){
+  if(editId&&editId!==id&&formSujo()&&!confirm("Há alterações não salvas na peça aberta. Descartar e abrir esta outra?"))return;
   const l=S.lanc.find(x=>x.id===id);if(!l)return;
   if(!editId)rascunho=clone(S.form);editId=id;S.form=clone(l);delete S.form.id;erro="";
   dobrarOv(S.form,id);if(S.form.conj)conjSync(S.form);editSnap=JSON.stringify(S.form);
@@ -140,14 +141,16 @@ function editar(id){
   salvar(false);renderTopo();renderForm();focarPrimeiro();editSnap=JSON.stringify(S.form);
 }
 function cancelar(){editId=null;if(rascunho)S.form=rascunho;rascunho=null;erro="";salvar(false);renderTopo();renderForm()}
+/* a cópia leva a foto original (qualidade cheia) do banco, não só a miniatura */
+function fotoCopia(de,para){try{idbGet("fotos",de).then(v=>{if(v)idbPut("fotos",para,v)}).catch(()=>{})}catch(e){}}
 function duplicar(ids){
-  const novos=ids.map(id=>{const c=clone(S.lanc.find(x=>x.id===id));c.id=uid();delete c.v.E;c.vinc=false;delete c.excl;if(c.ov)Object.values(c.ov).forEach(o=>delete o.E);return c});
+  const novos=ids.map(id=>{const c=clone(S.lanc.find(x=>x.id===id));c.id=uid();fotoCopia(id,c.id);delete c.v.E;c.vinc=false;delete c.excl;if(c.ov)Object.values(c.ov).forEach(o=>delete o.E);return c});
   S.lanc.push(...novos);undo={tipo:"dup",ids:novos.map(n=>n.id)};salvar(false);renderTopo();
   toast(`Duplicado no fim da lista: ${novos.map(n=>(G.refs[n.id]||[]).join("/")).join(", ")}`,{t:"Desfazer",fn:desfazer});
 }
 function duplicarLinha(ri){
   const row=G.linhas[ri];if(!row)return;const l=S.lanc.find(x=>x.id===row.lancId);if(!l)return;
-  const c=clone(l);c.id=uid();delete c.v.E;c.vinc=false;delete c.excl;
+  const c=clone(l);c.id=uid();fotoCopia(l.id,c.id);delete c.v.E;c.vinc=false;delete c.excl;
   if(c.tipo==="bruta"||(row.bid&&row.bid!=="p")){const bid=row.bid||row.key;if(c.tipo==="bruta")c.on={[bid]:true};else c.onP={[bid]:true};const o=(c.ov||{})[bid],o2=row.gi?(c.ov||{})[row.key]:null;c.ov={};if(o)c.ov[bid]=o;if(o2)c.ov[row.key]=o2}
   if(row.gi){   /* a linha pode ser tamanho, cor ou tamanho+cor (id "a17+c_L:azul"): a cópia fica só com aquela combinação */
     const ps=String(row.gi).split("+"),tam=ps.find(x=>!x.startsWith("c_")),cor=ps.find(x=>x.startsWith("c_"));
