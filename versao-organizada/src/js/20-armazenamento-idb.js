@@ -3,7 +3,7 @@ let ROMS=[],romArm=null,TABS=[],ARQ={},AUTOR="",tabArm=null;
 function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.open("cadpecas-big",3);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};rq.onerror=()=>res(null);
   rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(store,mode),st=tx.objectStore(store);let out=null;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>{d.close();res(out)};tx.onerror=tx.onabort=()=>{d.close();res(null)}}catch(e){d.close();res(null)}}}catch(e){res(null)}})}
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
-function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
+function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
 function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",hash:rec.hash||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);return gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
 let romGravP=null;
@@ -21,7 +21,7 @@ async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição
   if(ROM&&ROM.rows.length)romSalvar();
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
   const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,rows:rec.rows,pdf:null};
-  if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
+  if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.vz=rec.form.vz||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
   romMarcar();const nf=ROM.rows.filter(r=>r.feito).length,np=ROM.rows.filter(r=>!r.skip).length;
   ROM.msg=`Romaneio salvo aberto · ${nf} já lançada(s) · ${np} para lançar. Mude qualquer campo de uma peça já lançada para corrigir (ela é substituída, mantendo posição e referência; só muda de referência se você trocar a categoria; nesse caso as outras peças nunca são renumeradas).`;
   renderTopo();renderForm();renderRom();romSalvar();const w=document.getElementById("romWrap");if(w)rolarPane(w)}
@@ -169,7 +169,7 @@ const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 let romConflito=false;
 function romSalvar(){if(!ROM||!ROM.rows.length)return true;if(romConflito)return false;romGravarBig();let lsOk=false;const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
-  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,desconto:f.desconto},em:Date.now()};
+  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now()};
   romInfo=`${f.v.H||""} · ${ROM.rows.length} peças`;try{localStorage.setItem("cadpecas-rom-info",romInfo)}catch(e){}
   try{localStorage.setItem(ROMKEY,JSON.stringify(snap));romTem=true;lsOk=true}catch(e){try{localStorage.setItem(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true;lsOk=true}catch(x){}}
   if(db){try{const pr=db.doc("dados/romaneio").set({...snap,rows:semFoto(snap.rows),texto:String(ROM.texto||"").slice(0,200000)});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}return lsOk}
@@ -178,4 +178,4 @@ function romLimparRascunho(){romTem=false;romInfo="";try{localStorage.removeItem
 async function romSync(){if(!db||romTem)return;try{const d=await db.doc("dados/romaneio").get();if(d.exists&&d.data()&&d.data().rows&&d.data().rows.length){localStorage.setItem(ROMKEY,JSON.stringify(d.data()));romTem=true;romInfo=((d.data().form||{}).H||"")+" · "+d.data().rows.length+" peças";renderForm()}}catch(e){}}
 function romRetomar(){const d=romRascunho();if(!d||!d.rows||!d.rows.length)return false;const f=S.form;
   ROM={sid:d.sid,por:d.por,criado:d.criado,log:d.log,tid:d.tid,texto:d.texto||"",obs:d.obs||"",doc:d.doc||"",hash:d.hash||"",conf:d.conf||"",bulk:d.bulk||null,rows:d.rows,msg:`Romaneio em andamento retomado · ${d.rows.length} peças`,pdf:null};
-  if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;if(d.form.onP)f.onP=d.form.onP;f.mk=d.form.mk||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}
+  if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;if(d.form.onP)f.onP=d.form.onP;f.mk=d.form.mk||{};f.vz=d.form.vz||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}

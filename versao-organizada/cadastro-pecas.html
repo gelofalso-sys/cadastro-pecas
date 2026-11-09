@@ -2917,6 +2917,7 @@ function modeloDeJson(file){const fr=new FileReader();fr.onload=()=>{try{
   }catch(e){toast("Não consegui abrir o modelo: "+(e&&e.message?e.message:"arquivo inválido")+".")}};fr.readAsText(file)}
 /* ===== colar romaneio: lê a lista do fornecedor com um modelo de leitura ===== */
 const MON="(\\d[\\d.]*,\\d{2})";
+const numQtd=s=>{s=String(s);return /^\d{1,3}(\.\d{3})+$/.test(s)?num(s.replace(/\./g,"")):num(s)};
 const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d+)",x:"(?:.*?)",item:"(?:\\d{1,4})",u:"(?:([A-Za-z]{1,4})\\.?\\s+)?",qv:"(\\d[\\d.]*(?:,\\d+)?)",pu:"(\\d[\\d.]*,\\d{2,4})"};
 function padraoRegex(pad){const ordem=[];let src="";
   String(pad||"").split(/(\{\w+\})/).forEach(p=>{const m=p.match(/^\{(\w+)\}$/);
@@ -2948,8 +2949,8 @@ function lerRomaneio(texto,T){
     const o={};P.ordem.forEach((k,i)=>o[k]=m[i+1]);
     const desc=String(o.desc||"").replace(/Varia[^:]{1,4}:/i," ").replace(/ {2,}/g," ").replace(/^[\s,;:\-]+|[\s,;:\-]+$/g,"");
     const un=String(o.u||"").toUpperCase().replace(/[.]/g,""),porPeso=/^(GR|G|KG)$/.test(un),pr=o.preco||o.pu,qn=o.qtd||o.qv;
-    let loteG=null,precoG=null;if(porPeso){const fk=un==="KG"?1000:1;loteG=(num(qn)||0)*fk;precoG=(num(pr)||0)/fk}
-    R.rows.push({cod:o.cod||"",desc,preco:pr?num(pr):null,precod:o.precod?num(o.precod):null,total:o.total?num(o.total):null,qtd:porPeso?1:Math.trunc(num(qn)||0),peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":"",
+    let loteG=null,precoG=null;if(porPeso){const fk=un==="KG"?1000:1;loteG=(numQtd(qn)||0)*fk;precoG=(num(pr)||0)/fk}
+    R.rows.push({cod:o.cod||"",desc,preco:pr?num(pr):null,precod:o.precod?num(o.precod):null,total:o.total?num(o.total):null,qtd:porPeso?1:Math.trunc(numQtd(qn)||0),peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":"",
       ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}};
   colhe(P);if(!R.rows.length&&String(T.padrao).includes("R$ {precod}")){try{colhe(padraoRegex(String(T.padrao).replace("R$ {precod}","").replace(/ {2,}/g," ")))}catch(e){}}
   {const r0=R.rows[0];if(r0){const m=r0.desc.match(/^\s*(?:total(?:\s+geral)?|qtd\.?\s*total|quantidade\s+total|romaneio|pedido|resumo)\b[^\d]{0,20}\d[0-9.,]*\s*(?:pe[cç]as?|itens?|unidades?|un\.?|produtos?|volumes?)?\s*/i);
@@ -3149,7 +3150,7 @@ let ROMS=[],romArm=null,TABS=[],ARQ={},AUTOR="",tabArm=null;
 function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.open("cadpecas-big",3);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};rq.onerror=()=>res(null);
   rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(store,mode),st=tx.objectStore(store);let out=null;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>{d.close();res(out)};tx.onerror=tx.onabort=()=>{d.close();res(null)}}catch(e){d.close();res(null)}}}catch(e){res(null)}})}
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
-function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
+function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
 function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",hash:rec.hash||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);return gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
 let romGravP=null;
@@ -3167,7 +3168,7 @@ async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição
   if(ROM&&ROM.rows.length)romSalvar();
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
   const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,rows:rec.rows,pdf:null};
-  if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
+  if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.vz=rec.form.vz||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
   romMarcar();const nf=ROM.rows.filter(r=>r.feito).length,np=ROM.rows.filter(r=>!r.skip).length;
   ROM.msg=`Romaneio salvo aberto · ${nf} já lançada(s) · ${np} para lançar. Mude qualquer campo de uma peça já lançada para corrigir (ela é substituída, mantendo posição e referência; só muda de referência se você trocar a categoria; nesse caso as outras peças nunca são renumeradas).`;
   renderTopo();renderForm();renderRom();romSalvar();const w=document.getElementById("romWrap");if(w)rolarPane(w)}
@@ -3315,7 +3316,7 @@ const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 let romConflito=false;
 function romSalvar(){if(!ROM||!ROM.rows.length)return true;if(romConflito)return false;romGravarBig();let lsOk=false;const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
-  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,desconto:f.desconto},em:Date.now()};
+  const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now()};
   romInfo=`${f.v.H||""} · ${ROM.rows.length} peças`;try{localStorage.setItem("cadpecas-rom-info",romInfo)}catch(e){}
   try{localStorage.setItem(ROMKEY,JSON.stringify(snap));romTem=true;lsOk=true}catch(e){try{localStorage.setItem(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true;lsOk=true}catch(x){}}
   if(db){try{const pr=db.doc("dados/romaneio").set({...snap,rows:semFoto(snap.rows),texto:String(ROM.texto||"").slice(0,200000)});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}return lsOk}
@@ -3324,7 +3325,7 @@ function romLimparRascunho(){romTem=false;romInfo="";try{localStorage.removeItem
 async function romSync(){if(!db||romTem)return;try{const d=await db.doc("dados/romaneio").get();if(d.exists&&d.data()&&d.data().rows&&d.data().rows.length){localStorage.setItem(ROMKEY,JSON.stringify(d.data()));romTem=true;romInfo=((d.data().form||{}).H||"")+" · "+d.data().rows.length+" peças";renderForm()}}catch(e){}}
 function romRetomar(){const d=romRascunho();if(!d||!d.rows||!d.rows.length)return false;const f=S.form;
   ROM={sid:d.sid,por:d.por,criado:d.criado,log:d.log,tid:d.tid,texto:d.texto||"",obs:d.obs||"",doc:d.doc||"",hash:d.hash||"",conf:d.conf||"",bulk:d.bulk||null,rows:d.rows,msg:`Romaneio em andamento retomado · ${d.rows.length} peças`,pdf:null};
-  if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;if(d.form.onP)f.onP=d.form.onP;f.mk=d.form.mk||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}
+  if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;if(d.form.onP)f.onP=d.form.onP;f.mk=d.form.mk||{};f.vz=d.form.vz||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}
 /* ===== edição em lote ===== */
 function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),fq=romFq,cc=catBy(b.cat),ns=ROM.rows.filter(r=>r.sel).length;
   const mks=bruta?bh.banhos.filter(x=>f.on[x.id]).map(x=>({id:x.id,nome:"Multiplicador "+x.nome})):[{id:"p",nome:"Multiplicador"}];
@@ -4099,7 +4100,7 @@ function trocarBanhista(f,id){f.banhista=id;marcadosPadrao(f);f.onP={};f.vz={};
 function banhistaDoFornecedor(f){const fo=fornBy(f.v.H);if(f.tipo==="bruta"&&fo&&fo.banhista&&fo.banhista!==f.banhista&&cfg().banhistas.some(b=>b.id===fo.banhista))trocarBanhista(f,fo.banhista)}
 function limparForm(){const cc=cfg().colcfg,f=S.form;f.vz={};LET.forEach(L=>{if(!cc[L].manter)delete f.v[L]});
   Object.keys(f.ov||{}).forEach(b=>{const o=f.ov[b];if(!o||typeof o!=="object"){delete f.ov[b];return}Object.keys(o).forEach(L=>{if(!cc[L]||!cc[L].manter)delete o[L]});if(!Object.keys(o).length)delete f.ov[b]});if(f.tipo!=="pronta")f.vinc=false;if(f.conj){f.comp=[novaComp(),novaComp()];delete f.v.F;delete f.fConj;conjSync(f)}}
-const focarPrimeiro=()=>{const el=document.querySelector("#f-F")||document.querySelector("#form .fbody input");if(el){el.focus();try{el.select()}catch(x){}}};
+const focarPrimeiro=forca=>{if(celular()&&forca!==true)return;const el=document.querySelector("#f-F")||document.querySelector("#form .fbody input");if(el){el.focus();try{el.select()}catch(x){}}};
 let addTrava=0;
 /* ===== fotos: escolher, arrastar ou colar (Ctrl+V) ===== */
 let FT_GRANDE=null,ftAlvo=null;
@@ -4162,7 +4163,7 @@ function registrarLivres(l){const C=cfg(),h=String(val(l,"H")||"").replace(/\s+/
 function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";
-  if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro();return}
+  if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro(true);return}
   if(!quiet){const meu=editId||"__p",rd=previsao().linhas.filter(r=>r.lancId===meu&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
   {let ck=null,onde=null;
     for(const L of VALIDA_NUM){const r=checaCel(L,f.v[L]);if(r.erro){ck=r.erro;onde=L;break}}
@@ -4576,7 +4577,7 @@ document.addEventListener("click",e=>{
     case "ponto-novo":pontoSalvar("criado por você").then(ok=>{toast(ok?"Ponto de restauração criado.":"Não consegui criar o ponto (armazenamento do navegador).");pontosCarregar()});break;
     case "ponto-voltar":pontoRestaurar(t.dataset.k);break;
     case "ir":if(celular())formAbrir(false);irPara(t.dataset.sec);break;
-    case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();break;
+    case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);break;
     case "exemplo":S.lanc=exemplo();salvar(false);renderTopo();break;
     case "xlsx":baixar();break;
     case "copiar":copiar();break;
@@ -4881,8 +4882,8 @@ function onField(t,isChange){
     if(k==="nome"){const old=c.nome,nv=t.value.trim();
       const dup=C.categorias.some(x=>x!==c&&String(x.nome).trim().toLowerCase()===nv.toLowerCase());
       if(!nv||dup){if(isChange){t.value=old;toast(!nv?"O nome da categoria não pode ficar vazio — voltei ao nome anterior.":`Já existe a categoria “${nv}” — voltei ao nome anterior.`)}return}
-      (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;const rest=it.slice(q+1).trim(),pp=rest.split(">");return pp[0].trim()===old?it.slice(0,q+1)+t.value+(pp.length>1?">"+pp.slice(1).join(">"):""):it}).join(";")});
-      c.nome=t.value;C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][t.value]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=t.value});if(f.v.I===old)f.v.I=t.value;salvar(true)}
+      (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;const rest=it.slice(q+1).trim(),pp=rest.split(">");return pp[0].trim()===old?it.slice(0,q+1)+nv+(pp.length>1?">"+pp.slice(1).join(">"):""):it}).join(";")});
+      c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
     else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){c[k]=t.value;salvar(true,false);if(isChange)renderForm()}

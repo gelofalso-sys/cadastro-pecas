@@ -21,5 +21,5 @@ function trocarBanhista(f,id){f.banhista=id;marcadosPadrao(f);f.onP={};f.vz={};
 function banhistaDoFornecedor(f){const fo=fornBy(f.v.H);if(f.tipo==="bruta"&&fo&&fo.banhista&&fo.banhista!==f.banhista&&cfg().banhistas.some(b=>b.id===fo.banhista))trocarBanhista(f,fo.banhista)}
 function limparForm(){const cc=cfg().colcfg,f=S.form;f.vz={};LET.forEach(L=>{if(!cc[L].manter)delete f.v[L]});
   Object.keys(f.ov||{}).forEach(b=>{const o=f.ov[b];if(!o||typeof o!=="object"){delete f.ov[b];return}Object.keys(o).forEach(L=>{if(!cc[L]||!cc[L].manter)delete o[L]});if(!Object.keys(o).length)delete f.ov[b]});if(f.tipo!=="pronta")f.vinc=false;if(f.conj){f.comp=[novaComp(),novaComp()];delete f.v.F;delete f.fConj;conjSync(f)}}
-const focarPrimeiro=()=>{const el=document.querySelector("#f-F")||document.querySelector("#form .fbody input");if(el){el.focus();try{el.select()}catch(x){}}};
+const focarPrimeiro=forca=>{if(celular()&&forca!==true)return;const el=document.querySelector("#f-F")||document.querySelector("#form .fbody input");if(el){el.focus();try{el.select()}catch(x){}}};
 let addTrava=0;

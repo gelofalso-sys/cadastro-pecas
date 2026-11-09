@@ -59,7 +59,7 @@ function registrarLivres(l){const C=cfg(),h=String(val(l,"H")||"").replace(/\s+/
 function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";
-  if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro();return}
+  if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro(true);return}
   if(!quiet){const meu=editId||"__p",rd=previsao().linhas.filter(r=>r.lancId===meu&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
   {let ck=null,onde=null;
     for(const L of VALIDA_NUM){const r=checaCel(L,f.v[L]);if(r.erro){ck=r.erro;onde=L;break}}

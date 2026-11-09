@@ -127,8 +127,8 @@ function onField(t,isChange){
     if(k==="nome"){const old=c.nome,nv=t.value.trim();
       const dup=C.categorias.some(x=>x!==c&&String(x.nome).trim().toLowerCase()===nv.toLowerCase());
       if(!nv||dup){if(isChange){t.value=old;toast(!nv?"O nome da categoria não pode ficar vazio — voltei ao nome anterior.":`Já existe a categoria “${nv}” — voltei ao nome anterior.`)}return}
-      (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;const rest=it.slice(q+1).trim(),pp=rest.split(">");return pp[0].trim()===old?it.slice(0,q+1)+t.value+(pp.length>1?">"+pp.slice(1).join(">"):""):it}).join(";")});
-      c.nome=t.value;C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][t.value]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=t.value});if(f.v.I===old)f.v.I=t.value;salvar(true)}
+      (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;const rest=it.slice(q+1).trim(),pp=rest.split(">");return pp[0].trim()===old?it.slice(0,q+1)+nv+(pp.length>1?">"+pp.slice(1).join(">"):""):it}).join(";")});
+      c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
     else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){c[k]=t.value;salvar(true,false);if(isChange)renderForm()}

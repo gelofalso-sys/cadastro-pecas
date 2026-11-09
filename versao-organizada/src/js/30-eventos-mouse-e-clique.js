@@ -130,7 +130,7 @@ document.addEventListener("click",e=>{
     case "ponto-novo":pontoSalvar("criado por você").then(ok=>{toast(ok?"Ponto de restauração criado.":"Não consegui criar o ponto (armazenamento do navegador).");pontosCarregar()});break;
     case "ponto-voltar":pontoRestaurar(t.dataset.k);break;
     case "ir":if(celular())formAbrir(false);irPara(t.dataset.sec);break;
-    case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();break;
+    case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);break;
     case "exemplo":S.lanc=exemplo();salvar(false);renderTopo();break;
     case "xlsx":baixar();break;
     case "copiar":copiar();break;
