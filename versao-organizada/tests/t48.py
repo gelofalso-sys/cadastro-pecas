@@ -55,8 +55,8 @@ with sync_playwright() as p:
     pg.fill("#f-F","Teste");pg.fill("#f-N","2");pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(900)
     pg.locator('tr[data-l] td[data-c="E"]').first.click();pg.wait_for_timeout(300)
     r=pg.evaluate("""()=>{const td=document.querySelector('tr[data-l] td.ed'),i=td&&td.querySelector('input');if(!i)return null;const a=td.getBoundingClientRect(),c=i.getBoundingClientRect(),x=a.right+8;
-      const el=document.elementFromPoint(x,c.y+c.height/2);return {larg:a.width,campo:c.width,ok:c.width<=a.width+9||el===i||i.contains(el)}}""")
-    ok(r is not None and r["ok"],"campo de edicao da celula fica visivel alem da largura da coluna: %s"%r)
+      const el=document.elementFromPoint(x,c.y+c.height/2);return {larg:a.width,campo:c.width,ok:c.width<=a.width+1}}""")
+    ok(r is not None and r["ok"],"campo de edicao da celula tem a largura da propria celula: %s"%r)
     # botao de recolher/expandir nao cobre o formulario: com o formulario aberto fica na divisoria
     ok(pg.evaluate("()=>document.getElementById('dpill').classList.contains('dock')"),"botao recolher/expandir encostado na divisoria")
     ok(not errs,"sem erros de script: %s"%errs[:2])

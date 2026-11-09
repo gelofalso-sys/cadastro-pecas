@@ -66,7 +66,7 @@ table.t td.ov::after{content:"";position:absolute;top:0;right:0;border-style:sol
 table.t td.miss{background:color-mix(in srgb,var(--warn) 9%,transparent)}
 table.t td[data-c]:hover{box-shadow:inset 0 0 0 1px var(--focus)}
 table.t td.ed{position:relative;z-index:4;padding:0;overflow:visible;box-shadow:inset 0 0 0 2px var(--focus)}
-table.t td.ed input{height:27px;border:0;border-radius:0;box-shadow:0 0 0 2px var(--focus);text-align:left!important;padding:0 8px;min-width:150px;background:var(--surface)!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink);caret-color:var(--focus);font-size:13px;opacity:1}
+table.t td.ed input{height:27px;width:100%;min-width:0;box-sizing:border-box;border:0;border-radius:0;box-shadow:none;padding:0 5px;background:var(--surface)!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink);caret-color:var(--focus);font-size:13px;opacity:1}
 table.t th.k,table.t td.k{position:sticky;left:0;z-index:1;background:var(--surface);padding:0 3px;cursor:default;box-shadow:1px 0 0 var(--line);min-width:0}
 table.t th.k{z-index:3;background:var(--surface-2)}
 .k .in{display:flex;align-items:center}

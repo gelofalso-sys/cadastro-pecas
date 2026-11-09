@@ -75,7 +75,7 @@ table.t td.ov::after{content:"";position:absolute;top:0;right:0;border-style:sol
 table.t td.miss{background:color-mix(in srgb,var(--warn) 9%,transparent)}
 table.t td[data-c]:hover{box-shadow:inset 0 0 0 1px var(--focus)}
 table.t td.ed{position:relative;z-index:4;padding:0;overflow:visible;box-shadow:inset 0 0 0 2px var(--focus)}
-table.t td.ed input{height:27px;border:0;border-radius:0;box-shadow:0 0 0 2px var(--focus);text-align:left!important;padding:0 8px;min-width:150px;background:var(--surface)!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink);caret-color:var(--focus);font-size:13px;opacity:1}
+table.t td.ed input{height:27px;width:100%;min-width:0;box-sizing:border-box;border:0;border-radius:0;box-shadow:none;padding:0 5px;background:var(--surface)!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink);caret-color:var(--focus);font-size:13px;opacity:1}
 table.t th.k,table.t td.k{position:sticky;left:0;z-index:1;background:var(--surface);padding:0 3px;cursor:default;box-shadow:1px 0 0 var(--line);min-width:0}
 table.t th.k{z-index:3;background:var(--surface-2)}
 .k .in{display:flex;align-items:center}
@@ -2236,7 +2236,7 @@ function abrirCel(ri,L,cursorFim){
   const calc=formulaVazia?calcBanho(row,L,ri+2):null,calcTxt=calc&&typeof calc.v==="number"?r2c(calc.v).toFixed(2).replace(".",","):"";
   const raw=!row?"":formulaVazia?calcTxt:(row.v[L]??"");celEd={ri,L,orig:String(raw),nova:!row,setas:!!cursorFim};
   const ph=formulaVazia?(calc?(calc.f?"="+calc.f:String(calc.v)):"(vazio)"):(!row?"digite ou cole (Ctrl+V)":"");
-  selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=Math.max(td2.offsetWidth,150);td2.classList.add("ed");
+  selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=td2.offsetWidth;td2.classList.add("ed");
   td2.innerHTML=`<input id="celIn" value="${esc(raw)}" list="dl-cel" ${NUM.has(L)?'class="n"':""} placeholder="${esc(ph)}" title="${esc(formulaVazia&&calc&&calc.f?"Calculado: ="+calc.f+" — digite um valor para substituir":"")}" aria-label="${esc(NOME[L])}" autocomplete="off">`;
   const i=document.getElementById("celIn");i.style.width=w+"px";i.focus({preventScroll:true});try{td2.scrollIntoView({block:"nearest",inline:"nearest"})}catch(x){}if(cursorFim){const n=i.value.length;try{i.setSelectionRange(n,n)}catch(x){}}else i.select();
 }
