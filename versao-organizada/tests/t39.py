@@ -39,7 +39,7 @@ with sync_playwright() as p:
     import re
     ref1=re.match(r"[A-Z]+[0-9]+[A-Z]",txt(pg,0,"E")).group(0)
     cel(pg,1,"E").click();pg.wait_for_timeout(300);pg.fill("#celIn",ref1);pg.keyboard.press("Enter");pg.wait_for_timeout(500)
-    t=toast(pg);print("EREFS2",pg.evaluate("()=>[...document.querySelectorAll('#sheet tr[data-ri] td[data-c=E]')].slice(0,3).map(t=>t.innerText.trim()+'|'+t.className)"));print("EREFS",pg.evaluate("()=>[...document.querySelectorAll('#sheet tr[data-ri] td[data-c=E]')].slice(0,3).map(t=>t.innerText.trim()+'|'+t.className)"),"REP" ,"repetida" in pg.evaluate("()=>document.body.innerText"));print("TOAST",t,pg.evaluate("()=>document.querySelectorAll('#sheet tr.dup,#sheet td.dup,#sheet .dup').length"));ok("Referência trocada" in t and "se ajustaram" in t,"troca de referência explica o efeito e a renumeração das outras linhas")
+    t=toast(pg);print("EREFS2",pg.evaluate("()=>[...document.querySelectorAll('#sheet tr[data-ri] td[data-c=E]')].slice(0,3).map(t=>t.innerText.trim()+'|'+t.className)"));print("EREFS",pg.evaluate("()=>[...document.querySelectorAll('#sheet tr[data-ri] td[data-c=E]')].slice(0,3).map(t=>t.innerText.trim()+'|'+t.className)"),"REP" ,"repetida" in pg.evaluate("()=>document.body.innerText"));print("TOAST",t,pg.evaluate("()=>document.querySelectorAll('#sheet tr.dup,#sheet td.dup,#sheet .dup').length"));ok("Referência trocada" in t,"troca para referência já usada avisa (as referências são fixas: a outra linha não se ajusta, fica marcada como repetida): %s"%t[:120])
     pg.keyboard.press("Control+z");pg.wait_for_timeout(500)
     # 5) mudar a galvânica: custo da peça lançada acompanha, o preço de venda fica fixo
     custo0=txt(pg,0,"U");preco0=txt(pg,0,"V")

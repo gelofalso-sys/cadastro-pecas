@@ -28,6 +28,15 @@ with sync_playwright() as p:
     ok(pg.evaluate("()=>!document.body.innerText.includes('Referência repetida')"),"sem aviso falso de referência repetida")
     # Esc fecha a janela de Romaneios/Tabelas e desarma a exclusão
     pg.evaluate("()=>document.querySelector('[data-act=\"tab-lista\"]')&&0")
+    # referências fixas: excluir a 1ª peça não renumera as outras; "Renumerar referências" refaz na ordem
+    pg.fill("#f-F","Argola tres");pg.fill("#f-N","2");pg.fill("#f-P","5");pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(900)
+    R0=[re.sub(r"(Ouro|Prata)$","",x) for x in col(pg,"E")]
+    pg.click('tr[data-l] [data-act="del"] >> nth=0');pg.wait_for_timeout(500);pg.click('tr[data-l] [data-act="del"] >> nth=0');pg.wait_for_timeout(500)
+    R1=[re.sub(r"(Ouro|Prata)$","",x) for x in col(pg,"E")]
+    ok(R1==R0[2:],"excluir a 1ª peça não renumera as seguintes: %s -> %s"%(R0,R1))
+    pg.click('[data-act="renumerar"] >> nth=0');pg.wait_for_timeout(900)
+    R2=[re.sub(r"(Ouro|Prata)$","",x) for x in col(pg,"E")]
+    ok(len(R2)==len(R1) and R2[0]!=R1[0] or R2[0]==R1[0],"Renumerar referências roda sem erro: %s"%R2)
     ok(not errs,"sem erros de script: %s"%errs[:2])
     b.close()
 print("\nFalhas:",len(f))

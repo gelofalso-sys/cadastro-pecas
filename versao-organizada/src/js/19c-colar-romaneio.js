@@ -113,7 +113,7 @@ function romFixaRefs(arr,pos,p,ign,clon){const g=gerar(arr);
 function romMonta(base,r,fk){if(r.refaz&&r.lancIds&&r.lancIds.length){const pos=base.findIndex(l=>l.id===r.lancIds[0]),vel=pos>=0?base[pos]:null,troca=!!vel&&romPrefDe(vel)!==romPrefDe(fk);
     if(troca)romFixaRefs(base,pos,romPrefDe(vel),r.lancIds,true);
     for(let j=base.length-1;j>=0;j--)if(r.lancIds.includes(base[j].id))base.splice(j,1);
-    if(vel&&!troca){base.splice(Math.min(pos,base.length),0,fk);return {troca:false}}
+    if(vel&&!troca){if(vel.v&&!vazio(vel.v.E)&&vazio(fk.v.E)){fk.v.E=vel.v.E;if(vel.rf)fk.rf=1}base.splice(Math.min(pos,base.length),0,fk);return {troca:false}}
     base.push(fk);return {troca}}
   base.push(fk);return {troca:false}}
 function romPreview(){const out=[],base=S.lanc.slice();

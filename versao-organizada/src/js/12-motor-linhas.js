@@ -1,4 +1,8 @@
 /* ===== motor: lançamentos -> linhas ===== */
+/* a referência de cada peça fica FIXA depois de lançada (excluir ou trocar a categoria de outra peça não renumera as demais); "Renumerar" refaz na ordem */
+function fixarRefs(){if(!S.lanc.some(l=>l&&l.v&&vazio(l.v.E)&&!(l.tipo==="pronta"&&l.vinc)))return false;const g=gerar(S.lanc);let ch=false;
+  S.lanc.forEach(l=>{if(!l||!l.v||!vazio(l.v.E)||(l.tipo==="pronta"&&l.vinc))return;const rw=g.linhas.find(x=>x.lancId===l.id);if(!rw)return;const E=String(rw.v.E||""),pt=String(rw.part||""),b=pt&&E.endsWith(pt)?E.slice(0,E.length-pt.length):E;if(b){l.v.E=b;l.rf=1;ch=true}});return ch}
+function renumerarRefs(){S.lanc.forEach(l=>{if(l&&l.rf&&l.v){delete l.v.E;delete l.rf}});fixarRefs()}
 function gerar(list){
   list=list||S.lanc;list.forEach(l=>{if(l&&l.conj&&Array.isArray(l.comp)&&(l.cjSnap===undefined||l.cjSnap===conjSnap(l))){try{conjSync(l)}catch(e){}}});   /* conjunto lançado acompanha o cadastro de galvânicas (a menos que alguém tenha digitado o custo na planilha) */
   const C=cfg(),cont={},usados={},linhas=[],refs={},semQ={};

@@ -246,6 +246,7 @@ document.addEventListener("click",e=>{
     case "rom-salvo-del":{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(romArm);romArm=null;romListaRef();renderForm()}break}
     case "backup-total":backupTotal();break;
     case "tab-lista":tabListaAbrir();break;
+    case "renumerar":{if(!S.lanc.length){toast("Nenhuma peça para renumerar.");break}if(!confirm("Renumerar as referências na ordem da tabela? As referências automáticas (as que você não digitou) serão refeitas do começo da sequência, e as peças já enviadas ao fornecedor podem mudar de número. Dá para desfazer."))break;renumerarRefs();salvar(false);renderTopo();toast("Referências renumeradas na ordem da tabela.",{t:"Desfazer",fn:desfazer});break}
     case "tab-salvar-abrir":tabSalvarAbrir();break;
     case "tab-salvar-ok":tabSalvarOk();break;
     case "tab-ver":tabVer(t.dataset.id);break;
