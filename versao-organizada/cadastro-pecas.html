@@ -931,7 +931,7 @@ td.mem span{display:inline-block;max-width:260px;overflow:hidden;text-overflow:e
   body.formvis .mbar{left:auto;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:0;background:none;border:0;backdrop-filter:none}
   body.formvis .mbar .btn{height:38px;box-shadow:0 2px 8px color-mix(in srgb,var(--ink) 18%,transparent)}
   .pane-bot .inner{padding-bottom:84px}
-  .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))!important;left:12px;right:12px}
+  .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))!important;left:12px;right:12px;transform:none!important;z-index:60}
 }
 
 /* ===== v40: importar nota fiscal (nf-) ===== */
@@ -2927,7 +2927,7 @@ function padraoRegex(pad){const ordem=[];let src="";
 const rxPerigo=x=>/\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d)/.test(String(x));
 const rxs=(x,f)=>{try{if(rxPerigo(x))return null;return new RegExp(x,f||"i")}catch(e){return null}};
 function mapaCat(desc,T){const d=semAc(desc);
-  for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a)))return b}
+  for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a))&&catBy(b.split(">")[0].trim()))return b}
   const w=d.split(/[\s,]+/)[0];const c=cfg().categorias.find(c=>w&&semAc(c.nome).startsWith(w.slice(0,4)));return c?c.nome:""}
 const ROM_MAX=60000;
 function lerRomaneio(texto,T){
@@ -2953,7 +2953,7 @@ function lerRomaneio(texto,T){
       ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}};
   colhe(P);if(!R.rows.length&&String(T.padrao).includes("R$ {precod}")){try{colhe(padraoRegex(String(T.padrao).replace("R$ {precod}","").replace(/ {2,}/g," ")))}catch(e){}}
   {const r0=R.rows[0];if(r0){const m=r0.desc.match(/^\s*(?:total(?:\s+geral)?|qtd\.?\s*total|quantidade\s+total|romaneio|pedido|resumo)\b[^\d]{0,20}\d[0-9.,]*\s*(?:pe[cç]as?|itens?|unidades?|un\.?|produtos?|volumes?)?\s*/i);
-      if(m&&m[0].length<r0.desc.length){R.cab=m[0].trim();r0.desc=r0.desc.slice(m[0].length).replace(/^[s,;:-]+/,"")}}}
+      if(m&&m[0].length<r0.desc.length){R.cab=m[0].trim();r0.desc=r0.desc.slice(m[0].length).replace(/^[\s,;:-]+/,"")}}}
   if(!R.rows.length){R.erro="Não reconheci nenhuma peça. Confira se copiou a tabela inteira (com código e valores). Se o fornecedor usa outro formato, veja Cadastros › Romaneios › Avançado.";return R}
   const sq=R.rows.reduce((t,r)=>t+r.qtd,0),sv=R.rows.reduce((t,r)=>t+(r.lote?(r.total||0):(r.preco!=null?r.preco*r.qtd:(r.total||0))),0),pt=[];
   if(T.qtdRe){const r=rxs(T.qtdRe),m2=r&&full.match(r);if(m2){const n=+String(m2[1]).replace(/\D/g,"");pt.push(n===sq?`✓ ${sq} peças conferem`:`⚠ a lista diz ${n} peças e li ${sq}`)}}
@@ -3054,7 +3054,7 @@ function renderRom0(){const el=document.getElementById("romWrap");if(!el)return;
   <div class="rom-cfg">${fq("Fornecedor",`<select data-rp="forn">${opts(C.fornecedores.map(x=>x.nome),f.v.H||"","—")}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="forn" title="Cadastrar um fornecedor novo agora" aria-label="Novo fornecedor">＋</button>
     <div class="fq"><span>Tipo de peça</span><div class="seg" role="group" aria-label="Tipo"><button type="button" data-act="rom-tipo" data-v="bruta" aria-pressed="${bruta}" title="Peça ainda sem banho: vai para a galvânica antes de ser vendida">Bruta (vai banhar)</button><button type="button" data-act="rom-tipo" data-v="pronta" aria-pressed="${!bruta}">Pronta</button></div></div>
     ${true?`${fq("Galvânica",`<select data-rp="bh">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="bh" title="Cadastrar uma galvânica nova agora" aria-label="Nova galvânica">＋</button><div class="fq"><span>${bruta?"Banhos (padrão de todas as peças)":"Banhos (peça pronta: uma linha por banho; nenhum = peça única)"}</span><div class="rom-bn">${bh.banhos.map(b=>`<label class="gi${(bruta?f.on:(f.onP||{}))[b.id]?" on":""}" title="Custo ${esc(b.nome)} por grama: ${esc(b.mult||"—")}"><input type="checkbox" data-rp="bn" data-b="${b.id}" ${(bruta?f.on:(f.onP||{}))[b.id]?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></label>`).join("")}</div></div><button type="button" class="btn ghost sm" data-act="rom-q" data-q="bn" title="Cria um banho novo (ex.: Ródio negro) nesta galvânica">＋ Banho</button><button type="button" class="btn ghost sm" data-act="ir" data-sec="banho" title="Valores por grama, cores e milésimos da galvânica">Editar galvânica</button>`:""}
-    ${(bruta?bh.banhos.filter(b=>f.on[b.id]).map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):(()=>{const sl=bh.banhos.filter(b=>(f.onP||{})[b.id]);return sl.length?sl.map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):[{id:"p",nome:"Multiplicador"}]})()).map(m=>fq(m.nome+" (varejo = custos × este valor)",`<input class="n" data-rp="mkg" data-b="${m.id}" value="${esc((f.mk||{})[m.id]??"")}" placeholder="×" inputmode="decimal">`,"w-c")).join("")}
+    ${(bruta?bh.banhos.filter(b=>f.on[b.id]).map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):(()=>{const sl=bh.banhos.filter(b=>(f.onP||{})[b.id]);return sl.length?sl.map(b=>({id:b.id,nome:"Multiplicador "+b.nome})):[{id:"p",nome:"Multiplicador"}]})()).map(m=>fq(esc(m.nome)+" (varejo = custos × este valor)",`<input class="n" data-rp="mkg" data-b="${m.id}" value="${esc((f.mk||{})[m.id]??"")}" placeholder="×" inputmode="decimal">`,"w-c")).join("")}
     <span class="hint">Desconto do fornecedor <b>${esc(f.desconto||"0")}%</b></span></div>
   <div class="rom-t"><textarea data-rp="texto" rows="3" placeholder="Cole aqui o texto da lista do fornecedor, ou use Importar PDF…">${esc(ROM.texto)}</textarea><div class="rom-b"><button type="button" class="btn pri" data-act="rom-ler">Ler lista</button><label class="btn" title="Escolha ou arraste o PDF do romaneio: o sistema lê as peças e recorta as fotos">Importar PDF<input type="file" id="romPdf" accept="application/pdf,.pdf" class="vh"></label><label class="btn" title="Planilha do fornecedor (.xlsx, .xls ou .csv): você confirma qual coluna é código, descrição, quantidade e valor">Importar planilha<input type="file" id="romXls" accept=".xlsx,.xls,.csv" class="vh"></label><span class="hint">${esc(ROM.msg||"")}</span></div></div>`;
   h+=romPlanHTML();
@@ -3339,7 +3339,10 @@ function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==
 function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhuma"?false:m==="sempeso"?!(num(r.peso)>0):m.startsWith("cat:")?r.cat===m.slice(4):r.sel});
   document.querySelectorAll("#romWrap .rc").forEach((rc,i)=>{const c=rc.querySelector("[data-rp=sel]");if(c)c.checked=!!ROM.rows[i].sel});romSelN()}
 function romSelN(){const e=document.getElementById("romSelN");if(e)e.textContent=`${ROM.rows.filter(r=>r.sel).length} selecionada(s) — sem seleção, vale para todas`}
-function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r=>r.sel);if(!alvo.length)alvo=ROM.rows.filter(r=>!r.skip);let n=0;
+function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r=>r.sel);if(!alvo.length)alvo=ROM.rows.filter(r=>!r.skip);
+  if(!vazio(b.peso)){const ck=checaCel("N",b.peso);if(ck.erro){toast(ck.erro);return}}
+  for(const k of Object.keys(b.mk||{})){if(!vazio(b.mk[k])){const x=num(b.mk[k]);if(x==null||x<=0){toast("Multiplicador inválido (use um número maior que 0).");return}}}
+  let n=0;
   alvo.forEach(r=>{let m=false;if(r.feito&&r.arq)return;
     if(!vazio(b.peso)){r.peso=b.peso;m=true}
     Object.keys(b.mk||{}).forEach(k=>{if(vazio(b.mk[k]))return;r.mk=r.mk||{};if(String(b.mk[k])===String((f.mk||{})[k]??""))delete r.mk[k];else r.mk[k]=b.mk[k];m=true});
@@ -4510,6 +4513,7 @@ document.addEventListener("click",e=>{
       S.lanc.forEach(l=>{if(!sel.has(l.id))return;antes.push({id:l.id,v:clone(l.v),ov:clone(l.ov||{})});
         if(L==="W"&&temGrade(l)){l.ov=l.ov||{};const ks=l.tipo==="bruta"?banhistaBy(l.banhista).banhos.filter(b=>l.on[b.id]).map(b=>b.id):(bonP(l).length?bonP(l).map(b=>b.id):["p"]);ks.forEach(k=>itensGrade(l).forEach(it=>{(l.ov[k+"~"+it.id]=l.ov[k+"~"+it.id]||{}).W=v}))}
         else if(l.tipo==="bruta"&&POR_BANHO.has(L)){l.ov=l.ov||{};banhistaBy(l.banhista).banhos.forEach(b=>{if(l.on[b.id])(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
+        else if(l.tipo==="pronta"&&bonP(l).length&&POR_BANHO.has(L)){l.ov=l.ov||{};bonP(l).forEach(b=>{(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
         else{l.v[L]=v;if(l.ov)Object.values(l.ov).forEach(o=>delete o[L])}});
       undo={tipo:"bulk",antes};salvar(false);renderTopo();toast(`${NOME[L]} = “${v}” em ${antes.length} peça(s).`,{t:"Desfazer",fn:desfazer});break}
     case "excl-volta":S.form.excl=[];salvar(false);renderForm();toast("As linhas excluídas voltam quando você clicar em Salvar.");break;

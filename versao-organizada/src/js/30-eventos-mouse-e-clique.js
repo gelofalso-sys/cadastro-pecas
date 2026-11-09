@@ -67,6 +67,7 @@ document.addEventListener("click",e=>{
       S.lanc.forEach(l=>{if(!sel.has(l.id))return;antes.push({id:l.id,v:clone(l.v),ov:clone(l.ov||{})});
         if(L==="W"&&temGrade(l)){l.ov=l.ov||{};const ks=l.tipo==="bruta"?banhistaBy(l.banhista).banhos.filter(b=>l.on[b.id]).map(b=>b.id):(bonP(l).length?bonP(l).map(b=>b.id):["p"]);ks.forEach(k=>itensGrade(l).forEach(it=>{(l.ov[k+"~"+it.id]=l.ov[k+"~"+it.id]||{}).W=v}))}
         else if(l.tipo==="bruta"&&POR_BANHO.has(L)){l.ov=l.ov||{};banhistaBy(l.banhista).banhos.forEach(b=>{if(l.on[b.id])(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
+        else if(l.tipo==="pronta"&&bonP(l).length&&POR_BANHO.has(L)){l.ov=l.ov||{};bonP(l).forEach(b=>{(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
         else{l.v[L]=v;if(l.ov)Object.values(l.ov).forEach(o=>delete o[L])}});
       undo={tipo:"bulk",antes};salvar(false);renderTopo();toast(`${NOME[L]} = “${v}” em ${antes.length} peça(s).`,{t:"Desfazer",fn:desfazer});break}
     case "excl-volta":S.form.excl=[];salvar(false);renderForm();toast("As linhas excluídas voltam quando você clicar em Salvar.");break;

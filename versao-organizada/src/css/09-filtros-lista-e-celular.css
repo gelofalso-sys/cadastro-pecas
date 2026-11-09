@@ -89,6 +89,6 @@ td.mem span{display:inline-block;max-width:260px;overflow:hidden;text-overflow:e
   body.formvis .mbar{left:auto;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));padding:0;background:none;border:0;backdrop-filter:none}
   body.formvis .mbar .btn{height:38px;box-shadow:0 2px 8px color-mix(in srgb,var(--ink) 18%,transparent)}
   .pane-bot .inner{padding-bottom:84px}
-  .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))!important;left:12px;right:12px}
+  .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))!important;left:12px;right:12px;transform:none!important;z-index:60}
 }
 

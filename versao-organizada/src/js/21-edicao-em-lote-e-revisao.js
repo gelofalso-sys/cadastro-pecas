@@ -12,7 +12,10 @@ function romBulkHTML(){const C=cfg(),f=S.form,b=ROM.bulk||{mk:{}},bruta=f.tipo==
 function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhuma"?false:m==="sempeso"?!(num(r.peso)>0):m.startsWith("cat:")?r.cat===m.slice(4):r.sel});
   document.querySelectorAll("#romWrap .rc").forEach((rc,i)=>{const c=rc.querySelector("[data-rp=sel]");if(c)c.checked=!!ROM.rows[i].sel});romSelN()}
 function romSelN(){const e=document.getElementById("romSelN");if(e)e.textContent=`${ROM.rows.filter(r=>r.sel).length} selecionada(s) — sem seleção, vale para todas`}
-function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r=>r.sel);if(!alvo.length)alvo=ROM.rows.filter(r=>!r.skip);let n=0;
+function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r=>r.sel);if(!alvo.length)alvo=ROM.rows.filter(r=>!r.skip);
+  if(!vazio(b.peso)){const ck=checaCel("N",b.peso);if(ck.erro){toast(ck.erro);return}}
+  for(const k of Object.keys(b.mk||{})){if(!vazio(b.mk[k])){const x=num(b.mk[k]);if(x==null||x<=0){toast("Multiplicador inválido (use um número maior que 0).");return}}}
+  let n=0;
   alvo.forEach(r=>{let m=false;if(r.feito&&r.arq)return;
     if(!vazio(b.peso)){r.peso=b.peso;m=true}
     Object.keys(b.mk||{}).forEach(k=>{if(vazio(b.mk[k]))return;r.mk=r.mk||{};if(String(b.mk[k])===String((f.mk||{})[k]??""))delete r.mk[k];else r.mk[k]=b.mk[k];m=true});
