@@ -21,7 +21,7 @@ const banhistaBy=id=>cfg().banhistas.find(b=>b.id===id)||cfg().banhistas[0];
 const bhDe=x=>banhistaBy(x&&x.banhista);
 /* O Preço de Varejo só existe na peça lançada se o usuário o DIGITOU dentro da peça. O fator gera apenas uma SUGESTÃO (mostrada no formulário); o valor definitivo é do usuário. */
 const prefDe=(cat,sub)=>{const c=catBy(cat)||{},sp=sub&&c.subPref&&c.subPref[sub];return String(sp||c.prefixo||"BR").toUpperCase()};
-function comSufixoCat(d,cat){const sx=(catBy(cat)||{}).sufixo;d=String(d||"").trim();if(!sx||!d)return d;return d.toLowerCase().includes(sx.trim().toLowerCase())?d:d+sx}
+function comSufixoCat(d,cat){const sx=(catBy(cat)||{}).sufixo;d=String(d||"").trim();if(!sx||!d)return d;return d.toLowerCase().includes(sx.trim().toLowerCase())?d:d+(/^[\s,.;:)]/.test(sx)?"":" ")+sx}   /* sem espaço no começo do texto, o sistema põe um (senão “lisa”+“folheado” saía “lisafolheado”) */
 const ultimo=p=>Math.trunc(num(cfg().seqs[p])||0);
 /* uma categoria pode usar os tamanhos de outra (grade.usa = nome da categoria de origem): edita-se uma vez só */
 function libGradeSel(attr){const C=cfg(),o=[];C.categorias.forEach(c=>{if(c.grade&&!c.grade.usa&&!c.grade.usaId)o.push(["c:"+c.nome,(c.grade.nome||"Variação")+" ("+c.nome+")"])});(C.grades||[]).forEach(g=>o.push(["o:"+g.id,g.nome]));
