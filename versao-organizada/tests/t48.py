@@ -51,6 +51,14 @@ with sync_playwright() as p:
     msgs.clear();pg.set_input_files("#fileBkT",arq);pg.wait_for_timeout(1500)
     ok(any("INCOMPLETO" in m for m in msgs),"restaurar backup incompleto: o dialogo avisa %s"%[m[:50] for m in msgs])
     ok("INCOMPLETO" in pg.inner_text("body"),"restaurar backup incompleto: a mensagem final repete o aviso")
+    # campo de edicao da celula nao pode ficar coberto pela celula vizinha (campo 150px em coluna estreita)
+    pg.fill("#f-F","Teste");pg.fill("#f-N","2");pg.click('button.btn.pri.big[type="submit"]');pg.wait_for_timeout(900)
+    pg.locator('tr[data-l] td[data-c="E"]').first.click();pg.wait_for_timeout(300)
+    r=pg.evaluate("""()=>{const td=document.querySelector('tr[data-l] td.ed'),i=td&&td.querySelector('input');if(!i)return null;const a=td.getBoundingClientRect(),c=i.getBoundingClientRect(),x=a.right+8;
+      const el=document.elementFromPoint(x,c.y+c.height/2);return {larg:a.width,campo:c.width,ok:c.width<=a.width+9||el===i||i.contains(el)}}""")
+    ok(r is not None and r["ok"],"campo de edicao da celula fica visivel alem da largura da coluna: %s"%r)
+    # botao de recolher/expandir nao cobre o formulario: com o formulario aberto fica na divisoria
+    ok(pg.evaluate("()=>document.getElementById('dpill').classList.contains('dock')"),"botao recolher/expandir encostado na divisoria")
     ok(not errs,"sem erros de script: %s"%errs[:2])
     b.close()
 print(chr(10)+"Falhas:",len(f))

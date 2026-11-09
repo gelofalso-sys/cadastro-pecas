@@ -74,7 +74,7 @@ table.t td.dup{color:var(--bad);background:var(--bad-soft)!important}
 table.t td.ov::after{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 7px 7px 0;border-color:transparent var(--ov) transparent transparent}
 table.t td.miss{background:color-mix(in srgb,var(--warn) 9%,transparent)}
 table.t td[data-c]:hover{box-shadow:inset 0 0 0 1px var(--focus)}
-table.t td.ed{padding:0;overflow:visible;box-shadow:inset 0 0 0 2px var(--focus)}
+table.t td.ed{position:relative;z-index:4;padding:0;overflow:visible;box-shadow:inset 0 0 0 2px var(--focus)}
 table.t td.ed input{height:27px;border:0;border-radius:0;box-shadow:none;padding:0 8px;min-width:150px;background:var(--surface)!important;color:var(--ink)!important;-webkit-text-fill-color:var(--ink);caret-color:var(--focus);font-size:13px;opacity:1}
 table.t th.k,table.t td.k{position:sticky;left:0;z-index:1;background:var(--surface);padding:0 3px;cursor:default;box-shadow:1px 0 0 var(--line);min-width:0}
 table.t th.k{z-index:3;background:var(--surface-2)}
@@ -1202,6 +1202,7 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
 #filTog,.dpill{display:none}
 .dpill{position:fixed;right:18px;bottom:16px;z-index:8;height:38px;padding:0 16px;border:0;border-radius:99px;background:var(--accent);color:var(--accent-ink);font:600 13px var(--body);cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28)}
 .dpill:hover{filter:brightness(1.1)}
+.dpill.dock{height:26px;padding:0 12px;font-size:12px;right:30px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 @media (min-width:901px){.dpill:not([hidden]){display:inline-flex;align-items:center}}
 /* abas de cadastro grudadas no topo da área: dá para trocar de aba de qualquer ponto da página */
 #cfg .ctabs{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:4px}
@@ -5197,8 +5198,12 @@ document.getElementById("filTog").addEventListener("click",()=>{const f=document
 document.getElementById("tools").addEventListener("click",e=>{if(e.target.closest(".issues")&&!e.target.closest("a,button"))document.getElementById("tools").classList.toggle("aberto")});
 function pilulaAtualiza(){const b=document.getElementById("dpill");if(!b)return;const v=document.body.dataset.vis||"tudo";
   const alvo=v==="planilha"?["tudo","▴ Expandir o formulário"]:v==="cad"?["tudo","Tabela e formulário"]:["planilha","▾ Recolher o formulário"];
-  b.dataset.alvo=alvo[0];b.textContent=alvo[1];b.hidden=celular()}
+  b.dataset.alvo=alvo[0];b.textContent=alvo[1];b.hidden=celular();pilulaPos()}
+/* com o formulário aberto o botão fica ENCOSTADO na divisória entre a tabela e o formulário (não flutua sobre os campos); sem o formulário ele volta para o canto */
+function pilulaPos(){const b=document.getElementById("dpill"),sp=document.getElementById("splitter");if(!b)return;const v=document.body.dataset.vis||"tudo",r=sp&&sp.getBoundingClientRect();
+  if(!b.hidden&&v==="tudo"&&r&&r.height>0){b.classList.add("dock");b.style.top=Math.round(r.top+r.height/2-b.offsetHeight/2)+"px";b.style.bottom="auto"}else{b.classList.remove("dock");b.style.top="";b.style.bottom=""}}
 window.addEventListener("resize",pilulaAtualiza);
+try{new ResizeObserver(pilulaPos).observe(document.getElementById("paneTop"))}catch(e){}
 document.getElementById("dpill").addEventListener("click",e=>{const a=e.currentTarget.dataset.alvo;visPara(a);if(a==="tudo")refocar("#f-F")});
 
 /* ===== importação de romaneios: vários arquivos, ordem na fila e aviso de arquivo repetido ===== */
