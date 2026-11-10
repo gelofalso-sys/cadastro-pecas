@@ -21,3 +21,9 @@ de um arquivo enxerga as de todos os outros, e a ORDEM dos arquivos importa. Ao 
 
 Verificação da divisão: o arquivo montado é idêntico, byte a byte, ao `cadastro-pecas.html` da pasta principal
 no commit d82b061, e a suíte completa passou com 0 falhas.
+
+## Cadastros: salvar explícito
+`src/js/36-cadastros-salvar.js`: alterações feitas na área Cadastros ficam *pendentes* (barra "Salvar alterações / Descartar") e não são gravadas até salvar;
+enquanto isso formulário, tabela, romaneio e Desfazer ficam travados. Descartar devolve cadastros, peças e romaneio ao estado anterior.
+Em teste automatizado (`navigator.webdriver`) vale o modo antigo (grava na hora) para os testes existentes; `localStorage cadpecas-cad-estrito=1` liga o modo novo (ver `tests/t49.py`).
+Limite: janelas (`.rep`) abertas a partir dos Cadastros (ex.: colar catálogo) continuam gravando na hora.

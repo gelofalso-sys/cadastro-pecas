@@ -1324,6 +1324,13 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
 }
 @media (max-width:700px){#formWrap h2{display:none}}   /* o título da gaveta já diz "Lançar peça" */
 @media (pointer:coarse){table.t td.ed input{font-size:16px;height:36px}}   /* 16px: o iPhone não dá zoom na página ao tocar para digitar */
+#cadBar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:min(96vw,720px);background:var(--surface);color:var(--ink);border:2px solid #d99a00;border-radius:10px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.28);font-size:12.5px}
+#cadBar.pisca{animation:cadPisca .6s}
+@keyframes cadPisca{0%,100%{transform:translateX(-50%) scale(1)}30%{transform:translateX(-50%) scale(1.05);border-color:#e03131}}
+
+.xbar{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.trow .tools{flex:1 1 120px}
+@media (max-width:760px){.xbar{display:none}}
 </style>
 
 <aside class="side" id="side" aria-label="Menu lateral" hidden><div class="side-h"><b class="sl">Cadastro de Peças</b><button type="button" class="side-t" id="sideT" aria-label="Recolher ou expandir o menu" title="Recolher / expandir (Alt+B)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></i></button></div><div class="side-top sl" id="sideTop"></div><nav class="sn"><div class="sg g0"><span class="sl">Principal</span></div><button type="button" data-vis="tudo" title="Tabela e formulário"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></i><span class="sl">Tabela e formulário</span></button><div class="sg g1"><span class="sl">Romaneios</span></div><button type="button" data-go="act:imp-pick" title="Importar romaneio"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></i><span class="sl">Importar romaneio</span></button><button type="button" data-go="act:rom-abrir" title="Novo / continuar"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6M9 15h6"/></svg></i><span class="sl">Novo / continuar</span></button><button type="button" data-go="sec:roml" title="Romaneios lançados"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></i><span class="sl">Romaneios lançados</span></button><button type="button" data-act="renumerar" title="Renumerar as referências na ordem da tabela"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M4 12h10M4 17h10M18 6v12M16 16l2 2 2-2"/></svg></i><span class="sl">Renumerar referências</span></button><button type="button" data-go="act:tab-lista" title="Tabelas salvas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg></i><span class="sl">Tabelas salvas</span></button><div class="sg g2"><span class="sl">Cadastros</span></div><button type="button" data-go="sec:banho" title="Galvânicas e banhos"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.7l5.7 5.6a8 8 0 1 1-11.4 0z"/></svg></i><span class="sl">Galvânicas e banhos</span></button><button type="button" data-go="sec:cor" title="Cores, tamanhos e variações"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></i><span class="sl">Cores, tamanhos e variações</span></button><button type="button" data-go="sec:cat" title="Categorias"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01"/></svg></i><span class="sl">Categorias</span></button><button type="button" data-go="sec:forn" title="Fornecedores"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></i><span class="sl">Fornecedores</span></button><div class="sg g3"><span class="sl">Planilha</span></div><button type="button" data-go="sec:col" title="Padrões das colunas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/></svg></i><span class="sl">Padrões das colunas</span></button><button type="button" data-go="sec:mod" title="Modelo da planilha"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h8"/></svg></i><span class="sl">Modelo da planilha</span></button><div class="sg g4"><span class="sl">Leitura e arquivos</span></div><button type="button" data-go="sec:rom" title="Leitura de romaneios"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg></i><span class="sl">Leitura de romaneios</span></button><button type="button" data-go="sec:foto" title="Fotos (link)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21"/></svg></i><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc" title="Importar e backup"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3zM21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></i><span class="sl">Importar e backup</span></button><button type="button" data-go="act:xlsx" title="Baixar .xlsx" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></i><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar" title="Copiar para o Excel" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></i><span class="sl">Copiar para o Excel</span></button></nav><div class="side-exp sl" id="sideExp"></div></aside>
@@ -1342,7 +1349,7 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
 <nav class="vis" id="vis" aria-label="Visões"><button type="button" data-vis="tudo" class="vtudo" title="Tabela em cima e formulário embaixo (Alt+1)">Tabela e formulário</button><button type="button" data-vis="planilha" class="vplan" title="Só a tabela">Tabela</button><button type="button" data-vis="cad" class="vcad" title="Categorias, galvânicas, fornecedores e demais cadastros (Alt+3)">Cadastros</button><button type="button" class="vrom" data-act="rom-lista" title="Romaneios já lançados: abrir, ver ou corrigir">Romaneios</button></nav>
 <div class="app" id="app" role="main">
   <section class="gut pane-top" id="paneTop" aria-label="Planilha">
-    <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><button type="button" class="btn sm" id="filTog" aria-expanded="false" title="Mostrar ou esconder os filtros">⚲ Filtros</button><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
+    <div id="banner"></div><div class="fil" id="fil" hidden><input id="fBusca" type="search" placeholder="Buscar referência, descrição, cor, fornecedor…" aria-label="Buscar na lista" autocomplete="off"><button type="button" class="btn sm" id="filTog" aria-expanded="false" title="Mostrar ou esconder os filtros">⚲ Filtros</button><span id="filSel"></span><span id="filInfo" class="hint"></span><span class="seg vseg" role="group" aria-label="Ver como"><button type="button" data-act="vista" data-v="lista">Lista</button><button type="button" data-act="vista" data-v="planilha">Planilha</button></span></div><div class="trow"><div class="tools" id="tools"></div><span class="xbar" role="group" aria-label="Exportar e tabelas salvas"><button type="button" class="btn sm" data-act="tab-lista" title="Histórico de tabelas salvas, quem montou e os romaneios de cada uma">Tabelas salvas</button><button type="button" class="btn sm" data-act="copiar" title="Copia a tabela para colar no Excel">Copiar para o Excel</button><button type="button" class="btn pri sm" data-act="xlsx" title="Baixa a tabela no formato do sistema escolhido">Baixar .xlsx</button></span><span class="zm" role="group" aria-label="Tamanho da tabela"><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="-1" title="Diminuir a tabela" aria-label="Diminuir a tabela">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="t" data-d="0" id="zvT" title="Voltar ao tamanho normal" aria-label="Tamanho normal da tabela">100%</button><button type="button" class="btn sm" data-act="zoom" data-z="t" data-d="1" title="Aumentar a tabela" aria-label="Aumentar a tabela">+</button></span></div><div class="selbar" id="selbar"></div><div class="totais" id="totais"></div>
     <div class="sheet" id="sheet" tabindex="0"></div><div class="nf-vaz" id="nfVaz" hidden><span id="nfVazT"></span><button type="button" class="btn sm" id="nfVazB"></button></div>
   </section>
   <div class="splitter" id="splitter" role="separator" aria-orientation="horizontal" title="Arraste para mudar o tamanho da planilha e do lançamento · duplo clique volta ao meio"><span></span></div>
@@ -1803,7 +1810,7 @@ function traduzF(f,cols){const mapa={},fat={};cols.forEach((c,i)=>{if(c.k&&!(c.k
 function celulas(row,r,sugestao){
   const c=celulasBase(row,r);
   if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v;else if(x&&x.f){const n=typeof x.calc==="number"?x.calc:numRaw(row.v[L],row.v);if(n!=null)soma+=n}});
-    c[iv]={v:Math.round(soma*row.mk*100)/100,f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
+    c[iv]={v:r2c(soma*row.mk),f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
   return c;
 }
 /* centavos no arredondamento comercial (1,005 → 1,01), sem o erro do ponto flutuante */
@@ -2176,7 +2183,7 @@ function renderTopo(){try{romResync()}catch(e){}
   const ps=[...new Set([...S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))),prefDe(S.form.v.I,S.form.v.J)])];
   {const ms=document.getElementById("modSel");if(ms){const C0=cfg(),tem=r=>C0.modelos.some(x=>r.test(String(x.nome||"")));
     ms.innerHTML=opts([...C0.modelos.map(x=>[x.id,x.nome]),...(tem(/bling/i)?[]:[["@bling","＋ Adicionar Bling"]]),...(tem(/jueri/i)?[]:[["@jueri","＋ Adicionar Jueri"]]),["@novo","＋ Outro sistema…"]],C0.modelo)}
-    const bx=document.querySelector('[data-act="xlsx"]');if(bx)bx.textContent=(filtroOn()?"Baixar filtro ":"Baixar ")+(modeloAtual().formato==="csv"?".csv":".xlsx");{const bc=document.querySelector('[data-act="copiar"]');if(bc)bc.textContent=filtroOn()?"Copiar filtro para o Excel":"Copiar para o Excel"}}
+    const bxT=(filtroOn()?"Baixar filtro ":"Baixar ")+(modeloAtual().formato==="csv"?".csv":".xlsx");document.querySelectorAll('[data-act="xlsx"]:not(.mbar *)').forEach(bx=>{bx.textContent=bxT});document.querySelectorAll('[data-act="copiar"]').forEach(bc=>{bc.textContent=filtroOn()?"Copiar filtro para o Excel":"Copiar para o Excel"})}
   document.getElementById("seqs").innerHTML=ps.map(p0=>{const p=esc(p0),u=ultimo(p0),m=(g.manualReal||{})[p0]||0,i0=Math.max(u,m),f=g.cont[p0];return `<span class="seq">${p}: última <b>${p}${u}</b>${m>u?` · à mão até <b>${p}${m}</b>`:""}${f&&f>i0?` → lista <b>${p}${i0+1}${f>i0+1?"–"+f:""}</b>`:""}<span class="px">próxima <b>${p}${esc(proxDe(p0))}</b></span></span>`}).join("");
   document.getElementById("banner").innerHTML=lastExport?`<div class="banner"><p>Planilha gerada com <b class="mono">${esc(lastExport.faixa)}</b>. Gravar como última peça do sistema?</p>
     <button class="btn pri sm" type="button" data-act="exp-limpar">Gravar e limpar a lista</button><button class="btn sm" type="button" data-act="exp-so">Só gravar o número</button><button class="btn ghost sm" type="button" data-act="exp-nao">Agora não</button></div>`:"";
@@ -2592,7 +2599,7 @@ function conjTotHTML(f){
   const R=conjCalc(f),q=num(vazio(f.v.Q)?padraoDe(f.v.I,"Q"):f.v.Q)||0,mk=f.mk||{},ov=f.ov||{};
   if(!(f.comp||[]).some(c=>!vazio(c.peso)||!vazio(c.custo)))return `<p class="hint">Preencha o peso e o custo das peças para ver a somatória por banho.</p>`;
   const linhas=R.vars.map(x=>{const id=x.b?x.b.id:"p",t=x.tot,dsc=num(f.desconto)||0,P=dsc>0?r2c(r4c(t.P)-r4c(t.P)*kDesc(dsc)):r4c(t.P),qq=r4c(q),custo=0+P+qq+r4c(t.R)+r4c(t.S)+r4c(t.T)+r4c(t.U),m=num(mk[id]),man=x.b?(ov[id]||{}).V:f.v.V,
-    vr=!vazio(man)&&num(man)!=null?num(man):(m?Math.round(custo*m*100)/100:null);
+    vr=!vazio(man)&&num(man)!=null?num(man):(m?r2c(custo*m):null);
     return `<tr><th>${x.b?`<span class="dot d-${x.b.coluna}"></span>${esc(x.b.letra)} · ${esc(x.b.nome)}`:"Conjunto"}</th><td>${fmt(t.N)} g</td><td>${brl(P)}</td><td>${brl(r4c(t.R)+r4c(t.S)+r4c(t.T))}</td><td>${brl(r4c(t.U))}</td><td>${q?brl(qq):"–"}</td><td><b>${brl(custo)}</b></td><td>${m?fmt(m):"–"}</td><td><b>${vr!=null?"R$ "+brl(vr):"digite o Fator × abaixo"}</b></td></tr>`}).join("");
   const aviso=R.vars.some(x=>x.semMult)?`<p class="hint cj-w">⚠ Um banho usado aqui está sem o R$ por grama (Cadastros › Galvânicas): o custo dela entra como zero.</p>`:"";
   return `<table class="cj-s"><thead><tr><th>Somatória</th><th>Peso</th><th>Compra</th><th>Banho</th><th>Verniz</th><th>Insumos</th><th>Custo</th><th>Fator ×</th><th>Varejo</th></tr></thead><tbody>${linhas}</tbody></table>${aviso}`}
@@ -3048,7 +3055,7 @@ function romPreview(){const out=[],base=S.lanc.slice();
   ROM.rows.forEach((r,i)=>{out[i]=null;if(r.skip)return;const {f}=romForm(r,true),t=romMonta(base,r,{...f,id:"__rom"+i});out[i]={rows:[],troca:t.troca}});
   if(!base.some(l=>String(l.id).startsWith("__rom")))return out;let g;try{g=gerar(base)}catch(e){return out}
   g.linhas.forEach((row,ri)=>{const id=String(row.lancId);if(!id.startsWith("__rom"))return;const o=out[+id.slice(5)];if(!o)return;
-    const cs=celulas(row,ri+2),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
+    const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
     o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),cb:row.banho?n(row.banho.coluna):null,custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
 const fm=n=>n==null?"—":"R$ "+brl(n);
@@ -3179,6 +3186,7 @@ async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição
   if(ROM&&ROM.rows.length)romSalvar();
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
   const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,rows:rec.rows,pdf:null};
+  {const A=cfg().catAlias||{};ROM.rows.forEach(r=>{let n=0;while(r.cat&&!catBy(r.cat)&&A[r.cat]&&n++<10)r.cat=A[r.cat]})}   /* categoria renomeada depois de guardar o romaneio */
   if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.vz=rec.form.vz||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
   romMarcar();const nf=ROM.rows.filter(r=>r.feito).length,np=ROM.rows.filter(r=>!r.skip).length;
   ROM.msg=`Romaneio salvo aberto · ${nf} já lançada(s) · ${np} para lançar. Mude qualquer campo de uma peça já lançada para corrigir (ela é substituída, mantendo posição e referência; só muda de referência se você trocar a categoria; nesse caso as outras peças nunca são renumeradas).`;
@@ -3369,7 +3377,7 @@ function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r
 function romRevisar(){const pv=romPreview(),it=[];
   ROM.rows.forEach((r,i)=>{if(r.skip)return;const p=pv[i],q=romForm(r).q,cols=romColsR(r),al=[],cria=q.length>0;
     if(!cria)al.push("sem quantidade — não será criada");else if(romSomaDe(r,cols)!==r.qtd)al.push(`divisão ${romSomaDe(r,cols)} de ${r.qtd}`);
-    if(r.catq)al.push("categoria não confirmada");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
+    if(r.catq)al.push("categoria não confirmada");if(r.cat&&!catBy(r.cat))al.push("categoria “"+r.cat+"” não existe mais — escolha outra");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
     if(p&&p.rows.some(x=>x.dup))al.push("referência repetida");if(cria&&p&&p.rows.some(x=>x.v==null))al.push("sem preço de varejo");if(ROM.pdf&&!r.foto)al.push("sem foto");
     it.push({r,i,p,cria,al})});
   const cr=it.filter(x=>x.cria),nal=it.filter(x=>x.al.length).length,zeros=[...new Set(cr.map(x=>prefDe(x.r.cat,x.r.sub)))].filter(pf=>!(ultimo(pf)>0));let un=0,cus=0,vr=0,nl=0;
@@ -3552,7 +3560,14 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   else if(k==="exk"){r._k=t.value;return}
   else if(k==="exv"){r._v=t.value;return}
   else if(k==="q"){r.q[t.dataset.b]=t.value}
+  if(fin&&!vazio(t.value)&&(k==="vp"||(k==="bo"&&t.dataset.k==="V"))){const rc2=t.closest(".rc");if(rc2)romFatorDoPreco(r,k==="vp"?"p":t.dataset.b,rc2)}
   romAtualSoon()}
+/* digitou o Preço de Varejo no cartão: o Fator × passa a ser o que dá esse preço (preço ÷ soma dos custos), como no formulário */
+function romFatorDoPreco(r,id,rc){const p=romPreview()[ROM.rows.indexOf(r)];if(!p)return;const x=id==="p"?p.rows[0]:p.rows.find(y=>y.bid===id);
+  if(!x||!(x.custo>0)){toast("Para o fator ser calculado, informe antes o peso e os custos.");return}
+  const alvo=num(id==="p"?r.vp:((r.bo||{})[id]||{}).V);if(alvo==null||alvo<0)return;
+  const fator=String(Math.round(alvo/x.custo*10000)/10000).replace(".",",");r.mk=r.mk||{};r.mk[id]=fator;
+  const inp=rc.querySelector(`[data-rp="mk"][data-b="${CSS.escape(String(id))}"]`);if(inp)inp.value=fator}
 function romLer(){if(ROM&&String(ROM.texto||"").length>MAX_TEXTO_COLADO){ROM.msg=`O texto tem ${String(ROM.texto).length} caracteres e o limite é ${MAX_TEXTO_COLADO}. Cole em partes.`;renderRom();return}if(ROM&&ROM.pdf&&ROM.texto!==ROM.pdf.texto)ROM.pdf=null;let f=S.form,T=romT(),R=lerRomaneioAuto(ROM.texto,T);
   {const pts=r=>r.erro?-1e9:romScore(r)+(/✓ valor/.test(r.conf||"")?1000:0);let bp=pts(R);for(const T2 of cfg().romaneios){if(T2.id===T.id)continue;const R2=lerRomaneioAuto(ROM.texto,T2),p2=pts(R2);if(p2>bp){bp=p2;ROM.tid=T2.id;T=T2;R=R2}}}
   if(R.erro){const tinha=ROM.rows&&ROM.rows.length;ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg=R.erro+(tinha?" Os cartões da leitura anterior foram removidos.":"");romSalvarSoon();renderRom();return}
@@ -3972,8 +3987,8 @@ function relAbrir(){const R=relLer();if(!R){toast("Ainda não há relatório (ou
   const ov=document.createElement("div");ov.className="rep";
   ov.innerHTML=`<div class="rep-c"><div class="rep-h"><div><b class="rep-t">Relatório do romaneio lançado</b><div class="hint">${esc(m.forn||"—")}${m.banhista?" · galvânica "+esc(m.banhista):""}${m.obs?" · "+esc(m.obs):""} · ${esc(new Date(R.em).toLocaleString("pt-BR"))}</div></div>
     <div class="rep-ac noprint"><button type="button" class="btn sm" data-act="rel-print">🖨 Imprimir / PDF</button><button type="button" class="btn sm" data-act="rel-copy">Copiar resumo</button><button type="button" class="btn sm" data-act="rel-csv">Baixar .csv</button>${undo&&undo.tipo==="dup"&&R===REL?`<button type="button" class="btn sm danger" data-act="rel-undo">Desfazer criação</button>`:""}<button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div>
-    <div class="rep-k"><div class="kpi"><b>${R.itens.length}</b><span>peças</span></div><div class="kpi"><b>${tot.l}</b><span>linhas</span></div><div class="kpi ${ok?"ok":"bad"}"><b>${tot.un}<small> / ${Number(m.naLista)||0}</small></b><span>unidades lançadas / lista</span></div><div class="kpi"><b>${fm(tot.cu)}</b><span>custo total</span></div><div class="kpi"><b>${fm(tot.vr)}</b><span>varejo total</span></div>${tot.vr?`<div class="kpi"><b>${fmt(Math.round((tot.vr-tot.cu)/tot.vr*1000)/10)}%</b><span>lucro</span></div>`:""}</div>
-    <div class="rep-cf ${(/⚠/.test(m.conf)||!ok)?"bad":"ok"}">${ok?"✓ Todas as unidades da lista foram lançadas":"⚠ Faltaram "+((Number(m.naLista)||0)-tot.un)+" unidades da lista"}${m.conf?" · Conferência da lista: "+esc(m.conf):""}</div>
+    <div class="rep-k"><div class="kpi"><b>${R.itens.length}</b><span>peças</span></div><div class="kpi"><b>${tot.l}</b><span>linhas</span></div><div class="kpi ${ok?"ok":"bad"}"><b>${tot.un}<small> / ${Number(m.naLista)||0}</small></b><span>unidades lançadas / lista</span></div><div class="kpi"><b>${fm(tot.cu)}</b><span>custo total</span></div><div class="kpi"><b>${fm(tot.vr)}</b><span>varejo total</span></div>${tot.vr&&R.itens.every(i=>i.vr>0)?`<div class="kpi"><b>${fmt(Math.round((tot.vr-tot.cu)/tot.vr*1000)/10)}%</b><span>lucro</span></div>`:""}</div>
+    <div class="rep-cf ${(/⚠/.test(m.conf)||!ok||R.ign.length)?"bad":"ok"}">${ok?(R.ign.length?"✓ Todas as unidades das peças marcadas foram lançadas · ⚠ "+R.ign.length+" peça"+(R.ign.length===1?"":"s")+" da lista ficaram de fora (veja “Não lançadas”)":"✓ Todas as unidades da lista foram lançadas"):"⚠ Faltaram "+((Number(m.naLista)||0)-tot.un)+" unidades da lista"}${m.conf?" · Conferência da lista: "+esc(m.conf):""}</div>
     <div class="rep-rf"><span class="hint">Referências criadas</span>${relFaixas(R).map(x=>`<span class="rch"><b>${esc(x)}</b></span>`).join("")||"—"}<span class="hint noprint">Ao baixar a planilha, o sistema pergunta se grava a última peça de cada tipo.</span></div>
     <div class="rep-tb"><table><thead><tr><th></th><th>Referências</th><th>Descrição</th><th>Categoria</th><th class="n">Un.</th><th class="n">Compra</th><th class="n">Custo</th><th class="n">Varejo</th></tr></thead><tbody>
     ${R.itens.map(i=>`<tr><td>${i.foto?`<img class="rc-ft sm" src="${fs(i.foto)}" alt="">`:""}</td><td>${i.linhas.map(l=>`<div class="rl"><b class="mono">${esc(l.ref)}</b>${l.cor?` <i>${esc(l.cor)}</i>`:""}</div>`).join("")}</td><td><b>${esc(i.desc)}</b><div class="hint">${esc(i.cod||"")}${i.peso?` · ${esc(i.peso)} g`:""}</div></td><td>${esc(i.cat)}${i.sub?`<div class="hint">${esc(i.sub)}</div>`:""}</td><td class="n">${i.linhas.map(l=>`<div class="rl">${Number(l.q)||0}</div>`).join("")}</td><td class="n"><div class="rl">${esc(i.compra||"—")}</div></td><td class="n">${i.linhas.map(l=>`<div class="rl">${brl(l.cu)}</div>`).join("")}</td><td class="n">${i.linhas.map(l=>`<div class="rl">${l.v==null?"—":brl(l.v)}</div>`).join("")}</td></tr>`).join("")}</tbody></table></div>
@@ -4906,6 +4921,7 @@ function onField(t,isChange){
       const dup=C.categorias.some(x=>x!==c&&String(x.nome).trim().toLowerCase()===nv.toLowerCase());
       if(!nv||dup){if(isChange){t.value=old;toast(!nv?"O nome da categoria não pode ficar vazio — voltei ao nome anterior.":`Já existe a categoria “${nv}” — voltei ao nome anterior.`)}return}
       (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;const rest=it.slice(q+1).trim(),pp=rest.split(">");return pp[0].trim()===old?it.slice(0,q+1)+nv+(pp.length>1?">"+pp.slice(1).join(">"):""):it}).join(";")});
+      C.catAlias=C.catAlias||{};Object.keys(C.catAlias).forEach(k=>{if(C.catAlias[k]===old)C.catAlias[k]=nv});C.catAlias[old]=nv;   /* romaneios salvos guardam o nome antigo: ao reabrir, seguem o novo */
       c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
@@ -4975,7 +4991,7 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.id==="impFile"){const fl=[...t.files];t.value="";impAdd(fl);return}
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
   if(t.id==="romXls"&&t.files[0]){const fl=t.files[0];t.value="";return romPlanilha(fl)}
-  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.lcf!==undefined||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.cvf!==undefined||t.dataset.cvg!==undefined||t.dataset.ff==="desconto"||t.dataset.bhf!==undefined||t.dataset.gif==="letra"||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.rp==="faixa"||t.dataset.rp==="qall"||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome")onField(t,true)});
+  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.lcf!==undefined||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.cvf!==undefined||t.dataset.cvg!==undefined||t.dataset.ff==="desconto"||t.dataset.bhf!==undefined||t.dataset.gif==="letra"||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.rp==="faixa"||t.dataset.rp==="qall"||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome"||(t.closest&&t.closest("#romWrap")&&(t.dataset.rp==="vp"||(t.dataset.rp==="bo"&&t.dataset.k==="V"))))onField(t,true)});
 document.addEventListener("paste",e=>{const cb=e.clipboardData||window.clipboardData;let tcb="";try{tcb=cb?cb.getData("text"):""}catch(x){}
   if(tcb.length>MAX_TEXTO_COLADO){e.preventDefault();toast(`Texto grande demais para colar (${tcb.length} caracteres; o limite é ${MAX_TEXTO_COLADO}). Cole em partes menores.`);return}
   const pt=e.target;
@@ -5317,6 +5333,73 @@ document.addEventListener("keydown",e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&e.k
 if(!celular())sideAplicar(abertos.side);
 /* celular: a barra de baixo some o "Lançar peça" quando o formulário já está na tela */
 try{const io=new IntersectionObserver(es=>{document.body.classList.toggle("formvis",!celular()&&es.some(x=>x.isIntersecting))},{threshold:0.1});io.observe(document.getElementById("formWrap"))}catch(e){}
+/* ===== Cadastros: alterações só valem depois de SALVAR; romaneio aberto acompanha o cadastro =====
+   Enquanto há alterações pendentes nos Cadastros: nada é gravado (nem no navegador nem na conta), as ações da tabela, do formulário e do
+   romaneio ficam travadas, e a barra "Salvar / Descartar" fica na tela. Descartar devolve cadastros, peças e romaneio ao que eram.
+   Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que localStorage "cadpecas-cad-estrito"="1". */
+const CAD={snap:null,pend:false,hL:0,hR:null,sig:null,rt:null};
+const CADAUTO=(()=>{try{return !!navigator.webdriver&&localStorage.getItem("cadpecas-cad-estrito")!=="1"}catch(e){return false}})();
+const cadLancSig=()=>JSON.stringify(S.lanc,(k,v)=>(k==="ft"||k==="ftR"||k==="foto")?undefined:v);
+const cadRomSig=()=>ROM&&ROM.rows?JSON.stringify(ROM.rows,(k,v)=>k==="foto"?undefined:v):null;
+function cadTirarFoto(){try{flushJa()}catch(e){}
+  CAD.snap={c:JSON.stringify(S.config),l:cadLancSig(),f:JSON.stringify(S.form),r:cadRomSig(),rasc:rascunho?JSON.stringify(rascunho,(k,v)=>k==="ft"?undefined:v):null};
+  CAD.hL=HIST.length;CAD.hR=REDO.slice()}
+function cadBarra(){let b=document.getElementById("cadBar");
+  if(!CAD.pend){if(b)b.remove();return}
+  if(!b){b=document.createElement("div");b.id="cadBar";b.setAttribute("role","alert");
+    b.innerHTML=`<span><b>Alterações nos Cadastros ainda não salvas.</b> Só valem depois de salvar; até lá o resto do app fica travado.</span><button type="button" class="btn pri sm" data-cad="salvar">Salvar alterações</button><button type="button" class="btn sm" data-cad="descartar">Descartar</button>`;document.body.appendChild(b)}}
+function cadConferir(){
+  if(CADAUTO)return;
+  if(CAD.snap){const mudou=JSON.stringify(S.config)!==CAD.snap.c||cadLancSig()!==CAD.snap.l;
+    if(mudou&&!CAD.pend){CAD.pend=true;setStatus("Cadastros: alterações NÃO salvas",true)}
+    if(!mudou&&CAD.pend){CAD.pend=false;setStatus("Salvo neste navegador")}
+    if(!mudou)CAD.snap=null}
+  cadBarra()}
+function cadRomAtualizar(){   /* romaneio aberto acompanha o cadastro (valores da galvânica, banhos, fornecedores…) */
+  if(!ROM||!ROM.rows||!ROM.rows.length)return;
+  const s=JSON.stringify(S.config);if(s===CAD.sig)return;CAD.sig=s;
+  clearTimeout(CAD.rt);CAD.rt=setTimeout(()=>{CAD.rt=null;if(!ROM||!ROM.rows||!ROM.rows.length)return;const w=document.getElementById("romWrap"),pos=[];for(let e=w;e;e=e.parentElement)if(e.scrollHeight>e.clientHeight)pos.push([e,e.scrollTop]);
+    try{renderRom()}finally{pos.forEach(([e,t])=>{e.scrollTop=t})}},350)}
+function cadSalvar(){if(!CAD.pend)return;CAD.pend=false;CAD.snap=null;cadBarra();
+  dirty.c=true;dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);sT=null;setStatus("Salvando…");chain=chain.then(flush);
+  render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.")}
+function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
+  const lancAtual=new Map(S.lanc.map(l=>[l.id,l]));
+  S.config=JSON.parse(s.c);S.form=JSON.parse(s.f);
+  S.lanc=JSON.parse(s.l).map(l=>{const a=lancAtual.get(l.id);if(a){if(a.ft!==undefined)l.ft=a.ft;if(a.ftR!==undefined)l.ftR=a.ftR}return l});
+  if(s.r&&ROM&&ROM.rows){const rs=JSON.parse(s.r);rs.forEach((o,i)=>{const r=ROM.rows[i];if(!r)return;Object.keys(r).forEach(k=>{if(k!=="foto"&&!(k in o))delete r[k]});Object.assign(r,o)})}
+  if(s.rasc&&rascunho){const o=JSON.parse(s.rasc);Object.keys(rascunho).forEach(k=>{if(k!=="ft"&&!(k in o))delete rascunho[k]});Object.assign(rascunho,o)}
+  HIST.length=Math.min(HIST.length,CAD.hL);REDO.length=0;CAD.hR.forEach(x=>REDO.push(x));
+  CAD.pend=false;CAD.snap=null;CAD.sig=JSON.stringify(S.config);cadBarra();
+  try{sincGrade(S.form)}catch(e){}
+  try{histIni()}catch(e){}
+  render();if(ROM&&ROM.rows&&ROM.rows.length){renderRom();romSalvarSoon()}setStatus(db?"Salvo na sua conta":"Salvo neste navegador");toast("Alterações dos Cadastros descartadas.")}
+/* enquanto há alterações pendentes: grava nada */
+{const flush0=flush;flush=async function(){if(CAD.pend)return true;return flush0()}}
+/* travas */
+const CAD_TRAVA="#form,#sheet,#romWrap,#tools,#banner,#impBar,#fil,#btnUndo,#btnRedo,#side [data-act]";
+function cadAviso(){const b=document.getElementById("cadBar");if(b){b.classList.remove("pisca");void b.offsetWidth;b.classList.add("pisca")}toast("Salve ou descarte as alterações dos Cadastros antes de continuar.")}
+const CAD_TIPOS=["click","dblclick","mousedown","input","change","keydown","paste","drop","cut"];
+CAD_TIPOS.forEach(tp=>window.addEventListener(tp,e=>{
+  const t=e.target;if(!t||!t.closest)return;
+  if(!CAD.rt&&t.closest("#cfg"))CAD.sig=JSON.stringify(S.config);   /* referência para saber se o cadastro mudou neste evento */
+  if(CADAUTO)return;
+  const bar=t.closest("#cadBar");
+  if(bar){if(tp==="click"){const b=t.closest("[data-cad]");if(b){e.preventDefault();e.stopPropagation();b.dataset.cad==="salvar"?cadSalvar():cadDescartar()}}return}
+  if(CAD.pend){
+    const ctl="select,input[type=checkbox],input[type=radio],input[type=file]";
+    const nav=tp==="keydown"&&(["Tab","Escape","Shift","Control","Alt","Meta","Home","End","PageUp","PageDown"].includes(e.key)||e.key.startsWith("Arrow")||((e.ctrlKey||e.metaKey)&&/^[ac]$/i.test(e.key)));
+    const undo=tp==="keydown"&&(e.ctrlKey||e.metaKey)&&/^[zy]$/i.test(e.key)&&!t.closest("#cfg");
+    const fora=!!t.closest(CAD_TRAVA)&&!t.closest("#cfg");
+    let bloq=undo;
+    if(!bloq&&fora)bloq=tp==="mousedown"?!!t.closest(ctl):tp==="keydown"?!nav:true;
+    if(bloq){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(tp!=="mousedown"&&tp!=="input")cadAviso();return}}
+  else if(!CAD.snap&&t.closest("#cfg")&&tp!=="mousedown"&&!(tp==="keydown"&&(e.key==="Tab"||e.key.startsWith("Arrow")||e.key==="Shift"||e.key==="Control"||e.key==="Alt"||e.key==="Meta"))){cadTirarFoto()}
+},true));
+/* depois de cada evento (e depois que os temporizadores dos cadastros rodaram) confere o que mudou */
+CAD_TIPOS.forEach(tp=>window.addEventListener(tp,e=>{const t=e.target;if(!t||!t.closest||!t.closest("#cfg"))return;
+  setTimeout(()=>{cadConferir();cadRomAtualizar()},0);setTimeout(()=>{cadConferir();cadRomAtualizar()},700)}));
+window.addEventListener("beforeunload",e=>{if(CAD.pend){e.preventDefault();e.returnValue="";return ""}});
 })();
 </script>
 

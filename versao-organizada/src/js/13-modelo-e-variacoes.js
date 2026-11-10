@@ -78,7 +78,7 @@ function traduzF(f,cols){const mapa={},fat={};cols.forEach((c,i)=>{if(c.k&&!(c.k
 function celulas(row,r,sugestao){
   const c=celulasBase(row,r);
   if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v;else if(x&&x.f){const n=typeof x.calc==="number"?x.calc:numRaw(row.v[L],row.v);if(n!=null)soma+=n}});
-    c[iv]={v:Math.round(soma*row.mk*100)/100,f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
+    c[iv]={v:r2c(soma*row.mk),f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
   return c;
 }
 /* centavos no arredondamento comercial (1,005 → 1,01), sem o erro do ponto flutuante */
