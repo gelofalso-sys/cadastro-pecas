@@ -95,7 +95,7 @@ function janGarantir(ri){const J=JAN;if(!J)return true;const p=J.lista.indexOf(r
 function guiaHTML(){if(abertos.guiaX)return "";return `<span class="ok vaz guia" role="note"><b>Guia rápido:</b> <button type="button" class="gi tod" data-act="ir" data-sec="cat" title="Categorias, subcategorias, tamanhos e cores">1 · Cadastros</button> <button type="button" class="gi tod" data-act="ir" data-sec="lancar">2 · Lançar peça</button> <span class="hint">3 · conferir a tabela</span> <span class="hint">4 · “Exportar para…” e baixar</span> <button type="button" class="x" data-act="guia-fechar" aria-label="Fechar o guia" title="Fechar o guia">×</button></span> `}
 /* apagou (ou voltou) peças da tabela com o romaneio aberto: as linhas dele que já não existem na tabela deixam de ser "já lançada" */
 let romChaveL="",romCriando=false;
-function romResync(){if(romCriando||!ROM||!ROM.rows||!ROM.rows.length)return;const k=S.lanc.map(l=>l.id).join(",");if(k===romChaveL)return;romChaveL=k;
+function romResync(){if(romCriando||!ROM||!ROM.rows||(!ROM.rows.length&&!(ROM.removidos||[]).length))return;const k=S.lanc.map(l=>l.id).join(",");if(k===romChaveL)return;romChaveL=k;
   const antes=ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("");romMarcar();if(ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("")!==antes){romSalvarSoon();setTimeout(()=>{if(ROM)renderRom()},0)}}
 function renderTopo(){try{romResync()}catch(e){}
   const g=G=gerar(),sh=document.getElementById("sheet"),st=sh.scrollTop,sl=sh.scrollLeft,cc=cfg().colcfg;
@@ -114,7 +114,8 @@ function renderTopo(){try{romResync()}catch(e){}
       <button class="btn ghost sm" type="button" data-act="b-none" title="Limpar seleção">×</button></div>`:"")
     +(()=>{const nf=S.lanc.filter(l=>l.ft&&vazio(l.v.B)).length;return nf?`<button class="btn sm" type="button" data-act="fotos-enviar" title="Envia as fotos para o imgbb e põe o link na coluna Foto (os sistemas pedem o link da foto)">↑ Gerar link de ${nf} foto${nf>1?"s":""}</button>`:""})()
     +`<div class="issues">${av.length?av.map(a=>`<span class="${a.bad?"bad":""}">• ${esc(a.t)}</span>`).join(""):!g.linhas.length?`${guiaHTML()}<span class="ok vaz"><b>Comece lançando uma peça abaixo</b> ou importe um romaneio ou nota fiscal. Também dá para colar linhas de outra planilha (clique numa célula e use <kbd>Ctrl</kbd>+<kbd>V</kbd>).</span> <button class="btn sm" type="button" data-act="exemplo">Ver um exemplo</button>`:`<span class="ok">Clique numa célula para editar · <kbd>Enter</kbd> desce · <kbd>Tab</kbd> vai para a direita · pode colar blocos do Excel</span>`}</div>`;
-  const cab=`<thead><tr><th class="k"><div class="in"><input type="checkbox" id="selAll" ${S.lanc.length&&S.lanc.every(l=>sel.has(l.id))?"checked":""} aria-label="Selecionar todos"></div></th><th class="k nm" title="Número da linha: ajuda a achar qual peça você está alterando">Nº</th><th class="tfh" title="Foto que veio do romaneio — só referência visual, não vai para a planilha">Foto do romaneio</th><th class="tfh" title="Imagem que você anexou: é ela que gera o link da coluna Foto">Imagem (upload)</th>${LET.map(L=>`<th data-hc="${L}" title="${esc(NOME[L])} — clique para selecionar a coluna"><small>${L}</small>${esc(nomeTela(L))}<span class="rz" data-rz="${L}" title="Arraste para ajustar a largura · duplo clique volta ao padrão"></span></th>`).join("")}</tr></thead>`;
+  const visIds=[...new Set(g.linhas.filter((r,i)=>vis(i)).map(r=>r.lancId))];
+  const cab=`<thead><tr><th class="k"><div class="in"><input type="checkbox" id="selAll" ${visIds.length&&visIds.every(id=>sel.has(id))?"checked":""} aria-label="Selecionar todos"></div></th><th class="k nm" title="Número da linha: ajuda a achar qual peça você está alterando">Nº</th><th class="tfh" title="Foto que veio do romaneio — só referência visual, não vai para a planilha">Foto do romaneio</th><th class="tfh" title="Imagem que você anexou: é ela que gera o link da coluna Foto">Imagem (upload)</th>${LET.map(L=>`<th data-hc="${L}" title="${esc(NOME[L])} — clique para selecionar a coluna"><small>${L}</small>${esc(nomeTela(L))}<span class="rz" data-rz="${L}" title="Arraste para ajustar a largura · duplo clique volta ao padrão"></span></th>`).join("")}</tr></thead>`;
   const ftMap={},ftRMap={},ftUMap={};S.lanc.forEach(l=>{const a=l.ft&&ftOk(l.ft)?l.ft:"",b=l.ftR&&ftOk(l.ftR)?l.ftR:"";if(a||b)ftMap[l.id]=a||b;if(b)ftRMap[l.id]=b;if(a)ftUMap[l.id]=a});
   let h=`<table class="t" style="width:${larguraTabela()}px"><colgroup><col style="width:96px"><col style="width:44px"><col style="width:56px"><col style="width:56px">${LET.map(L=>`<col data-cw="${L}" style="width:${cw(L)}px">`).join("")}</colgroup>${cab}<tbody>`;
   const cel=g.linhas.map((row,ri)=>celulas(row,ri+2));   /* uma vez só por desenho (antes eram duas) */
@@ -125,7 +126,7 @@ function renderTopo(){try{romResync()}catch(e){}
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
-      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(DUAS.has(L)?brl(x.v):fmt(x.v)):x.v;
+      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(L==="N"?(Math.round(x.v*1000)/1000).toFixed(3).replace(/0$/,"").replace(".",","):DUAS.has(L)?brl(x.v):fmt(x.v)):x.v;
       h+=`<td class="${isN?"n":""}${x.f?" fx":""}${ov}" data-c="${L}" title="${x.f?"="+esc(x.f):esc(x.v)}">${esc(txt)}</td>`});
     h+=`</tr>`;return h};
   const nb=Math.max(6,30-g.linhas.length);
@@ -149,7 +150,7 @@ function renderTopo(){try{romResync()}catch(e){}
       <span class="ordsel" role="group" aria-label="Ordem da tabela"><span class="hint">Ordem</span><button type="button" class="${ord?"":"on"}" data-act="ordem" data-v="int" title="Cada peça com seus banhos e tamanhos juntos, na ordem em que foi lançada">Por peça</button><button type="button" class="${ord?"on":""}" data-act="ordem" data-v="ab" title="Todas as A (ouro), depois todas as B (prata), depois as prontas">Por banho</button></span>`}
   const li=vista()==="lista";sh.classList.toggle("lista",li);document.body.classList.toggle("vlista",li);if(li){selR=null;h=cartoes(g)}
   sh.innerHTML=h;sh.scrollTop=st;sh.scrollLeft=sl;sh.style.overflowAnchor=JAN?"none":"";if(JAN)janMedir();pintarSel();renderSelBar();
-  renderNum();{const pp=prefDe(S.form.v.I,S.form.v.J),pr=document.getElementById("proxRef");if(pr)pr.textContent=fnum(pp,proxDe(pp));const pb=document.getElementById("proxBig");if(pb)pb.innerHTML=`Próxima referência <b>${esc(pp)}${fnum(pp,proxDe(pp))}</b>`}
+  renderNum();{const pp=prefDe(S.form.v.I,S.form.v.J),pr=document.getElementById("proxRef");if(pr)pr.textContent=fnum(pp,proxDe(pp));const pb=document.getElementById("proxBig");if(pb)pb.innerHTML=`Próxima referência <b>${esc(pp)}${fnum(pp,proxDe(pp))}</b>`;const mf=document.querySelector("#form .mfp");if(mf)mf.textContent=`próxima ${pp}${fnum(pp,proxDe(pp))}`}
 }
 /* ---- edição de célula ---- */
 function abrirCel(ri,L,cursorFim){

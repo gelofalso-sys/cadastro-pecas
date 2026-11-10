@@ -1,0 +1,72 @@
+/* Navegação e superfícies de trabalho para telas pequenas. */
+.mobile-menu,.fextra-tog{display:none}
+@media (max-width:900px){
+  .mobile-menu{display:block;position:relative;order:1;margin-left:auto;z-index:30}
+  .mobile-menu summary{display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font-weight:700;cursor:pointer;list-style:none}
+  .mobile-menu summary::-webkit-details-marker{display:none}
+  .mobile-menu[open] summary{background:var(--accent);color:var(--accent-ink)}
+  .mobile-menu-panel{position:fixed;top:60px;right:8px;width:min(320px,calc(100vw - 16px));max-height:calc(100dvh - 76px);overflow-y:auto;overscroll-behavior:contain;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:3px}
+  .mobile-menu-panel b{padding:12px 10px 4px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  .mobile-menu-panel button{min-height:44px;padding:8px 10px;text-align:left;border:0;border-radius:8px;background:transparent;color:var(--ink);font:600 14px var(--body)}
+  .mobile-menu-panel button:focus-visible,.mobile-menu-panel button:hover{background:var(--accent-soft);outline:2px solid var(--accent)}
+  header nav.ir{display:none!important}
+  .hin .sp{order:3;overflow:visible;mask-image:none;-webkit-mask-image:none;padding:0;display:grid;grid-template-columns:minmax(110px,1fr) minmax(0,1.5fr);gap:8px}
+  .hin .sp .btn{display:none}
+  .hin .sp .autor,.hin .sp .mod,.hin .sp select{width:100%;min-width:0;max-width:none}
+  .hin .sp .autor,.hin .sp select{height:44px!important;min-height:44px!important}
+  .udo .btn{min-width:44px;min-height:44px!important}
+  .vis button{min-height:44px}
+  .vis .vrom{margin-left:2px}
+  .rom-lista{padding:0 12px 12px}
+  .rom-lista table,.rom-lista tbody{display:block;width:100%}
+  .rom-lista thead{display:none}
+  .rom-lista tbody tr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 10px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  .rom-lista tbody tr[style*="display: none"]{display:none!important}
+  .rom-lista tbody tr td{display:block;min-width:0;padding:0;border:0!important;background:transparent!important;text-align:left!important;overflow-wrap:anywhere}
+  .rom-lista tbody tr td::before{content:attr(data-label);display:block;margin-bottom:2px;color:var(--muted);font:600 11px var(--body)}
+  .rom-lista tbody tr td:nth-child(-n+4),.rom-lista .rom-acoes,.rom-lista .rom-vazio td{grid-column:1/-1}
+  .rom-lista .rom-acoes{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .rom-lista .rom-acoes::before{display:none}
+  .rom-lista .rom-acoes .btn{flex:1 1 auto;min-height:44px}
+  .rep-busca{height:44px;max-width:none;margin:8px 12px;width:calc(100% - 24px)}
+  .rom .rom-cfg{align-items:stretch;gap:8px}
+  .rom .rom-cfg .fq{flex:1 1 100%;width:100%;min-width:0}
+  .rom .rom-cfg .fq>span{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.3}
+  .rom .rom-cfg input,.rom .rom-cfg select{width:100%;min-height:44px}
+  .rom .rom-h,.rom .rom-b{flex-wrap:wrap;gap:8px}
+  .rom .rom-h .btn,.rom .rom-b .btn,.rom .rom-cfg .btn{min-height:44px}
+  .rom .rom-t textarea{min-height:110px}
+  #form .fbar .btn.sm,#form .fbar label.btn{min-height:40px}
+  #form .fextra-tog{display:inline-flex;align-items:center}
+  #form:not(.fextra-open) .fbar :is([data-act="repetir"],[data-q="multi"],[data-act="rom-abrir"],[data-act="rom-lista"],[data-act="rel-abrir"],[data-act="limpar"],label:has(#nfFile)){display:none}
+}
+
+/* No celular, o menu lateral recolhível substitui as barras superiores. */
+@media (max-width:900px){
+  header,#vis{display:none!important}
+  .mobile-menu{position:fixed;left:8px;right:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px));z-index:50;order:initial;margin:0}
+  .mobile-menu summary{width:48px;height:48px;padding:0;font-size:0;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+  .mobile-menu summary::before{content:"☰";font-size:22px}
+  .mobile-menu-panel{top:8px;bottom:8px;left:8px;right:auto;width:min(320px,calc(100vw - 16px));max-height:none;border-radius:12px;padding:12px}
+  .mobile-menu-title{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px}
+  .mobile-menu-title b{padding:0;color:var(--ink);font-size:15px;text-transform:none;letter-spacing:normal}
+  .mobile-menu-title span{font-size:11px;color:var(--muted)}
+  #mobileSettings{display:grid;gap:8px;padding:4px 10px 10px;border-bottom:1px solid var(--line)}
+  #mobileSettings .udo{display:flex;gap:6px}
+  #mobileSettings .udo .btn{flex:1}
+  #mobileSettings .sp{display:grid;grid-template-columns:1fr;gap:8px;overflow:visible;mask-image:none;-webkit-mask-image:none;padding:0}
+  #mobileSettings .sp .btn{display:none}
+  #mobileSettings .sp .mod,#mobileSettings .sp .autor,#mobileSettings .sp select{width:100%;min-width:0;max-width:none}
+  #mobileSettings .sp .autor,#mobileSettings .sp select{min-height:44px}
+}
+
+@media (max-width:900px){
+  .mobile-menu[open]::before{content:"";position:fixed;inset:0;background:rgba(10,14,22,.42);pointer-events:none}
+  .mobile-menu-panel{top:max(8px,env(safe-area-inset-top,0px));bottom:max(8px,env(safe-area-inset-bottom,0px))}
+  .mobile-menu-panel .mobile-menu-close{display:flex;align-items:center;justify-content:center;flex:none;min-width:44px;min-height:44px;padding:0;font-size:26px;line-height:1}
+  .mobile-menu-panel button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+  .mobile-menu summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  body.fopen:not(:has(.mobile-menu[open])) .mobile-menu{bottom:calc(var(--msh,60dvh) + 8px)}
+}
+
+.rom-conjunto{margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:8px}.rom-conjunto summary{cursor:pointer;font-weight:700}.rom-conjunto-linha{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:8px 0}.rom-conjunto-linha label{display:grid;gap:3px;flex:1 1 110px;font-size:12px}.rom-conjunto-linha input,.rom-conjunto-linha select{width:100%;min-width:0;min-height:40px}

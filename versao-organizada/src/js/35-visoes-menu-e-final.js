@@ -30,11 +30,14 @@ function sideAplicar(modo){/* "open" = expandido · "mini" = faixa estreita só 
   sd.hidden=false;document.body.classList.add("side-on");document.body.classList.toggle("side-mini",modo==="mini");
   abertos.side=modo;guardarAbertos();sideMarcar()}
 function hdrLayout(){const hin=document.querySelector("header .hin");if(!hin)return;
-  const st=document.getElementById("saveStatus"),ud=hin.querySelector(".udo"),sp=hin.querySelector(".sp"),top=document.getElementById("sideTop"),ex=document.getElementById("sideExp");if(!st||!ud||!sp||!top||!ex)return;
+  const st=document.getElementById("saveStatus"),ud=document.querySelector(".udo"),sp=document.querySelector(".sp"),top=document.getElementById("sideTop"),ex=document.getElementById("sideExp");if(!st||!ud||!sp||!top||!ex)return;
   if(!celular()){if(st.parentNode!==top)top.append(st,ud);if(sp.parentNode!==ex)ex.append(sp)}
-  else{const ref=hin.querySelector("nav.ir");if(st.parentNode!==hin){hin.insertBefore(st,ref);hin.insertBefore(ud,ref)}if(sp.parentNode!==hin)hin.append(sp)}}
-window.addEventListener("resize",()=>{hdrLayout();if(!celular())sideAplicar(abertos.side)});
+  else{const mobile=document.getElementById("mobileSettings");if(mobile){if(st.parentNode!==mobile)mobile.append(st,ud);if(sp.parentNode!==mobile)mobile.append(sp)}}}
+window.addEventListener("resize",()=>{hdrLayout();sideAplicar(abertos.side);if(!celular()){const menu=document.getElementById("mobileMenu");if(menu)menu.open=false}});
 hdrLayout()
+
+/* Menu móvel reúne os mesmos destinos do menu lateral. */
+{const menu=document.getElementById("mobileMenu");if(menu){const summary=menu.querySelector("summary"),close=menu.querySelector(".mobile-menu-close");menu.addEventListener("toggle",()=>{if(menu.open){menu.querySelectorAll("[data-mobile^=\"vis:\"]").forEach(b=>{if(b.dataset.mobile==="vis:"+visAtual())b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")})}});close.addEventListener("click",()=>{menu.open=false;summary.focus()});menu.addEventListener("click",e=>{const b=e.target.closest("[data-mobile]");if(!b)return;const [tipo,id]=b.dataset.mobile.split(":");menu.open=false;if(tipo==="vis"){visPara(id)}else if(tipo==="sec"){formAbrir(false);irPara(id)}else{if(id==="imp-pick")visPara("lancar");const alvo=document.querySelector('#impBar [data-act="'+id+'"]')||document.querySelector('[data-act="'+id+'"]');if(alvo)alvo.click()}});document.addEventListener("click",e=>{if(menu.open&&!menu.contains(e.target))menu.open=false});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&menu.open){menu.open=false;menu.querySelector("summary").focus()}})}}
 
 document.getElementById("sideT").addEventListener("click",()=>sideAplicar(abertos.side==="mini"?"open":"mini"));
 document.getElementById("side").addEventListener("click",e=>{

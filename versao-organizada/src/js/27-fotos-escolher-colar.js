@@ -76,7 +76,7 @@ function adicionar(limpar,quiet){
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
   {const gr=gradeBy(f.grade);if(gr&&!f.semGrade&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
   if(!vazio(f.v.E))f.v.E=String(f.v.E).replace(/\s+/g,"").toUpperCase();Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object"&&!vazio(o.E))o.E=String(o.E).replace(/\s+/g,"").toUpperCase()});
-  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=r2c(n).toFixed(2).replace(".",",")})};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
+  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=r2c(n).toFixed(2).replace(".",",")});const p=o.N;if(!vazio(p)&&String(p).trim()[0]!=="="){const n=num(p);if(n!=null)o.N=String(Math.round(n*1000)/1000).replace(".",",")}};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
   const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);if(ant&&ant.rf&&prefDe(val(novo,"I")||"",val(novo,"J"))!==prefDe(val(ant,"I")||"",val(ant,"J"))){delete novo.v.E;delete novo.rf}novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
   if(!novo.conj){delete novo.comp;delete novo.fConj}
@@ -106,7 +106,11 @@ function desfazer0(refazer){
   const pilha=refazer===true?REDO:HIST,outra=refazer===true?HIST:REDO;
   if(!pilha.length){toast(refazer===true?"Nada para refazer.":"Nada para desfazer.");return}
   const e=pilha.pop();
-  outra.push({L:snapL,C:snapC,F:e.F?JSON.stringify(S.form):null,E:!!editId,soCfg:e.soCfg,t:Date.now()});
+  if(e.R&&(romConflito||conflito)){pilha.push(e);toast("Resolva o conflito de dados antes de desfazer o romaneio.");return}
+  if(e.R&&!romHistPode(e.R.depois)){pilha.push(e);return}
+  const troca={L:snapL,C:snapC,F:e.F?JSON.stringify(S.form):null,E:!!editId,soCfg:e.soCfg,t:Date.now()};
+  if(e.R){troca.R=e.R.depois;troca.R.depois={id:e.R.id,estado:e.R.estado,rec:e.R.rec}}
+  outra.push(troca);
   restaurando=true;const eidAntes=editId||null;
   const idsAntes=S.lanc.map(l=>l.id);
   try{
@@ -115,6 +119,7 @@ function desfazer0(refazer){
     if(e.F&&!editId&&!e.E){S.form=lerForm(JSON.parse(e.F))}
     if(editId&&!S.lanc.some(l=>l.id===editId)){editId=null;if(rascunho)S.form=rascunho;rascunho=null}
     [...sel].forEach(i=>{if(!S.lanc.some(l=>l.id===i))sel.delete(i)});selR=null;
+    if(e.R)romHistAplicar(e.R);
     histIni();
   }finally{restaurando=false}
   salvar(true);render();

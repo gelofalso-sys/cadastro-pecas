@@ -35,8 +35,11 @@ async function lerPdf(file){
       const c=imgCanvas(o);if(!c)continue;fotos.push({pg,cy:(g.y0+g.y1)/2,h:g.y1-g.y0,url:c.toDataURL("image/jpeg",0.95),mini:miniFoto(c)})}}
   return {texto,itens,fotos}}
 function romFotos(rows){const P=ROM.pdf;if(!P)return;const pares=[],usados=new Set(),feitos=new Set();
-  rows.forEach((r,i)=>{if(!r.cod)return;const rc=new RegExp("(^|[^A-Za-z0-9])"+String(r.cod).replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")+"($|[^A-Za-z0-9])"),it=P.itens.find(x=>rc.test(x.s));if(!it)return;
-    P.fotos.forEach((f,j)=>{if(f.pg!==it.pg)return;const d=Math.abs(f.cy-it.y);if(d<=Math.max(f.h*0.8,24))pares.push([d,i,j])})});
+  rows.forEach((r,i)=>{if(!r.cod)return;const rc=new RegExp("(^|[^A-Za-z0-9])"+String(r.cod).replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")+"($|[^A-Za-z0-9])"),candidatos=P.itens.filter(x=>rc.test(x.s));
+    /* Um código também pode aparecer no endereço, telefone ou cabeçalho. Só vincule
+       fotos a uma ocorrência que esteja numa linha de produto com valor monetário. */
+    candidatos.forEach(it=>{const linha=P.itens.filter(x=>x.pg===it.pg&&Math.abs(x.y-it.y)<=5).map(x=>x.s).join(" ");if(!/(?:R\s*\$\s*)?\d[\d.]*,\d{2,3}(?:\D|$)/.test(linha))return;
+      P.fotos.forEach((f,j)=>{if(f.pg!==it.pg)return;const d=Math.abs(f.cy-it.y);if(d<=Math.max(f.h*0.8,24))pares.push([d,i,j])})})});
   pares.sort((a,b)=>a[0]-b[0]);pares.forEach(([d,i,j])=>{if(feitos.has(i)||usados.has(j))return;feitos.add(i);usados.add(j);rows[i].foto=P.fotos[j].url;rows[i].fotoMini=P.fotos[j].mini})}
 async function romPdf(file){
   if(!ROM){ROM={tid:abertos.romT&&cfg().romaneios.some(x=>x.id===abertos.romT)?abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}

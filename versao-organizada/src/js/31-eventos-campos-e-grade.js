@@ -90,7 +90,7 @@ function onField(t,isChange){
     if(re&&t.dataset.rf){const T=C.romaneios[+re.dataset.rom];if(T){T[t.dataset.rf]=t.type==="checkbox"?t.checked:t.value;salvar(true,false)}return}}
   if(t.id==="fBusca"){FIL.q=t.value;guardarFil();renderTopo();return}
   if(t.dataset&&t.dataset.fil){if(!isChange)return;FIL[t.dataset.fil]=t.value;guardarFil();renderTopo();return}
-  if(t.id==="selAll"){if(t.checked)G.linhas.forEach((r,ri)=>{if(vis(ri))sel.add(r.lancId)});else sel.clear();renderTopo();return}
+  if(t.id==="selAll"){G.linhas.forEach((r,ri)=>{if(vis(ri)){if(t.checked)sel.add(r.lancId);else sel.delete(r.lancId)}});renderTopo();return}
   if(t.hasAttribute&&t.hasAttribute("data-sel")){const id=t.closest("tr").dataset.l;if(t.checked)sel.add(id);else sel.delete(id);renderTopo();return}
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";

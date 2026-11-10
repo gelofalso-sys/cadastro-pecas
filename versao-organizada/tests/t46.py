@@ -45,14 +45,14 @@ with sync_playwright() as p:
     ws=openpyxl.load_workbook(nome).active;h=[c.value for c in ws[1]]
     ok(ws.cell(2,h.index("Custo de Compra")+1).number_format=="0.00","Custo de Compra com 2 casas: %s"%ws.cell(2,h.index("Custo de Compra")+1).number_format)
     ok(ws.cell(2,h.index("Custo do Banho de Ouro")+1).number_format=="0.00","banho com 2 casas")
-    ok(ws.cell(2,h.index("Peso")+1).number_format=="0.00","peso com 2 casas")
-    # peso e compra com mais de 2 casas viram 2 casas; zero é aceito
+    ok(ws.cell(2,h.index("Peso")+1).number_format=="0.000","peso com 3 casas")
+    # peso conserva milésimos e compra é arredondada a centavos; zero é aceito
     preenche(pg,"pronta","Spina Joias","Pingentes","","Zero e casas","1,2345","9,999");pg.fill("#f-W","1")
     ok(add(pg)==1,"peça com 3 casas adicionada")
     preenche(pg,"pronta","Spina Joias","Pingentes","","Tudo zero","0","0");pg.fill("#f-W","1")
     ok(add(pg)==1,"peso 0 e compra 0 não bloqueiam")
     F=col(pg,"F");N=col(pg,"N");P=col(pg,"P")
-    i=F.index("Zero e casas");ok((N[i],P[i])==("1,23","10,00"),"peso e compra mostrados com 2 casas: %s %s"%(N[i],P[i]))
+    i=F.index("Zero e casas");ok((N[i],P[i])==("1,235","10,00"),"peso com milésimos e compra com 2 casas: %s %s"%(N[i],P[i]))
     # custo total = soma exata dos componentes mostrados
     tx=pg.evaluate("()=>{const e=[...document.querySelectorAll('*')].find(x=>x.children.length>=5&&/Custo total/.test(x.innerText)&&/^Pe/.test(x.innerText.trim())&&x.innerText.length<400);return e?e.innerText:''}")
     import re
