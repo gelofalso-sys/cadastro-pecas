@@ -2934,7 +2934,7 @@ function modeloDeJson(file){const fr=new FileReader();fr.onload=()=>{try{
 /* ===== colar romaneio: lê a lista do fornecedor com um modelo de leitura ===== */
 const MON="(\\d[\\d.]*,\\d{2})";
 const numQtd=s=>{s=String(s);return /^\d{1,3}(\.\d{3})+$/.test(s)?num(s.replace(/\./g,"")):num(s)};
-const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d+)",x:"(?:.*?)",item:"(?:\\d{1,4})",u:"(?:([A-Za-z]{1,4})\\.?\\s+)?",qv:"(\\d[\\d.]*(?:,\\d+)?)",pu:"(\\d[\\d.]*,\\d{2,4})"};
+const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d+)",x:"(?:.*?)",item:"(?:\\d{1,4})",u:"(?:(?<=\\s)([A-Za-z]{1,4})\\.?\\s+)?",qv:"(\\d[\\d.]*(?:,\\d+)?)",pu:"(\\d[\\d.]*,\\d{2,4})"};
 function padraoRegex(pad){const ordem=[];let src="";
   String(pad||"").split(/(\{\w+\})/).forEach(p=>{const m=p.match(/^\{(\w+)\}$/);
     if(m&&TOK[m[1]]){if(m[1]!=="x"&&m[1]!=="item")ordem.push(m[1]);src+=TOK[m[1]]}
@@ -3411,8 +3411,8 @@ function romCardHTML(r,i){if(r.lote)return romLoteHTML(r,i);const C=cfg(),f=S.fo
   const tabVar=matriz?tabMx:ids.length?`<table class="szt"><thead><tr><th>Quantidade por ${g&&lcor.length?"tamanho · cor":(lcor.length&&!g?"cor":"tamanho")}</th>${ids.map(id=>`<th>${esc(romNomeId(r.cat,r.sub,id))}</th>`).join("")}<th>todos</th></tr></thead><tbody>${rc.map(c=>`<tr><th>${bruta?dotc(c)+esc(c.nome):"Qtd"}</th>${ids.map(id=>`<td><input class="n" data-rp="q" data-b="${c.id}~${id}" value="${esc(r.q[c.id+"~"+id]??"")}" inputmode="numeric" placeholder="0"></td>`).join("")}<td><input class="n" data-rp="qall" data-b="${c.id}" placeholder="=" inputmode="numeric" aria-label="Mesma quantidade em todos"></td></tr>`).join("")}</tbody></table>`:(g&&!r.semG?`<span class="hint">Escolha os tamanhos (ou as cores) acima para dividir a quantidade.</span>`:"");
   const grade=(g||cc)?`<div class="rc-gr">${chipsSz}${chipsCr}${tabVar}</div>`:"";
   return `<div class="rc${r.skip?" sk":""}${r.open?" op":""}" data-i="${i}">
-    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}${((r.bh&&r.bh!==f.banhista)||(r.tipo&&r.tipo!==f.tipo))?`<span class="rch" title="Esta peça foge do lote (tipo e/ou galvânica próprios)">${esc(romTipo(r)==="bruta"?"Bruta":"Pronta")} · ${esc(romBh(r).nome)}</span>`:""}<span class="rsum"><span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span><span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷</button></span></div>
-    <div class="rc-top"><label class="rsel" title="Selecionar para edição em lote"><input type="checkbox" data-rp="sel" ${r.sel?"checked":""}><span>lote</span></label><input type="checkbox" data-rp="use" ${r.skip?"":"checked"} aria-label="Criar esta peça" title="Criar esta peça">${r.feito?romBadge(r):""}
+    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}${((r.bh&&r.bh!==f.banhista)||(r.tipo&&r.tipo!==f.tipo))?`<span class="rch" title="Esta peça foge do lote (tipo e/ou galvânica próprios)">${esc(romTipo(r)==="bruta"?"Bruta":"Pronta")} · ${esc(romBh(r).nome)}</span>`:""}${romParteTag(r)}<span class="rsum"><span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span><span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷ dividir</button>${r.parteG||r.feito?"":`<button type="button" class="x" data-act="rom-partir" title="Partir este item em partes (ex.: um trio em 3 pares)">✂ partir</button>`}</span></div>
+    <div class="rc-top"><label class="rsel" title="Selecionar para edição em lote"><input type="checkbox" data-rp="sel" ${r.sel?"checked":""}><span>selec.</span></label><label class="rsel" title="Criar esta peça"><input type="checkbox" data-rp="use" ${r.skip?"":"checked"} aria-label="Criar esta peça"><span>criar</span></label>${r.feito?romBadge(r):""}
       ${r.foto?`<button type="button" class="rc-fb" data-act="rom-foto" title="Ampliar a foto"><img class="rc-ft" src="${fs(r.foto)}" alt="Foto da peça"></button>`:""}
       ${fq("Código do fornecedor",`<input data-rp="cod" value="${esc(r.cod||"")}">`,"w-c")}
       ${fq("Descrição",`<input data-rp="desc" value="${esc(r.desc)}">`,"rc-desc")}
@@ -3475,9 +3475,23 @@ function romLoteHTML(r,i){const R=romLoteResumo(r),tot=r.total!=null?r.total:(r.
 function romLoteAtualiza(lot){const el=document.querySelector(`#romWrap [data-lsum="${CSS.escape(lot.lid)}"]`);if(!el)return;const R=romLoteResumo(lot);el.className="lote-sum "+R.cls;el.textContent=R.txt}
 function romLotePeso(r,rc){const w=num(r.peso);r.custo=w>0&&r.precoG!=null?virg(w*r.precoG):"";const ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci)ci.value=r.custo;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);if(lot)romLoteAtualiza(lot)}
 function romLoteAdd(r,n,peso){let pos=ROM.rows.indexOf(r);ROM.rows.forEach((x,j)=>{if(x.loteDe===r.lid)pos=j});const f=S.form,novos=[],k0=romLoteKids(r).length;
-  for(let q=0;q<n;q++){const x={cod:(r.cod||"")+"-"+(k0+q+1),desc:"",preco:r.precoG,precod:null,total:null,qtd:1,peso:peso!=null?g3(peso):"",q:{},skip:false,aviso:"",cat:r.cat||f.v.I||"",sub:r.sub||"",loteDe:r.lid,precoG:r.precoG,custo:peso!=null?virg(peso*r.precoG):""};
+  for(let q=0;q<n;q++){const x={cod:(r.cod||"")+"-"+(k0+q+1),desc:r.desc||"",preco:r.precoG,precod:null,total:null,qtd:1,peso:peso!=null?g3(peso):"",q:{},skip:false,aviso:r.catq?"· categoria não reconhecida: confira":"",catq:!!r.catq,cat:r.cat||f.v.I||"",sub:r.sub||"",loteDe:r.lid,precoG:r.precoG,custo:peso!=null?virg(peso*r.precoG):""};
     x.mk={};x.bo={};x.on={};x.vz={};x.ex={};romNovaCat(x);novos.push(x)}
   ROM.rows.splice(pos+1,0,...novos);romSalvarSoon();renderRom()}
+/* ===== partir um item em partes (ex.: um trio em 3 pares): o custo do item é repartido (centavos exatos) e cada parte vira um cartão com cópia dos banhos/quantidades ===== */
+const romPartes=r=>ROM.rows.filter(x=>x.parteG&&x.parteG===r.parteG);
+function romPartir(r,n){n=Math.trunc(n);if(!(n>=2&&n<=12)){toast("Escolha de 2 a 12 partes.");return}
+  if(r.lote||r.parteG||r.loteDe||r.feito){toast(r.feito?"Esta peça já foi lançada.":"Este item já é uma parte ou um lote: use “juntar” antes de partir de novo.");return}
+  const c=num(r.custo),cents=c!=null&&c>=0?Math.round(c*100):null,base=cents!=null?Math.floor(cents/n):null,extra=cents!=null?cents-base*n:0,gid=uid(),pos=ROM.rows.indexOf(r),novos=[];
+  r.parteG=gid;r.parteN=n;r.parteK=1;r.parteCusto0=r.custo;r.parteCod0=r.cod;r.parteDesc0=r.desc;
+  for(let k=2;k<=n;k++){const x=clone(r);x.lancIds=undefined;x.feito=false;x.refaz=false;x.sel=false;x.open=false;x.bo={};x.vp="";x.parteK=k;novos.push(x)}
+  [r,...novos].forEach((x,i)=>{const k=i+1;x.parteK=k;x.cod=(r.parteCod0||"")+"-"+k;x.desc=(r.parteDesc0||"")+" ("+k+"/"+n+")";if(cents!=null)x.custo=virg((base+(k<=extra?1:0))/100)});
+  ROM.rows.splice(pos+1,0,...novos);romSalvarSoon();renderRom();toast(`Item dividido em ${n} partes: o custo foi repartido (${n} × quantidade da lista).`)}
+function romJuntar(r){const ps=romPartes(r);if(ps.some(x=>x.feito)){toast("Uma das partes já foi lançada.");return}
+  const p1=ps.find(x=>x.parteK===1)||ps[0];p1.custo=p1.parteCusto0;p1.cod=p1.parteCod0;p1.desc=p1.parteDesc0;["parteG","parteN","parteK","parteCusto0","parteCod0","parteDesc0"].forEach(k=>{delete p1[k]});
+  ROM.rows=ROM.rows.filter(x=>!(ps.includes(x)&&x!==p1));romSalvarSoon();renderRom()}
+function romParteTag(r){if(!r.parteG)return "";const ps=romPartes(r),s=ps.reduce((t,x)=>t+(num(x.custo)||0),0),o=num(r.parteCusto0);
+  return `<span class="rch" title="Item partido: o custo do item foi repartido entre as partes (edite o custo de cada uma se quiser)">Parte ${r.parteK}/${r.parteN} · partes somam R$ ${brl(s)}${o!=null?" de R$ "+brl(o):""} <button type="button" class="x" data-act="rom-juntar" title="Desfazer a divisão e voltar a um só item">juntar</button></span>`}
 function romLoteDecora(){if(!ROM)return;const cs=document.querySelectorAll("#romWrap .rc[data-i]");cs.forEach(c=>{const r=ROM.rows[+c.dataset.i];if(!r||!r.loteDe||c.querySelector(".lote-tag"))return;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);
   c.insertAdjacentHTML("afterbegin",`<div class="lote-tag"><span>Item do lote ${esc(lot?lot.cod:"")} · custo = peso × R$ ${String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")}/g</span><button type="button" class="x" data-act="lote-del" data-i="${c.dataset.i}" aria-label="Remover este item do lote">×</button></div>`)})}
 function romNovaCat(r){const g=gradeDaCat(r.cat,r.sub);r.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];r.csel=coresPadrao(r.cat,r.sub);r.semG=false;r.open=false;r.q={};if(!romIds(r).length&&!g&&romTipo(r)!=="bruta")r.q.p=String(r.qtd)}
@@ -3706,7 +3720,7 @@ function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a ediç�
     if(dif.length&&!confirm("Ao refazer, "+dif.length+" peça(s) já lançada(s) estão diferentes do que o romaneio guarda (você editou depois na peça ou na tabela). Criar agora vai SOBRESCREVER essas edições com os dados do romaneio:"+NL+NL+dif.slice(0,8).join(NL)+(dif.length>8?NL+"…e mais "+(dif.length-8):"")+NL+NL+"OK = sobrescrever com o romaneio"+NL+"Cancelar = manter como está (depois corrija o card ou o romaneio)"))return}
   romCriando=true;setTimeout(()=>{romCriando=false},0);   /* durante a criação o romaneio não é ressincronizado com a tabela */
   const snap=clone(f),feitas=[],ign=[];let sem=0,err=0,un=0,ultErro="";const naLista=ROM.rows.filter(r=>!r.skip).reduce((t,r)=>t+r.qtd,0);
-  ROM.rows.forEach(r=>{if(r.skip){if(!(r.feito&&!r.refaz))ign.push({desc:r.desc,cod:r.cod,motivo:r.aviso?String(r.aviso).replace("· ",""):"desmarcada"});return}
+  ROM.rows.forEach(r=>{if(r.skip){if(!(r.feito&&!r.refaz)&&!(r.lote&&romLoteKids(r).length))ign.push({desc:r.desc,cod:r.cod,motivo:r.aviso?String(r.aviso).replace("· ",""):"desmarcada"});return}
     S.form=clone(snap);const {f:f2,q}=romForm(r);if(!q.length){sem++;ign.push({desc:r.desc,cod:r.cod,motivo:"sem quantidade"});return}
     S.form=f2;let pos=-1,velhos=null;if(r.refaz&&r.lancIds&&r.lancIds.length){pos=S.lanc.findIndex(l=>l.id===r.lancIds[0]);if(pos>=0&&romPrefDe(S.lanc[pos])!==prefDe(f2.v.I||"",f2.v.J))romFixaRefs(S.lanc,pos,romPrefDe(S.lanc[pos]),r.lancIds,false);velhos=S.lanc.filter(l=>r.lancIds.includes(l.id));S.lanc=S.lanc.filter(l=>!r.lancIds.includes(l.id))}
     if(adicionar(false,true)){const nl=S.lanc[S.lanc.length-1];if(pos>=0&&velhos&&velhos[0]&&romPrefDe(velhos[0])===romPrefDe(nl)){if(velhos[0].v&&!vazio(velhos[0].v.E)){nl.v.E=velhos[0].v.E;if(velhos[0].rf)nl.rf=1}S.lanc.pop();S.lanc.splice(Math.min(pos,S.lanc.length),0,nl)}feitas.push({r,id:nl.id});un+=q.reduce((t,x)=>t+x[1],0)}else{if(velhos)S.lanc.splice(Math.max(0,pos),0,...velhos);err++;ultErro=erro||ultErro;ign.push({desc:r.desc,cod:r.cod,motivo:"erro ao criar"+(erro?": "+erro:"")})}});
@@ -4664,6 +4678,10 @@ document.addEventListener("click",e=>{
       if(S.form.v.I===nome){S.form.v.I=C.categorias.length?C.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}
       salvar(true);render();toast(`Categoria “${nome}” excluída.`);break}
     case "lote-add":{const r=ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));break}
+    case "rom-partir":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i];if(!r)break;const bx=rc.querySelector(".partbox");if(bx){bx.remove();break}
+      t.insertAdjacentHTML("afterend",`<span class="partbox"><label class="fq"><span>Partes</span><input class="n" data-partn value="3" inputmode="numeric" style="width:48px" aria-label="Quantas partes"></label><button type="button" class="btn pri sm" data-act="rom-partir-ok">Partir</button></span>`);const pi=rc.querySelector("[data-partn]");pi.focus();pi.select();break}
+    case "rom-partir-ok":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i],pi=rc.querySelector("[data-partn]");if(r)romPartir(r,num(pi&&pi.value));break}
+    case "rom-juntar":{const r=ROM.rows[+t.closest(".rc").dataset.i];if(r)romJuntar(r);break}
     case "lote-resto":{const r=ROM.rows[+t.dataset.i];if(!r)break;const R=romLoteResumo(r);if(R.dif>0.05)romLoteAdd(r,1,R.dif);else toast("O peso do lote já fechou.");break}
     case "lote-del":{ROM.rows.splice(+t.dataset.i,1);if(ROM.rows.length)romSalvarSoon();else romLimparRascunho();renderRom();break}   /* lista vazia: apaga o rascunho, senão o anterior reaparece */
     case "imp-pick":{document.getElementById("impFile").click();break}
@@ -4925,8 +4943,11 @@ function onField(t,isChange){
       c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
-    else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){c[k]=t.value;salvar(true,false);if(isChange)renderForm()}
-    else{C.seqs[(c.prefixo||"").toUpperCase()]=t.value.replace(/\D/g,"").slice(0,9);salvar(true,false)}
+    else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){
+      if(isChange){const v=t.value.trim(),n=num(v),regra={ncm:[/^\d{8}$/.test(v),"O NCM tem 8 números (ex.: 71131100)."],cfop:[/^\d{4}$/.test(v),"O CFOP tem 4 números (ex.: 5102)."],fcp:[n!=null&&n>=0&&n<=100,"O FCP é um percentual de 0 a 100."],insumos:[n!=null&&n>=0&&n<=1e6,"Insumos precisa ser um número de 0 em diante (ex.: 0,50)."]}[k];
+        if(v!==""&&!regra[0]){t.value=c[k]||"";toast(regra[1]+" Voltei ao valor anterior.");return}c[k]=v;t.value=v}
+      salvar(true,false);if(isChange)renderForm()}
+    else{const d=t.value.replace(/\D/g,"").slice(0,9);if(t.value!==d){t.value=d;if(isChange)toast("A última peça aceita só números inteiros, até 9 dígitos.")}C.seqs[(c.prefixo||"").toUpperCase()]=d;salvar(true,false)}
     renderTopo();if(isChange){if(k==="nome"||k==="prefixo")renderCfg();renderForm();renderListas()}return}
   if(t.dataset.cvg&&ce){const c=C.categorias[+ce.dataset.cat];c.coresCfg=c.coresCfg||{};const k=t.dataset.cvg;
     if(k==="subs")c.coresCfg.subs=t.value.split(/[;,]/).map(z=>z.trim()).filter(Boolean);
@@ -4959,7 +4980,7 @@ function onField(t,isChange){
     if(k==="nome"){const old=fo.nome,nv=t.value.trim();
       const dupF=C.fornecedores.some(x=>x!==fo&&semAc(x.nome)===semAc(nv));
       if(!nv||dupF){if(isChange){t.value=old;toast(!nv?"O nome do fornecedor não pode ficar vazio — voltei ao nome anterior.":`Já existe o fornecedor “${nv}” — voltei ao nome anterior.`)}return}
-      S.lanc.forEach(l=>{if(l.v.H===old)l.v.H=t.value});(C.romaneios||[]).forEach(T=>{if(T&&T.forn===old)T.forn=t.value});if(f.v.H===old)f.v.H=t.value;fo.nome=t.value;salvar(true)}else{fo[k]=t.value;salvar(true,false)}
+      if(isChange)t.value=nv;S.lanc.forEach(l=>{if(l.v.H===old)l.v.H=nv});(C.romaneios||[]).forEach(T=>{if(T&&T.forn===old)T.forn=nv});if(f.v.H===old)f.v.H=nv;fo.nome=nv;salvar(true)}else{fo[k]=t.value;salvar(true,false)}
     if(isChange){renderListas();renderTopo();renderForm()}return}
   const be=t.closest("[data-bh]");
   if(be&&(t.dataset.bmc!==undefined||t.dataset.bmv!==undefined)){const eMil=t.dataset.bmc!==undefined,bh=C.banhistas[+be.dataset.bh],b=bh&&bh.banhos[+(eMil?t.dataset.bmc:t.dataset.bmv)],cn=t.dataset.mcat,chave=eMil?"milCat":"multCat";if(!b)return;const v=String(t.value).trim();
@@ -4968,11 +4989,12 @@ function onField(t,isChange){
     b[chave]=b[chave]||{};if(v==="")delete b[chave][cn];else b[chave][cn]=v;salvar(true,false);renderTopo();if(isChange)renderForm();return}
   if(be&&t.dataset.bnf==="cor"&&t.value==="__nova"){catUI.corNova={bi:+be.dataset.bh,j:+t.closest("[data-bn]").dataset.bn};renderCfg();refocar("[data-ncor]");return}
   if(be&&(t.dataset.bhf||t.dataset.bnf)){const bh=C.banhistas[+be.dataset.bh];
-    if(t.dataset.bhf){const m=validaBanho(bh,null,t.dataset.bhf,t.value);if(m){if(isChange){t.value=bh[t.dataset.bhf]??"";toast(m)}return}bh[t.dataset.bhf]=t.type==="checkbox"?t.checked:t.value}
-    else{const b=bh.banhos[+t.closest("[data-bn]").dataset.bn],m=validaBanho(bh,b,t.dataset.bnf,t.value);if(m){if(isChange){t.value=b[t.dataset.bnf]??"";toast(m)}return}b[t.dataset.bnf]=t.type==="checkbox"?t.checked:t.value}
+    if(t.dataset.bhf){const m=validaBanho(bh,null,t.dataset.bhf,t.value);if(m){if(isChange){t.value=bh[t.dataset.bhf]??"";toast(m)}return}bh[t.dataset.bhf]=t.type==="checkbox"?t.checked:(t.dataset.bhf==="nome"?t.value.trim():t.value)}
+    else{const b=bh.banhos[+t.closest("[data-bn]").dataset.bn],m=validaBanho(bh,b,t.dataset.bnf,t.value);if(m){if(isChange){t.value=b[t.dataset.bnf]??"";toast(m)}return}b[t.dataset.bnf]=t.type==="checkbox"?t.checked:(t.dataset.bnf==="nome"?t.value.trim():t.value)}
+    if(isChange&&(t.dataset.bhf==='nome'||t.dataset.bnf==='nome'))t.value=t.value.trim();
     salvar(true,false);renderTopo();if(isChange)renderForm();else atualizarGera();return}
   const cce=t.closest("[data-cc]");
-  if(cce&&t.dataset.ccf){const c=C.colcfg[cce.dataset.cc],k=t.dataset.ccf;c[k]=t.type==="checkbox"?t.checked:t.value;salvar(true,false);
+  if(cce&&t.dataset.ccf){const c=C.colcfg[cce.dataset.cc],k=t.dataset.ccf;if(k==="padrao"&&NUM.has(cce.dataset.cc)&&String(t.value).trim()!==""&&!String(t.value).trim().startsWith("=")){const n=num(t.value);if(n==null||n<0){if(isChange){t.value=c.padrao||"";toast("Este padrão precisa ser um número de 0 em diante.")}return}}c[k]=t.type==="checkbox"?t.checked:t.value;salvar(true,false);
     if(k==="opcoes")renderListas();renderTopo();if(isChange||t.type==="checkbox")renderForm();else atualizarGera();return}
 }
 
@@ -4991,7 +5013,7 @@ document.addEventListener("change",e=>{const t=e.target;
   if(t.id==="impFile"){const fl=[...t.files];t.value="";impAdd(fl);return}
   if(t.id==="romPdf"&&t.files[0]){const fl=t.files[0];t.value="";return romPdf(fl)}
   if(t.id==="romXls"&&t.files[0]){const fl=t.files[0];t.value="";return romPlanilha(fl)}
-  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.lcf!==undefined||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.cvf!==undefined||t.dataset.cvg!==undefined||t.dataset.ff==="desconto"||t.dataset.bhf!==undefined||t.dataset.gif==="letra"||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="letra"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.rp==="faixa"||t.dataset.rp==="qall"||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome"||(t.closest&&t.closest("#romWrap")&&(t.dataset.rp==="vp"||(t.dataset.rp==="bo"&&t.dataset.k==="V"))))onField(t,true)});
+  if(t.tagName==="SELECT"||t.type==="checkbox"||t.type==="radio"||t.dataset.lcf!==undefined||t.dataset.mk!==undefined||t.dataset.cf||t.dataset.sp||t.dataset.subren!==undefined||t.dataset.cvf!==undefined||t.dataset.cvg!==undefined||t.dataset.ff==="desconto"||t.dataset.bhf!==undefined||t.dataset.gif==="letra"||t.dataset.bmc!==undefined||t.dataset.bmv!==undefined||t.dataset.bnf==="nome"||t.dataset.bnf==="fator"||t.dataset.bnf==="letra"||t.dataset.ccf==="padrao"||t.dataset.ff==="nome"||t.id==="ultInp"||t.dataset.col==="H"||t.dataset.col==="I"||(t.dataset.ccf==="opcoes")||t.hasAttribute("data-faixa")||t.dataset.rp==="faixa"||t.dataset.rp==="qall"||t.dataset.gf==="faixa"||t.dataset.gf==="rotulo"||t.dataset.gf==="subs"||t.dataset.gf==="nome"||(t.closest&&t.closest("#romWrap")&&(t.dataset.rp==="vp"||(t.dataset.rp==="bo"&&t.dataset.k==="V"))))onField(t,true)});
 document.addEventListener("paste",e=>{const cb=e.clipboardData||window.clipboardData;let tcb="";try{tcb=cb?cb.getData("text"):""}catch(x){}
   if(tcb.length>MAX_TEXTO_COLADO){e.preventDefault();toast(`Texto grande demais para colar (${tcb.length} caracteres; o limite é ${MAX_TEXTO_COLADO}). Cole em partes menores.`);return}
   const pt=e.target;

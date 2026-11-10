@@ -1,7 +1,7 @@
 /* ===== colar romaneio: lê a lista do fornecedor com um modelo de leitura ===== */
 const MON="(\\d[\\d.]*,\\d{2})";
 const numQtd=s=>{s=String(s);return /^\d{1,3}(\.\d{3})+$/.test(s)?num(s.replace(/\./g,"")):num(s)};
-const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d+)",x:"(?:.*?)",item:"(?:\\d{1,4})",u:"(?:([A-Za-z]{1,4})\\.?\\s+)?",qv:"(\\d[\\d.]*(?:,\\d+)?)",pu:"(\\d[\\d.]*,\\d{2,4})"};
+const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d+)",x:"(?:.*?)",item:"(?:\\d{1,4})",u:"(?:(?<=\\s)([A-Za-z]{1,4})\\.?\\s+)?",qv:"(\\d[\\d.]*(?:,\\d+)?)",pu:"(\\d[\\d.]*,\\d{2,4})"};
 function padraoRegex(pad){const ordem=[];let src="";
   String(pad||"").split(/(\{\w+\})/).forEach(p=>{const m=p.match(/^\{(\w+)\}$/);
     if(m&&TOK[m[1]]){if(m[1]!=="x"&&m[1]!=="item")ordem.push(m[1]);src+=TOK[m[1]]}

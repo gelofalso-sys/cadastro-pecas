@@ -180,6 +180,10 @@ document.addEventListener("click",e=>{
       if(S.form.v.I===nome){S.form.v.I=C.categorias.length?C.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}
       salvar(true);render();toast(`Categoria “${nome}” excluída.`);break}
     case "lote-add":{const r=ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));break}
+    case "rom-partir":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i];if(!r)break;const bx=rc.querySelector(".partbox");if(bx){bx.remove();break}
+      t.insertAdjacentHTML("afterend",`<span class="partbox"><label class="fq"><span>Partes</span><input class="n" data-partn value="3" inputmode="numeric" style="width:48px" aria-label="Quantas partes"></label><button type="button" class="btn pri sm" data-act="rom-partir-ok">Partir</button></span>`);const pi=rc.querySelector("[data-partn]");pi.focus();pi.select();break}
+    case "rom-partir-ok":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i],pi=rc.querySelector("[data-partn]");if(r)romPartir(r,num(pi&&pi.value));break}
+    case "rom-juntar":{const r=ROM.rows[+t.closest(".rc").dataset.i];if(r)romJuntar(r);break}
     case "lote-resto":{const r=ROM.rows[+t.dataset.i];if(!r)break;const R=romLoteResumo(r);if(R.dif>0.05)romLoteAdd(r,1,R.dif);else toast("O peso do lote já fechou.");break}
     case "lote-del":{ROM.rows.splice(+t.dataset.i,1);if(ROM.rows.length)romSalvarSoon();else romLimparRascunho();renderRom();break}   /* lista vazia: apaga o rascunho, senão o anterior reaparece */
     case "imp-pick":{document.getElementById("impFile").click();break}

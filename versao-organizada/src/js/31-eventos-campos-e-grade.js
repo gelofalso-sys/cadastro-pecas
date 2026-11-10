@@ -132,8 +132,11 @@ function onField(t,isChange){
       c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
-    else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){c[k]=t.value;salvar(true,false);if(isChange)renderForm()}
-    else{C.seqs[(c.prefixo||"").toUpperCase()]=t.value.replace(/\D/g,"").slice(0,9);salvar(true,false)}
+    else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){
+      if(isChange){const v=t.value.trim(),n=num(v),regra={ncm:[/^\d{8}$/.test(v),"O NCM tem 8 números (ex.: 71131100)."],cfop:[/^\d{4}$/.test(v),"O CFOP tem 4 números (ex.: 5102)."],fcp:[n!=null&&n>=0&&n<=100,"O FCP é um percentual de 0 a 100."],insumos:[n!=null&&n>=0&&n<=1e6,"Insumos precisa ser um número de 0 em diante (ex.: 0,50)."]}[k];
+        if(v!==""&&!regra[0]){t.value=c[k]||"";toast(regra[1]+" Voltei ao valor anterior.");return}c[k]=v;t.value=v}
+      salvar(true,false);if(isChange)renderForm()}
+    else{const d=t.value.replace(/\D/g,"").slice(0,9);if(t.value!==d){t.value=d;if(isChange)toast("A última peça aceita só números inteiros, até 9 dígitos.")}C.seqs[(c.prefixo||"").toUpperCase()]=d;salvar(true,false)}
     renderTopo();if(isChange){if(k==="nome"||k==="prefixo")renderCfg();renderForm();renderListas()}return}
   if(t.dataset.cvg&&ce){const c=C.categorias[+ce.dataset.cat];c.coresCfg=c.coresCfg||{};const k=t.dataset.cvg;
     if(k==="subs")c.coresCfg.subs=t.value.split(/[;,]/).map(z=>z.trim()).filter(Boolean);
@@ -166,7 +169,7 @@ function onField(t,isChange){
     if(k==="nome"){const old=fo.nome,nv=t.value.trim();
       const dupF=C.fornecedores.some(x=>x!==fo&&semAc(x.nome)===semAc(nv));
       if(!nv||dupF){if(isChange){t.value=old;toast(!nv?"O nome do fornecedor não pode ficar vazio — voltei ao nome anterior.":`Já existe o fornecedor “${nv}” — voltei ao nome anterior.`)}return}
-      S.lanc.forEach(l=>{if(l.v.H===old)l.v.H=t.value});(C.romaneios||[]).forEach(T=>{if(T&&T.forn===old)T.forn=t.value});if(f.v.H===old)f.v.H=t.value;fo.nome=t.value;salvar(true)}else{fo[k]=t.value;salvar(true,false)}
+      if(isChange)t.value=nv;S.lanc.forEach(l=>{if(l.v.H===old)l.v.H=nv});(C.romaneios||[]).forEach(T=>{if(T&&T.forn===old)T.forn=nv});if(f.v.H===old)f.v.H=nv;fo.nome=nv;salvar(true)}else{fo[k]=t.value;salvar(true,false)}
     if(isChange){renderListas();renderTopo();renderForm()}return}
   const be=t.closest("[data-bh]");
   if(be&&(t.dataset.bmc!==undefined||t.dataset.bmv!==undefined)){const eMil=t.dataset.bmc!==undefined,bh=C.banhistas[+be.dataset.bh],b=bh&&bh.banhos[+(eMil?t.dataset.bmc:t.dataset.bmv)],cn=t.dataset.mcat,chave=eMil?"milCat":"multCat";if(!b)return;const v=String(t.value).trim();
@@ -175,11 +178,12 @@ function onField(t,isChange){
     b[chave]=b[chave]||{};if(v==="")delete b[chave][cn];else b[chave][cn]=v;salvar(true,false);renderTopo();if(isChange)renderForm();return}
   if(be&&t.dataset.bnf==="cor"&&t.value==="__nova"){catUI.corNova={bi:+be.dataset.bh,j:+t.closest("[data-bn]").dataset.bn};renderCfg();refocar("[data-ncor]");return}
   if(be&&(t.dataset.bhf||t.dataset.bnf)){const bh=C.banhistas[+be.dataset.bh];
-    if(t.dataset.bhf){const m=validaBanho(bh,null,t.dataset.bhf,t.value);if(m){if(isChange){t.value=bh[t.dataset.bhf]??"";toast(m)}return}bh[t.dataset.bhf]=t.type==="checkbox"?t.checked:t.value}
-    else{const b=bh.banhos[+t.closest("[data-bn]").dataset.bn],m=validaBanho(bh,b,t.dataset.bnf,t.value);if(m){if(isChange){t.value=b[t.dataset.bnf]??"";toast(m)}return}b[t.dataset.bnf]=t.type==="checkbox"?t.checked:t.value}
+    if(t.dataset.bhf){const m=validaBanho(bh,null,t.dataset.bhf,t.value);if(m){if(isChange){t.value=bh[t.dataset.bhf]??"";toast(m)}return}bh[t.dataset.bhf]=t.type==="checkbox"?t.checked:(t.dataset.bhf==="nome"?t.value.trim():t.value)}
+    else{const b=bh.banhos[+t.closest("[data-bn]").dataset.bn],m=validaBanho(bh,b,t.dataset.bnf,t.value);if(m){if(isChange){t.value=b[t.dataset.bnf]??"";toast(m)}return}b[t.dataset.bnf]=t.type==="checkbox"?t.checked:(t.dataset.bnf==="nome"?t.value.trim():t.value)}
+    if(isChange&&(t.dataset.bhf==='nome'||t.dataset.bnf==='nome'))t.value=t.value.trim();
     salvar(true,false);renderTopo();if(isChange)renderForm();else atualizarGera();return}
   const cce=t.closest("[data-cc]");
-  if(cce&&t.dataset.ccf){const c=C.colcfg[cce.dataset.cc],k=t.dataset.ccf;c[k]=t.type==="checkbox"?t.checked:t.value;salvar(true,false);
+  if(cce&&t.dataset.ccf){const c=C.colcfg[cce.dataset.cc],k=t.dataset.ccf;if(k==="padrao"&&NUM.has(cce.dataset.cc)&&String(t.value).trim()!==""&&!String(t.value).trim().startsWith("=")){const n=num(t.value);if(n==null||n<0){if(isChange){t.value=c.padrao||"";toast("Este padrão precisa ser um número de 0 em diante.")}return}}c[k]=t.type==="checkbox"?t.checked:t.value;salvar(true,false);
     if(k==="opcoes")renderListas();renderTopo();if(isChange||t.type==="checkbox")renderForm();else atualizarGera();return}
 }
 
