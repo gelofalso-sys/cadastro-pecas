@@ -62,7 +62,7 @@ function romRevisar(){const pv=romPreview(),it=[];
       <td>${esc(x.r.cat)}${x.r.sub?" › "+esc(x.r.sub):""}</td><td class="n">${x.p?x.p.rows.reduce((t,y)=>t+y.q,0):0}</td>
       <td class="n">${esc(x.r.custo||"—")}</td><td class="n">${x.p?x.p.rows.map(y=>y.sugerido?(y.v==null?"A definir":"Sugestão "+brl(y.v)):y.v==null?"A definir":brl(y.v)).join(" / "):"—"}</td><td class="al-t">${x.al.map(esc).join(" · ")}</td></tr>`).join("")}
     </tbody></table></div>
-    <div class="rev-f">${bloqueiaLote?`<span class="hint">Corrija a quantidade dos itens de lote antes de criar.</span>`:""}<button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length&&!bloqueiaLote?"":"disabled"}>${nal?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
+    <div class="rev-f">${bloqueiaLote?`<span class="hint">⚠ Há item de lote com divisão diferente de 1 unidade: será criado com as quantidades distribuídas (alerta, não bloqueio).</span>`:""}<button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length?"":"disabled"}>${nal||bloqueiaLote?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
   document.body.appendChild(ov)}
 const romFq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
 function romCardHTML(r,i){if(r.lote)return romLoteHTML(r,i);const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
@@ -135,20 +135,30 @@ function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>
   if(!kids.length){cls="warn";txt="Nenhum item ainda: pese as peças e adicione cada uma abaixo."}
   else if(dif===0&&Math.round(v*100)!==Math.round(tot*100)){cls="warn";txt=`o peso fecha (${g3(w)} g), mas há diferença de R$ ${brl(Math.abs(r2c(v)-r2c(tot)))}: os itens somam R$ ${brl(v)} e o lote custou R$ ${brl(tot)}. Confira e ajuste os custos dos itens.`}
   else if(dif===0){cls="ok";txt=`✓ a soma bate: ${g3(w)} g de ${g3(r.loteG)} g`}
-  else if(dif>0){cls="warn";txt=`faltam ${g3(dif)} g para fechar o lote (${g3(w)} g de ${g3(r.loteG)} g)`}
-  else{cls="bad";txt=`passou ${g3(-dif)} g do peso do lote (${g3(w)} g de ${g3(r.loteG)} g)`}
+  else if(dif>0){cls="warn";txt=`faltam ${g3(dif)} g para fechar o lote (${g3(w)} g de ${g3(r.loteG)} g) — só um alerta${r.ratear!==false&&w>0?`: o valor do lote é rateado pelo peso informado (R$ ${String(Math.round(tot/w*10000)/10000).replace(".",",")}/g)`:""}`}
+  else{cls="warn";txt=`os pesos informados somam ${g3(w)} g, ${g3(-dif)} g a mais que o peso do lote (${g3(r.loteG)} g) — só um alerta${r.ratear!==false?`: o valor do lote é rateado pelo peso informado (R$ ${String(Math.round(tot/w*10000)/10000).replace(".",",")}/g)`:""}`}
   return {cls,dif,txt:`${txt} · ${kids.length} item(ns) · valor dos itens R$ ${brl(v)} de R$ ${brl(tot)}`}}
 function romLoteHTML(r,i){const R=romLoteResumo(r),tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);
   return `<div class="rc lote" data-i="${i}"><div class="lote-h"><b>Lote por peso · ${esc(r.cod||"")} ${esc(r.desc)}</b><span>${g3(r.loteG)} g × R$ ${String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")}/g = <b>R$ ${brl(tot)}</b></span></div>
     <p class="hint">O fornecedor vendeu este lote por peso, sem separar as peças. Pese cada peça e adicione-a aqui: o custo de cada uma é o peso × o valor da grama, e depois entra o fator. Confira se a soma dos pesos fecha com o lote.</p>
+    <label class="vchk"><input type="checkbox" data-rp="lotrat" ${r.ratear!==false?"checked":""}> Ratear o valor do lote (R$ ${brl(tot)}) pelo peso que eu informar em cada item</label>
     <div class="row"><label class="fq"><span>Quantos itens?</span><input class="n" data-lotn value="1" inputmode="numeric" style="width:64px"></label><button type="button" class="btn pri sm" data-act="lote-add" data-i="${i}">＋ Adicionar itens</button><button type="button" class="btn sm" data-act="lote-resto" data-i="${i}" title="Cria um item com o peso que falta para fechar o lote">＋ Item com o que falta</button></div>
     <div class="lote-sum ${R.cls}" data-lsum="${esc(r.lid)}" role="status">${esc(R.txt)}</div></div>`}
 function romLoteAtualiza(lot){const el=document.querySelector(`#romWrap [data-lsum="${CSS.escape(lot.lid)}"]`);if(!el)return;const R=romLoteResumo(lot);el.className="lote-sum "+R.cls;el.textContent=R.txt}
-function romLotePeso(r,rc){const w=num(r.peso);r.custo=w>0&&r.precoG!=null?virg(w*r.precoG):"";const ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci)ci.value=r.custo;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);if(lot)romLoteAtualiza(lot)}
+/* o valor do lote é o que o fornecedor cobrou: ele é repartido pelo peso que você informou em cada item (centavos exatos), mesmo que a soma dos pesos difira do peso da lista */
+function romLoteRecalc(lot){
+  if(!lot)return;const kids=romLoteKids(lot),tot=lot.total!=null?lot.total:(lot.loteG||0)*(lot.precoG||0),ws=kids.map(k=>{const p=num(k.peso);return p>0?p:0}),W=ws.reduce((a,b)=>a+b,0);
+  if(lot.ratear!==false&&W>0&&tot>0){const cents=Math.round(tot*100),raw=ws.map(w=>cents*w/W),base=raw.map(Math.floor);let rest=cents-base.reduce((a,b)=>a+b,0);
+    raw.map((x,i)=>[x-Math.floor(x),i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(rest>0&&ws[i]>0){base[i]++;rest--}});
+    kids.forEach((k,i)=>{k.custo=ws[i]>0?virg(base[i]/100):""})}
+  else kids.forEach((k,i)=>{k.custo=ws[i]>0&&lot.precoG!=null?virg(ws[i]*lot.precoG):""});
+  kids.forEach(k=>{const rc=document.querySelector(`#romWrap .rc[data-i="${ROM.rows.indexOf(k)}"]`),ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci&&document.activeElement!==ci)ci.value=k.custo});
+  romLoteAtualiza(lot)}
+function romLotePeso(r,rc){const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);if(lot)romLoteRecalc(lot);else{const w=num(r.peso);r.custo=w>0&&r.precoG!=null?virg(w*r.precoG):"";const ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci)ci.value=r.custo}}
 function romLoteAdd(r,n,peso){let pos=ROM.rows.indexOf(r);ROM.rows.forEach((x,j)=>{if(x.loteDe===r.lid)pos=j});const f=S.form,novos=[],k0=romLoteKids(r).length;
   for(let q=0;q<n;q++){const x={cod:(r.cod||"")+"-"+(k0+q+1),desc:r.desc||"",preco:r.precoG,precod:null,total:null,qtd:1,peso:peso!=null?g3(peso):"",q:{},skip:false,aviso:r.catq?"· categoria não reconhecida: confira":"",catq:!!r.catq,cat:r.cat||f.v.I||"",sub:r.sub||"",loteDe:r.lid,precoG:r.precoG,custo:peso!=null?virg(peso*r.precoG):""};
     x.mk={};x.bo={};x.on={};x.vz={};x.ex={};romNovaCat(x);novos.push(x)}
-  ROM.rows.splice(pos+1,0,...novos);romSalvarSoon();renderRom()}
+  ROM.rows.splice(pos+1,0,...novos);romLoteRecalc(r);romSalvarSoon();renderRom()}
 /* ===== partir um item em partes (ex.: um trio em 3 pares): o custo do item é repartido (centavos exatos) e cada parte vira um cartão com cópia dos banhos/quantidades ===== */
 const romPartes=r=>ROM.rows.filter(x=>x.parteG&&x.parteG===r.parteG);
 function romPartir(r,n){n=Math.trunc(n);if(!(n>=2&&n<=12)){toast("Escolha de 2 a 12 partes.");return}
@@ -167,7 +177,7 @@ function romJuntar(r){const ps=romPartes(r);if(ps.some(x=>x.feito&&!(x.parteK===
 function romParteTag(r){if(!r.parteG)return "";const ps=romPartes(r),s=ps.reduce((t,x)=>t+(num(x.custo)||0),0),o=num(r.parteCusto0);
   return `<span class="rch" title="Item partido: o custo do item foi repartido entre as partes (edite o custo de cada uma se quiser)">Parte ${r.parteK}/${r.parteN} · partes somam R$ ${brl(s)}${o!=null?" de R$ "+brl(o):""} <button type="button" class="x" data-act="rom-juntar" title="Desfazer a divisão e voltar a um só item">juntar</button></span>`}
 function romLoteDecora(){if(!ROM)return;const cs=document.querySelectorAll("#romWrap .rc[data-i]");cs.forEach(c=>{const r=ROM.rows[+c.dataset.i];if(!r||!r.loteDe||c.querySelector(".lote-tag"))return;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);
-  c.insertAdjacentHTML("afterbegin",`<div class="lote-tag"><span>Item do lote ${esc(lot?lot.cod:"")} · custo = peso × R$ ${String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")}/g</span><button type="button" class="x" data-act="lote-del" data-i="${c.dataset.i}" aria-label="Remover este item do lote">×</button></div>`)})}
+  c.insertAdjacentHTML("afterbegin",`<div class="lote-tag"><span>Item do lote ${esc(lot?lot.cod:"")} · ${lot&&lot.ratear!==false?"valor do lote rateado pelo peso":"custo = peso × R$ "+String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")+"/g"}</span><button type="button" class="x" data-act="lote-del" data-i="${c.dataset.i}" aria-label="Remover este item do lote">×</button></div>`)})}
 function romNovaCat(r){const g=gradeDaCat(r.cat,r.sub);r.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];r.csel=coresPadrao(r.cat,r.sub);r.semG=false;r.open=false;r.q={};if(!romIds(r).length&&!g&&romTipo(r)!=="bruta")r.q.p=String(r.qtd)}
 /* Conserva quantidades compatíveis ao trocar categoria de uma parte; exige confirmação para descartar distribuições incompatíveis. */
 function romTrocarCategoria(r,cat,sub){if(r.cat===cat&&(r.sub||"")===(sub||""))return true;
@@ -207,6 +217,7 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   if(k==="texto"){ROM.texto=t.value;return}
   if(k==="obs"){ROM.obs=t.value;romAtualSoon();return}
   if(k==="rins"){romInsCampo(t,fin);return}
+  if(k==="lotrat"){const rc=t.closest(".rc"),lot=rc&&ROM.rows[+rc.dataset.i];if(lot&&lot.lote){lot.ratear=t.checked;romLoteRecalc(lot);romAtualSoon()}return}
   if(k==="qtdx"){const rc=t.closest(".rc"),r=rc&&ROM.rows[+rc.dataset.i];if(r&&r.extra){const n=Math.trunc(num(t.value)||0);r.qtd=Math.max(0,Math.min(1e6,n));romAtualSoon()}return}
   if(k==="tid"){ROM.tid=t.value;abertos.romT=t.value;guardarAbertos();ROM.msg="Modelo trocado: clique em Ler lista para reler com ele.";const T=romT();if(T&&T.forn&&fornBy(T.forn))romSetForn(T.forn);renderRom();return}
   if(k==="forn"){const t0=S.form.tipo;romSetForn(t.value);if(S.form.tipo!==t0)ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});renderRom();return}

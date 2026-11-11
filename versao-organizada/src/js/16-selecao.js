@@ -60,6 +60,7 @@ function renderSelBar(){
     ${det?`<span class="sel-calculo">${esc(det)}</span>`:""}
     ${row?`<button class="btn sm" type="button" data-act="s-edit" title="Abre a peça no lançamento para alterar">✎ Editar ${esc(row.v.E)}</button><button class="btn sm" type="button" data-act="s-nova" title="Copia os dados para o lançamento; ao Adicionar sai com nova referência">＋ Nova referência a partir desta</button><button class="btn sm" type="button" data-act="s-dup">⧉ Duplicar linha</button>`:""}
     <button class="btn sm" type="button" data-act="s-copy">Copiar <kbd>Ctrl+C</kbd></button>${G.linhas[b.r1]?`<button class="btn sm" type="button" data-act="s-clear">Limpar <kbd>Del</kbd></button>`:""}${b.r2>b.r1&&G.linhas[b.r1]?`<button class="btn sm" type="button" data-act="s-fill">Preencher para baixo <kbd>Ctrl+D</kbd></button>`:""}
+    ${ids.length?`<button class="btn sm" type="button" data-act="s-xlsx" title="Baixa um .xlsx só com as peças da seleção">Baixar .xlsx só estas</button>`:""}
     ${ids.length?`<button class="btn sm danger" type="button" data-act="s-del">Excluir ${(()=>{const q=Math.min(b.r2,G.linhas.length-1)-b.r1+1;return q>1?q+" linhas":"a linha"})()}</button>`:""}`;
 }
 function usarModelo(id){

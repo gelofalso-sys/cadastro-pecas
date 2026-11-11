@@ -63,6 +63,8 @@ document.addEventListener("click",e=>{
     case "b-dup":duplicar([...sel].filter(id=>S.lanc.some(l=>l.id===id)));break;
     case "b-del":excluir([...sel]);break;
     case "b-copy":copiar(new Set(sel));break;
+    case "b-xlsx":baixar(false,new Set(sel));break;
+    case "s-xlsx":{const ids=idsDaSel();if(ids.length)baixar(false,new Set(ids));break}
     case "b-none":sel.clear();renderTopo();break;
     case "b-set":{const L=document.getElementById("bCol").value,v=document.getElementById("bVal").value;const antes=[];
       {const ch=checaCel(L,v);if(ch.erro){toast(ch.erro+" (não aplicado)");break}if(vazio(v)&&(L==="F"||L==="I")){toast(NOME[L]+" não pode ficar vazio (não aplicado).");break}}
@@ -103,7 +105,7 @@ document.addEventListener("click",e=>{
       toast(`“${mo.nome}” pronto: é só escolher “${mo.nome}” em Exportar para e baixar. Faça um teste pequeno no outro sistema antes de importar tudo.`);break}
     case "mod-conferir":{const g=gerar();if(!g.linhas.length){toast("A tabela está vazia: lance ou cole peças antes de conferir.");break}if(!abrirConferencia(g,colunasExport(),null))toast("Tudo certo: a tabela atende às regras do modelo.");break}
     case "mod-salvar":modeloParaJson(modeloAtual());break;
-    case "exp-assim":{const o=document.querySelector(".rep");if(o)o.remove();const a=expPend;expPend=null;if(a&&a.tipo==="copiar")copiar(a.ids,true);else baixar(true);break}
+    case "exp-assim":{const o=document.querySelector(".rep");if(o)o.remove();const a=expPend;expPend=null;if(a&&a.tipo==="copiar")copiar(a.ids,true);else baixar(true,a&&a.ids);break}
     case "mod-bling":{const mo=modeloBling();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast("Modelo Bling criado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele (depois de cadastrá-los, ligue-os em “Recebe o dado de”). Use o botão Validar do Bling antes de Importar.");break}
     case "mod-jueri":{const mo=modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();break}
     case "ordem":C.ordem=t.dataset.v;salvar(true,false);renderTopo();break;
@@ -186,7 +188,7 @@ document.addEventListener("click",e=>{
     case "rom-partir-ok":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i],pi=rc.querySelector("[data-partn]");if(r)romPartir(r,num(pi&&pi.value));break}
     case "rom-juntar":{const r=ROM.rows[+t.closest(".rc").dataset.i];if(r)romJuntar(r);break}
     case "lote-resto":{const r=ROM.rows[+t.dataset.i];if(!r)break;const R=romLoteResumo(r);if(R.dif>0)romLoteAdd(r,1,R.dif);else toast("Não há peso restante no lote.");break}
-    case "lote-del":{const r=ROM.rows[+t.dataset.i];if(!r)break;if(r.feito||(r.lancIds||[]).length){toast("Esta peça já foi lançada. Exclua o lançamento na tabela antes de remover o item do lote.");break}ROM.rows.splice(+t.dataset.i,1);if(ROM.rows.length)romSalvarSoon();else romLimparRascunho();renderRom();break}   /* lista vazia: apaga o rascunho, senão o anterior reaparece */
+    case "lote-del":{const r=ROM.rows[+t.dataset.i];if(!r)break;if(r.feito||(r.lancIds||[]).length){toast("Esta peça já foi lançada. Exclua o lançamento na tabela antes de remover o item do lote.");break}{const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);ROM.rows.splice(+t.dataset.i,1);if(lot)romLoteRecalc(lot)}if(ROM.rows.length)romSalvarSoon();else romLimparRascunho();renderRom();break}   /* lista vazia: apaga o rascunho, senão o anterior reaparece */
     case "imp-pick":{document.getElementById("impFile").click();break}
     case "imp-up":{const i=+t.dataset.i;if(i>0){[IMPQ[i-1],IMPQ[i]]=[IMPQ[i],IMPQ[i-1]];renderImp()}break}
     case "imp-down":{const i=+t.dataset.i;if(i<IMPQ.length-1){[IMPQ[i+1],IMPQ[i]]=[IMPQ[i],IMPQ[i+1]];renderImp()}break}

@@ -12,8 +12,8 @@ with sync_playwright() as p:
   cards=page.locator('#romWrap .rc:has(.lote-tag)');cards.nth(i).locator('[data-rp="cat"]').select_option(label=cat);cards=page.locator('#romWrap .rc:has(.lote-tag)');cards.nth(i).locator('[data-rp="peso"]').fill(peso)
   cards.nth(i).locator('[data-rp="q"][data-b="ouro"]').fill('1')
  page.wait_for_timeout(500);cards=page.locator('#romWrap .rc:has(.lote-tag)');print('resumo',lot.locator('.lote-sum').inner_text());print('pesos',cards.locator('[data-rp="peso"]').evaluate_all('(es)=>es.map(e=>e.value)'));print('compras',cards.locator('[data-rp="custo"]').evaluate_all('(es)=>es.map(e=>e.value)'));print('banhos',cards.locator('[data-cb="ouro"]').all_inner_texts());assert cards.locator('[data-cb="ouro"]').all_inner_texts()==['banho R$ 2,00','banho R$ 25,00'];assert '6,000 g' in lot.locator('.lote-sum').inner_text()
- # Quantidade maior que o número de itens físicos não pode passar pela conferência.
- cards.first.locator('[data-rp="q"][data-b="ouro"]').fill('2');page.locator('#romCriar').click();assert page.locator('[data-act="rev-ok"]').is_disabled();assert 'adicione outro item' in page.locator('.rev').inner_text().lower();page.locator('[data-act="rev-fechar"]').first.click();cards=page.locator('#romWrap .rc:has(.lote-tag)');cards.first.locator('[data-rp="q"][data-b="ouro"]').fill('1')
+ # Quantidade maior que o número de itens físicos é só alerta (não bloqueia a criação).
+ cards.first.locator('[data-rp="q"][data-b="ouro"]').fill('2');page.locator('#romCriar').click();assert page.locator('[data-act="rev-ok"]').is_enabled();assert 'adicione outro item' in page.locator('.rev').inner_text().lower();page.locator('[data-act="rev-fechar"]').first.click();cards=page.locator('#romWrap .rc:has(.lote-tag)');cards.first.locator('[data-rp="q"][data-b="ouro"]').fill('1')
  page.locator('#romCriar').click();assert page.locator('[data-act="rev-ok"]').is_enabled();page.locator('[data-act="rev-ok"]').click();page.locator('.rep [data-act="rel-fechar"]').click();page.wait_for_timeout(300)
  with page.expect_download() as d:
   page.evaluate("document.querySelector('#sideExp [data-act=xlsx]').click()")

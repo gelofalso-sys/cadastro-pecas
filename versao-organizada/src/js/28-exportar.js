@@ -19,6 +19,7 @@ function pendenciasExport(g){
   const cont={};pend.forEach(p=>p.falta.forEach(f=>cont[f]=(cont[f]||0)+1));const tot=g.linhas.length,todos=Object.keys(cont).filter(f=>tot>=4&&cont[f]>=Math.ceil(tot*0.8));
   const out=todos.map(f=>`Em ${cont[f]} de ${tot} peças falta: ${f}. Se isso é esperado (ex.: ainda sem preço de venda), pode seguir.`);
   pend.forEach(p=>{const fl=p.falta.filter(f=>!todos.includes(f));if(fl.length)out.push(`Linha ${p.i+2} (${p.r.v.E||"sem ref."}): ${fl.join(", ")}`)});
+  {const dups=[...new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(dups.length)out.unshift(`Referência repetida em ${dups.length} peça(s): ${dups.slice(0,6).join(", ")}${dups.length>6?"…":""}. O arquivo sai assim; confira se o outro sistema aceita referências iguais.`)}
   return out}
 /* conferência antes de exportar: pendências da tabela + regras do modelo escolhido */
 let expPend=null;
@@ -45,20 +46,19 @@ function gerarExport(){const g0=gerar(),fil=filtroOn();
   /* com filtro: sai EXATAMENTE o que o filtro mostra. Só no modelo que agrupa em produto pai + variações a peça vai inteira (senão o pai ficaria sem filhos) */
   const peca=!!(fil&&modeloAtual().agrupar==="sim");
   return {g0,fil,peca,g:fil?(()=>{if(peca){const ids=new Set(g0.linhas.filter(casa).map(r=>r.lancId));return {...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}}return {...g0,linhas:g0.linhas.filter(casa)}})():g0}}
-async function baixar(forcar){
-  const GE=gerarExport(),g=GE.g,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),cfgExp=sigCfg();if(!g.linhas.length){toast(GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
-  if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de baixar.");return}
-  const cols=colunasExport(),mo=modeloAtual(),csv=mo.formato==="csv";
+async function baixar(forcar,ids){
+  const GE=gerarExport(),g=ids?{...GE.g0,linhas:GE.g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),cfgExp=sigCfg();if(!g.linhas.length){toast(ids?"Nenhuma peça selecionada para baixar.":GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para baixar tudo.":"A lista está vazia.");return}
+  const cols=colunasExport(),mo=modeloAtual();let csv=mo.formato==="csv";
   if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
-  if(!forcar&&abrirConferencia(g,cols,{tipo:"xlsx"}))return;
-  if(!csv&&typeof XLSX==="undefined"){toast("A biblioteca de planilha não carregou. Use Copiar para o Excel ou um modelo em CSV.");return}
-  const sl=saidaLinhas(g,mo),partes=dividirLotes(sl,Math.trunc(num(mo.lote)||0)),faixa=(GE.fil?faixaFiltro(g):(faixaRefs(g)||"lista"))+(GE.fil?" (filtro)":""),dl=await obterDL(),ext=csv?"csv":"xlsx";
+  if(!forcar&&abrirConferencia(g,cols,{tipo:"xlsx",ids:ids||null}))return;
+  if(!csv&&typeof XLSX==="undefined"){csv=true;toast("A biblioteca de planilha (pasta lib) não carregou: baixei em CSV, que o Excel também abre. Para .xlsx, abra o arquivo que fica ao lado da pasta lib.")}
+  const sl=saidaLinhas(g,mo),partes=dividirLotes(sl,Math.trunc(num(mo.lote)||0)),faixa=ids?faixaFiltro(g)+" (selecionadas)":(GE.fil?faixaFiltro(g):(faixaRefs(g)||"lista"))+(GE.fil?" (filtro)":""),dl=await obterDL(),ext=csv?"csv":"xlsx";
   const nomeBase=`Cadastro de peças ${faixa.replace(/[^\w\- ,]/g,"-")}`;let feitas=0;
   for(let p=0;p<partes.length;p++){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){if(!GE.fil)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
+  if(feitas===partes.length){if(ids)toast(`Baixei só as ${ids.size} peça(s) selecionada(s): ${g.linhas.length} linha(s).`);if(!GE.fil&&!ids)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo();if(GE.fil)toast(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=Math.trunc(num(mo.lote)||0),gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)toast(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`)}
 }
@@ -77,7 +77,6 @@ const LOC=(()=>{let l="pt-br",dec=",";try{l=String(navigator.language||"pt-br").
 const fLocal=f=>LOC.dec==="."?f:LOC.pt?f.replace(/,/g,";").replace(/(\d)\.(\d)/g,"$1,$2").replace(/\bROUND\(/g,"ARRED("):null;
 async function copiar(ids,forcar){
   const GE=gerarExport(),g0=GE.g0,idsExp=S.lanc.map(l=>l.id),sigExp=sigLanc(),cfgExp=sigCfg(),g=ids?{...g0,linhas:g0.linhas.filter(r=>ids.has(r.lancId))}:GE.g;if(!g.linhas.length){toast(!ids&&GE.fil?"Nenhuma linha no filtro atual. Limpe o filtro para copiar tudo.":"Nada para copiar.");return}
-  if(g.linhas.some(r=>r.dup)){toast("Há referências repetidas (em vermelho). Corrija antes de copiar.");return}
   const cols=colunasExport();if(!cols.length){toast("O modelo não tem nenhuma coluna marcada para sair no arquivo.");return}
   if(!forcar&&abrirConferencia(g,cols,{tipo:"copiar",ids:ids||null}))return;
   const TAB=String.fromCharCode(9),NL=String.fromCharCode(10);
