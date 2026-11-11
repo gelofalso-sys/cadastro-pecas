@@ -4,7 +4,7 @@ document.addEventListener("mouseover",e=>{const tr=e.target.closest("tr[data-l]"
 /* a variação do elemento (cartão da categoria ou variação sem categoria) */
 function gradeDoEl(el){const e=el.closest("[data-gr]");if(!e)return null;const k=e.dataset.gr;return k.charAt(0)==="o"?(cfg().grades||[])[+k.slice(1)]:cfg().categorias[+k].grade}
 function aplicaFaixa(txt){const f=S.form,gr=gradeBy(f.grade);if(!gr)return;f.gsel=selFaixa(gr,txt);erro="";salvar(false);renderTopo();renderForm()}
-/* campos do banho/banhista: devolve a mensagem de erro ("" = válido). Letra única e não vazia; milésimos, multiplicador e verniz >= 0 */
+/* campos do banho/banhista: devolve a mensagem de erro ("" = válido). Letra opcional (vazia = a referência sai sem letra), única quando preenchida; milésimos, multiplicador e verniz >= 0 */
 function validaBanho(bh,b,campo,valor){
   const v=String(valor==null?"":valor).trim();
   if(b&&campo==="fator"&&v){const n=num(v);if(n==null||n<=0||n>1e5)return "O Fator × precisa ser um número maior que 0 (ex.: 2,5)."}
@@ -13,7 +13,7 @@ function validaBanho(bh,b,campo,valor){
     if(!v)return "O nome do banho não pode ficar vazio.";
     if(bh.banhos.some(x=>x!==b&&semAc(x.nome)===semAc(v)))return `Já existe um banho chamado “${v}” neste galvânica — use outro nome (ex.: ${v} 2).`}
   if(b&&campo==="letra"){
-    if(!v)return "A letra do banho não pode ficar vazia.";
+    if(!v)return "";
     if(!/^[A-Za-z]{1,2}$/.test(v))return "A letra do banho deve ter só letras (A–Z), no máximo 2.";
     if(bh.banhos.some(x=>x!==b&&String(x.letra||"").trim().toLowerCase()===v.toLowerCase()))return `Já existe um banho com a letra “${v}” neste galvânica — escolha outra.`}
   if((b&&(campo==="mil"||campo==="mult"))||(!b&&campo==="verniz")){
@@ -96,12 +96,12 @@ function onField(t,isChange){
   if(t.id==="selAll"){G.linhas.forEach((r,ri)=>{if(vis(ri)){if(t.checked)sel.add(r.lancId);else sel.delete(r.lancId)}});renderTopo();return}
   if(t.hasAttribute&&t.hasAttribute("data-sel")){const id=t.closest("tr").dataset.l;if(t.checked)sel.add(id);else sel.delete(id);renderTopo();return}
   if(t.dataset.col){
-    const L=t.dataset.col;f.v[L]=t.value;erro="";
+    const L=t.dataset.col;f.v[L]=t.value;erro="";if(L==="N")compraGramaAuto(f);
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
       const nome=t.value.replace(/\s+/g," ").trim(),ant=t.dataset.prev!=null?t.dataset.prev:"";if(ant&&catBy(ant))f.v.I=ant;else delete f.v.I;
       quickPre=nome;quick="cat";quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
-    if(L==="I"&&isChange){f.csel=editId?(f.csel||[]).filter(id=>coresDaCat(t.value).some(x=>x.id===id)):[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange){f.csel=editId?(f.csel||[]).filter(id=>coresDaCat(t.value).some(x=>x.id===id)):[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);aplicarSemBanho(f);compraGramaAuto(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
     if(L==="V"&&isChange)fatorDoPreco("p");
     atualizarGera();salvar(false);return;
@@ -136,6 +136,8 @@ function onField(t,isChange){
       c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
+    else if(k==="semBanho"){c.semBanho=!!t.checked;salvar(true,false);if(isChange){renderCfg();toast(c.semBanho?`“${c.nome}” agora é lançada sem banho: já entra como peça pronta, sem galvânica, verniz nem milésimos.`:`“${c.nome}” voltou a usar banho.`)}}
+    else if(k==="compraGrama"){if(isChange){const v=t.value.trim(),n=num(v);if(v!==""&&(n==null||n<0||n>1e6)){t.value=c.compraGrama||"";toast("Compra por grama precisa ser um número de 0 em diante (ex.: 12,50). Voltei ao valor anterior.");return}c.compraGrama=v;t.value=v;salvar(true,false);renderCfg()}}
     else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){
       if(isChange){const v=t.value.trim(),n=num(v),regra={ncm:[/^\d{8}$/.test(v),"O NCM tem 8 números (ex.: 71131100)."],cfop:[/^\d{4}$/.test(v),"O CFOP tem 4 números (ex.: 5102)."],fcp:[n!=null&&n>=0&&n<=100,"O FCP é um percentual de 0 a 100."],insumos:[n!=null&&n>=0&&n<=1e6,"Insumos precisa ser um número de 0 em diante (ex.: 0,50)."]}[k];
         if(v!==""&&!regra[0]){t.value=c[k]||"";toast(regra[1]+" Voltei ao valor anterior.");return}c[k]=v;t.value=v}

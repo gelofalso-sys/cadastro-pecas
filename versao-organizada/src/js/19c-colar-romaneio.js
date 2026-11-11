@@ -79,7 +79,7 @@ const romBh=r=>banhistaBy((r&&r.bh)||S.form.banhista);
 const romOn=(r,b)=>r&&r.on&&(b.id in r.on)?r.on[b.id]:((r&&r.bh&&r.bh!==S.form.banhista)?(romTipo(r)==="bruta"&&!!b.marcado):(romTipo(r)==="bruta"?S.form.on:(S.form.onP||{}))[b.id]);
 function romReset(r){r.on={};r.q={};r.bo={};r.mk={};r.vz={};if(romTipo(r)!=="bruta"&&!romIds(r).length&&!gradeDaCat(r.cat,r.sub))r.q.p=String(r.qtd)}
 function romColsR(r){const f=S.form,bh=romBh(r);
-  if(romTipo(r)!=="bruta"){const sel=bh.banhos.filter(b=>romOn(r,b));if(!sel.length)return [{id:"p",nome:"Quantidade",letra:"",cor:"",col:""}];return sel.map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:"",mil:milDe(b,(r&&r.cat)||f.v.I)}))}
+  if(romTipo(r)!=="bruta"){const sel=r&&r.sb?[]:bh.banhos.filter(b=>romOn(r,b));if(!sel.length)return [{id:"p",nome:"Quantidade",letra:"",cor:"",col:""}];return sel.map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:"",mil:milDe(b,(r&&r.cat)||f.v.I)}))}
   return bh.banhos.filter(b=>romOn(r,b)).map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:b.coluna,mil:milDe(b,(r&&r.cat)||f.v.I)}))}
 const romCols=()=>romColsR(null);
 /* monta, para uma peça do romaneio, o mesmo lançamento que o formulário montaria */

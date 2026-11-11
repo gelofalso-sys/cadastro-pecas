@@ -1,6 +1,7 @@
 20-armazenamento-idb.js
 21-edicao-em-lote-e-revisao.js
 21b-romaneio-extras.js
+21c-diagnostico-dados.js
 22-importar-pdf-romaneio.js
 23-fotos-imgbb-e-nota-fiscal.js
 24-ui-numeracao-e-colunas.js

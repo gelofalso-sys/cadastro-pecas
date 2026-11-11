@@ -35,7 +35,7 @@ function conjCalc(f){
   const res=vars.map(vb=>{const tot={N:0,P:0,R:0,S:0,T:0,U:0},lin=[];let semMult=false;
     (f.comp||[]).forEach(c=>{const qtd=conjQtd(c)||0,peso=(num(c.peso)||0)*qtd,custo=(num(c.custo)||0)*qtd,
       b=c.banho==="-"?null:(c.banho?(bh.banhos||[]).find(x=>x.id===c.banho)||null:vb);let banho=0,vern=0;
-      if(b){const cat=conjCat(c),m=c.cat&&!cat?null:num(multItem(f,b,cat||(f.v&&f.v.I)));if(m==null)semMult=true;else banho=b.modo==="fixo"?m*qtd:peso*m;
+      if(b&&!banhoSemCalc(b)){const cat=conjCat(c),m=c.cat&&!cat?null:num(multItem(f,b,cat||(f.v&&f.v.I)));if(m==null)semMult=true;else banho=b.modo==="fixo"?m*qtd:peso*m;
         const vzv=c.vz==null?vzPad(bh,b):!!c.vz,vv=num(bh.verniz);if(vzv&&vv!=null)vern=peso*vv;tot[b.coluna]=(tot[b.coluna]||0)+banho}
       tot.N+=peso;tot.P+=custo;tot.U+=vern;lin.push({peso,custo,banho,vern,total:custo+banho+vern})});
     return {b:vb,tot,lin,semMult}});

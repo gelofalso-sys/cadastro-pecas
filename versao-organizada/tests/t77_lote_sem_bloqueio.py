@@ -17,7 +17,7 @@ with sync_playwright() as p:
         c=cards().nth(i);c.locator('[data-rp="cat"]').select_option(label='Masculinos');x=cards().nth(i).locator('[data-rp="peso"]');x.fill(ps);x.press('Tab')
     pg.wait_for_timeout(400)
     resumo=pg.locator('#romWrap [data-lsum]').first.inner_text();print('resumo:',resumo)
-    assert 'só um alerta' in resumo and 'rateado' in resumo,resumo
+    assert 'informados até agora' in resumo and 'valor por grama até agora' in resumo,resumo
     custos=[n(cards().nth(i).locator('[data-rp="custo"]').input_value()) for i in range(3)]
     print('custos',custos,'soma',round(sum(custos),2));assert abs(sum(custos)-1197.17)<0.005,'o valor do lote deve ser o mesmo, rateado pelo peso informado'
     # divisão incompleta (sem quantidade distribuída em um item, 2 unidades em outro) não bloqueia

@@ -102,8 +102,8 @@ function romBodyHTML(r){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=rom
     return `<div class="rc-r bd"><span class="bd-t"><span class="dot d-${b.coluna}"></span>${esc(b.nome)} <small>${esc(b.letra)}</small></span>
       ${fq("Cor",`<select data-rp="bo" data-k="L" data-b="${b.id}">${opts(C.cores,bo.L||b.cor)}</select>`,"w-s")}
       ${fq("Milésimos",`<input class="n" data-rp="bo" data-k="O" data-b="${b.id}" value="${esc(bo.O??milDe(b,r.cat||f.v.I)??"")}" inputmode="decimal">`,"w-n")}
-      ${!bruta?"":fq(b.modo==="fixo"?"R$ banho":"R$/g da peça",`<input class="n" data-rp="bo" data-k="_m" data-b="${b.id}" value="${esc(bo._m??"")}" placeholder="${esc(String(multDe(b,r.cat||f.v.I)||"").replace(".",","))}" inputmode="decimal" title="Valor do banho só desta peça (R$ por grama; ou valor fixo se o banho for assim). Vazio = o valor da categoria na galvânica">`,"w-n")}${!bruta?"":fq("Custo do banho R$",`<input class="n calc" data-rp="bo" data-k="C" data-b="${b.id}" ${ai("C",bo.C)} inputmode="decimal" title="Peso × valor por grama da galvânica ${esc(bh.nome)}. Digite para trocar só nesta peça; apague para voltar ao cálculo.">`,"w-c")}
-      ${!bruta?"":fq("Custo do verniz R$",`<input class="n calc" data-rp="bo" data-k="U" data-b="${b.id}" ${ai("U",bo.U)} inputmode="decimal">`,"w-c")}
+      ${!bruta||banhoSemCalc(b)?"":fq(b.modo==="fixo"?"R$ banho":"R$/g da peça",`<input class="n" data-rp="bo" data-k="_m" data-b="${b.id}" value="${esc(bo._m??"")}" placeholder="${esc(String(multDe(b,r.cat||f.v.I)||"").replace(".",","))}" inputmode="decimal" title="Valor do banho só desta peça (R$ por grama; ou valor fixo se o banho for assim). Vazio = o valor da categoria na galvânica">`,"w-n")}${!bruta||banhoSemCalc(b)?"":fq("Custo do banho R$",`<input class="n calc" data-rp="bo" data-k="C" data-b="${b.id}" ${ai("C",bo.C)} inputmode="decimal" title="Peso × valor por grama da galvânica ${esc(bh.nome)}. Digite para trocar só nesta peça; apague para voltar ao cálculo.">`,"w-c")}
+      ${!bruta||banhoSemCalc(b)?"":fq("Custo do verniz R$",`<input class="n calc" data-rp="bo" data-k="U" data-b="${b.id}" ${ai("U",bo.U)} inputmode="decimal">`,"w-c")}
       ${fq("Descrição desta linha",`<input data-rp="bo" data-k="F" data-b="${b.id}" ${ai("F",bo.F)}>`,"w-l")}</div>`}).join("");
   h+=`<details class="gdet" ${nEx?"open":""}><summary><b>Todos os outros campos</b><span>${nEx} alterado(s) · referência manual, ID, foto, códigos, tamanho, localização, NCM, CFOP, impostos, catálogo, status…</span></summary><div class="gb"><div class="dgrid">${exL.map(L=>fq(esc(NOME[L])+(L==="E"?" (referência manual)":""),`<input data-rp="ex" data-k="${L}" value="${esc((r.ex||{})[L]??padraoDe(r.cat||f.v.I,L)??"")}" ${L==="E"?'placeholder="automática"':""}>`)).join("")}</div></div></details>`;
   return h}
@@ -130,27 +130,37 @@ function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();romExtrasAtual(
   const b=document.getElementById("romCriar");if(b){const n=ROM.rows.filter(r=>!r.skip).length;b.textContent=`Criar ${n} peça${n===1?"":"s"}`;b.disabled=!n}}
 const g3=n=>(Math.round((+n||0)*1000)/1000).toFixed(3).replace(".",",");
 const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);
+/* peso "real": o que você pesa sem o insumo que a galvânica pesa junto. O valor do lote não muda; o valor por grama sobe porque o peso caiu */
+const romLoteReal=r=>{const n=num(r.pesoReal);return n>0?n:null};
+function romLoteTaxa(r,w){const tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0),real=romLoteReal(r),base=real!=null?real:(r.ratear!==false&&w>0?w:(r.loteG||0));return base>0?tot/base:0}
 function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>{const p=num(x.peso);if(p>0)w+=p;v+=r2c(num(x.custo)||0)});
-  const dif=Math.round(((r.loteG||0)-w)*1000)/1000,tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);let cls,txt;
+  const real=romLoteReal(r),ref=real!=null?real:(r.loteG||0),dif=Math.round((ref-w)*1000)/1000,tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0),taxa=romLoteTaxa(r,w),rs=x=>String(Math.round(x*10000)/10000).replace(".",","),
+    nome=real!=null?`peso real ${g3(real)} g`:`peso do lote ${g3(r.loteG)} g`;let cls,txt;
   if(!kids.length){cls="warn";txt="Nenhum item ainda: pese as peças e adicione cada uma abaixo."}
   else if(dif===0&&Math.round(v*100)!==Math.round(tot*100)){cls="warn";txt=`o peso fecha (${g3(w)} g), mas há diferença de R$ ${brl(Math.abs(r2c(v)-r2c(tot)))}: os itens somam R$ ${brl(v)} e o lote custou R$ ${brl(tot)}. Confira e ajuste os custos dos itens.`}
-  else if(dif===0){cls="ok";txt=`✓ a soma bate: ${g3(w)} g de ${g3(r.loteG)} g`}
-  else if(dif>0){cls="warn";txt=`faltam ${g3(dif)} g para fechar o lote (${g3(w)} g de ${g3(r.loteG)} g) — só um alerta${r.ratear!==false&&w>0?`: o valor do lote é rateado pelo peso informado (R$ ${String(Math.round(tot/w*10000)/10000).replace(".",",")}/g)`:""}`}
-  else{cls="warn";txt=`os pesos informados somam ${g3(w)} g, ${g3(-dif)} g a mais que o peso do lote (${g3(r.loteG)} g) — só um alerta${r.ratear!==false?`: o valor do lote é rateado pelo peso informado (R$ ${String(Math.round(tot/w*10000)/10000).replace(".",",")}/g)`:""}`}
-  return {cls,dif,txt:`${txt} · ${kids.length} item(ns) · valor dos itens R$ ${brl(v)} de R$ ${brl(tot)}`}}
+  else if(real==null){cls="ok";txt=`${g3(w)} g informados até agora (a lista diz ${g3(r.loteG)} g; a diferença é normal quando o insumo pesa junto)`}   /* sem peso real: o valor por grama é fluido, recalculado a cada item */
+  else if(dif===0){cls="ok";txt=`✓ a soma bate: ${g3(w)} g de ${g3(ref)} g (${nome})`}
+  else if(dif>0){cls="warn";txt=`faltam ${g3(dif)} g para fechar o ${nome} (${g3(w)} g de ${g3(ref)} g) — só um alerta`}
+  else{cls="warn";txt=`os pesos informados somam ${g3(w)} g, ${g3(-dif)} g a mais que o ${nome} — só um alerta`}
+  const difTaxa=Math.abs(taxa-(r.precoG||0))>0.00005;
+  return {cls,dif,taxa,txt:`${txt} · valor por grama ${r.ratear!==false&&taxa>0?`${real==null?"até agora":"real"} R$ ${rs(taxa)}/g${difTaxa?` (a lista dizia R$ ${rs(r.precoG||0)}/g${real==null?"; muda a cada item que você pesa":""})`:""}`:`da lista R$ ${rs(r.precoG||0)}/g`} · ${kids.length} item(ns) · valor dos itens R$ ${brl(v)} de R$ ${brl(tot)}`}}
 function romLoteHTML(r,i){const R=romLoteResumo(r),tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);
   return `<div class="rc lote" data-i="${i}"><div class="lote-h"><b>Lote por peso · ${esc(r.cod||"")} ${esc(r.desc)}</b><span>${g3(r.loteG)} g × R$ ${String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")}/g = <b>R$ ${brl(tot)}</b></span></div>
     <p class="hint">O fornecedor vendeu este lote por peso, sem separar as peças. Pese cada peça e adicione-a aqui: o custo de cada uma é o peso × o valor da grama, e depois entra o fator. Confira se a soma dos pesos fecha com o lote.</p>
+    <div class="row"><label class="fq" title="Peso que você mede, sem o insumo que a galvânica pesa junto. O valor do lote não muda: o valor por grama sobe porque o peso caiu."><span>Peso real do lote (g) — opcional</span><input class="n" data-rp="lotpr" value="${esc(r.pesoReal||"")}" placeholder="${g3(r.loteG).replace(",000","")} (lista)" inputmode="decimal" style="width:120px" aria-label="Peso real do lote em gramas, sem insumo"></label><span class="hint">Pode deixar vazio: o valor por grama é recalculado a cada item que você pesa (valor do lote ÷ soma dos pesos), até o último item fechar o lote em R$ ${brl(tot)}. Só preencha se já souber o peso final e quiser fixar o valor da grama.</span></div>
     <label class="vchk"><input type="checkbox" data-rp="lotrat" ${r.ratear!==false?"checked":""}> Ratear o valor do lote (R$ ${brl(tot)}) pelo peso que eu informar em cada item</label>
     <div class="row"><label class="fq"><span>Quantos itens?</span><input class="n" data-lotn value="1" inputmode="numeric" style="width:64px"></label><button type="button" class="btn pri sm" data-act="lote-add" data-i="${i}">＋ Adicionar itens</button><button type="button" class="btn sm" data-act="lote-resto" data-i="${i}" title="Cria um item com o peso que falta para fechar o lote">＋ Item com o que falta</button></div>
     <div class="lote-sum ${R.cls}" data-lsum="${esc(r.lid)}" role="status">${esc(R.txt)}</div></div>`}
 function romLoteAtualiza(lot){const el=document.querySelector(`#romWrap [data-lsum="${CSS.escape(lot.lid)}"]`);if(!el)return;const R=romLoteResumo(lot);el.className="lote-sum "+R.cls;el.textContent=R.txt}
 /* o valor do lote é o que o fornecedor cobrou: ele é repartido pelo peso que você informou em cada item (centavos exatos), mesmo que a soma dos pesos difira do peso da lista */
 function romLoteRecalc(lot){
-  if(!lot)return;const kids=romLoteKids(lot),tot=lot.total!=null?lot.total:(lot.loteG||0)*(lot.precoG||0),ws=kids.map(k=>{const p=num(k.peso);return p>0?p:0}),W=ws.reduce((a,b)=>a+b,0);
-  if(lot.ratear!==false&&W>0&&tot>0){const cents=Math.round(tot*100),raw=ws.map(w=>cents*w/W),base=raw.map(Math.floor);let rest=cents-base.reduce((a,b)=>a+b,0);
-    raw.map((x,i)=>[x-Math.floor(x),i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(rest>0&&ws[i]>0){base[i]++;rest--}});
-    kids.forEach((k,i)=>{k.custo=ws[i]>0?virg(base[i]/100):""})}
+  if(!lot)return;const kids=romLoteKids(lot),tot=lot.total!=null?lot.total:(lot.loteG||0)*(lot.precoG||0),ws=kids.map(k=>{const p=num(k.peso);return p>0?p:0}),W=ws.reduce((a,b)=>a+b,0),real=romLoteReal(lot);
+  if(lot.ratear!==false&&tot>0&&(real!=null?real:W)>0&&W>0){
+    if(real==null||Math.abs(W-real)<0.0005){   /* lote fechado: os centavos fecham exatamente no valor do lote */
+      const cents=Math.round(tot*100),raw=ws.map(w=>cents*w/W),base=raw.map(Math.floor);let rest=cents-base.reduce((a,b)=>a+b,0);
+      raw.map((x,i)=>[x-Math.floor(x),i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(rest>0&&ws[i]>0){base[i]++;rest--}});
+      kids.forEach((k,i)=>{k.custo=ws[i]>0?virg(base[i]/100):""})}
+    else{const taxa=tot/real;kids.forEach((k,i)=>{k.custo=ws[i]>0?virg(r2c(ws[i]*taxa)):""})}}   /* lote ainda aberto: cada item custa peso × valor por grama real */
   else kids.forEach((k,i)=>{k.custo=ws[i]>0&&lot.precoG!=null?virg(ws[i]*lot.precoG):""});
   kids.forEach(k=>{const rc=document.querySelector(`#romWrap .rc[data-i="${ROM.rows.indexOf(k)}"]`),ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci&&document.activeElement!==ci)ci.value=k.custo});
   romLoteAtualiza(lot)}
@@ -187,7 +197,11 @@ function romTrocarCategoria(r,cat,sub){if(r.cat===cat&&(r.sub||"")===(sub||""))r
     if(incomp.length&&!confirm("A nova categoria tem variações diferentes. As quantidades incompatíveis serão removidas; confira a distribuição após trocar. Continuar?"))return false;
     Object.entries(oldq).forEach(([k,v])=>{if(valid.has(k))novo.q[k]=v});
     r.gsel=novo.gsel;r.csel=novo.csel;r.semG=novo.semG;r.q=novo.q;r.open=novo.open}
-  r.cat=novo.cat;r.sub=novo.sub;return true}
+  {const cn=catBy(cat);if(cn&&cn.semBanho){if(!r.sb){r.sb=true;r.tipoAntes=r.tipo;r.q={}}r.tipo="pronta"}else if(r.sb){r.sb=false;if(r.tipoAntes)r.tipo=r.tipoAntes;else delete r.tipo;r.q={}}}
+  r.cat=novo.cat;r.sub=novo.sub;romCompraGrama(r);return true}
+/* categoria vendida por grama: custo de compra = peso × valor do grama quando o custo está vazio (ou foi calculado assim) */
+function romCompraGrama(r){const c=catBy(r.cat),g=c&&num(c.compraGrama),p=num(r.peso);if(!(g>0)||r.lote||r.loteDe||!(vazio(r.custo)||r.custoAuto))return false;
+  if(p>0){r.custo=virg(r2c(p*g));r.custoAuto=true}else if(r.custoAuto){r.custo="";r.custoAuto=false}return true}
 const ROM_PAPEIS=[["cod","Código"],["desc","Descrição"],["qtd","Quantidade"],["preco","Valor unitário"],["total","Valor total"]];
 const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|mercadoria|artigo/i,qtd:/qtd|quant|^qt$|^un/i,preco:/unit|pre[cç]o|vlr un|valor un|^valor$/i,total:/total|subtotal/i};
 /* texto de arquivo: UTF-8 (com ou sem BOM); se não for UTF-8 válido, Windows-1252 */
@@ -217,6 +231,7 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   if(k==="texto"){ROM.texto=t.value;return}
   if(k==="obs"){ROM.obs=t.value;romAtualSoon();return}
   if(k==="rins"){romInsCampo(t,fin);return}
+  if(k==="lotpr"){const rc=t.closest(".rc"),lot=rc&&ROM.rows[+rc.dataset.i];if(lot&&lot.lote){const n=num(t.value);if(!vazio(t.value)&&(n==null||n<=0||n>1e6)){if(fin){toast("O peso real precisa ser um número maior que 0 (ex.: 77).");t.value=lot.pesoReal||""}return}lot.pesoReal=t.value;romLoteRecalc(lot);romAtualSoon()}return}
   if(k==="lotrat"){const rc=t.closest(".rc"),lot=rc&&ROM.rows[+rc.dataset.i];if(lot&&lot.lote){lot.ratear=t.checked;romLoteRecalc(lot);romAtualSoon()}return}
   if(k==="qtdx"){const rc=t.closest(".rc"),r=rc&&ROM.rows[+rc.dataset.i];if(r&&r.extra){const n=Math.trunc(num(t.value)||0);r.qtd=Math.max(0,Math.min(1e6,n));romAtualSoon()}return}
   if(k==="tid"){ROM.tid=t.value;abertos.romT=t.value;guardarAbertos();ROM.msg="Modelo trocado: clique em Ler lista para reler com ele.";const T=romT();if(T&&T.forn&&fornBy(T.forn))romSetForn(T.forn);renderRom();return}
@@ -252,7 +267,7 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
     else if(k==="bo"&&["C","U","V","O","_m"].includes(t.dataset.k)){const n=num(t.value);if(n==null||n<0)m="Digite um número maior ou igual a 0."}
     if(m){t.classList.add("bad");t.style.outline="2px solid #c0392b";if(fin)toast(m+" (não gravado)");return}
     t.classList.remove("bad");t.style.outline=""}
-  if(k==="custo")r.custo=t.value;else if(k==="peso"){r.peso=t.value;if(r.loteDe)romLotePeso(r,rc)}else if(k==="cor")r.cor=t.value;else if(k==="vp")r.vp=t.value;else if(k==="obs1")r.obs=t.value;
+  if(k==="custo"){r.custo=t.value;r.custoAuto=false}else if(k==="peso"){r.peso=t.value;if(r.loteDe)romLotePeso(r,rc);else if(romCompraGrama(r)){const ci=rc.querySelector('[data-rp="custo"]');if(ci)ci.value=r.custo}}else if(k==="cor")r.cor=t.value;else if(k==="vp")r.vp=t.value;else if(k==="obs1")r.obs=t.value;
   else if(k==="cat"){if(!romTrocarCategoria(r,t.value,"")){Object.assign(r,estadoAntes);renderRom();return}r.catq=false;r.aviso=String(r.aviso||"").replace("· categoria não reconhecida: confira","").trim();renderRom();return}
   else if(k==="sub"){if(!romTrocarCategoria(r,r.cat,t.value))Object.assign(r,estadoAntes);renderRom();return}
   else if(k==="vinc"){r.vinc=t.checked}

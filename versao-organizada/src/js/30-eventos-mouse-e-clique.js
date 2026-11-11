@@ -258,8 +258,9 @@ document.addEventListener("click",e=>{
     case "foto-rem-rom":{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");break}
     case "tab-foto":{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));break}
     case "rom-lista":romListaAbrir();break;
+    case "diag-dados":diagnosticoDados();break;
     case "rom-refazer-todas":{if(!ROM)break;let n=0;ROM.rows.forEach(r=>{if(r.feito&&!r.arq){r.refaz=true;r.skip=false;r.aviso="";n++}});ROM.msg=n?`${n} peça(s) já lançadas liberadas para edição. Mude o que quiser e clique em Criar peças: elas substituem as antigas.`:"Nenhuma peça já lançada para editar.";renderRom();break}
-    case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());romAbrirSalvo(t.dataset.id);break}
+    case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());Promise.resolve(romAbrirSalvo(t.dataset.id)).catch(e=>{try{console.error("romaneio salvo",e)}catch(x){}toast("Não consegui abrir esse romaneio: "+((e&&e.message)||e)+". Abra “Diagnóstico dos dados” na lista de romaneios salvos.")});break}
     case "rom-salvo-del":{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(romArm);romArm=null;romListaRef();renderForm()}break}
     case "backup-total":backupTotal();break;
     case "tab-lista":tabListaAbrir();break;

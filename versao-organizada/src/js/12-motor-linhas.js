@@ -38,7 +38,8 @@ function gerar(list){
               const letra=refParte(b,it);kk++;
               const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};["R","S","T"].forEach(c=>v[c]="");
               if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
-              const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna,v,banho:{coluna:b.coluna,modo:b.modo||"peso",mult:num(multItem(l,b,cat))},verniz:vzOn(l,bh,b)?num(bh.verniz):null},l);
+              const semCalc=banhoSemCalc(b);   /* banho sem cálculo (ex.: Prata 925): só marca a linha; sem custo de banho nem verniz */
+              const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna||"",v,...(semCalc?{}:{banho:{coluna:b.coluna,modo:b.modo||"peso",mult:num(multItem(l,b,cat))},verniz:vzOn(l,bh,b)?num(bh.verniz):null})},l);
               refs[l.id].push(row.v.E);
               if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row);
             });

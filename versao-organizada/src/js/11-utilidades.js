@@ -39,6 +39,16 @@ function selFaixa(gr,txt){const sel=new Set();
     else if(tk.toLowerCase()==="todos")gr.itens.forEach(it=>sel.add(it.id));
     else gr.itens.forEach(it=>{if(String(it.nome)===tk)sel.add(it.id)})});
   return gr.itens.map(i=>i.id).filter(id=>sel.has(id))}
+/* categoria "sem banho" (ex.: Prata 925): entra como peça pronta, sem galvânica; ao sair dela volta ao tipo anterior */
+function aplicarSemBanho(f){if(editId||f.conj)return;const c=catBy(f.v.I);
+  if(c&&c.semBanho){if(!f._sb){f._tipoAntes=f.tipo;f._sb=true}f.tipo="pronta";f.onP={}}
+  else if(f._sb){f._sb=false;f.tipo=f._tipoAntes||"bruta";if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean)&&typeof marcadosPadrao==="function")marcadosPadrao(f)}}
+/* categoria vendida por grama: Custo de Compra = peso × valor do grama, enquanto o usuário não digitar o custo à mão */
+function compraGramaAuto(f){const c=catBy(f.v.I),r=c&&num(c.compraGrama);
+  if(!(r>0)){if(f._pAuto&&f.v.P===f._pAuto)delete f.v.P;f._pAuto=null;return}
+  if(!(vazio(f.v.P)||f.v.P===f._pAuto))return;
+  const n=num(f.v.N);if(n>0){f.v.P=r2c(n*r).toFixed(2).replace(".",",");f._pAuto=f.v.P}else{if(f.v.P===f._pAuto)delete f.v.P;f._pAuto=null}
+  const el=document.getElementById("f-P");if(el&&document.activeElement!==el)el.value=f.v.P||""}
 function sincGrade(f){const g=gradeDaCat(f.v.I,f.v.J),id=g?g.id:"";if(id!==(f.grade||"")){f.grade=id;f.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];f.semGrade=false}}
 /* verniz por variação de banho: o que foi marcado nesta peça vale; sem marca, vale o padrão do banho */
 /* banhos marcados: peça bruta usa "on"; peça pronta usa "onP" (só cor, letra e milésimos — sem custo de banho) */
@@ -106,7 +116,7 @@ function contFinal(g){const o={...g.cont};Object.entries(g.manual||{}).forEach((
 const catPad={Y:"ncm",AA:"cfop",AB:"fcp",Q:"insumos"};
 /* Itens detalhados só alteram Q após escolha explícita de uma regra nos Cadastros. */
 function insumosItensResumo(cat){const C=cfg(),it=Array.isArray(C.insumosItens)?C.insumosItens:[],usados=it.filter(x=>x&&(!x.cat||x.cat===cat)),soma=usados.reduce((a,x)=>a+(num(x.qtd)||0)*(num(x.valor)||0),0);return {itens:usados,total:Math.round((soma+Number.EPSILON)*100)/100}}
-const padraoDe=(cat,L)=>{const C=cfg(),k=catPad[L],c=k?catBy(cat):null,antigo=c&&!vazio(c[k])?c[k]:C.colcfg[L].padrao;
+const padraoDe=(cat,L)=>{const C=cfg(),k=catPad[L],c=k?catBy(cat):null;if(!C.colcfg[L])return "";const antigo=c&&!vazio(c[k])?c[k]:C.colcfg[L].padrao;
   if(L!=="Q"||!['somar','substituir'].includes(C.insumosModo))return antigo;
   const itens=insumosItensResumo(cat).total,base=num(antigo)||0;return String(Math.round(((C.insumosModo==='somar'?base:0)+itens+Number.EPSILON)*100)/100)};
 function insumosContaHTML(cat,manual,linhaManual){
@@ -118,7 +128,9 @@ function insumosContaHTML(cat,manual,linhaManual){
   return `${modo==='somar'?origem+' R$ '+brl(num(base)||0)+' + ':''}${subtotal} = R$ ${brl(num(padraoDe(cat,'Q'))||0)} por peça`;
 }
 const val=(l,L)=>vazio(l.v[L])?padraoDe(l.v.I,L):l.v[L];
-const opcoesDe=L=>String(cfg().colcfg[L].opcoes||"").split(";").map(s=>s.trim()).filter(Boolean);
+/* banho sem cálculo: modo "Sem cálculo" ou sem coluna de custo (nada vai para R/S/T) */
+const banhoSemCalc=b=>!!b&&(b.modo==="nenhum"||!b.coluna);
+const opcoesDe=L=>String((cfg().colcfg[L]||{}).opcoes||"").split(";").map(s=>s.trim()).filter(Boolean);
 function listaDe(L,catNome){const C=cfg();let base=[];
   if(L==="H")base=C.fornecedores.map(f=>f.nome);else if(L==="I")base=C.categorias.map(c=>c.nome);
   else if(L==="J"){const c=catBy(catNome);base=c?c.subs:[]}else if(L==="L")base=C.cores;else if(L==="M")base=C.observacoes;
