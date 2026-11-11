@@ -32,39 +32,43 @@ function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r
   for(const k of Object.keys(b.mk||{})){if(!vazio(b.mk[k])){const x=num(b.mk[k]);if(x==null||x<=0){toast("Multiplicador inválido (use um número maior que 0).");return}}}
   let n=0;
   alvo.forEach(r=>{let m=false;if(r.feito&&r.arq)return;
+    if(b.cat&&!romTrocarCategoria(r,b.cat,b.sub||""))return;
     if(!vazio(b.peso)){r.peso=b.peso;m=true}
     Object.keys(b.mk||{}).forEach(k=>{if(vazio(b.mk[k]))return;r.mk=r.mk||{};if(String(b.mk[k])===String((f.mk||{})[k]??""))delete r.mk[k];else r.mk[k]=b.mk[k];m=true});
     if(!vazio(b.obs)){r.obs=b.obs;m=true}
-    if(b.cat){const g0=!!romTemVar(r.cat,r.sub);r.cat=b.cat;r.sub=b.sub||"";m=true;if(g0||romTemVar(r.cat,r.sub))romNovaCat(r)}
+    if(b.cat)m=true
     if(b.tipo||b.bh){if(b.tipo)r.tipo=b.tipo;if(b.bh)r.bh=b.bh;romReset(r);m=true}
     if(m){romArma(r);n++}});
   ROM.bulk={...b,aberto:true};renderRom();toast(`Aplicado a ${n} peça(s).`)}
 /* ===== revisão final ===== */
+/* Um cartão de lote representa uma unidade; distribuir mais ou menos gera conferência enganosa. */
+function romLoteDistribuicaoInvalida(r){return !!(r&&r.loteDe&&!r.skip&&romSomaDe(r,romColsR(r))!==r.qtd)}
 function romRevisar(){const pv=romPreview(),it=[];
   ROM.rows.forEach((r,i)=>{if(r.skip)return;const p=pv[i],q=romForm(r).q,cols=romColsR(r),al=[],cria=q.length>0;
-    if(!cria)al.push("sem quantidade — não será criada");else if(romSomaDe(r,cols)!==r.qtd)al.push(`divisão ${romSomaDe(r,cols)} de ${r.qtd}`);
-    if(r.catq)al.push("categoria não confirmada");if(r.cat&&!catBy(r.cat))al.push("categoria “"+r.cat+"” não existe mais — escolha outra");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
-    if(p&&p.rows.some(x=>x.dup))al.push("referência repetida");if(cria&&p&&p.rows.some(x=>x.v==null))al.push("sem preço de varejo");if(ROM.pdf&&!r.foto)al.push("sem foto");
+    if(romLoteDistribuicaoInvalida(r))al.push(`item de lote: distribua ${r.qtd} unidade(s) entre os banhos ou desmarque “criar”; adicione outro item para outra peça`);else if(!cria)al.push("sem quantidade — não será criada");else if(romSomaDe(r,cols)!==r.qtd)al.push(`divisão ${romSomaDe(r,cols)} de ${r.qtd}`);
+    if(r.catq)al.push("categoria não confirmada");if(Array.isArray(r.conjComp)&&r.conjOriginal){const o0=num(r.conjOriginal.custo),a0=r.conjComp.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0);if(o0!=null&&Math.abs(o0-a0)>=0.005)al.push("soma dos componentes (R$ "+brl(a0)+") difere do valor do romaneio (R$ "+brl(o0)+")")}if(cria&&p&&romTipo(r)==="bruta"&&num(r.peso)>0&&p.rows.some(x=>x.q>0&&x.cb==null))al.push("banho sem valor na galvânica (custo do banho em branco)");if(r.cat&&!catBy(r.cat))al.push("categoria “"+r.cat+"” não existe mais — escolha outra");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
+    if(p&&p.rows.some(x=>x.dup))al.push("referência repetida");if(ROM.pdf&&!r.foto)al.push("sem foto");
     it.push({r,i,p,cria,al})});
-  const cr=it.filter(x=>x.cria),nal=it.filter(x=>x.al.length).length,zeros=[...new Set(cr.map(x=>prefDe(x.r.cat,x.r.sub)))].filter(pf=>!(ultimo(pf)>0));let un=0,cus=0,vr=0,nl=0;
-  cr.forEach(x=>x.p.rows.forEach(y=>{nl++;un+=y.q;cus+=y.custo*y.q;vr+=(y.v||0)*y.q}));
+  const bloqueiaLote=it.some(x=>romLoteDistribuicaoInvalida(x.r)),cr=it.filter(x=>x.cria),nal=it.filter(x=>x.al.length).length,zeros=[...new Set(cr.map(x=>prefDe(x.r.cat,x.r.sub)))].filter(pf=>!(ultimo(pf)>0));let un=0,cus=0,vr=0,nl=0;
+  cr.forEach(x=>x.p.rows.forEach(y=>{nl++;un+=y.q;cus+=y.custo*y.q;vr+=(!y.sugerido&&y.v||0)*y.q}));
+  let insRat=0;{const c0=romInsCtx();cr.forEach(x=>{const u=x.p.rows.reduce((t,y)=>t+y.q,0);insRat+=romInsRateio(x.r,c0)*u})}
   const ov=document.createElement("div");ov.className="rev";
-  ov.innerHTML=`<div class="rev-c"><div class="rev-h"><b>Revisão final</b><span class="hint">confira antes de criar — nada foi gravado ainda</span><button type="button" class="btn ghost sm" data-act="rev-fechar" style="margin-left:auto">Voltar e corrigir ✕</button></div>
-    <div class="rev-s"><span class="tt"><b>${cr.length}</b> peças</span><span class="tt"><b>${nl}</b> linhas</span><span class="tt"><b>${un}</b> unidades</span><span class="tt">Custo <b>${fm(cus)}</b></span><span class="tt tot-v">Varejo <b>${fm(vr)}</b></span>${vr?`<span class="tt">Lucro <b>${fmt(Math.round((vr-cus)/vr*1000)/10)}%</b></span>`:""}<span class="tt ${nal?"bad":"ok"}">${nal?`⚠ ${nal} com alerta`:"✓ sem alertas"}</span>${zeros.length?`<span class="tt bad">⚠ Confira a numeração: a última peça ${zeros.map(esc).join(", ")} está em 0 (é a primeira?)</span>`:""}
+  ov.innerHTML=`<div class="rev-c"><div class="rev-h"><b>Revisão final</b><span class="hint">confira antes de criar — nada foi gravado ainda. ${romInsTotal()>0?`Insumos do romaneio: R$ ${brl(romInsTotal())} rateados nas peças (soma aplicada: R$ ${brl(r2c(insRat))}; a diferença é arredondamento).`:"Frete e separação só entram no custo se você os lançar em “Insumos deste romaneio”."}</span><button type="button" class="btn ghost sm" data-act="rev-fechar" style="margin-left:auto">Voltar e corrigir ✕</button></div>
+    <div class="rev-s"><span class="tt"><b>${cr.length}</b> peças</span><span class="tt"><b>${nl}</b> linhas</span><span class="tt"><b>${un}</b> unidades</span><span class="tt">Custo <b>${fm(cus)}</b></span><span class="tt tot-v">Varejo definido <b>${fm(vr)}</b></span><span class="tt ${nal?"bad":"ok"}">${nal?`⚠ ${nal} com alerta`:"✓ sem alertas"}</span>${zeros.length?`<span class="tt bad">⚠ Confira a numeração: a última peça ${zeros.map(esc).join(", ")} está em 0 (é a primeira?)</span>`:""}
       <label class="vchk"><input type="checkbox" data-act="rev-filtro"> mostrar só com alerta</label></div>
     <div class="rev-t"><table class="cfg"><thead><tr><th></th><th>Vai receber</th><th>Descrição</th><th>Categoria</th><th>Un.</th><th>Custo</th><th>Varejo</th><th>Alertas</th></tr></thead><tbody>
     ${it.map(x=>`<tr class="${x.al.length?"al":""}${x.cria?"":" nc"}" data-i="${x.i}"><td>${x.r.foto?`<img class="rc-ft sm" src="${fs(x.r.foto)}" alt="">`:""}</td>
       <td class="mono">${x.p?x.p.rows.map(y=>esc(y.ref)).join(" · "):"—"}</td><td><button type="button" class="lnk" data-act="rev-ir" data-i="${x.i}">${esc(x.r.desc)}</button><div class="hint">${esc(x.r.cod||"")}</div></td>
       <td>${esc(x.r.cat)}${x.r.sub?" › "+esc(x.r.sub):""}</td><td class="n">${x.p?x.p.rows.reduce((t,y)=>t+y.q,0):0}</td>
-      <td class="n">${esc(x.r.custo||"—")}</td><td class="n">${x.p?x.p.rows.map(y=>y.v==null?"—":brl(y.v)).join(" / "):"—"}</td><td class="al-t">${x.al.map(esc).join(" · ")}</td></tr>`).join("")}
+      <td class="n">${esc(x.r.custo||"—")}</td><td class="n">${x.p?x.p.rows.map(y=>y.sugerido?(y.v==null?"A definir":"Sugestão "+brl(y.v)):y.v==null?"A definir":brl(y.v)).join(" / "):"—"}</td><td class="al-t">${x.al.map(esc).join(" · ")}</td></tr>`).join("")}
     </tbody></table></div>
-    <div class="rev-f"><button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length?"":"disabled"}>${nal?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
+    <div class="rev-f">${bloqueiaLote?`<span class="hint">Corrija a quantidade dos itens de lote antes de criar.</span>`:""}<button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length&&!bloqueiaLote?"":"disabled"}>${nal?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
   document.body.appendChild(ov)}
 const romFq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
 function romCardHTML(r,i){if(r.lote)return romLoteHTML(r,i);const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
   const lcor=coresDaCat(r.cat,r.sub),ids=romIds(r),usaVar=(!!g&&!r.semG)||ids.length>0,dupCod=r.cod&&S.lanc.some(l=>!(r.lancIds||[]).includes(l.id)&&String(l.v.G||"")===String(r.cod)&&String(l.v.H||"")===String(r.forn||f.v.H||""));
   const banhoCard=b=>{const on=romOn(r,b),vz=r.vz&&(b.id in r.vz)?r.vz[b.id]:vzOn(f,bh,b),dis=on?"":"disabled";
-    return `<div class="bcard sm${on?"":" off"}"><div class="bh2"><label class="ck"><input type="checkbox" data-rp="bon" data-b="${b.id}" ${on?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</label>${bruta?`<label class="ck vz" title="Esta peça leva verniz"><input type="checkbox" data-rp="vz" data-b="${b.id}" ${vz?"checked":""} ${dis}>Verniz</label><small data-cb="${b.id}"></small>`:""}</div>
+    return `<div class="bcard sm${on?"":" off"}"><div class="bh2"><label class="ck"><input type="checkbox" data-rp="bon" data-b="${b.id}" ${on?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</label>${bruta?`<label class="ck vz" title="Esta peça leva verniz"><input type="checkbox" data-rp="vz" data-b="${b.id}" ${vz?"checked":""} ${dis}>Verniz</label><small data-cb="${b.id}"></small><small class="conta-banho" data-cb-conta="${b.id}"></small>`:""}</div>
       <div class="bf">${usaVar?"":fq("Quantidade",`<input class="n" data-rp="q" data-b="${b.id}" value="${esc(r.q[b.id]??"")}" inputmode="numeric" placeholder="0" ${dis}>`)}${fq("Fator ×",`<input class="n" title="Fator do preço: varejo = custos × este número" data-rp="mk" data-b="${b.id}" value="${esc((r.mk||{})[b.id]??(f.mk||{})[b.id]??"")}" placeholder="${esc(fatorBanho(b.id)||"×")}" inputmode="decimal" ${dis}>`)}${fq("Preço de Varejo",`<input class="n calc" data-rp="bo" data-k="V" data-b="${b.id}" data-auto="V:${b.id}" value="${esc(((r.bo||{})[b.id]||{}).V??"")}" placeholder="—" inputmode="decimal" ${dis}>`)}<small class="bfx" data-cbase="${b.id}"></small></div></div>`};
   const prontaCard=`<div class="bcard sm"><div class="bh2"><b>Quantidade e preço</b></div><div class="bf">${usaVar?"":fq("Quantidade",`<input class="n" data-rp="q" data-b="p" value="${esc(r.q.p??"")}" inputmode="numeric" placeholder="0">`)}${fq("Fator ×",`<input class="n" title="Fator do preço: varejo = custos × este número" data-rp="mk" data-b="p" value="${esc((r.mk||{}).p??(f.mk||{}).p??"")}" placeholder="×" inputmode="decimal">`)}${fq("Preço de Varejo",`<input class="n calc" data-rp="vp" data-auto="V:p" value="${esc(r.vp??"")}" placeholder="—" inputmode="decimal">`)}<small class="bfx" data-cbase="p"></small></div></div>`;
   const dotc=c=>`<span class="dot d-${c.col||"R"}"></span>`;
@@ -77,12 +81,12 @@ function romCardHTML(r,i){if(r.lote)return romLoteHTML(r,i);const C=cfg(),f=S.fo
   const tabVar=matriz?tabMx:ids.length?`<table class="szt"><thead><tr><th>Quantidade por ${g&&lcor.length?"tamanho · cor":(lcor.length&&!g?"cor":"tamanho")}</th>${ids.map(id=>`<th>${esc(romNomeId(r.cat,r.sub,id))}</th>`).join("")}<th>todos</th></tr></thead><tbody>${rc.map(c=>`<tr><th>${bruta?dotc(c)+esc(c.nome):"Qtd"}</th>${ids.map(id=>`<td><input class="n" data-rp="q" data-b="${c.id}~${id}" value="${esc(r.q[c.id+"~"+id]??"")}" inputmode="numeric" placeholder="0"></td>`).join("")}<td><input class="n" data-rp="qall" data-b="${c.id}" placeholder="=" inputmode="numeric" aria-label="Mesma quantidade em todos"></td></tr>`).join("")}</tbody></table>`:(g&&!r.semG?`<span class="hint">Escolha os tamanhos (ou as cores) acima para dividir a quantidade.</span>`:"");
   const grade=(g||cc)?`<div class="rc-gr">${chipsSz}${chipsCr}${tabVar}</div>`:"";
   return `<div class="rc${r.skip?" sk":""}${r.open?" op":""}" data-i="${i}">
-    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}${((r.bh&&r.bh!==f.banhista)||(r.tipo&&r.tipo!==f.tipo))?`<span class="rch" title="Esta peça foge do lote (tipo e/ou galvânica próprios)">${esc(romTipo(r)==="bruta"?"Bruta":"Pronta")} · ${esc(romBh(r).nome)}</span>`:""}${romParteTag(r)}<span class="rsum"><span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span><span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷ dividir</button>${r.parteG||r.arq?"":`<button type="button" class="x" data-act="rom-partir" title="Partir este item em partes (ex.: um trio em 3 pares)">✂ partir</button>`}</span></div>
+    <div class="rc-vr"><span class="rc-pl">Vai receber</span><span class="rc-pc" data-px>—</span>${dupCod?`<span class="rch dup" title="Já existe peça com o código deste fornecedor na tabela">código já lançado</span>`:""}${((r.bh&&r.bh!==f.banhista)||(r.tipo&&r.tipo!==f.tipo))?`<span class="rch" title="Esta peça foge do lote (tipo e/ou galvânica próprios)">${esc(romTipo(r)==="bruta"?"Bruta":"Pronta")} · ${esc(romBh(r).nome)}</span>`:""}${romParteTag(r)}${r.extra?`<span class="rch extra" title="Peça criada aqui, fora da lista do fornecedor">＋ fora da lista</span>`:""}<span class="rch ins" data-rins-c hidden></span><span class="rsum">${r.extra?`<label class="fq rc-qx"><span>Quantidade</span><input class="n" data-rp="qtdx" value="${esc(String(r.qtd||""))}" inputmode="numeric" aria-label="Quantidade desta peça"></label>`:`<span class="hint">Na lista <b>${Number(r.qtd)||0}</b></span>`}<span class="soma n" data-soma></span><button type="button" class="x" data-act="rom-div" title="Dividir a quantidade igualmente entre os banhos">÷ dividir</button>${r.parteG||r.arq?"":`<button type="button" class="x" data-act="rom-partir" title="Partir este item em partes (ex.: um trio em 3 pares)">✂ partir</button>`}</span></div>
     <div class="rc-top"><label class="rsel" title="Selecionar para edição em lote"><input type="checkbox" data-rp="sel" ${r.sel?"checked":""}><span>selec.</span></label><label class="rsel" title="Criar esta peça"><input type="checkbox" data-rp="use" ${r.skip?"":"checked"} aria-label="Criar esta peça"><span>criar</span></label>${r.feito?romBadge(r)+(!r.arq?`<button type="button" class="btn sm danger" data-act="rom-revogar" title="Retirar da tabela os lançamentos desta peça, mantendo o item no romaneio">Revogar lançamento</button>`:""):""}
-      ${r.foto?`<button type="button" class="rc-fb" data-act="rom-foto" title="Ampliar a foto"><img class="rc-ft" src="${fs(r.foto)}" alt="Foto da peça"></button>`:""}
+      ${r.foto?`<span class="rc-fw"><button type="button" class="rc-fb" data-act="rom-foto" title="Ampliar a foto"><img class="rc-ft" src="${fs(r.foto)}" alt="Foto da peça"></button><span class="rc-fa"><button type="button" class="x" data-act="rom-foto-add" data-i="${i}" title="Trocar a foto deste item (ou arraste/cole uma imagem sobre o cartão)">trocar</button><button type="button" class="x" data-act="rom-foto-del" data-i="${i}" title="Tirar a foto deste item">remover</button></span></span>`:`<button type="button" class="rc-fadd" data-act="rom-foto-add" data-i="${i}" title="Escolher uma foto deste item (ou arraste/cole uma imagem sobre o cartão)">📷<span>foto</span></button>`}
       ${fq("Código do fornecedor",`<input data-rp="cod" value="${esc(r.cod||"")}">`,"w-c")}
       ${fq("Descrição",`<input data-rp="desc" value="${esc(r.desc)}">`,"rc-desc")}
-      ${fq("Categoria",`<select data-rp="cat">${opts(C.categorias.map(c=>c.nome),r.cat)}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="cat" data-i="${i}" title="Criar uma categoria nova agora" aria-label="Nova categoria">＋</button>
+      ${fq(r.loteDe||r.parteG?"Categoria desta peça (define valor do banho)":"Categoria",`<select data-rp="cat" title="A categoria desta peça determina o valor por grama do banho">${opts(C.categorias.map(c=>c.nome),r.cat)}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="cat" data-i="${i}" title="Criar uma categoria nova agora" aria-label="Nova categoria">＋</button>
       ${fq("Subcategoria",`<select data-rp="sub">${opts(cc?cc.subs:[],r.sub,"—")}</select>`,"w-m")}<button type="button" class="x" data-act="rom-q" data-q="sub" data-i="${i}" title="Criar uma subcategoria nova agora" aria-label="Nova subcategoria">＋</button>
       ${!bruta?fq("Cor",`<select data-rp="cor">${opts(C.cores,r.cor||"","(padrão)")}</select>`,"w-s"):""}
       ${fq("Custo de Compra",`<input class="n" data-rp="custo" value="${esc(r.custo)}" inputmode="decimal">`,"w-c")}
@@ -107,28 +111,29 @@ function romUltHTML(){const C=cfg(),ps=[...new Set(ROM.rows.filter(r=>!r.skip).m
   return `<div class="rom-ult"><b>Numeração do sistema</b><span class="hint">última peça já cadastrada de cada tipo — é a partir dela que saem as próximas referências</span>${ps.map(p=>`<label class="fq ult${ultimo(p)>0?"":" bad"}"><span>Última peça ${esc(p)}</span><div class="ub"><input class="n" data-rp="ult" data-p="${esc(p)}" value="${esc(C.seqs[p]||"")}" inputmode="numeric"><small data-nx="${esc(p)}">próxima ${esc(p)}<b>${proxDe(p)}</b></small></div></label>`).join("")}</div>`}
 let romT0=null;
 const romAtualSoon=()=>{clearTimeout(romT0);romT0=setTimeout(romAtual,120);romSalvarSoon()};
-function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();const pv=romPreview(),f=S.form;
+function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();romExtrasAtual();const pv=romPreview(),f=S.form;
   let nl=0,var_=0,cus=0;
   ROM.rows.forEach((r,i)=>{if(r.lote)return;const rc=document.querySelector(`#romWrap .rc[data-i="${i}"]`);if(!rc)return;const cols=romColsR(r),sm=romSomaDe(r,cols),p=pv[i];
     const so=rc.querySelector("[data-soma]");so.textContent=`${sm}/${r.qtd}`;so.className="soma n "+(sm===r.qtd?"ok":"bad");
     rc.querySelector("[data-px]").innerHTML=romLinhasHTML(p,r,cols);
     if(p)p.rows.forEach(x=>{nl++;var_+=(x.v||0)*x.q;cus+=x.custo*x.q});
-    const baseTxt=(id,x)=>{const sp=rc.querySelector(`[data-cbase="${CSS.escape(String(id))}"]`);if(!sp)return;if(!x||!(x.custo>0)){sp.textContent="";return}const mk=num((r.mk||{})[id])||num((f.mk||{})[id]),man=(r.bo&&r.bo[id]&&!vazio(r.bo[id].V))||(id==="p"&&!vazio(r.vp));const fat=man&&x.v!=null?Math.round(x.v/x.custo*100)/100:mk;sp.innerHTML=`Soma dos custos <b>R$ ${brl(x.custo)}</b>${fat?` × ${fmt(fat)}${man?" (do preço digitado)":""}`:""}${x.v!=null?` = <b>R$ ${brl(x.v)}</b>`:""}`};
+    const baseTxt=(id,x)=>{const sp=rc.querySelector(`[data-cbase="${CSS.escape(String(id))}"]`);if(!sp)return;if(!x||!(x.custo>0)){sp.textContent="";return}const mk=num((r.mk||{})[id])||num((f.mk||{})[id]),man=(r.bo&&r.bo[id]&&!vazio(r.bo[id].V))||(id==="p"&&!vazio(r.vp));const fat=man&&x.v!=null?Math.round(x.v/x.custo*100)/100:mk;sp.innerHTML=`Soma dos custos <b>R$ ${brl(x.custo)}</b>${fat?` × ${fmt(fat)}${man?" (do preço digitado)":""}`:""}${x.v!=null?` = <b>R$ ${brl(x.v)}</b>${man?"":" (sugestão; não salva como preço)"}`:""}`};
     const fill=(sel,v,k)=>rc.querySelectorAll(sel).forEach(e=>{if(e.tagName!=="INPUT"||document.activeElement===e)return;const bo=(r.bo||{})[e.dataset.b]||{},ov=e.dataset.rp==="vp"?r.vp:bo[k];if(!vazio(ov))return;e.value=v==null?"":(k==="F"?v:brl(v));e.classList.add("isauto")});
-    if(p){if(romTipo(r)==="bruta"||(cols[0]&&cols[0].id!=="p"))cols.forEach(c=>{const x=p.rows.find(y=>y.bid===c.id);if(!x)return;{const sp=rc.querySelector(`[data-cb="${CSS.escape(String(c.id))}"]`);if(sp)sp.textContent=x.cb!=null?"banho R$ "+brl(x.cb):(num(r.peso)>0?"":"⚠ informe o peso")}fill(`[data-auto="C:${c.id}"]`,x.cb,"C");fill(`[data-auto="U:${c.id}"]`,x.u,"U");fill(`[data-auto="V:${c.id}"]`,x.v,"V");fill(`[data-auto="F:${c.id}"]`,x.desc,"F");baseTxt(c.id,x)});
+    if(p){if(romTipo(r)==="bruta"||(cols[0]&&cols[0].id!=="p"))cols.forEach(c=>{const x=p.rows.find(y=>y.bid===c.id);if(!x)return;{const sp=rc.querySelector(`[data-cb="${CSS.escape(String(c.id))}"]`);if(sp)sp.textContent=x.cb!=null?"banho R$ "+brl(x.cb):(num(r.peso)>0?"⚠ sem valor na galvânica":"⚠ informe o peso");const conta=rc.querySelector(`[data-cb-conta="${CSS.escape(String(c.id))}"]`);if(conta)conta.textContent=x.contaBanho||""}fill(`[data-auto="C:${c.id}"]`,x.cb,"C");fill(`[data-auto="U:${c.id}"]`,x.u,"U");fill(`[data-auto="V:${c.id}"]`,x.v,"V");fill(`[data-auto="F:${c.id}"]`,x.desc,"F");baseTxt(c.id,x)});
       else{const x=p.rows[0];if(x){fill('[data-auto="V:p"]',x.v,"V");baseTxt("p",x)}}}});
   const chk=document.getElementById("romChk");if(chk){const at=ROM.rows.filter(r=>!r.skip),sp=at.filter(r=>num(r.peso)==null).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=pv.filter(x=>x&&x.rows.some(y=>y.dup)).length,pt=[];
     if(sp)pt.push(`⚠ ${sp} sem peso`);if(dv)pt.push(`⚠ ${dv} com divisão diferente da lista`);if(dp)pt.push(`⚠ ${dp} com referência repetida`);
-    if(ROM.pdf){const ft=at.filter(r=>r.foto).length;pt.push(`${ft===at.length?"✓":"⚠"} fotos ${ft}/${at.length}`)}
-    if(!sp&&!dv&&!dp)pt.push("✓ pronto para criar");chk.textContent="Antes de criar: "+pt.join(" · ");chk.className="rom-c "+((sp||dv||dp)?"bad":"")}
-  const tt=document.getElementById("romTot");if(tt)tt.textContent=nl?`${nl} linhas · Custo total ${fm(cus)} · Varejo ${fm(var_)}${var_?` · Lucro ${fmt(Math.round((var_-cus)/var_*1000)/10)}%`:""}`:"";
+    const semTam=at.filter(r=>{const g=gradeDaCat(r.cat,r.sub);return g&&!r.semG&&!(r.gsel||[]).length&&!Array.isArray(r.conjComp)});if(semTam.length)pt.push(`⚠ ${semTam.length} sem tamanho (escolha o aro ou marque “sem tamanho”)`);ROM.rows.forEach((r,i)=>{const rc=document.querySelector(`#romWrap .rc[data-i="${i}"]`);if(rc)rc.classList.toggle("semtam",semTam.includes(r))});
+    if(ROM.pdf||at.some(r=>r.foto)){const ft=at.filter(r=>r.foto).length;pt.push(`${ft===at.length?"✓":"⚠"} fotos ${ft}/${at.length}`)}
+    if(!sp&&!dv&&!dp&&!semTam.length)pt.push("✓ pronto para criar");chk.textContent="Antes de criar: "+pt.join(" · ");chk.className="rom-c "+((sp||dv||dp||semTam.length)?"bad":"")}
+  const tt=document.getElementById("romTot");if(tt)tt.textContent=nl?`${nl} linhas · Custo total ${fm(cus)} · Varejo estimado ${fm(var_)}${var_?` · Lucro ${fmt(Math.round((var_-cus)/var_*1000)/10)}%`:""}`:"";
   const b=document.getElementById("romCriar");if(b){const n=ROM.rows.filter(r=>!r.skip).length;b.textContent=`Criar ${n} peça${n===1?"":"s"}`;b.disabled=!n}}
 const g3=n=>(Math.round((+n||0)*1000)/1000).toFixed(3).replace(".",",");
 const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);
-function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>{const p=num(x.peso);if(p>0)w+=p;v+=num(x.custo)||0});
+function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>{const p=num(x.peso);if(p>0)w+=p;v+=r2c(num(x.custo)||0)});
   const dif=Math.round(((r.loteG||0)-w)*1000)/1000,tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);let cls,txt;
   if(!kids.length){cls="warn";txt="Nenhum item ainda: pese as peças e adicione cada uma abaixo."}
-  else if(dif===0&&Math.abs(v-tot)>0.01*kids.length+0.05){cls="warn";txt=`o peso fecha (${g3(w)} g), mas os itens somam R$ ${brl(v)} e o lote custou R$ ${brl(tot)}`}
+  else if(dif===0&&Math.round(v*100)!==Math.round(tot*100)){cls="warn";txt=`o peso fecha (${g3(w)} g), mas há diferença de R$ ${brl(Math.abs(r2c(v)-r2c(tot)))}: os itens somam R$ ${brl(v)} e o lote custou R$ ${brl(tot)}. Confira e ajuste os custos dos itens.`}
   else if(dif===0){cls="ok";txt=`✓ a soma bate: ${g3(w)} g de ${g3(r.loteG)} g`}
   else if(dif>0){cls="warn";txt=`faltam ${g3(dif)} g para fechar o lote (${g3(w)} g de ${g3(r.loteG)} g)`}
   else{cls="bad";txt=`passou ${g3(-dif)} g do peso do lote (${g3(w)} g de ${g3(r.loteG)} g)`}
@@ -164,6 +169,15 @@ function romParteTag(r){if(!r.parteG)return "";const ps=romPartes(r),s=ps.reduce
 function romLoteDecora(){if(!ROM)return;const cs=document.querySelectorAll("#romWrap .rc[data-i]");cs.forEach(c=>{const r=ROM.rows[+c.dataset.i];if(!r||!r.loteDe||c.querySelector(".lote-tag"))return;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);
   c.insertAdjacentHTML("afterbegin",`<div class="lote-tag"><span>Item do lote ${esc(lot?lot.cod:"")} · custo = peso × R$ ${String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")}/g</span><button type="button" class="x" data-act="lote-del" data-i="${c.dataset.i}" aria-label="Remover este item do lote">×</button></div>`)})}
 function romNovaCat(r){const g=gradeDaCat(r.cat,r.sub);r.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];r.csel=coresPadrao(r.cat,r.sub);r.semG=false;r.open=false;r.q={};if(!romIds(r).length&&!g&&romTipo(r)!=="bruta")r.q.p=String(r.qtd)}
+/* Conserva quantidades compatíveis ao trocar categoria de uma parte; exige confirmação para descartar distribuições incompatíveis. */
+function romTrocarCategoria(r,cat,sub){if(r.cat===cat&&(r.sub||"")===(sub||""))return true;
+  const oldq=clone(r.q||{}),novo={...clone(r),cat,sub:sub||""};
+  if(romTemVar(r.cat,r.sub)||romTemVar(novo.cat,novo.sub)){romNovaCat(novo);
+    const valid=new Set(romKeys(novo,romColsR(novo))),incomp=Object.keys(oldq).filter(k=>!valid.has(k)&&!vazio(oldq[k])&&(num(oldq[k])||0)>0);
+    if(incomp.length&&!confirm("A nova categoria tem variações diferentes. As quantidades incompatíveis serão removidas; confira a distribuição após trocar. Continuar?"))return false;
+    Object.entries(oldq).forEach(([k,v])=>{if(valid.has(k))novo.q[k]=v});
+    r.gsel=novo.gsel;r.csel=novo.csel;r.semG=novo.semG;r.q=novo.q;r.open=novo.open}
+  r.cat=novo.cat;r.sub=novo.sub;return true}
 const ROM_PAPEIS=[["cod","Código"],["desc","Descrição"],["qtd","Quantidade"],["preco","Valor unitário"],["total","Valor total"]];
 const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|mercadoria|artigo/i,qtd:/qtd|quant|^qt$|^un/i,preco:/unit|pre[cç]o|vlr un|valor un|^valor$/i,total:/total|subtotal/i};
 /* texto de arquivo: UTF-8 (com ou sem BOM); se não for UTF-8 válido, Windows-1252 */
@@ -192,6 +206,8 @@ let romBusy=false;
 function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan){ROM.plan.map[t.dataset.k]=t.value===""?null:+t.value;renderRom()}return}const k=t.dataset.rp;if(!k)return;const f=S.form;romSalvarSoon();
   if(k==="texto"){ROM.texto=t.value;return}
   if(k==="obs"){ROM.obs=t.value;romAtualSoon();return}
+  if(k==="rins"){romInsCampo(t,fin);return}
+  if(k==="qtdx"){const rc=t.closest(".rc"),r=rc&&ROM.rows[+rc.dataset.i];if(r&&r.extra){const n=Math.trunc(num(t.value)||0);r.qtd=Math.max(0,Math.min(1e6,n));romAtualSoon()}return}
   if(k==="tid"){ROM.tid=t.value;abertos.romT=t.value;guardarAbertos();ROM.msg="Modelo trocado: clique em Ler lista para reler com ele.";const T=romT();if(T&&T.forn&&fornBy(T.forn))romSetForn(T.forn);renderRom();return}
   if(k==="forn"){const t0=S.form.tipo;romSetForn(t.value);if(S.form.tipo!==t0)ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});renderRom();return}
   if(k==="bh"){trocarBanhista(f,t.value);salvar(false);renderForm();ROM.rows.forEach(r=>{if(r.feito)return;r.on={};r.bo={};r.vz={};r.mk={}});renderRom();return}
@@ -202,7 +218,7 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
     if(kk==="mk"){ROM.bulk.mk=ROM.bulk.mk||{};ROM.bulk.mk[t.dataset.b]=t.value;return}
     ROM.bulk[kk]=t.value;if(kk==="cat"){ROM.bulk.sub="";const ss=document.querySelector("#romWrap [data-rp=rb][data-k=sub]"),cc=catBy(t.value);if(ss)ss.innerHTML=opts(cc?cc.subs:[],"","(manter)")}return}
   if(k==="mkg"){f.mk=f.mk||{};const bm=t.dataset.b;if(vazio(t.value))delete f.mk[bm];else f.mk[bm]=t.value;salvar(false);document.querySelectorAll(`#romWrap [data-rp=mk][data-b="${bm}"]`).forEach(e=>{const rr=ROM.rows[+e.closest(".rc").dataset.i];if(rr&&!(rr.mk&&rr.mk[bm]!==undefined))e.value=t.value});romAtualSoon();return}
-  const rc=t.closest(".rc");if(!rc)return;const i=+rc.dataset.i,r=ROM.rows[i];if(!r)return;
+  const rc=t.closest(".rc");if(!rc)return;const i=+rc.dataset.i,r=ROM.rows[i];if(!r)return;const estadoAntes={skip:r.skip,refaz:r.refaz,aviso:r.aviso};
   if(k!=="sel"&&k!=="use"){if(r.feito&&r.arq){if(fin)toast("Esta peça está na tabela salva “"+r.arq+"”. Restaure a tabela para corrigir.");return}
     if(romArma(r)){rc.classList.remove("sk");const u=rc.querySelector('[data-rp="use"]');if(u)u.checked=true;const bd=rc.querySelector(".rfeito");if(bd)bd.outerHTML=romBadge(r);if(fin)toast("Peça já lançada: ao criar ela é substituída, na mesma posição e com a mesma referência.")}}
   if(k==="qall"){const v=t.value;if(!vazio(v)){const n=num(v);if(n==null||n<0||!Number.isInteger(n)){if(fin)toast("Quantidade precisa ser um número inteiro, 0 ou mais.");return}}if(!fin||romBusy)return;romBusy=true;try{romKeys(r,[{id:t.dataset.b}]).forEach(kk=>{r.q[kk]=vazio(v)?"":String(num(v))});renderRom()}finally{romBusy=false}return}
@@ -226,8 +242,8 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
     if(m){t.classList.add("bad");t.style.outline="2px solid #c0392b";if(fin)toast(m+" (não gravado)");return}
     t.classList.remove("bad");t.style.outline=""}
   if(k==="custo")r.custo=t.value;else if(k==="peso"){r.peso=t.value;if(r.loteDe)romLotePeso(r,rc)}else if(k==="cor")r.cor=t.value;else if(k==="vp")r.vp=t.value;else if(k==="obs1")r.obs=t.value;
-  else if(k==="cat"){r.catq=false;r.aviso=String(r.aviso||"").replace("· categoria não reconhecida: confira","").trim();const g0=!!romTemVar(r.cat,r.sub);r.cat=t.value;r.sub="";if(g0||romTemVar(r.cat,r.sub))romNovaCat(r);renderRom();return}
-  else if(k==="sub"){const g0=!!romTemVar(r.cat,r.sub);r.sub=t.value;if(g0||romTemVar(r.cat,r.sub))romNovaCat(r);renderRom();return}
+  else if(k==="cat"){if(!romTrocarCategoria(r,t.value,"")){Object.assign(r,estadoAntes);renderRom();return}r.catq=false;r.aviso=String(r.aviso||"").replace("· categoria não reconhecida: confira","").trim();renderRom();return}
+  else if(k==="sub"){if(!romTrocarCategoria(r,r.cat,t.value))Object.assign(r,estadoAntes);renderRom();return}
   else if(k==="vinc"){r.vinc=t.checked}
   else if(k==="semg"){r.semG=t.checked;if(t.checked)r.gsel=[];renderRom();return}
   else if(k==="cs"){const id=t.dataset.id;r.csel=(r.csel||[]).filter(x=>x!==id);if(t.checked)r.csel.push(id);r.csel=coresDaCat(r.cat,r.sub).map(x=>x.id).filter(x=>r.csel.includes(x));renderRom();return}
@@ -265,5 +281,6 @@ function romAplicaR(R){const f=S.form,T=romT();
   if(ROM.pdf)romFotos(R.rows);
   {const vel={},n1={},n2={};(ROM.rows||[]).forEach(o=>{if(o.cod){n1[o.cod]=(n1[o.cod]||0)+1;vel[o.cod+"|"+n1[o.cod]]=o}});let mant=0;R.rows.forEach(r=>{if(r.cod)n2[r.cod]=(n2[r.cod]||0)+1;const o=r.cod&&vel[r.cod+"|"+n2[r.cod]];if(!o)return;mant++;["peso","desc","cat","sub","custo","q","gsel","mk","bo","on","vz","ex","obs","vp","cor","sel","open","catq"].forEach(k=>{if(o[k]!==undefined)r[k]=o[k]})});R._mant=mant}
   {const kids=(ROM.rows||[]).filter(x=>x.loteDe);if(kids.length){const old={};(ROM.rows||[]).forEach(x=>{if(x.lote&&x.cod)old[x.cod]=x});const out=[];R.rows.forEach(x=>{out.push(x);if(x.lote&&old[x.cod]){x.lid=old[x.cod].lid;kids.filter(k=>k.loteDe===x.lid).forEach(k=>out.push(k))}});R.rows=out}}
+  {const ex=(ROM.rows||[]).filter(x=>x.extra);if(ex.length)R.rows=R.rows.concat(ex)}   /* peças criadas à mão no romaneio sobrevivem a uma nova leitura da lista */
   ROM.rows=R.rows;ROM.obs=R.obs||ROM.obs||"";ROM.conf=R.conf;ROM.msg=`${R.rows.length} peças lidas${R._mant?` · ${R._mant} com as suas edições mantidas`:""}`;romSalvarSoon();renderRom();{const pe=[...document.querySelectorAll('#romWrap [data-rp=peso]')].find(x=>!x.value);if(pe)pe.focus({preventScroll:true})}}
 function romDividir(r,cols){const ks=romKeys(r,cols),n=ks.length;if(!n)return;const base=Math.floor(r.qtd/n);let resto=r.qtd-base*n;ks.forEach(k=>{r.q[k]=String(base+(resto-->0?1:0))})}

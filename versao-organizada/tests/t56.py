@@ -1,9 +1,10 @@
 from pathlib import Path
+import os
 from playwright.sync_api import sync_playwright
 
 url = (Path(__file__).resolve().parent.parent / 'Cadastro de Pecas - abrir no Chrome.html').as_uri()
 with sync_playwright() as p:
-    browser = p.chromium.launch(channel='msedge')
+    browser = p.chromium.launch(channel=os.environ.get('CP_BROWSER','msedge'))
     page = browser.new_page(viewport={'width': 390, 'height': 844})
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))

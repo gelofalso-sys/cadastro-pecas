@@ -19,7 +19,9 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1500,"height":950}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto("http://127.0.0.1:8849/cadastro-pecas.html");pg.wait_for_timeout(900)
-    pg.set_input_files("#impFile",nome);pg.wait_for_timeout(1500);pg.click("text=Abrir o primeiro");pg.wait_for_timeout(1500)
+    pg.set_input_files("#impFile",nome);pg.wait_for_timeout(1500)
+    if pg.locator("text=Abrir o primeiro").count():pg.click("text=Abrir o primeiro")   # um arquivo só abre sozinho; com arquivo repetido ou vários, a fila continua
+    pg.wait_for_timeout(1500)
     sel=pg.eval_on_selector('select[data-k="cod"]',"e=>e.selectedOptions[0].text")
     ok("Referência" in sel,"código vem da coluna Referência, não do ID vazio: %s"%sel)
     prev=pg.inner_text(".prevg")

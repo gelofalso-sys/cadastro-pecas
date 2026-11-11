@@ -8,6 +8,7 @@ const partir = source.slice(source.indexOf('function romPartir'), source.indexOf
 const ctx = {
   ROM: {rows: []}, uid: () => 'grupo', clone: x => structuredClone(x),
   num: x => x == null || x === '' ? null : Number(String(x).replace(',', '.')),
+  r2c: x => Math.round(+(x*100).toPrecision(12))/100,
   virg: x => String(x).replace('.', ','), g3: x => Number(x).toFixed(3).replace('.', ','),
   brl: x => Number(x).toFixed(2).replace('.', ','), toast: () => {},
   romSalvarSoon: () => {}, renderRom: () => {}
@@ -28,6 +29,9 @@ assert.equal(parts[0].refaz, true);
 assert.equal(parts[0].lancIds[0], 'id');
 assert.equal(parts[1].feito, false);
 assert.equal(ctx.romLoteResumo(lote).cls, 'ok');
+ctx.ROM.rows = [{loteDe:'l', peso:'5', custo:'10,024'}, {loteDe:'l', peso:'5', custo:'9,936'}];
+assert.equal(ctx.romLoteResumo(lote).cls, 'warn', 'diferença de quatro centavos não deve aparecer como conferida');
+assert.match(ctx.romLoteResumo(lote).txt, /0,04/);
 console.log('Regras de lote e divisão: OK');
 const pesoSource = fs.readFileSync('src/js/12-motor-linhas.js', 'utf8');
 const lerValor = pesoSource.slice(pesoSource.indexOf('function lerValor('), pesoSource.indexOf('/* avalia uma fórmula segura'));
@@ -48,7 +52,7 @@ console.log('Precisão de peso e divisão em centavos: OK');
 const cjSource=fs.readFileSync('src/js/19c-colar-romaneio.js','utf8');
 const validar=cjSource.slice(cjSource.indexOf('function romConjVerificar()'));
 const conjSource=fs.readFileSync('src/js/18-conjunto.js','utf8');
-const conjErro=conjSource.slice(conjSource.indexOf('function conjErro('),conjSource.indexOf('function conjResumoHTML'));
+const conjErro=conjSource.slice(conjSource.indexOf('function conjQtd('),conjSource.indexOf('function conjResumoHTML'));
 let avisos=0,confirmacoes=0;
 const cctx={ROM:{rows:[]},num:ctx.num,vazio:x=>x==null||String(x).trim()==='',semAc:x=>String(x||'').toLowerCase(),brl:ctx.brl,romBh:()=>({banhos:[{id:'ouro'}]}),toast:()=>avisos++,confirm:()=>{confirmacoes++;return false}};
 vm.createContext(cctx);vm.runInContext(conjErro+'\n'+validar,cctx);

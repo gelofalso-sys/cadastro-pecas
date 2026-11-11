@@ -37,18 +37,21 @@ function fotoRemover(lid){
   const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
   inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=ftAlvo;ftAlvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
+    if(typeof al==="string"&&al.startsWith("rom:")){if(ROM)romFotosEscolhidas(+al.slice(4),fl);return}
     if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
     if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto anexada.");autoEnviar([al])}catch(e){toast(e.message)}return}
     fotosEmLote(fl,al)});
   const temArq=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
   let hl=null;const limpaHl=()=>{if(hl){hl.classList.remove("ftdrop");hl=null}};
-  document.addEventListener("dragover",e=>{if(!temArq(e))return;const tr=e.target.closest&&e.target.closest("#sheet tr[data-l]"),fm=e.target.closest&&e.target.closest("#form");if(!tr&&!fm)return;e.preventDefault();const alvo=tr||fm;if(hl!==alvo){limpaHl();hl=alvo;hl.classList.add("ftdrop")}});
+  document.addEventListener("dragover",e=>{if(!temArq(e))return;const tr=e.target.closest&&e.target.closest("#sheet tr[data-l]"),fm=e.target.closest&&e.target.closest("#form"),rcd=e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");if(!tr&&!fm&&!rcd)return;e.preventDefault();const alvo=tr||rcd||fm;if(hl!==alvo){limpaHl();hl=alvo;hl.classList.add("ftdrop")}});
   document.addEventListener("dragleave",e=>{if(!e.relatedTarget)limpaHl()});
-  document.addEventListener("drop",e=>{if(!temArq(e))return;const tr=e.target.closest&&e.target.closest("#sheet tr[data-l]"),fm=e.target.closest&&e.target.closest("#form");limpaHl();if(!tr&&!fm)return;e.preventDefault();e.stopPropagation();
+  document.addEventListener("drop",e=>{if(!temArq(e))return;const tr=e.target.closest&&e.target.closest("#sheet tr[data-l]"),fm=e.target.closest&&e.target.closest("#form"),rcd=e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");limpaHl();if(!tr&&!fm&&!rcd)return;e.preventDefault();e.stopPropagation();
     const fl=[...e.dataTransfer.files];if(!fl.length)return;
+    if(rcd&&ROM){romFotosEscolhidas(+rcd.dataset.i,fl);return}
     if(tr)fotosEmLote(fl,tr.dataset.l);else if(fl.length===1)fotoDoFormulario(fl[0]);else fotosEmLote(fl,editId)});
   document.addEventListener("paste",e=>{const fl=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(x=>/^image\//.test(x.type));if(!fl.length)return;
     if(e.target&&e.target.id==="celIn")return;e.preventDefault();
+    const rcp=e.target&&e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");if(rcp&&ROM){romFotosEscolhidas(+rcp.dataset.i,fl.slice(0,1));return}
     const row=selR&&G&&G.linhas[selR.fr],lid=editId||(row&&row.lancId);
     if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
     else fotoDoFormulario(fl[0])},true)})();
@@ -70,7 +73,7 @@ function adicionar(limpar,quiet){
     if(!cs.some(c=>!vazio(c.desc)||(num(c.peso)||0)>0||(num(c.custo)||0)>0)){erro="Coloque pelo menos uma peça no conjunto (nome, peso ou custo).";atualizarGera();return}
     const mau=cs.findIndex(c=>["peso","custo"].some(k=>!vazio(c[k])&&(num(c[k])==null||num(c[k])<0||num(c[k])>1e7)));
     if(mau>=0){erro=`Peça ${mau+1} do conjunto: peso e custo precisam ser números de 0 em diante.`;atualizarGera();const el=document.querySelector(`[data-ci="${mau}"] input.cj-n`);if(el)el.focus();return}
-  if(f.conj){const ie=(f.comp||[]).findIndex((c,i)=>{const e=conjErro(f,i);return e&&e!=="nome repetido"});if(ie>=0){erro=`Peça ${ie+1} do conjunto: ${conjErro(f,ie)}.`;atualizarGera();const el=document.querySelector(`#conj [data-ci="${ie}"] [data-cp="${vazio(f.comp[ie].desc)?"desc":vazio(f.comp[ie].peso)?"peso":"custo"}"]`);if(el)el.focus();return}}
+  if(f.conj){const ie=(f.comp||[]).findIndex((c,i)=>{const e=conjErro(f,i);return e&&e!=="nome repetido"});if(ie>=0){erro=`Peça ${ie+1} do conjunto: ${conjErro(f,ie)}.`;atualizarGera();const el=document.querySelector(`#conj [data-ci="${ie}"] [data-cp="${vazio(f.comp[ie].desc)?"desc":conjQtd(f.comp[ie])==null?"qtd":vazio(f.comp[ie].peso)?"peso":"custo"}"]`);if(el)el.focus();return}}
     {const R=conjCalc(f);if(R.tot.N<=0&&R.tot.P<=0){erro="Coloque o peso ou o custo de compra nas peças do conjunto.";atualizarGera();return}}}
   if(!catBy(val(f,"I"))){erro="Escolha a categoria da peça.";atualizarGera();const ec=document.getElementById("f-I");if(ec)ec.focus();return}
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}

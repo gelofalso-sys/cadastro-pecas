@@ -62,7 +62,11 @@ function libSiglas(){const C=cfg(),M=C.coresMeta||{},us=new Set(),out={};(C.core
     if(!sg)for(let i=1;i<100;i++)if(!us.has(String(i))){sg=String(i);break}
     us.add(sg);out[k]=sg});return out}
 const libPedra=n=>{const C=cfg(),m=(C.coresMeta||{})[corKey(n)];if(m&&m.ped!=null)return !!m.ped;return !(C.banhistas||[]).some(b=>(b.banhos||[]).some(x=>corKey(x.cor)===corKey(n)))};
-const libCores=()=>{const C=cfg(),sg=libSiglas(),M=C.coresMeta||{};return (C.cores||[]).filter(libPedra).map(n=>{const k=corKey(n);return {id:"L:"+k,nome:n,texto:(M[k]&&M[k].txt)||"",letra:sg[k]||"",lib:true}})};
+/* O identificador da cor deve sobreviver a renomeações: ele também integra as chaves das quantidades. */
+function idsCoresBiblioteca(){const C=cfg(),M=C.coresMeta=C.coresMeta||{},ids={},usados=new Set();
+  (C.cores||[]).forEach(n=>{const k=corKey(n),m=M[k];if(m&&m.idCor){ids[k]=m.idCor;usados.add(m.idCor)}});
+  (C.cores||[]).forEach(n=>{const k=corKey(n);if(ids[k])return;let id="L:"+k;if(usados.has(id)){do{id="L:id_"+uid()}while(usados.has(id));M[k]=M[k]||{};M[k].idCor=id}ids[k]=id;usados.add(id)});return ids}
+const libCores=()=>{const C=cfg(),sg=libSiglas(),M=C.coresMeta||{},ids=idsCoresBiblioteca();return (C.cores||[]).filter(libPedra).map(n=>{const k=corKey(n);return {id:ids[k],nome:n,texto:(M[k]&&M[k].txt)||"",letra:sg[k]||"",lib:true}})};
 const coresDaCat=(cat,sub)=>{const c=catBy(cat);if(!c)return [];const own=Array.isArray(c.cores)?c.cores:[],ss=(c.coresCfg&&c.coresCfg.subs)||[],base=own.length&&(!ss.length||ss.includes(sub))?own:[],nomes=new Set(base.map(x=>corKey(x.nome)));return base.concat(libCores().filter(x=>!nomes.has(corKey(x.nome))))};
 const coresPadrao=(cat,sub)=>{const c=catBy(cat),p=(c&&c.coresCfg&&c.coresCfg.padrao)||[];return coresDaCat(cat,sub).map(x=>x.id).filter(id=>p.includes(id))};
 const coresItem=(cat,x)=>{const c=catBy(cat),cf=(c&&c.coresCfg)||{};return {id:"c_"+x.id,letra:String(x.letra||""),nome:x.nome,ref:cf.modoRef==="nome"?String(x.nome):String(x.letra||""),texto:x.texto==="-"?"":(!vazio(x.texto)?(/^\s/.test(x.texto)?x.texto:" "+x.texto):" "+x.nome),col:cf.col||"",valor:cf.col?x.nome:"",cfCol:cf.col||""}};
@@ -100,7 +104,19 @@ function inicioDe(p,g){return Math.max(ultimo(p),((g||G||{}).manual||{})[p]||0)}
 function contFinal(g){const o={...g.cont};Object.entries(g.manual||{}).forEach(([p,n])=>{if(n>(o[p]||0))o[p]=n});return o}
 /* NCM, CFOP, FCP e Custo de Insumos podem ter valor próprio em cada categoria; sem ele vale o padrão da coluna */
 const catPad={Y:"ncm",AA:"cfop",AB:"fcp",Q:"insumos"};
-const padraoDe=(cat,L)=>{const k=catPad[L];if(k){const c=catBy(cat);if(c&&!vazio(c[k]))return c[k]}return cfg().colcfg[L].padrao};
+/* Itens detalhados só alteram Q após escolha explícita de uma regra nos Cadastros. */
+function insumosItensResumo(cat){const C=cfg(),it=Array.isArray(C.insumosItens)?C.insumosItens:[],usados=it.filter(x=>x&&(!x.cat||x.cat===cat)),soma=usados.reduce((a,x)=>a+(num(x.qtd)||0)*(num(x.valor)||0),0);return {itens:usados,total:Math.round((soma+Number.EPSILON)*100)/100}}
+const padraoDe=(cat,L)=>{const C=cfg(),k=catPad[L],c=k?catBy(cat):null,antigo=c&&!vazio(c[k])?c[k]:C.colcfg[L].padrao;
+  if(L!=="Q"||!['somar','substituir'].includes(C.insumosModo))return antigo;
+  const itens=insumosItensResumo(cat).total,base=num(antigo)||0;return String(Math.round(((C.insumosModo==='somar'?base:0)+itens+Number.EPSILON)*100)/100)};
+function insumosContaHTML(cat,manual,linhaManual){
+  if(linhaManual)return 'valor informado diretamente nesta linha da tabela';
+  if(!vazio(manual))return 'valor informado diretamente na peça';
+  const C=cfg(),c=catBy(cat),temCat=c&&!vazio(c.insumos),base=temCat?c.insumos:C.colcfg.Q.padrao,origem=temCat?'padrão da categoria':'padrão geral',modo=C.insumosModo||'off';
+  if(modo==='off')return `${origem}: R$ ${brl(num(base)||0)} por peça; itens detalhados não aplicados`;
+  const {itens,total}=insumosItensResumo(cat),linhas=itens.map(x=>`${esc(x.nome)} (${x.cat?'categoria '+esc(x.cat):'geral'}): ${fmt(num(x.qtd)||0)} × R$ ${brl(num(x.valor)||0)} = R$ ${brl((num(x.qtd)||0)*(num(x.valor)||0))}`),subtotal=linhas.length?linhas.join(' + '):'nenhum item aplicável';
+  return `${modo==='somar'?origem+' R$ '+brl(num(base)||0)+' + ':''}${subtotal} = R$ ${brl(num(padraoDe(cat,'Q'))||0)} por peça`;
+}
 const val=(l,L)=>vazio(l.v[L])?padraoDe(l.v.I,L):l.v[L];
 const opcoesDe=L=>String(cfg().colcfg[L].opcoes||"").split(";").map(s=>s.trim()).filter(Boolean);
 function listaDe(L,catNome){const C=cfg();let base=[];
@@ -109,6 +125,6 @@ function listaDe(L,catNome){const C=cfg();let base=[];
   else if(L==="AD")base=["Não","Sim"];else if(L==="AE")base=["Ativo","Inativo"];
   return [...new Set([...base,...opcoesDe(L)])]}
 function opts(list,sel,blank){return (blank!=null?`<option value="">${esc(blank)}</option>`:"")+list.map(v=>{const [vv,tt]=Array.isArray(v)?v:[v,v];return `<option value="${esc(vv)}"${vv===sel?" selected":""}>${esc(tt)}</option>`}).join("")+(sel&&!list.some(v=>(Array.isArray(v)?v[0]:v)===sel)?`<option selected>${esc(sel)}</option>`:"")}
-function toast(msg,acao){const t=document.getElementById("toast");t.innerHTML=`<span>${esc(msg)}</span>`+(acao?`<button type="button" id="tBtn">${esc(acao.t)}</button>`:"");t.hidden=false;if(acao)document.getElementById("tBtn").onclick=()=>{t.hidden=true;acao.fn()};clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,acao?6500:2600)}
+function toast(msg,acao){const t=document.getElementById("toast");t.innerHTML=`<span>${esc(msg)}</span>`+(acao?`<button type="button" id="tBtn">${esc(acao.t)}</button>`:"")+`<button type="button" id="tFechar" aria-label="Fechar aviso">×</button>`;t.hidden=false;if(acao)document.getElementById("tBtn").onclick=()=>{t.hidden=true;acao.fn()};document.getElementById("tFechar").onclick=()=>{t.hidden=true;clearTimeout(toast._t)};clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,Math.min(20000,Math.max(acao?10000:6000,String(msg).length*90)))}
 function descBanho(l,b,i){const d=comSufixoCat(val(l,"F"),val(l,"I"));if(i===0||!b.sufixo)return d;return d.toLowerCase().includes(b.sufixo.trim().toLowerCase())?d:d+b.sufixo}
 

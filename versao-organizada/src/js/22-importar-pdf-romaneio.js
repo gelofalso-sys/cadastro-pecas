@@ -45,9 +45,9 @@ async function romPdf(file){
   if(!ROM){ROM={tid:abertos.romT&&cfg().romaneios.some(x=>x.id===abertos.romT)?abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}
   ROM.doc=file.name;ROM.hash=IMPH.get(file)||"";ROM.msg="Lendo o PDF…";renderRom();rolarPane(document.getElementById("romWrap"));
   try{const P=await lerPdf(file);ROM.pdf=P;ROM.texto=P.texto;romLer();
-    if(ROM.rows.length){const n=ROM.rows.filter(r=>r.foto).length;ROM.msg=`${ROM.rows.length} peças lidas do PDF · ${n} foto${n===1?"":"s"} encontrada${n===1?"":"s"}`;const h=document.querySelector("#romWrap .rom-b .hint");if(h)h.textContent=ROM.msg}}
+    if(ROM.rows.length){const n=ROM.rows.filter(r=>r.foto).length;ROM.msg=`${ROM.rows.length} peças lidas do PDF · ${n} foto${n===1?"":"s"} encontrada${n===1?"":"s"}`;const h=document.querySelector("#romWrap .rom-b .hint");if(h)h.textContent=ROM.msg;impStatusFim(true)}else impStatusFim(false,"não encontrei peças nesse PDF (confira o modelo de leitura ou cole o texto)")}
   catch(e){let m=String(e&&e.message?e.message:"erro").replace(/[.\s]+$/,"");if(/invalid pdf|missing pdf|unexpected server|xref|not a pdf/i.test(m)||(e&&/Invalid|Missing/i.test(e.name||"")))m="o arquivo não é um PDF válido ou está corrompido";
-    ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg="Não consegui ler esse PDF: "+m+". Copie o texto e cole na caixa.";romSalvarSoon();renderRom()}}
+    ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg="Não consegui ler esse PDF: "+m+". Copie o texto e cole na caixa.";romSalvarSoon();renderRom();impStatusFim(false,m)}}
 /* foto ampliada com zoom (botões, roda do mouse, duplo clique) e arrastar para mover */
 function melhorarFoto(im,cb){const n=im.naturalWidth,h=im.naturalHeight,sc=Math.max(1,Math.min(3,Math.round(1800/Math.max(n,h,1))));if(sc<2||n*sc*h*sc>9e6){cb(null);return}
   try{const c=document.createElement("canvas");c.width=n*sc;c.height=h*sc;const x=c.getContext("2d");x.imageSmoothingEnabled=true;x.imageSmoothingQuality="high";x.drawImage(im,0,0,c.width,c.height);

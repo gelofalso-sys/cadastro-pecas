@@ -17,7 +17,7 @@ with sync_playwright() as p:
         errs=[];pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
         pg.goto(URL);pg.wait_for_timeout(900)
         ok(pg.evaluate("()=>document.documentElement.scrollWidth<=innerWidth+1"),"%dpx: sem rolagem horizontal da página"%w)
-        vis=pg.evaluate("""()=>{const e=document.querySelector('.mbar [data-act="xlsx"]');if(!e)return false;const r=e.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight}""")
+        vis=pg.evaluate("""()=>{const e=document.querySelector('.mbar > [data-act="xlsx"]');if(!e)return false;const r=e.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight}""")
         ok(vis,"%dpx: botão Baixar visível na barra de baixo"%w)
         # lança uma peça pelo celular
         pg.get_by_text("Lançar peça").locator("visible=true").last.click();pg.wait_for_timeout(600)

@@ -37,12 +37,15 @@ function trocarPrefixo(c,txt){const C=cfg(),antigo=String(c.prefixo||"").toUpper
   {const re=new RegExp("^"+antigo+"\\d");let nm=0;S.lanc.forEach(l=>{if(val(l,"I")!==c.nome)return;[l.v.E,...Object.values(l.ov||{}).map(o=>o&&typeof o==="object"?o.E:"")].forEach(x=>{if(antigo&&re.test(String(x||"").replace(/\s+/g,"").toUpperCase()))nm++})});if(nm)msg+=` Atenção: ${nm} referência(s) digitada(s) à mão continuam com ${antigo} (não mudam sozinhas) — confira na tabela.`}
   salvar(true,false);render();toast(msg,{t:"Desfazer",fn:desfazer})}
 function onField(t,isChange){
+  if(t.dataset&&t.dataset.insmodo!==undefined){if(!isChange)return;const v=t.value;if(!["off","somar","substituir"].includes(v))return;cfg().insumosModo=v;salvar(true,false);renderTopo();renderForm();renderCfg();return}
+  if(t.dataset&&t.dataset.inscampo!==undefined){if(!isChange)return;const row=t.closest("[data-insrow]"),it=cfg().insumosItens||[],x=row&&it[+row.dataset.insrow],k=t.dataset.inscampo;if(!x)return;let v=String(t.value||"").trim();if(k==="nome"){if(!v){t.value=x.nome||"";toast("Informe o nome do insumo.");return}v=v.slice(0,80)}else if(k==="cat"){if(v&&!catBy(v)){t.value=x.cat||"";toast("Escolha uma categoria cadastrada.");return}}else if(k==="qtd"||k==="valor"){const n=num(v);if(n==null||n<0||(k==="qtd"&&n===0)||n>1000000){t.value=x[k]||"";toast(k==="qtd"?"Quantidade deve ser maior que zero.":"Preço precisa ser zero ou maior.");return}}else return;x[k]=v;salvar(true,false);renderTopo();renderForm();renderCfg();return}
+
   if(t.dataset&&t.dataset.mf!==undefined){const tr=t.closest("[data-mi]"),m=tr&&MULTI[+tr.dataset.mi];if(m)m[t.dataset.mf]=t.value;return}
   if(t.dataset&&t.dataset.lcf!==undefined){if(!isChange)return;const C=cfg(),tr=t.closest("[data-lc]"),j=+tr.dataset.lc,n=C.cores[j],k=corKey(n),M=C.coresMeta=C.coresMeta||{},fl=t.dataset.lcf;
     if(fl==="nome"){const nv=t.value.trim();if(!nv||nv===n){t.value=n;return}if(C.cores.some((y,q)=>q!==j&&corKey(y)===corKey(nv))){toast("Já existe uma cor com esse nome.");t.value=n;return}
-      const nk=corKey(nv);if(M[k]){M[nk]=M[k];if(nk!==k)delete M[k]}C.cores[j]=nv;
-      C.banhistas.forEach(b=>b.banhos.forEach(x=>{if(x.cor===n)x.cor=nv}));C.categorias.forEach(c=>(c.cores||[]).forEach(x=>{if(corKey(x.nome)===k)x.nome=nv}));
-      const troca=l=>{if(l&&Array.isArray(l.csel))l.csel=l.csel.map(id=>id==="L:"+k?"L:"+nk:id)};S.lanc.forEach(troca);troca(S.form);if(ROM&&ROM.rows)ROM.rows.forEach(troca)}
+      /* Preserva o ID antigo em vez de reescrever chaves compostas: isso mantém quantidades e referências também em romaneios/tabelas salvos. */
+      const id=idsCoresBiblioteca()[k],nk=corKey(nv);M[k]=M[k]||{};M[k].idCor=id;if(nk!==k){M[nk]=M[k];delete M[k]}C.cores[j]=nv;
+      C.banhistas.forEach(b=>b.banhos.forEach(x=>{if(x.cor===n)x.cor=nv}));C.categorias.forEach(c=>(c.cores||[]).forEach(x=>{if(corKey(x.nome)===k)x.nome=nv}))}
     else if(fl==="sig"){const v=t.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,2);if(v){const sg=libSiglas();if(C.cores.some((y,q)=>q!==j&&sg[corKey(y)]===v)){toast("Essa sigla já é de outra cor.");t.value=(M[k]&&M[k].sig)||"";return}}M[k]=M[k]||{};if(v)M[k].sig=v;else delete M[k].sig}
     else if(fl==="txt"){M[k]=M[k]||{};if(t.value.trim())M[k].txt=t.value.trim();else delete M[k].txt}
     else if(fl==="ped"){M[k]=M[k]||{};M[k].ped=t.checked}
@@ -57,13 +60,13 @@ function onField(t,isChange){
     if(t.dataset.dup!==undefined&&catUI.dup){dupCampo(t);return}
   }
   if(t.dataset&&t.dataset.cjpick!==undefined){const f=S.form,l=S.lanc.find(x=>x.id===t.value);t.value="";if(!l||!f.conj)return;f.comp=f.comp||[];if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");return}
-    const c=novaComp(String(l.v.F||"").replace(/\s+/g," ").trim().slice(0,60));c.peso=String(l.v.N||"");c.custo=String(l.v.P||"");{const vaz=f.comp.findIndex(x=>!x.desc&&!x.peso&&!x.custo);if(vaz>=0)f.comp[vaz]=c;else f.comp.push(c)}conjSync(f);salvar(false);renderTopo();renderForm();return}
+    const c=novaComp(String(l.v.F||"").replace(/\s+/g," ").trim().slice(0,60));c.peso=String(l.v.N||"");c.custo=String(l.v.P||"");c.cat=String(l.v.I||"");{const vaz=f.comp.findIndex(x=>!x.desc&&!x.peso&&!x.custo);if(vaz>=0)f.comp[vaz]=c;else f.comp.push(c)}conjSync(f);salvar(false);renderTopo();renderForm();return}
   if(t.dataset&&t.dataset.cp){const f=S.form,i=+(t.closest("[data-ci]")||{dataset:{}}).dataset.ci,c=f.comp&&f.comp[i];if(!c)return;
     if(t.dataset.cp==="vz")c.vz=t.checked;else c[t.dataset.cp]=t.value;
     if(t.dataset.cp==="banho"){delete c.vz;conjSync(f);salvar(false);renderTopo();renderForm();return}
     conjSync(f,true);salvar(false);renderTopo();return}
   const C=cfg(),f=S.form;
-  if(t.dataset&&t.dataset.fauto!==undefined){try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0")}catch(e){}return}
+  if(t.dataset&&t.dataset.fauto!==undefined){if(t.checked&&!confirm("Ativar envio automático? As fotos anexadas serão enviadas ao imgbb, um serviço de terceiros, e qualquer pessoa com o link poderá acessá-las.")){t.checked=false;return}try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0");localStorage.setItem("cadpecas-imgbb-consent-v1",t.checked?"1":"0")}catch(e){t.checked=false;toast("Não consegui salvar a preferência de envio automático.")}return}
   if(t.dataset&&t.dataset.fkey!==undefined){try{localStorage.setItem("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange&&!faixaBusy){faixaBusy=true;try{aplicaFaixa(t.value)}finally{faixaBusy=false}}return}
   if(t.dataset&&t.dataset.nv!==undefined){if(!NOVO)return;
@@ -128,6 +131,7 @@ function onField(t,isChange){
       const dup=C.categorias.some(x=>x!==c&&String(x.nome).trim().toLowerCase()===nv.toLowerCase());
       if(!nv||dup){if(isChange){t.value=old;toast(!nv?"O nome da categoria não pode ficar vazio — voltei ao nome anterior.":`Já existe a categoria “${nv}” — voltei ao nome anterior.`)}return}
       (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;const rest=it.slice(q+1).trim(),pp=rest.split(">");return pp[0].trim()===old?it.slice(0,q+1)+nv+(pp.length>1?">"+pp.slice(1).join(">"):""):it}).join(";")});
+      (C.insumosItens||[]).forEach(x=>{if(x.cat===old)x.cat=nv});
       C.catAlias=C.catAlias||{};Object.keys(C.catAlias).forEach(k=>{if(C.catAlias[k]===old)C.catAlias[k]=nv});C.catAlias[old]=nv;   /* romaneios salvos guardam o nome antigo: ao reabrir, seguem o novo */
       c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}

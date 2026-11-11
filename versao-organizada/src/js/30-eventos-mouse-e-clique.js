@@ -46,6 +46,8 @@ document.addEventListener("click",e=>{
   const ci=t.closest("[data-cat]")?+t.closest("[data-cat]").dataset.cat:-1,bi=t.closest("[data-bh]")?+t.closest("[data-bh]").dataset.bh:-1;
   const snapCfg=CFG_UNDO.includes(a)?clone(S.config):null;
   switch(a){
+    case "insitem-add":{C.insumosItens=Array.isArray(C.insumosItens)?C.insumosItens:[];if(C.insumosItens.length>=100){toast("Limite de 100 itens de insumo.");break}C.insumosItens.push({nome:"Novo insumo",cat:"",qtd:"1",valor:"0"});salvar(true,false);renderCfg();renderTopo();renderForm();break}
+    case "insitem-del":{const i=+t.dataset.i;if(!Array.isArray(C.insumosItens)||!C.insumosItens[i])break;if(!confirm(`Excluir o insumo “${C.insumosItens[i].nome}”? O custo de insumos será recalculado quando os itens estiverem ativos.`))break;C.insumosItens.splice(i,1);salvar(true,false);renderCfg();renderTopo();renderForm();break}
     case "editar":editar(tr.dataset.l);if(celular())formAbrir(true);break;
     case "form-fechar":formAbrir(false);break;
     case "form-alt":{abertos.malt=(Number(abertos.malt==null?1:abertos.malt)+1)%3;guardarAbertos();gavetaAlt();break}
@@ -177,9 +179,7 @@ document.addEventListener("click",e=>{
 
     case "cat-del":catUI.dup=null;delCat=C.categorias[ci].nome;renderCfg();break;
     case "cat-del-no":delCat=null;renderCfg();break;
-    case "cat-del-ok":{const nome=C.categorias[ci].nome;const nUso=S.lanc.filter(l=>val(l,"I")===nome).length;if(nUso){delCat=null;toast(`Não excluí “${nome}”: ${nUso} peça(s) lançadas usam esta categoria (a referência delas mudaria). Mude a categoria dessas peças antes.`);render();return}C.categorias.splice(ci,1);delCat=null;
-      if(S.form.v.I===nome){S.form.v.I=C.categorias.length?C.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}
-      salvar(true);render();toast(`Categoria “${nome}” excluída.`);break}
+    case "cat-del-ok":{const nome=C.categorias[ci].nome;if((C.insumosItens||[]).some(x=>x.cat===nome)){delCat=null;toast(`Não excluí “${nome}”: há itens de insumo vinculados. Altere-os antes.`);renderCfg();break}const nUso=S.lanc.filter(l=>val(l,"I")===nome).length;if(nUso){delCat=null;toast(`Não excluí “${nome}”: ${nUso} peça(s) lançadas usam esta categoria (a referência delas mudaria). Mude a categoria dessas peças antes.`);render();return}conjExcluirCategoria(nome);break}
     case "lote-add":{const r=ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));break}
     case "rom-partir":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i];if(!r)break;const bx=rc.querySelector(".partbox");if(bx){bx.remove();break}
       t.insertAdjacentHTML("afterend",`<span class="partbox"><label class="fq"><span>Partes</span><input class="n" data-partn value="3" inputmode="numeric" style="width:48px" aria-label="Quantas partes"></label><button type="button" class="btn pri sm" data-act="rom-partir-ok">Partir</button></span>`);const pi=rc.querySelector("[data-partn]");pi.focus();pi.select();break}
@@ -193,6 +193,13 @@ document.addEventListener("click",e=>{
     case "imp-del":{IMPQ.splice(+t.dataset.i,1);renderImp();break}
     case "imp-limpar":{IMPQ=[];renderImp();break}
     case "imp-abrir":{const q=IMPQ.splice(+t.dataset.i,1)[0];renderImp();if(q)impAbrirArq(q.file);break}
+    case "rom-nova":{romNovaPeca();break}
+    case "imp-ir":{rolarPane(document.getElementById("romWrap"));break}
+    case "rom-foto-add":{romFotoEscolher(+t.dataset.i);break}
+    case "rom-foto-del":{romFotoRemover(+t.dataset.i);break}
+    case "rins-add":{if(!ROM)break;ROM.ins=ROM.ins||{itens:[],base:"un"};if(ROM.ins.itens.length>=30){toast("Limite de 30 insumos por romaneio.");break}ROM.ins.itens.push({nome:"",valor:""});abertos.rins=true;guardarAbertos();romSalvarSoon();renderRom();break}
+    case "rins-sug":{if(!ROM)break;const sg=romInsSugestoes().find(x=>x.nome===t.dataset.k);if(!sg)break;ROM.ins=ROM.ins||{itens:[],base:"un"};ROM.ins.itens.push({nome:sg.nome,valor:sg.valor});abertos.rins=true;guardarAbertos();romSalvarSoon();renderRom();toast(`${sg.nome} de R$ ${sg.valor} será rateado nas peças deste romaneio.`);break}
+    case "rins-del":{if(!ROM||!ROM.ins)break;ROM.ins.itens.splice(+t.dataset.i,1);romSalvarSoon();renderRom();break}
     case "lib-grade-add":{C.grades=C.grades||[];C.grades.push({id:uid(),nome:"Nova variação",rotulo:" ",col:"",modoRef:"letra",subs:[],itens:[]});abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();break}
     case "lib-grade-pmg":{C.grades=C.grades||[];const g={id:uid(),nome:"P M G",rotulo:" tamanho ",col:"K",modoRef:"letra",subs:[],itens:[]};addTamanhos(g,"P M G");C.grades.push(g);abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();break}
     case "cor-on":{const f=S.form;f.corOn=true;renderForm();break}
@@ -202,7 +209,7 @@ document.addEventListener("click",e=>{
     case "sub-del":C.categorias[ci].subs.splice(+t.dataset.j,1);salvar(true,false);render();break;
     case "forn-add":{const nomeLivre=b0=>{let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);return n};C.fornecedores.push({nome:nomeLivre("Novo fornecedor"),desconto:"0",tipo:"bruta",codigo:""});salvar(true,false);render();break}
     case "forn-dup":{const i=+t.closest("[data-forn]").dataset.forn,f=clone(C.fornecedores[i]);{const b0=f.nome+" (cópia)";let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);f.nome=n}C.fornecedores.splice(i+1,0,f);salvar(true,false);render();break}
-    case "forn-del":C.fornecedores.splice(+t.closest("[data-forn]").dataset.forn,1);salvar(true,false);render();break;
+    case "forn-del":{const i=+t.closest("[data-forn]").dataset.forn,fo=C.fornecedores[i],n=S.lanc.filter(l=>l.v&&l.v.H===fo.nome).length,abertos=ROM?ROM.rows.filter(r=>r.forn===fo.nome).length:0;if(!confirm(`Remover o fornecedor “${fo.nome}” dos cadastros? ${n} peça(s) na tabela atual e ${abertos} item(ns) do romaneio aberto usam esse nome. Referências em tabelas e romaneios salvos não são alteradas; ele deixará de aparecer nas opções. As alterações de cadastro podem ser descartadas antes de salvar.`))break;C.fornecedores.splice(i,1);salvar(true,false);render();break}
     case "bh-add":C.banhistas.push({id:uid(),nome:"Nova galvânica",verniz:"0.42",vernizOn:true,banhos:clone(BANHISTA0.banhos)});salvar(true,false);render();break;
     case "bh-dup":{const b=clone(C.banhistas[bi]);b.id=uid();b.nome+=" (cópia)";C.banhistas.splice(bi+1,0,b);salvar(true,false);render();break}
     case "bh-del":{const id=C.banhistas[bi].id;{const n=S.lanc.filter(l=>l.banhista===id).length;if(n&&!confirm(`${n} peça(s) já lançadas usam esta galvânica. Remover mesmo assim? (Ctrl+Z desfaz)`))break}C.banhistas.splice(bi,1);C.fornecedores.forEach(f=>{if(f.banhista===id)f.banhista=""});salvar(true);render();break}
@@ -247,7 +254,7 @@ document.addEventListener("click",e=>{
     case "foto-form":ftAlvo="__form";document.getElementById("ftIn").click();break;
     case "foto-rem":fotoRemover(editId||null);break;
     case "foto-rem-rom":{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");break}
-    case "tab-foto":{const lid=t.dataset.lid,src=t.src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));break}
+    case "tab-foto":{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));break}
     case "rom-lista":romListaAbrir();break;
     case "rom-refazer-todas":{if(!ROM)break;let n=0;ROM.rows.forEach(r=>{if(r.feito&&!r.arq){r.refaz=true;r.skip=false;r.aviso="";n++}});ROM.msg=n?`${n} peça(s) já lançadas liberadas para edição. Mude o que quiser e clique em Criar peças: elas substituem as antigas.`:"Nenhuma peça já lançada para editar.";renderRom();break}
     case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());romAbrirSalvo(t.dataset.id);break}

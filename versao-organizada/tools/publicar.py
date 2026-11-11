@@ -5,7 +5,7 @@ Os dados de cada pessoa ficam só no navegador dela (localStorage + IndexedDB); 
 Cada publicação recebe uma marca-d'água própria (um id), invisível na tela: só aparece para quem abrir o
 código-fonte. Serve para identificar de qual cópia veio um site clonado. O registro (id, data, rótulo) fica em
 marcas-dagua.csv, fora da pasta publicada e fora do Git."""
-import os, re, shutil, subprocess, sys, time, random, csv
+import os, re, shutil, subprocess, sys, time, random, csv, hashlib, json
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 out = (sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else os.path.join(RAIZ, "publicar-netlify"))
@@ -36,9 +36,10 @@ os.makedirs(out, exist_ok=True)
 i = s.index('<script>\n(function(){'); j = s.index('</script>', i)
 js = s[i + 8:j]
 try:
+    if not shutil.which("terser"): raise FileNotFoundError("terser não instalado; pacote gerado sem minificação")
     tmp = os.path.join(out, "_tmp.js"); open(tmp, "w", encoding="utf-8").write(js)
     r = subprocess.run(
-        ['npx.cmd' if os.name == 'nt' else 'npx', '--yes', 'terser', tmp,
+        [shutil.which('terser'), tmp,
          '--compress', 'passes=3,toplevel=true,unsafe=false,drop_debugger=true',
          '--mangle', 'toplevel=true',
          '--format', 'comments=false'],
@@ -78,4 +79,9 @@ Como funciona: cada pessoa tem os proprios dados, guardados no navegador dela (n
 - Limpar dados do navegador ou usar aba anonima apaga tudo.
 - Por isso: baixar o "Backup completo" (Cadastros > Importar e copia) com frequencia. O app lembra apos 7 dias sem backup.
 ''')
+def sha256(path):
+    with open(path,"rb") as f:return hashlib.sha256(f.read()).hexdigest()
+manifest={"fonte_sha256":sha256(os.path.join(RAIZ,"cadastro-pecas.html")),"artefatos":{n:sha256(os.path.join(out,n)) for n in ("index.html","_headers","lib/xlsx.full.min.js")},"gerado_em":time.strftime("%Y-%m-%d %H:%M:%S")}
+with open(os.path.join(out,"manifesto-build.json"),"w",encoding="utf-8") as f:json.dump(manifest,f,ensure_ascii=False,indent=2)
 print("ok", out, os.path.getsize(os.path.join(out, "index.html")), "marca-dagua", wm)
+print("Confira os hashes e execute os testes no pacote antes de publicar.")

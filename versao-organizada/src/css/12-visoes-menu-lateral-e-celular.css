@@ -76,7 +76,7 @@ body[data-vis=lancar] #paneTop,body[data-vis=lancar] #splitter,body[data-vis=cad
 @media (max-width:900px){.vside{display:none}}
 /* ===== v20: planilha utilizável no celular, formulário recolhível, abas de cadastro sempre à mão ===== */
 #filTog,.dpill{display:none}
-.dpill{position:fixed;right:18px;bottom:16px;z-index:8;height:38px;padding:0 16px;border:0;border-radius:99px;background:var(--accent);color:var(--accent-ink);font:600 13px var(--body);cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28)}
+.dpill{position:fixed;right:18px;bottom:68px;z-index:8;height:38px;padding:0 16px;border:0;border-radius:99px;background:var(--accent);color:var(--accent-ink);font:600 13px var(--body);cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28)}
 .dpill:hover{filter:brightness(1.1)}
 .dpill.dock{height:26px;padding:0 12px;font-size:12px;right:30px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 @media (min-width:901px){.dpill:not([hidden]){display:inline-flex;align-items:center}}

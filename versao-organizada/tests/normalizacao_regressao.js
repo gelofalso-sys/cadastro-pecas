@@ -1,0 +1,4 @@
+const fs=require('node:fs'),assert=require('node:assert/strict'),vm=require('node:vm');
+const src=fs.readFileSync('src/js/10-limites-e-colunas.js','utf8');const part=src.slice(src.indexOf('const SEM_AC_MARCAS='),src.indexOf('\n',src.indexOf('const semAc=')));const ctx={};vm.createContext(ctx);vm.runInContext(part+';globalThis.normalizar=semAc',ctx);
+const antigo=s=>String(s==null?'':s).normalize('NFD').replace(new RegExp('['+String.fromCharCode(768)+'-'+String.fromCharCode(879)+']','g'),'').trim().toLowerCase();
+const casos=[null,undefined,'','  ANÉIS & peça  ','A\u0301 e\u036f','\u0370','\u{1F48E}',0,123];for(let i=0;i<1000;i++)casos.push(String.fromCharCode(i,768+i%112,5000+i));for(const x of casos)assert.equal(ctx.normalizar(x),antigo(x));console.log('OK normalização equivalente em 1009 casos');

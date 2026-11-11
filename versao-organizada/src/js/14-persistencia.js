@@ -104,7 +104,9 @@ async function migrarFotos(){let mexeu=0;
   return mexeu}
 function lerConfig(c){
   const o=clone(DEFAULT_CONFIG);if(!c)return o;
-  ["seqs","categorias","cores","observacoes","ordem","grades","modelos","modelo","romaneios"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
+  ["seqs","categorias","cores","coresMeta","catAlias","observacoes","ordem","grades","modelos","modelo","romaneios","vLib","vPeso","insumosItens","insumosModo"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
+  if(!Array.isArray(o.insumosItens))o.insumosItens=[];else o.insumosItens=o.insumosItens.filter(x=>x&&typeof x==="object"&&typeof x.nome==="string"&&(x.cat==null||typeof x.cat==="string")&&num(x.qtd)>0&&num(x.qtd)<=1000000&&num(x.valor)!=null&&num(x.valor)>=0&&num(x.valor)<=1000000).slice(0,100);
+  if(!["off","somar","substituir"].includes(o.insumosModo))o.insumosModo="off";
   o.categorias.forEach(x=>{if(x&&!Array.isArray(x.subs))x.subs=[]});   /* cópia/backup com categoria sem lista de subcategorias não pode quebrar a tela */
   o.romaneios.forEach(t=>{if(t.id==="carlinha"&&!/Corrente=/.test(t.mapa||"")){const d=ROMS0()[0];t.mapa=d.mapa;t.valorRe=d.valorRe}});
   if(c.colcfg){LET.forEach(L=>{const x=c.colcfg[L]||{};const pad=o.colcfg[L].form;o.colcfg[L]={...o.colcfg[L],...x};if(!c.v6)o.colcfg[L].form=pad})}

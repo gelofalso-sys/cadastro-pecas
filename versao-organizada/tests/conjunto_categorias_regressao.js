@@ -1,0 +1,22 @@
+// Regressão independente: o cálculo do conjunto deve usar a categoria de cada componente.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source = fs.readFileSync('src/js/18-conjunto.js','utf8');
+const code = source.slice(source.indexOf('function conjQtd('),source.indexOf('function conjErro(')) + source.slice(source.indexOf('function conjCat('), source.indexOf('function conjCatOpts(')) + source.slice(source.indexOf('function conjCalc('), source.indexOf('/* ao sair de Conjunto'));
+const core = fs.readFileSync('src/js/10-limites-e-colunas.js','utf8');
+const mult = core.slice(core.indexOf('const milDe='),core.indexOf('function resumoCat'));
+const bh = {verniz: 0, banhos:[{id:'ouro',coluna:'R',modo:'peso',mult:'9',multCat:{Brincos:'2',Colares:'5',Conjuntos:'9'}},{id:'prata',coluna:'T',modo:'peso',mult:'4',multCat:{Brincos:'3',Colares:'6'}}]};
+const cats=new Set(['Brincos','Colares','Conjuntos']);
+const ctx={bh, cfg:()=>({catAlias:{Antiga:'Brincos'}}),catBy:n=>cats.has(n)?{nome:n}:null, bhDe:()=>bh, bonP:f=>bh.banhos.filter(b=>f.onP?.[b.id]), num:x=>x===undefined||x===null||x===''?null:Number(String(x).replace(',','.')), vzPad:()=>false};
+vm.createContext(ctx);vm.runInContext(mult+'\n'+code,ctx);
+const f={v:{I:'Conjuntos'},onP:{ouro:true},ov:{},comp:[{desc:'Brinco',cat:'Brincos',peso:'1',custo:'2',banho:''},{desc:'Colar',cat:'Colares',peso:'2',custo:'3',banho:''}]};
+let out=ctx.conjCalc(f);assert.equal(out.tot.R,12,'por grama: 1×2 + 2×5');assert.equal(out.tot.N,3);assert.equal(out.tot.P,5);
+bh.banhos[0].modo='fixo';out=ctx.conjCalc(f);assert.equal(out.tot.R,7,'fixo por componente: 2+5');
+f.comp[1].banho='-';out=ctx.conjCalc(f);assert.equal(out.tot.R,2,'sem banho não deve somar custo');
+f.comp[1].banho='';bh.banhos[0].modo='peso';f.onP.prata=true;out=ctx.conjCalc(f);assert.equal(out.vars[1].tot.T,15,'outra variação: 1×3 + 2×6');
+f.comp[1].cat='';out=ctx.conjCalc(f);assert.equal(out.tot.R,20,'componente legado/vazio herda categoria do conjunto');
+f.comp[0].cat='Antiga';f.comp[1].cat='Colares';out=ctx.conjCalc(f);assert.equal(out.tot.R,12,'categoria renomeada resolve alias');
+f.comp[0].cat='Ausente';out=ctx.conjCalc(f);assert.equal(out.vars[0].semMult,true,'categoria removida não deve usar preço padrão silenciosamente');
+f.comp[0].cat='Brincos';f.ov.ouro={_m:'4'};out=ctx.conjCalc(f);assert.equal(out.tot.R,12,'R$/g digitado no conjunto prevalece sobre categorias');
+console.log('OK categorias por componente: peso, fixo, sem banho, variações, legado e valor manual');

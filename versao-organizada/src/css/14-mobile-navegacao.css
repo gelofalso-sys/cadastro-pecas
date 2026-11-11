@@ -70,3 +70,58 @@
 }
 
 .rom-conjunto{margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:8px}.rom-conjunto summary{cursor:pointer;font-weight:700}.rom-conjunto-linha{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:8px 0}.rom-conjunto-linha label{display:grid;gap:3px;flex:1 1 110px;font-size:12px}.rom-conjunto-linha input,.rom-conjunto-linha select{width:100%;min-width:0;min-height:40px}
+
+/* O acesso ao menu ocupa uma posição da barra inferior, sem cobrir linhas. */
+@media (max-width:900px){
+  #mbar .mobile-menu{position:relative;inset:auto;flex:0 0 44px;order:0;z-index:1}
+  #mbar .mobile-menu summary{width:44px;height:44px;min-height:44px;box-shadow:none}
+  #mbar .btn{min-width:0;padding-left:8px;padding-right:8px;font-size:14px}
+  #mbar .mobile-menu-panel{z-index:2}
+}
+
+.build-version{display:block;padding:4px 12px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+
+.foto-abrir{border:0;background:transparent;padding:0;line-height:0;cursor:zoom-in}.foto-abrir:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* Reserva espaço fixo para as ações da seleção, evitando deslocar a tabela no primeiro clique. */
+#paneTop .selbar,#paneTop:has(.issues span:not(.ok)) .selbar:has(>.hint:only-child){display:flex;height:32px;min-height:32px;max-height:32px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
+#paneTop .selbar>*{flex-shrink:0}
+body.vlista #paneTop .selbar{display:none}
+@media(max-width:900px){#paneTop .selbar,#paneTop:has(.issues span:not(.ok)) .selbar:has(>.hint:only-child){height:44px;min-height:44px;max-height:44px}}
+
+@media(max-width:900px){.rom-atalho{min-height:44px;flex:0 0 auto}}
+
+.contas-componentes{margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}.contas-componentes ul{margin:3px 0 8px;padding-left:20px}.contas-componentes small,.conta-banho{display:block;color:var(--muted);font-size:11px;line-height:1.4;white-space:normal}.conta-banho{flex-basis:100%}
+
+.sel-calculo{font-size:12px;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:4px 8px}
+
+/* romaneio: peça nova, foto por item, insumos do romaneio */
+.rch.extra{background:var(--accent-soft);color:var(--ink);border-color:transparent}
+.rch.ins{background:#fff7e0;color:#6b4a00;border-color:#f0d9a0}
+.rc-qx{margin:0}.rc-qx input{width:70px}
+.rc-fw{display:inline-flex;align-items:flex-end;gap:4px}
+.rc-fa{display:flex;flex-direction:column;gap:2px}
+.rc-fadd{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:64px;height:64px;border:2px dashed var(--line,#c9d1dc);border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;font-size:18px}
+.rc-fadd span{font-size:11px}
+.rc-fadd:hover,.rc-fadd:focus-visible{border-color:var(--accent);background:var(--accent-soft)}
+.rc.ftdrop{outline:2px dashed var(--accent);outline-offset:2px}
+.rins-res{margin-top:6px;font-size:12px;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:6px 8px}
+
+/* importar romaneio: zona de arraste clara + estado da importação */
+.imp-zone{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 8px;padding:14px 16px;border:2px dashed var(--accent);border-radius:12px;background:var(--accent-soft);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.imp-zone:hover,.imp-zone:focus-visible{background:var(--surface,#fff);box-shadow:0 0 0 3px var(--accent-soft)}
+.impbar.over .imp-zone{background:var(--surface,#fff);border-style:solid}
+.imp-ic{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;font-size:22px}
+.imp-tx{display:flex;flex-direction:column;gap:2px;min-width:0}.imp-tx b{font-size:15px}.imp-tx span{font-size:12.5px;color:var(--muted)}
+.imp-st{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 8px;padding:8px 12px;border-radius:8px;font-size:13px}
+.imp-st.ok{background:#e6f6ec;color:#14532d;border:1px solid #9bd3ae}
+.imp-st.lendo{background:var(--accent-soft)}
+.imp-st.bad{background:#fdecea;color:#7a1c14;border:1px solid #f0b4ae}
+.imp-st .btn{margin-left:auto}
+.imp-spin{width:14px;height:14px;border:2px solid var(--accent);border-right-color:transparent;border-radius:50%;animation:impgira .8s linear infinite}
+@keyframes impgira{to{transform:rotate(360deg)}}
+.imp-qt{margin:6px 0 2px}
+@media (prefers-reduced-motion:reduce){.imp-spin{animation:none}}
+.rins-sug{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0;padding:6px 10px;border:1px solid #f0d9a0;background:#fff7e0;color:#6b4a00;border-radius:8px;font-size:13px}
+.rins-sug .btn{margin-left:auto}
+.rc.semtam{border-left:4px solid var(--bad,#b3261e)}

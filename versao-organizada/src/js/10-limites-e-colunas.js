@@ -58,7 +58,8 @@ const BANHISTA0={id:"scarlat",nome:"Scarlat",verniz:"0.42",vernizOn:true,banhos:
   {id:"prata",nome:"Prata",letra:"B",cor:"Prata",mil:"50",modo:"peso",mult:"1.54",coluna:"T",sufixo:" banho prata",marcado:true,vz:true}]};
 /* A variação (tamanhos de anel, letras…) fica dentro da categoria: subs vazio = vale para toda a categoria; com nomes = só nessas subcategorias. */
 const mkGrade=(subs,id)=>({id:id,nome:"Tamanhos de anel",rotulo:" aro ",col:"K",subs:subs||[],itens:Array.from({length:15},(_,i)=>String(11+i)).map((n,i)=>({id:"a"+n,letra:String.fromCharCode(65+i),nome:n}))});
-const semAc=s=>String(s==null?"":s).normalize("NFD").replace(new RegExp("["+String.fromCharCode(768)+"-"+String.fromCharCode(879)+"]","g"),"").trim().toLowerCase();
+const SEM_AC_MARCAS=/[\u0300-\u036f]/g;
+const semAc=s=>String(s==null?"":s).normalize("NFD").replace(SEM_AC_MARCAS,"").trim().toLowerCase();
 function letraN(i){let s="",n=i+1;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s}
 function proxLetra(us){for(let i=0;i<702;i++){const s=letraN(i);if(!us.includes(s))return s}return "Z"}
 /* Categorias e subcategorias como estão cadastradas no Jueri (Produto > Categoria). Prata 925 não tem subcategoria no Jueri: as daqui servem só para escolher o prefixo da referência e não vão para a planilha. */

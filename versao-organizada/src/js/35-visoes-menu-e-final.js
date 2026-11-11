@@ -30,7 +30,7 @@ function sideAplicar(modo){/* "open" = expandido · "mini" = faixa estreita só 
   sd.hidden=false;document.body.classList.add("side-on");document.body.classList.toggle("side-mini",modo==="mini");
   abertos.side=modo;guardarAbertos();sideMarcar()}
 function hdrLayout(){const hin=document.querySelector("header .hin");if(!hin)return;
-  const st=document.getElementById("saveStatus"),ud=document.querySelector(".udo"),sp=document.querySelector(".sp"),top=document.getElementById("sideTop"),ex=document.getElementById("sideExp");if(!st||!ud||!sp||!top||!ex)return;
+  const st=document.getElementById("saveStatus"),ud=document.querySelector(".udo"),sp=document.getElementById("autorIn")?.closest(".sp"),top=document.getElementById("sideTop"),ex=document.getElementById("sideExp");if(!st||!ud||!sp||!top||!ex)return;
   if(!celular()){if(st.parentNode!==top)top.append(st,ud);if(sp.parentNode!==ex)ex.append(sp)}
   else{const mobile=document.getElementById("mobileSettings");if(mobile){if(st.parentNode!==mobile)mobile.append(st,ud);if(sp.parentNode!==mobile)mobile.append(sp)}}}
 window.addEventListener("resize",()=>{hdrLayout();sideAplicar(abertos.side);if(!celular()){const menu=document.getElementById("mobileMenu");if(menu)menu.open=false}});

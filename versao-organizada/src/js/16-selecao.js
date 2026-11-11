@@ -25,6 +25,29 @@ function preencherAbaixo(){const b=selBox();if(!b||b.r2<=b.r1||!G.linhas[b.r1])r
   for(let r=b.r1+1;r<=Math.min(b.r2,G.linhas.length-1);r++){if(!vis(r))continue;const row=G.linhas[r],l=S.lanc.find(x=>x.id===row.lancId);if(!l)continue;if(!(l.id in antes))antes[l.id]=clone(l.ov||{});
     for(let c=b.c1;c<=b.c2;c++){const L=LET[c];if(L==="E")continue;const v=src.banho&&FORMULA.has(L)&&!src.ovs.includes(L)?"":String(src.v[L]??"");gravarCel(r,L,v)}}
   undo={tipo:"multi",antes};salvar(false);renderTopo();if(editId)renderForm();toast("Preenchido para baixo.",{t:"Desfazer",fn:desfazer})}
+/* Mostra a conta da linha selecionada sem alterar a fórmula nem o valor da peça. */
+function detalheCelulaSelecionada(row,L,ri){
+  if(!row||!["Q","R","S","T","U"].includes(L))return "";
+  const x=celulas(row,ri+2)[LET.indexOf(L)],valor=x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null;
+  const l=S.lanc.find(p=>p.id===row.lancId),q=numRaw(row.v.W,row.v,0,row.desconto);
+  if(L==="Q"){
+    if(!l)return "";
+    if(l.insRom&&!(row.ovs||[]).includes("Q")&&!vazio(l.v.Q))return `Insumos: padrão R$ ${brl(l.insRom.base)} + parte dos insumos do romaneio${l.insRom.rom?" ("+l.insRom.rom+")":""} R$ ${brl(l.insRom.ins)} = R$ ${brl(valor==null?0:valor)} por unidade${q>0&&valor!=null?` × ${fmt(q)} un. = R$ ${brl(valor*q)} na linha`:""}.`;
+    if((row.ovs||[]).includes("Q")||!vazio(l.v.Q))return `Insumos: valor informado na peça ${valor==null?"—":"R$ "+brl(valor)} por unidade${q>0&&valor!=null?` × ${fmt(q)} un. = R$ ${brl(valor*q)} na linha`:""}.`;
+    const C=cfg(),cat=l.v.I||"",it=insumosItensResumo(cat),modo=C.insumosModo||"off",parts=it.itens.map(i=>`${i.nome} (${i.cat?"categoria":"geral"}): ${fmt(num(i.qtd)||0)} × R$ ${brl(num(i.valor)||0)}`);
+    const base=catBy(cat),anterior=num(base&&!vazio(base.insumos)?base.insumos:C.colcfg.Q.padrao)||0;
+    const detalhe=modo==="off"?`valor atual R$ ${brl(anterior)} (itens não aplicados)`:modo==="somar"?`valor atual R$ ${brl(anterior)} + itens ${parts.length?parts.join(" + "):"nenhum"}`:`itens ${parts.length?parts.join(" + "):"nenhum"}`;
+    return `Insumos: ${detalhe} = R$ ${brl(valor||0)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl((valor||0)*q)} na linha`:""}.`;
+  }
+  if(l&&l.conj)return `Conjunto · ${NOME[L]}: ${valor==null?"sem valor":"R$ "+brl(valor)+" por conjunto"}. Abra Editar para conferir os componentes.`;
+  if(row.ovs&&row.ovs.includes(L))return `${NOME[L]} informado na peça: ${valor==null?"sem valor":"R$ "+brl(valor)+" por unidade"}.`;
+  if(!row.banho)return "";
+  const peso=pesoLinha(row),taxa=L==="U"?row.verniz:(L===row.banho.coluna?row.banho.mult:null);
+  if(taxa==null)return `${NOME[L]}: sem valor configurado para esta linha.`;
+  if(L!=="U"&&row.banho.modo==="fixo")return `${NOME[L]}: R$ ${brl(taxa)} por unidade (valor fixo)${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(taxa)*q)} na linha`:""}.`;
+  if(peso==null)return `${NOME[L]}: informe o peso para calcular.`;
+  const unidade=r2c(peso*taxa);return `${NOME[L]}: ${fmt(peso)} g × R$ ${fmt(taxa)}/g = R$ ${brl(unidade)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(unidade*q)} na linha`:""}.`;
+}
 function renderSelBar(){
   const el=document.getElementById("selbar");if(!el)return;const b=selBox();
   if(!b){el.innerHTML=vista()==="lista"?"":G&&G.linhas.length?`<span class="hint">Clique numa célula para selecionar · arraste ou <kbd>Shift</kbd>+clique para várias · clique no nome da coluna ou na margem esquerda da linha para selecionar inteira · duplo clique, <kbd>Enter</kbd> ou comece a digitar para editar</span>`:"";return}
@@ -32,8 +55,9 @@ function renderSelBar(){
   /* a Soma só vale para uma coluna monetária, de peso ou de quantidade — nunca mistura nem soma códigos (NCM, CFOP…) */
   const kd=L=>MONEY.has(L)?"m":L==="W"?"q":L==="N"?"p":"",ks=new Set();for(let c=b.c1;c<=b.c2;c++)ks.add(kd(LET[c]));const somavel=ks.size===1&&!ks.has("");
   for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const row=G.linhas[r];if(!row)continue;const cs=celulas(row,r+2);for(let c=b.c1;c<=b.c2;c++){const x=cs[c];if(x&&typeof x.v==="number"){if(somavel)soma+=x.v;nn++}}}
-  const row=G.linhas[selR.fr],ids=idsDaSel();
+  const row=G.linhas[selR.fr],ids=idsDaSel(),det=n===1?detalheCelulaSelecionada(row,LET[b.c1],b.r1):"";
   el.innerHTML=`<span class="si"><b class="mono">${LET[b.c1]}${b.r1+2}${n>1?":"+LET[b.c2]+(b.r2+2):""}</b> ${n} célula${n>1?"s":""}${nn>1?` · Soma <b class="mono"${somavel?"":' title="Soma só para colunas de valor, peso ou quantidade (uma por vez)"'}>${somavel?fmt(soma):"—"}</b>`:""}</span>
+    ${det?`<span class="sel-calculo">${esc(det)}</span>`:""}
     ${row?`<button class="btn sm" type="button" data-act="s-edit" title="Abre a peça no lançamento para alterar">✎ Editar ${esc(row.v.E)}</button><button class="btn sm" type="button" data-act="s-nova" title="Copia os dados para o lançamento; ao Adicionar sai com nova referência">＋ Nova referência a partir desta</button><button class="btn sm" type="button" data-act="s-dup">⧉ Duplicar linha</button>`:""}
     <button class="btn sm" type="button" data-act="s-copy">Copiar <kbd>Ctrl+C</kbd></button>${G.linhas[b.r1]?`<button class="btn sm" type="button" data-act="s-clear">Limpar <kbd>Del</kbd></button>`:""}${b.r2>b.r1&&G.linhas[b.r1]?`<button class="btn sm" type="button" data-act="s-fill">Preencher para baixo <kbd>Ctrl+D</kbd></button>`:""}
     ${ids.length?`<button class="btn sm danger" type="button" data-act="s-del">Excluir ${(()=>{const q=Math.min(b.r2,G.linhas.length-1)-b.r1+1;return q>1?q+" linhas":"a linha"})()}</button>`:""}`;

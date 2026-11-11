@@ -1,7 +1,7 @@
 /* ===== fotos com link (imgbb): o sistema de destino pede um endereço público da foto ===== */
 const fotoKey=()=>{try{return (localStorage.getItem("cadpecas-imgbb")||"").trim()}catch(e){return ""}};
 /* envio automático: com a chave do imgbb guardada, a foto anexada já sobe e o link entra na coluna Foto (pode ser desligado em Cadastros › Fotos) */
-const fotoAuto=()=>{try{return localStorage.getItem("cadpecas-imgbb-auto")!=="0"}catch(e){return true}};
+const fotoAuto=()=>{try{return localStorage.getItem("cadpecas-imgbb-auto")==="1"&&localStorage.getItem("cadpecas-imgbb-consent-v1")==="1"}catch(e){return false}};
 const autoEnviar=ids=>{if(fotoKey()&&fotoAuto()&&ids&&ids.length)enviarFotos(ids)};
 /* testa a chave: envia uma imagem de 1 pixel que o imgbb apaga sozinho em 60 segundos */
 async function testarChaveImgbb(){const key=fotoKey();if(!key){toast("Cole a chave do imgbb primeiro.");return}
@@ -34,6 +34,7 @@ let fotosEnv=false;
 async function enviarFotos(soIds){if(fotosEnv)return;
   if(!fotoKey()){if(!Array.isArray(soIds)){toast("Cole a chave do imgbb em Cadastros › Fotos (link).");irPara("foto")}return}
   const ls=S.lanc.filter(l=>l.ft&&vazio(l.v.B)&&(!Array.isArray(soIds)||soIds.includes(l.id)));if(!ls.length){if(!Array.isArray(soIds))toast("Nenhuma foto esperando link.");return}
+  if(!Array.isArray(soIds)&&!confirm(`Enviar ${ls.length} foto(s) ao imgbb, um serviço de terceiros? As imagens saem deste aparelho e os links gerados podem ser acessados por quem os tiver.`))return;
   fotosEnv=true;let ok=0,falhas=0,sumiu=0,trocou=0,erro=null,chaveRuim=false;
   try{for(let i=0;i<ls.length;i++){toast(`Enviando foto ${i+1} de ${ls.length}…`);
     try{const ft0=ls[i].ft,u=await enviarFoto(ls[i]);
@@ -46,7 +47,7 @@ async function enviarFotos(soIds){if(fotosEnv)return;
   renderTopo();
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
-function romCriar(){const f=S.form;if(!romConjVerificar())return;if(editId){toast("Termine ou cancele a edição antes.");return}
+function romCriar(){const f=S.form;if(ROM.rows.some(romLoteDistribuicaoInvalida)){toast("Item de lote: distribua exatamente uma unidade entre os banhos ou desmarque criar. Para outra peça, adicione outro item ao lote.");return}if(!romConjVerificar())return;if(editId){toast("Termine ou cancele a edição antes.");return}
   if(romConflito){toast("Outra aba alterou este romaneio. Use “Recarregar” ou “Manter esta aba” no aviso amarelo antes de criar as peças.");return}
   {const NL=String.fromCharCode(10),dif=[];ROM.rows.forEach(r=>{if(r.skip||!r.refaz||!(r.lancIds||[]).length)return;const o=S.lanc.find(l=>l.id===r.lancIds[0]);if(!o||!o.v)return;const ch=[],ne=(x,y)=>{const a=num(x),b=num(y);return a!=null&&b!=null?Math.abs(a-b)>1e-9:String(x==null?"":x).trim()!==String(y==null?"":y).trim()};
       if(ne(o.v.N,r.peso))ch.push("peso "+(o.v.N||"—")+" → "+(r.peso||"—"));if(ne(o.v.P,r.custo))ch.push("compra "+(o.v.P||"—")+" → "+(r.custo||"—"));if(ne(o.v.F,r.desc))ch.push("descrição");
@@ -66,11 +67,11 @@ function romCriar(){const f=S.form;if(!romConjVerificar())return;if(editId){toas
   feitas.forEach(({r,id})=>{const ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=!!r.refaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto)idbPut("fotos",id,r.foto)});
   if(feitas.length)ROM.log=(ROM.log||[]).concat([{em:Date.now(),por:AUTOR,acao:`Lançou ${feitas.length-corr} peça(s) nova(s)${corr?` e corrigiu ${corr}`:""} · ${un} unidades`}])}
   /* O rascunho com os vínculos fica disponível até o IndexedDB confirmar a gravação. */
-  const lsOk=romSalvar(),gravacao=romGravP;let rascGravado=null;try{rascGravado=localStorage.getItem(ROMKEY)}catch(e){}
+  const lsOk=romSalvar(),gravacao=romGravP,romId=ROM.sid;let rascGravado=null;try{rascGravado=localStorage.getItem(ROMKEY)}catch(e){}
   ROM=null;renderRom();salvar(false);renderTopo();renderForm();if(ids.length)mostrarNoFim(ids[ids.length-1]);
   Promise.resolve(gravacao).then(ok=>{if(ok&&rascGravado){try{if(localStorage.getItem(ROMKEY)===rascGravado)romLimparRascunho()}catch(e){}}else if(!ok&&!lsOk){setStatus("NÃO foi possível guardar o vínculo do romaneio — baixe um backup",true);toast("Não consegui guardar o romaneio nem o rascunho. Não feche a página; baixe um backup completo.")}});
   toast(`${feitas.length} peça(s) criada(s) · ${un} de ${naLista} unidades${un<naLista?` (${naLista-un} ficaram de fora)`:""}${sem?` · ${sem} sem quantidade`:""}${err?` · ${err} com erro`:""}.`,ids.length?{t:"Desfazer",fn:desfazer}:null);
-  if(feitas.length)relGerar(feitas,ign,meta)}
+  if(feitas.length)relGerar(feitas,ign,meta,romId)}
 /* nf-inicio */
 const nfU=s=>semAc(s).toUpperCase(),nfR2=n=>Math.round((Number(n)||0)*100)/100,NFKEY="cadpecas-nf";
 const nfCnpj=d=>{d=String(d||"").replace(/\D/g,"");return d.length===14?d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5"):d};

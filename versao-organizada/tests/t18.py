@@ -7,7 +7,9 @@ class Q(http.server.SimpleHTTPRequestHandler):
     def log_message(self,*a):pass
 socketserver.TCPServer.allow_reuse_address=True
 srv=socketserver.TCPServer(("127.0.0.1",8789),functools.partial(Q,directory=D));threading.Thread(target=srv.serve_forever,daemon=True).start()
-bk=json.load(open(os.environ.get("CP_BACKUP",""),encoding="utf-8"))
+if not os.environ.get("CP_BACKUP") or not os.path.exists(os.environ["CP_BACKUP"]):
+    print("PULADO: defina CP_BACKUP com o caminho de um backup .json real para este teste");raise SystemExit(0)
+bk=json.load(open(os.environ["CP_BACKUP"],encoding="utf-8"))
 dados=json.dumps({"config":bk["config"],"lanc":bk["lanc"],"form":bk["form"],"edit":None,"rasc":None})
 URL="http://127.0.0.1:8789/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html"
 f=[]

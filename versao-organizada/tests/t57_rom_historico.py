@@ -14,7 +14,7 @@ with sync_playwright() as p:
  assert page.locator('#romWrap .rc').count()==2
  page.keyboard.press('Control+y');page.wait_for_timeout(700);assert page.locator('#romWrap .rc').count()==0
  page.keyboard.press('Control+z');page.wait_for_timeout(700);assert page.locator('#romWrap .rc').count()==2
- page.locator('#romWrap [data-rp="desc"]').first.fill('Alteração posterior');page.locator('#mobileMenu summary').click();page.keyboard.press('Control+y');page.wait_for_timeout(300)
+ page.locator('#romWrap [data-rp="desc"]').first.fill('Alteração posterior');page.locator('#romWrap [data-act="rom-fechar"]').focus();page.locator('#mobileMenu summary').click();page.keyboard.press('Control+y');page.wait_for_timeout(300)
  assert page.locator('#romWrap .rc').count()==2
  assert 'alterado depois' in page.locator('#toast').inner_text().lower()
  page.locator('.mobile-menu-close').click()

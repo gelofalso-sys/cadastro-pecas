@@ -28,7 +28,7 @@ with sync_playwright() as p:
  page.locator('.rep [data-act="rel-fechar"]').click()
  page.locator('[data-act="ir-lista"]').first.click()
  with page.expect_download() as download:
-  page.locator('#mbar [data-act="xlsx"]').click()
+  page.locator('#mbar > [data-act="xlsx"]').click()
   if page.locator('[data-act="exp-assim"]').is_visible(): page.locator('[data-act="exp-assim"]').click()
  from openpyxl import load_workbook
  wb=load_workbook(BytesIO(Path(download.value.path()).read_bytes()),data_only=False);ws=wb.active
