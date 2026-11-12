@@ -205,6 +205,21 @@ document.addEventListener("click",e=>{
     case "banco-remover":{const f=S.form,c=catBy(f.v.I);if(!c)break;const chave=f.v.J||"";c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[chave]=bancoLista(c.nome,chave).filter(x=>semAc(x)!==semAc(t.dataset.w));salvar(true,false);renderForm();bancoEditarAbrir();break}
     case "banco-restaurar":{const f=S.form,c=catBy(f.v.I);if(!c)break;const chave=f.v.J||"";if(c.bancoPalavras)delete c.bancoPalavras[chave];salvar(true,false);renderForm();bancoEditarAbrir();toast("Sugestões iniciais restauradas.");break}
     case "desc-palavra":{const f=S.form,w=t.dataset.w,cur=String(f.v.F||"");f.v.F=cur.replace(/\s+$/,"")+(cur.trim()?" ":"")+w+" ";f._descAuto="";salvar(false);renderForm();setTimeout(()=>{const d=document.getElementById("f-F");if(d){d.focus();d.setSelectionRange(d.value.length,d.value.length)}},0);break}
+    case "historico":historicoAbrir();break
+    case "hist-voltar":{const n=+t.dataset.n;document.querySelectorAll(".rep").forEach(x=>x.remove());for(let k=0;k<n&&HIST.length;k++)desfazer();toast(`Voltou ${n} alteração(ões).`);break}
+    case "origem-ok":{try{localStorage.setItem("cadpecas-origem-ok","1")}catch(e){}document.querySelectorAll(".origem-aviso").forEach(x=>x.remove());break}
+    case "simular-fator":simuladorFator();break
+    case "sim-usar":{const f=S.form;f.mk=f.mk||{};f.mk[t.dataset.bid]=String(t.dataset.fator).replace(".",",");document.querySelectorAll(".rep").forEach(x=>x.remove());salvar(false);renderForm();toast(`Fator ${t.dataset.fator.replace(".",",")} aplicado.`);break}
+    case "prim-ir":{primeirosIr(t.dataset.p);primeirosAtualizar();break}
+    case "prim-fechar":{abertos.primeiros=false;guardarAbertos();primeirosAtualizar();break}
+    case "exp-agrupar":{expAgrupa=!expAgrupa;if(expUlt)mostrarConferencia(expUlt.p,expUlt.podeSeguir);break}
+    case "rom-xlsx":{const ids=new Set(ROM.rows.flatMap(r=>r.lancIds||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("Nenhuma peça deste romaneio está na tabela atual.");break}baixar(false,ids);break}
+    case "rel-xlsx":{const ids=new Set((REL&&REL.lids||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("As peças desta criação não estão mais na tabela.");break}baixar(false,ids);break}
+    case "rom-bulk-div":{const rs=romSelRows().filter(r=>!r.skip&&!r.feito&&!r.lote&&(!gradeDaCat(r.cat,r.sub)||r.semG)&&!(r.csel||[]).length);rs.forEach(r=>romDividir(r,romColsR(r)));renderRom();toast(`${rs.length} peça(s) divididas entre os banhos.`);break}
+    case "rom-bulk-lote":{const idx=ROM.rows.map((r,i)=>[r,i]).filter(([r])=>romSelRows().includes(r)&&!r.lote&&!r.loteDe&&!r.feito&&!Array.isArray(r.conjComp)).map(x=>x[1]).reverse();idx.forEach(i=>romLotear(i,true));if(idx.length)toast(`${idx.length} item(ns) viraram lote.`);else toast("Nenhuma peça elegível (já é lote, já lançada ou conjunto).");break}
+    case "rom-bulk-criar":{const v=t.dataset.v==="1",rs=romSelRows().filter(r=>!r.feito&&!r.lote);rs.forEach(r=>{r.skip=!v});renderRom();toast(`${rs.length} peça(s) ${v?"marcadas para criar":"marcadas para não criar"}.`);break}
+    case "rom-passo":{romPassoIr(+t.dataset.p);break}
+    case "novidades":novidadesAbrir();break
     case "fisc-aplicar":{fiscalAplicarTodas();break}
     case "rom-lotear":{romLotear(+t.dataset.i);break}
     case "rom-lote-off":{romLoteOff(+t.dataset.i);break}

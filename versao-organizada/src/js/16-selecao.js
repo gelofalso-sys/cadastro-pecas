@@ -27,9 +27,17 @@ function preencherAbaixo(){const b=selBox();if(!b||b.r2<=b.r1||!G.linhas[b.r1])r
   undo={tipo:"multi",antes};salvar(false);renderTopo();if(editId)renderForm();toast("Preenchido para baixo.",{t:"Desfazer",fn:desfazer})}
 /* Mostra a conta da linha selecionada sem alterar a fórmula nem o valor da peça. */
 function detalheCelulaSelecionada(row,L,ri){
-  if(!row||!["Q","R","S","T","U"].includes(L))return "";
+  if(!row||!["P","Q","R","S","T","U","V"].includes(L))return "";
   const x=celulas(row,ri+2)[LET.indexOf(L)],valor=x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null;
   const l=S.lanc.find(p=>p.id===row.lancId),q=numRaw(row.v.W,row.v,0,row.desconto);
+  if(L==="P"){
+    if(valor==null)return "";const cg=l&&catBy(l.v.I)&&num(catBy(l.v.I).compraGrama),pe=pesoLinha(row);
+    if(cg>0&&pe!=null&&Math.abs(r2c(pe*cg)-valor)<0.011)return `Compra: ${fmt(pe)} g × R$ ${brl(cg)}/g (compra por grama da categoria) = R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}.`;
+    return `Compra: R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}${l&&l.lote?` · item ${l.lote.i}/${l.lote.n} de um lote`:""}.`}
+  if(L==="V"){
+    const cs=celulas(row,ri+2),nv=k=>{const c=cs[LET.indexOf(k)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:0},custo=r2c(["P","Q","R","S","T","U"].reduce((t,k)=>t+nv(k),0));
+    if(valor!=null)return `Preço de varejo digitado: R$ ${brl(valor)}${custo>0?` · custo R$ ${brl(custo)} (compra + insumos + banho + verniz) → fator ${fmt(Math.round(valor/custo*100)/100)} · lucro R$ ${brl(r2c(valor-custo))} (${fmt(Math.round((valor-custo)/valor*1000)/10)}%)`:""}.`;
+    return `Preço de varejo vazio (só entra se digitado). Custo R$ ${brl(custo)} (compra + insumos + banho + verniz)${row.mk?` × fator ${fmt(row.mk)} = sugestão R$ ${brl(r2c(custo*row.mk))}`:""}.`}
   if(L==="Q"){
     if(!l)return "";
     if(l.insRom&&!(row.ovs||[]).includes("Q")&&!vazio(l.v.Q))return `Insumos: padrão R$ ${brl(l.insRom.base)} + parte dos insumos do romaneio${l.insRom.rom?" ("+l.insRom.rom+")":""} R$ ${brl(l.insRom.ins)} = R$ ${brl(valor==null?0:valor)} por unidade${q>0&&valor!=null?` × ${fmt(q)} un. = R$ ${brl(valor*q)} na linha`:""}.`;

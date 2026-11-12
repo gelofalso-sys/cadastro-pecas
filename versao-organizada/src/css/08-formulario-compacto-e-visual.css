@@ -56,7 +56,7 @@ em.auto{font-style:normal;font-size:9.5px;font-weight:700;background:var(--accen
 .lb{display:flex;flex-wrap:wrap;align-items:flex-end;gap:5px 8px;margin-bottom:4px;padding-bottom:4px;border-bottom:1px dashed var(--line)}
 .lb:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
 .lb>b{width:84px;padding-bottom:6px;font-size:12px}
-form.lanc.mini .z-orig,form.lanc.mini .z-det,form.lanc.auto-mini .z-orig,form.lanc.auto-mini .z-det{display:none}
+form.lanc.mini .z-orig-extra,form.lanc.mini .z-det,form.lanc.auto-mini .z-orig-extra,form.lanc.auto-mini .z-det{display:none}   /* essencial: categoria e subcategoria ficam; fornecedor, código, desconto, observação e detalhes recolhem */
 /* cadastros */
 .cards{grid-template-columns:repeat(auto-fill,minmax(min(400px,100%),1fr))}
 .card .cfoot{display:flex;justify-content:flex-end;align-items:center;gap:8px;border-top:1px dashed var(--line);padding-top:6px}
@@ -165,3 +165,5 @@ table.t tr.flash td{animation:flash 1.6s ease-out}
 .mod{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .mod select{width:auto;max-width:170px;height:28px}
 @media (max-width:1180px){.fwrap{grid-template-columns:1fr}.graf{position:static}}
+/* o modo essencial usa a classe "mini" no formulário; a regra genérica .mini (rótulos pequenos em linha) não pode virar o formulário de lado */
+form.lanc.mini{display:block;white-space:normal;color:inherit;font-size:inherit;gap:0;align-items:initial}

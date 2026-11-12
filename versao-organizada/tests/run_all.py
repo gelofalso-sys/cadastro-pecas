@@ -34,5 +34,26 @@ for n in sorted(f for f in os.listdir(AQUI) if f.startswith("t") and f.endswith(
     for l in pulos:print("   ",l)
     for l in ruim:print("   ",l)
     falhas+=bool(ruim)
+# ---- testes em Node: regressões puras (*_regressao.js e afins) e cenários com navegador (t*.js) ----
+import shutil
+NODE = shutil.which("node")
+NP = os.environ.get("NODE_PATH") or next((c for c in (os.path.expanduser("~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules"),) if os.path.isdir(c)), "")
+js = sorted(f for f in os.listdir(AQUI) if f.endswith(".js") and (f.startswith("t") or f.endswith("_regressao.js") or f.startswith("banho_") or f.startswith("backup_")))
+if not NODE:
+    print("\nnode não encontrado: testes .js pulados")
+else:
+    for n in js:
+        r = subprocess.run([NODE, os.path.join(AQUI, n)], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           env={**os.environ, "PYTHONIOENCODING": "utf-8", **({"NODE_PATH": NP} if NP else {})}, timeout=300)
+        saida = (r.stdout or "") + (r.stderr or "")
+        if r.returncode and ("Cannot find module 'playwright'" in saida or "Executable doesn't exist" in saida):
+            print(f"{n}: PULADO (playwright/Chrome não disponível para o Node; defina NODE_PATH)")
+            continue
+        ruim = r.returncode != 0
+        print(f"{n}: {'FALHOU' if ruim else 'OK'}")
+        if ruim:
+            for l in saida.strip().splitlines()[-3:]:
+                print("   ", l)
+            falhas += 1
 print("\nFalhas:",falhas)
 sys.exit(1 if falhas else 0)

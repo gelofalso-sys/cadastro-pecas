@@ -99,7 +99,7 @@ function onField(t,isChange){
   if(t.id==="selAll"){G.linhas.forEach((r,ri)=>{if(vis(ri)){if(t.checked)sel.add(r.lancId);else sel.delete(r.lancId)}});renderTopo();return}
   if(t.hasAttribute&&t.hasAttribute("data-sel")){const id=t.closest("tr").dataset.l;if(t.checked)sel.add(id);else sel.delete(id);renderTopo();return}
   if(t.dataset.col){
-    const L=t.dataset.col;f.v[L]=t.value;erro="";if(L==="N")compraGramaAuto(f);
+    const L=t.dataset.col;f.v[L]=t.value;erro="";if(L==="N")compraGramaAuto(f);if(VALIDA_NUM.has(L))campoMsg(t,vazio(t.value)?"":(checaCel(L,t.value).erro||""));
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){const rs=resolverCatSub(t.value,t.dataset.prev||"");if(rs){const dig=t.value.trim();f.v.I=rs.cat;t.value=rs.cat;if(rs.sub)f.v.J=rs.sub;else delete f.v.J;toast(`“${dig}” entendido como ${rs.cat}${rs.sub?" › "+rs.sub:""} · referência ${prefDe(rs.cat,rs.sub)}`)}}
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */

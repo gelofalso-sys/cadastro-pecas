@@ -9,7 +9,7 @@ base=json.loads((Path(__file__).parent/'fixture_config.json').read_text(encoding
 base['banhistas']=fixture['config']['banhistas']
 fixture['config']=base
 seed=json.dumps(json.dumps(fixture,ensure_ascii=True))
-script='try { if (!localStorage.getItem("cadpecas4") && !sessionStorage.getItem("teste-galvanica")) { localStorage.setItem("cadpecas4",'+seed+'); sessionStorage.setItem("teste-galvanica","1"); if(!localStorage.getItem("cadpecas-abertos")) localStorage.setItem("cadpecas-abertos",JSON.stringify({catc:false})); } } catch(e) {}'
+script='try { if (!localStorage.getItem("cadpecas4") && !sessionStorage.getItem("teste-galvanica")) { localStorage.setItem("cadpecas4",'+seed+'); sessionStorage.setItem("teste-galvanica","1"); if(!localStorage.getItem("cadpecas-abertos")) localStorage.setItem("cadpecas-abertos",JSON.stringify({catc:false,min:false,romc:false})); } } catch(e) {}'
 original=Page.goto
 def goto(self,*args,**kwargs):
     self.add_init_script(script=script)

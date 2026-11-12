@@ -80,21 +80,21 @@ function romInsCampo(t,fin){
   romAtualSoon()}
 /* chip em cada cartão e resumo: chamado por romAtual */
 function romExtrasAtual(){
-  if(!ROM)return;const res=document.getElementById("rinsRes");if(res)res.textContent=romInsResumoTxt();
+  if(!ROM)return;romPassosAtual();const res=document.getElementById("rinsRes");if(res)res.textContent=romInsResumoTxt();
   const ctx=romInsCtx();
   ROM.rows.forEach((r,i)=>{if(r.lote)return;const rc=document.querySelector(`#romWrap .rc[data-i="${i}"]`),ch=rc&&rc.querySelector("[data-rins-c]");if(!ch)return;const v=romInsRateio(r,ctx);ch.hidden=!(v>0);if(v>0)ch.textContent=`+ insumos do romaneio R$ ${brl(v)}/un`})}
 
 /* ---------- lote para qualquer item do romaneio (pesar peça por peça) e desativar ---------- */
-function romLotear(i){
+function romLotear(i,quiet){
   const r=ROM&&ROM.rows[i];if(!r)return;
-  if(r.lote||r.loteDe){toast("Este item já é um lote.");return}
+  if(r.lote||r.loteDe){if(!quiet)toast("Este item já é um lote.");return}
   if(r.feito||(r.lancIds||[]).length){toast("Este item já foi lançado: revogue o lançamento antes de transformá-lo em lote.");return}
   if(Array.isArray(r.conjComp)){toast("Desfaça o conjunto antes de transformar o item em lote.");return}
   const qtd=Math.max(1,Math.min(60,Math.trunc(num(r.qtd)||1))),cu=num(r.custo)||0,pesoUn=num(r.peso)||0;
   r.lote=true;r.lid=uid();r.semPeso=true;r.und="";r.total=r2c(cu*qtd);r.loteG=null;r.precoG=null;r.ratear=true;r.qtdAntes=r.qtd;r.skip=true;r.aviso="lote: pese as peças";
   r.custoUn=r.custo;r.pesoUn=r.peso;r.peso="";r.q={};
   romLoteAdd(r,qtd,pesoUn>0?pesoUn:null);
-  toast(`${qtd} item(ns) criados no lote, numerados 1/${qtd}. Pese cada um: o valor do lote (R$ ${brl(r.total)}) se reparte pelo peso.`)}
+  if(!quiet)toast(`${qtd} item(ns) criados no lote, numerados 1/${qtd}. Pese cada um: o valor do lote (R$ ${brl(r.total)}) se reparte pelo peso.`)}
 function romLoteOff(i){
   const lot=ROM&&ROM.rows[i];if(!lot||!lot.lote)return;
   const kids=romLoteKids(lot);
@@ -145,3 +145,25 @@ function fiscalAplicarTodas(){
   Object.entries(vals).forEach(([k,v])=>{C.categorias.forEach(c=>{c[k]=v;n++})});
   if(!n){toast("Preencha pelo menos um campo na linha “Todas as categorias”.");return}
   abertos.fiscall=true;guardarAbertos();salvar(true,false);render();toast(`${Object.keys(vals).length} campo(s) aplicado(s) a ${C.categorias.length} categorias.`)}
+
+/* ---------- seleção para ações em massa ---------- */
+function romSelRows(){const s=ROM.rows.filter(r=>r.sel&&!r.lote);return s.length?s:ROM.rows.filter(r=>!r.lote)}
+
+/* ---------- passos do romaneio: 1 Importar · 2 Pesos · 3 Revisar · 4 Criar ---------- */
+function romPassosEstado(){
+  const rs=ROM.rows.filter(r=>!r.lote),at=ROM.rows.filter(r=>!r.skip&&!r.lote);
+  const sp=at.filter(r=>num(r.peso)==null).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=0,
+    tam=at.filter(r=>{const g=gradeDaCat(r.cat,r.sub);return g&&!r.semG&&!(r.gsel||[]).length&&!Array.isArray(r.conjComp)}).length,
+    lotes=ROM.rows.filter(r=>r.lote&&!r.semPeso).length,pend=sp+dv+tam;
+  return {n:rs.length,pend,sp,dv,tam,lotes,conf:ROM.conf||"",pronto:rs.length>0&&pend===0}}
+function romPassosHTML(){
+  if(!ROM||!ROM.rows.length)return "";
+  const e=romPassosEstado(),ok=!/⚠/.test(e.conf);
+  const p=(n,txt,estado,tit)=>`<li class="${estado}"><button type="button" data-act="rom-passo" data-p="${n}" title="${esc(tit)}"><b>${estado==="ok"?"✓":n}</b> ${txt}</button></li>`;
+  return `<ol class="rom-passos" id="romPassos" aria-label="Passos do romaneio">${p(1,`Importar <small>${e.n} peça(s)</small>`,"ok","Voltar ao topo para importar de novo")}${p(2,`Pesos e divisão <small>${e.pend?e.pend+" pendente(s)":"tudo certo"}</small>`,e.pend?"pend":"ok","Ir para a próxima pendência")}${p(3,`Conferir <small>${ok?"lista confere":"há diferença"}</small>`,ok?"ok":"pend","Ver a conferência com a lista do fornecedor")}${p(4,"Criar peças",e.pronto?"ok":"off","Ir para o botão Criar")}</ol>`}
+function romPassosAtual(){const el=document.getElementById("romPassos");if(!el||!ROM)return;const t=document.createElement("div");t.innerHTML=romPassosHTML();const n=t.firstElementChild;if(n)el.replaceWith(n)}
+function romPassoIr(p){
+  if(p===1){const b=document.getElementById("impBar");if(b)b.scrollIntoView({block:"start",behavior:"smooth"});return}
+  if(p===2){const bt=document.querySelector('#romWrap [data-act="rom-pend"]');if(bt)bt.click();return}
+  if(p===3){const c=document.getElementById("romChk");if(c)c.scrollIntoView({block:"center",behavior:"smooth"});return}
+  const b=document.getElementById("romCriar");if(b){b.scrollIntoView({block:"center",behavior:"smooth"});b.focus({preventScroll:true})}}

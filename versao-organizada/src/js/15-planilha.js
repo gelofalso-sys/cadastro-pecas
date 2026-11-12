@@ -130,7 +130,7 @@ function renderTopo(){try{romResync()}catch(e){}
       const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(L==="N"?(Math.round(x.v*1000)/1000).toFixed(3).replace(/0$/,"").replace(".",","):DUAS.has(L)?brl(x.v):fmt(x.v)):x.v;
       h+=`<td class="${isN?"n":""}${x.f?" fx":""}${ov}" data-c="${L}" title="${x.f?"="+esc(x.f):esc(x.v)}">${esc(txt)}</td>`});
     h+=`</tr>`;return h};
-  const nb=Math.max(6,30-g.linhas.length);
+  const nb=Math.max(4,10-g.linhas.length);   /* poucas linhas em branco: a tabela vazia não precisa ocupar a tela */
   const trBlank=ri=>{const k=ri-g.linhas.length;return `<tr class="blank" data-ri="${ri}"><td class="k"><span class="nb">${k===0?"nova":""}</span></td><td class="k nm"></td><td class="tf"></td><td class="tf"></td>${LET.map((L,x)=>`<td data-c="${L}"${k===0&&x===0?' class="ph"':""}></td>`).join("")}</tr>`};
   {const lista=[];g.linhas.forEach((row,ri)=>{if(!FV||FV.has(ri))lista.push(ri)});for(let k=0;k<nb;k++)lista.push(g.linhas.length+k);
    const rowHtml=ri=>ri<g.linhas.length?trReal(ri):trBlank(ri);
