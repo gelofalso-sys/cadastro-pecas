@@ -8,6 +8,7 @@ function valorCol(c,x){
   let o=x||null;
   const vaz=!o||(o.v==null&&!o.f)||(typeof o.v==="string"&&o.v.trim()==="");
   if(vaz){if(vazio(c.padrao))return null;o={v:String(c.padrao)}}
+  if(c.k==="I"&&o&&typeof o.v==="string"){const cx=catBy(o.v);if(cx&&cx.nomeExport)o={...o,v:cx.nomeExport}}   /* nome da categoria como a planilha/Jueri conhece */
   const t=c.tipo||"";
   if(t==="texto")return {v:o.v==null?(o.txt||(o.f?"="+o.f:"")):String(o.v)};
   if(o.v==null&&o.f){const fz0=(t==="numero"||t==="inteiro"||t==="dinheiro")?num(c.fator):null;   /* fórmula também recebe o fator da coluna */

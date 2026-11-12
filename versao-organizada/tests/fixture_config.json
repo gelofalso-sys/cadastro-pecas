@@ -1,0 +1,755 @@
+{
+  "modelos": [
+    {
+      "id": "jueri",
+      "nome": "Jueri",
+      "cols": [
+        {
+          "k": "A",
+          "h": "ID",
+          "on": true
+        },
+        {
+          "k": "B",
+          "h": "Foto",
+          "on": true
+        },
+        {
+          "k": "C",
+          "h": "Código de Barras",
+          "on": true
+        },
+        {
+          "k": "D",
+          "h": "Código Pai",
+          "on": true
+        },
+        {
+          "k": "E",
+          "h": "Referência",
+          "on": true
+        },
+        {
+          "k": "F",
+          "h": "Descrição",
+          "on": true
+        },
+        {
+          "k": "G",
+          "h": "Código do Fornecedor",
+          "on": true
+        },
+        {
+          "k": "H",
+          "h": "Fornecedor",
+          "on": true
+        },
+        {
+          "k": "I",
+          "h": "Categoria",
+          "on": true
+        },
+        {
+          "k": "J",
+          "h": "Subcategoria",
+          "on": true
+        },
+        {
+          "k": "K",
+          "h": "Tamanho",
+          "on": true
+        },
+        {
+          "k": "L",
+          "h": "Cor",
+          "on": true
+        },
+        {
+          "k": "M",
+          "h": "Observação",
+          "on": true
+        },
+        {
+          "k": "N",
+          "h": "Peso",
+          "on": true
+        },
+        {
+          "k": "O",
+          "h": "Milésimos de Banho",
+          "on": true
+        },
+        {
+          "k": "P",
+          "h": "Custo de Compra",
+          "on": true
+        },
+        {
+          "k": "Q",
+          "h": "Custo de Insumos",
+          "on": true
+        },
+        {
+          "k": "R",
+          "h": "Custo do Banho de Ouro",
+          "on": true
+        },
+        {
+          "k": "S",
+          "h": "Custo do Banho de Ródio",
+          "on": true
+        },
+        {
+          "k": "T",
+          "h": "Custo do Banho de Prata",
+          "on": true
+        },
+        {
+          "k": "U",
+          "h": "Custo do Banho de Verniz",
+          "on": true
+        },
+        {
+          "k": "V",
+          "h": "Preço de Varejo",
+          "on": true
+        },
+        {
+          "k": "W",
+          "h": "Quantidade",
+          "on": true
+        },
+        {
+          "k": "X",
+          "h": "Localização",
+          "on": true
+        },
+        {
+          "k": "Y",
+          "h": "Número NCM",
+          "on": true
+        },
+        {
+          "k": "Z",
+          "h": "Número EAN",
+          "on": true
+        },
+        {
+          "k": "AA",
+          "h": "CFOP",
+          "on": true
+        },
+        {
+          "k": "AB",
+          "h": "FCP",
+          "on": true
+        },
+        {
+          "k": "AC",
+          "h": "Imposto",
+          "on": true
+        },
+        {
+          "k": "AD",
+          "h": "Exibir no Catálogo",
+          "on": true
+        },
+        {
+          "k": "AE",
+          "h": "Status",
+          "on": true
+        }
+      ]
+    }
+  ],
+  "modelo": "jueri",
+  "v9": true,
+  "v10": true,
+  "v12": true,
+  "seqs": {
+    "BR": "1669",
+    "CO": "0",
+    "AN": "0",
+    "PU": "0",
+    "TZ": "0",
+    "CJ": "0",
+    "PG": "0",
+    "AC": "0",
+    "IN": "0",
+    "MA": "0",
+    "PE": "0",
+    "RL": "0"
+  },
+  "ordem": "int",
+  "v11": true,
+  "colcfg": {
+    "A": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "B": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "C": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "D": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "E": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "F": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": true
+    },
+    "G": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "H": {
+      "form": true,
+      "manter": true,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "I": {
+      "form": true,
+      "manter": true,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "J": {
+      "form": true,
+      "manter": true,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "K": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "L": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "M": {
+      "form": true,
+      "manter": true,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "N": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "O": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "P": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "Q": {
+      "form": true,
+      "manter": false,
+      "padrao": "0.5",
+      "opcoes": "",
+      "obrig": false
+    },
+    "R": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "S": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "T": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "U": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "V": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": true
+    },
+    "W": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": true
+    },
+    "X": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "Y": {
+      "form": true,
+      "manter": false,
+      "padrao": "71131100",
+      "opcoes": "",
+      "obrig": false
+    },
+    "Z": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "AA": {
+      "form": true,
+      "manter": false,
+      "padrao": "5102",
+      "opcoes": "",
+      "obrig": false
+    },
+    "AB": {
+      "form": true,
+      "manter": false,
+      "padrao": "2",
+      "opcoes": "",
+      "obrig": false
+    },
+    "AC": {
+      "form": true,
+      "manter": false,
+      "padrao": "",
+      "opcoes": "",
+      "obrig": false
+    },
+    "AD": {
+      "form": true,
+      "manter": false,
+      "padrao": "Não",
+      "opcoes": "",
+      "obrig": false
+    },
+    "AE": {
+      "form": true,
+      "manter": false,
+      "padrao": "Ativo",
+      "opcoes": "",
+      "obrig": false
+    }
+  },
+  "banhistas": [],
+  "grades": [],
+  "romaneios": [
+    {
+      "id": "carlinha",
+      "nome": "Clube de Compras da Carlinha",
+      "padrao": "{desc} [#{cod}] R$ {preco} R$ {precod} {qtd} R$ {total}",
+      "ini": "Valor Total",
+      "fim": "Valor Produtos",
+      "lixo": "P.gina \\d+/\\d+",
+      "obsRe": "Romaneio do (.+?) Pedido",
+      "mapa": "Colar=Colares; Corrente=Colares>Correntes; Choker=Colares>Chokers; Brinco=Brincos; Argola=Brincos>Argolas; Pingente=Pingentes; Anel=Anel; Pulseira=Pulseiras; Conjunto=Conjuntos",
+      "custo": "precod",
+      "qtdRe": "Quantidade Total de Produtos:\\s*(\\d+)",
+      "valorRe": "Valor Produtos(?: \\(sem desconto\\))?:\\s*R\\$\\s*(\\d[\\d.]*,\\d{2})"
+    },
+    {
+      "id": "pedido-peso",
+      "nome": "Pedido com itens por peso (GR)",
+      "padrao": "{item} {cod} {desc} {u}{qv} {pu} {total}",
+      "ini": "Unit. Total",
+      "fim": "Total Produtos",
+      "obsRe": "N. Pedido:\\s*(\\d+)",
+      "mapa": "Brinco=Brincos; Corrente=Colares>Correntes; Pingente=Pingentes; Anel=Anel; Pulseira=Pulseiras; Colar=Colares",
+      "auto": false,
+      "custo": "preco",
+      "valorRe": "Total Produtos:\\s*(\\d[\\d.]*,\\d{2})"
+    }
+  ],
+  "categorias": [
+    {
+      "nome": "Acessórios",
+      "prefixo": "AC",
+      "subs": []
+    },
+    {
+      "nome": "Anel",
+      "prefixo": "AN",
+      "subs": [],
+      "grade": {
+        "id": "aro",
+        "nome": "Tamanhos de anel",
+        "rotulo": " aro ",
+        "col": "K",
+        "subs": [],
+        "itens": [
+          {
+            "id": "a11",
+            "letra": "A",
+            "nome": "11"
+          },
+          {
+            "id": "a12",
+            "letra": "B",
+            "nome": "12"
+          },
+          {
+            "id": "a13",
+            "letra": "C",
+            "nome": "13"
+          },
+          {
+            "id": "a14",
+            "letra": "D",
+            "nome": "14"
+          },
+          {
+            "id": "a15",
+            "letra": "E",
+            "nome": "15"
+          },
+          {
+            "id": "a16",
+            "letra": "F",
+            "nome": "16"
+          },
+          {
+            "id": "a17",
+            "letra": "G",
+            "nome": "17"
+          },
+          {
+            "id": "a18",
+            "letra": "H",
+            "nome": "18"
+          },
+          {
+            "id": "a19",
+            "letra": "I",
+            "nome": "19"
+          },
+          {
+            "id": "a20",
+            "letra": "J",
+            "nome": "20"
+          },
+          {
+            "id": "a21",
+            "letra": "K",
+            "nome": "21"
+          },
+          {
+            "id": "a22",
+            "letra": "L",
+            "nome": "22"
+          },
+          {
+            "id": "a23",
+            "letra": "M",
+            "nome": "23"
+          },
+          {
+            "id": "a24",
+            "letra": "N",
+            "nome": "24"
+          },
+          {
+            "id": "a25",
+            "letra": "O",
+            "nome": "25"
+          }
+        ]
+      }
+    },
+    {
+      "nome": "Brincos",
+      "prefixo": "BR",
+      "subs": [
+        "Argolas",
+        "Grandes",
+        "Médios",
+        "Pequenos",
+        "Piercings",
+        "Trios/duos"
+      ]
+    },
+    {
+      "nome": "Colares",
+      "prefixo": "CO",
+      "subs": [
+        "Chokers",
+        "Correntes",
+        "Gargantilhas",
+        "Longos"
+      ]
+    },
+    {
+      "nome": "Conjuntos",
+      "prefixo": "CJ",
+      "subs": []
+    },
+    {
+      "nome": "Infantil",
+      "prefixo": "IN",
+      "subs": [
+        "Brincos",
+        "Colares",
+        "Conjuntos",
+        "Pulseiras"
+      ],
+      "subPref": {
+        "Brincos": "BR",
+        "Colares": "CO",
+        "Conjuntos": "CJ",
+        "Pulseiras": "PU"
+      }
+    },
+    {
+      "nome": "Masculinos",
+      "prefixo": "MA",
+      "subs": [
+        "Correntes",
+        "Pulseiras"
+      ],
+      "subPref": {
+        "Correntes": "CO",
+        "Pulseiras": "PU"
+      }
+    },
+    {
+      "nome": "Personalizado",
+      "prefixo": "PE",
+      "subs": []
+    },
+    {
+      "nome": "Pingentes",
+      "prefixo": "PG",
+      "subs": []
+    },
+    {
+      "nome": "Prata 925",
+      "prefixo": "BR",
+      "sufixo": " Prata 925",
+      "subs": [
+        "Brincos",
+        "Colares",
+        "Anéis",
+        "Pulseiras",
+        "Pingentes",
+        "Conjuntos"
+      ],
+      "subPref": {
+        "Brincos": "BR",
+        "Colares": "CO",
+        "Anéis": "AN",
+        "Pulseiras": "PU",
+        "Pingentes": "PG",
+        "Conjuntos": "CJ"
+      },
+      "subSoRef": {
+        "Brincos": true,
+        "Colares": true,
+        "Anéis": true,
+        "Pulseiras": true,
+        "Pingentes": true,
+        "Conjuntos": true
+      },
+      "grade": {
+        "id": "aro-p",
+        "nome": "Tamanhos de anel",
+        "rotulo": " aro ",
+        "col": "K",
+        "subs": [
+          "Anéis"
+        ],
+        "itens": [
+          {
+            "id": "a11",
+            "letra": "A",
+            "nome": "11"
+          },
+          {
+            "id": "a12",
+            "letra": "B",
+            "nome": "12"
+          },
+          {
+            "id": "a13",
+            "letra": "C",
+            "nome": "13"
+          },
+          {
+            "id": "a14",
+            "letra": "D",
+            "nome": "14"
+          },
+          {
+            "id": "a15",
+            "letra": "E",
+            "nome": "15"
+          },
+          {
+            "id": "a16",
+            "letra": "F",
+            "nome": "16"
+          },
+          {
+            "id": "a17",
+            "letra": "G",
+            "nome": "17"
+          },
+          {
+            "id": "a18",
+            "letra": "H",
+            "nome": "18"
+          },
+          {
+            "id": "a19",
+            "letra": "I",
+            "nome": "19"
+          },
+          {
+            "id": "a20",
+            "letra": "J",
+            "nome": "20"
+          },
+          {
+            "id": "a21",
+            "letra": "K",
+            "nome": "21"
+          },
+          {
+            "id": "a22",
+            "letra": "L",
+            "nome": "22"
+          },
+          {
+            "id": "a23",
+            "letra": "M",
+            "nome": "23"
+          },
+          {
+            "id": "a24",
+            "letra": "N",
+            "nome": "24"
+          },
+          {
+            "id": "a25",
+            "letra": "O",
+            "nome": "25"
+          }
+        ]
+      }
+    },
+    {
+      "nome": "Pulseiras",
+      "prefixo": "PU",
+      "subs": []
+    },
+    {
+      "nome": "Relógios",
+      "prefixo": "RL",
+      "subs": []
+    },
+    {
+      "nome": "Tornozeleiras",
+      "prefixo": "TZ",
+      "subs": []
+    }
+  ],
+  "fornecedores": [],
+  "cores": [
+    "Ouro",
+    "Prata",
+    "Ródio",
+    "Prata 925",
+    "Ródio negro",
+    "Rosé",
+    "Azul",
+    "Cristal",
+    "Branco",
+    "Preto",
+    "Verde",
+    "Vermelho",
+    "Rosa",
+    "Lilás",
+    "Roxo",
+    "Amarelo",
+    "Laranja",
+    "Marrom",
+    "Grafite",
+    "Champagne",
+    "Nude",
+    "Turquesa",
+    "Pérola",
+    "Bege",
+    "Cinza",
+    "Multicolorido"
+  ],
+  "observacoes": [],
+  "coresMeta": {}
+}

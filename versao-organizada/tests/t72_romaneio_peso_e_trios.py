@@ -8,7 +8,7 @@ url = (Path(__file__).resolve().parent.parent / 'Cadastro de Pecas - abrir no Ch
 EL = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.home() / 'Downloads' / 'Pedido_59830 (1).pdf'
 if not EL.exists():
     print('PULADO: PDF não encontrado', EL); sys.exit(0)
-TX = {'ouro': {'Brincos': 1, 'Masculinos': 1.8, 'Pingentes': 2.5, 'Colares': 3, 'Anél': 2}, 'prata': {'Brincos': .5, 'Masculinos': .9, 'Pingentes': 1.2, 'Colares': 1.5, 'Anél': 1}}
+TX = {'ouro': {'Brincos': 1, 'Masculinos': 1.8, 'Pingentes': 2.5, 'Colares': 3, 'Anel': 2}, 'prata': {'Brincos': .5, 'Masculinos': .9, 'Pingentes': 1.2, 'Colares': 1.5, 'Anel': 1}}
 VZ = .42
 
 

@@ -34,12 +34,12 @@ document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
     const row=G&&G.linhas[r];if(row&&row.lancId&&row.lancId!==editId&&!formSujo()&&!celular()){const lid=row.lancId;editar(lid);if(G.linhas[r]&&G.linhas[r].lancId===lid)selR={ar:r,ac:c,fr:r,fc:c}}
     abrirCel(r,td.dataset.c,true)}});
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
-function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=cfg().banhistas[0].id;conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
+function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=(cfg().banhistas[0]||{}).id||"";conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del","cv-del","cv-todas","cv-num"];
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo==="conjunto"){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];
-    if(!f.banhista)f.banhista=cfg().banhistas[0].id;if(!editId&&f.v.I!=="Conjuntos"&&catBy("Conjuntos")){f.v.I="Conjuntos";delete f.v.J;sincGrade(f)}
+    if(!f.banhista)f.banhista=(cfg().banhistas[0]||{}).id||"";if(!editId&&f.v.I!=="Conjuntos"&&catBy("Conjuntos")){f.v.I="Conjuntos";delete f.v.J;sincGrade(f)}
     conjSync(f);salvar(false);renderTopo();renderForm();refocar('#conj [data-cp="desc"]');return}
   if(t.dataset.tipo){if(S.form.conj){conjLimpar(S.form);delete S.form.conj}S.form.tipo=t.dataset.tipo;if(t.dataset.tipo==="bruta"&&!Object.values(S.form.on||{}).some(Boolean))marcadosPadrao(S.form);if(t.dataset.tipo==="bruta"&&!editId)banhistaDoFornecedor(S.form);salvar(false);renderTopo();renderForm();focarPrimeiro();return}
   const a=t.dataset.act,C=cfg(),tr=t.closest("tr[data-l],.pc[data-l]");
@@ -105,6 +105,7 @@ document.addEventListener("click",e=>{
       toast(`“${mo.nome}” pronto: é só escolher “${mo.nome}” em Exportar para e baixar. Faça um teste pequeno no outro sistema antes de importar tudo.`);break}
     case "mod-conferir":{const g=gerar();if(!g.linhas.length){toast("A tabela está vazia: lance ou cole peças antes de conferir.");break}if(!abrirConferencia(g,colunasExport(),null))toast("Tudo certo: a tabela atende às regras do modelo.");break}
     case "mod-salvar":modeloParaJson(modeloAtual());break;
+    case "exp-ir":{const ref=t.dataset.ref,ri=G&&G.linhas.findIndex(r=>String(r.v.E||"")===ref);if(ri==null||ri<0){toast("A peça não está na tabela atual.");break}if(FV&&!FV.has(ri)){toast("Esta peça está fora do filtro atual. Feche esta janela e limpe o filtro para encontrá-la.");break}const o=t.closest(".rep");if(o)o.remove();expPend=null;visPara(celular()?"planilha":"tudo");const col=LET.findIndex(L=>NOME[L]===t.dataset.colnome);selecionar(ri,col>=0?col:LET.indexOf("F"));rolarAte();setTimeout(()=>{const e=document.querySelector("#sheet td.sa");if(e)e.focus()},100);break}
     case "exp-assim":{const o=document.querySelector(".rep");if(o)o.remove();const a=expPend;expPend=null;if(a&&a.tipo==="copiar")copiar(a.ids,true);else baixar(true,a&&a.ids);break}
     case "mod-bling":{const mo=modeloBling();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast("Modelo Bling criado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele (depois de cadastrá-los, ligue-os em “Recebe o dado de”). Use o botão Validar do Bling antes de Importar.");break}
     case "mod-jueri":{const mo=modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();break}
@@ -112,8 +113,8 @@ document.addEventListener("click",e=>{
     case "add-limpar":adicionar(true);break;
     case "tg-min":abertos.min=!abertos.min;guardarAbertos();renderForm();break;
     case "tg-det":abertos.det=!abertos.det;guardarAbertos();renderForm();break;
-    case "rom-q":{const f=S.form,i=t.dataset.i!=null?+t.dataset.i:null,r=i!=null&&ROM?ROM.rows[i]:null;romQ0={I:f.v.I,J:f.v.J};romQRow=i;if(r&&["sub","gi","cv"].includes(t.dataset.q)){if(r.cat)f.v.I=r.cat;if(t.dataset.q!=="sub"){if(r.sub)f.v.J=r.sub;else delete f.v.J}}quick=t.dataset.q;quickB=null;renderForm();const el=document.querySelector("#formWrap .nf");if(el)el.scrollIntoView({block:"center"});refocar("#q1");break}
-    case "q":quickPre="";quick=quick===t.dataset.q&&(t.dataset.qb||null)===quickB?null:t.dataset.q;quickB=quick?(t.dataset.qb||null):null;renderForm();break;
+    case "rom-q":{if(t.dataset.q==="bh"||t.dataset.q==="bn"){qIrGalvanica(t.dataset.q);break}const f=S.form,i=t.dataset.i!=null?+t.dataset.i:null,r=i!=null&&ROM?ROM.rows[i]:null;romQ0={I:f.v.I,J:f.v.J};romQRow=i;if(r&&["sub","gi","cv"].includes(t.dataset.q)){if(r.cat)f.v.I=r.cat;if(t.dataset.q!=="sub"){if(r.sub)f.v.J=r.sub;else delete f.v.J}}quick=t.dataset.q;quickB=null;renderForm();const el=document.querySelector("#formWrap .nf");if(el)el.scrollIntoView({block:"center"});refocar("#q1");break}
+    case "q":if(t.dataset.q==="bh"||t.dataset.q==="bn"){qIrGalvanica(t.dataset.q);break}quickPre="";quick=quick===t.dataset.q&&(t.dataset.qb||null)===quickB?null:t.dataset.q;quickB=quick?(t.dataset.qb||null):null;renderForm();break;
     case "q-salvar":salvarRapido();break;
     case "multi-mais":{MULTI.push({F:"",N:"",P:""});renderForm();const ins=document.querySelectorAll('#multiPanel [data-mf="F"]');if(ins.length)ins[ins.length-1].focus();break}
     case "multi-del":{MULTI.splice(+t.dataset.i,1);renderForm();break}
@@ -136,7 +137,7 @@ document.addEventListener("click",e=>{
     case "ponto-voltar":pontoRestaurar(t.dataset.k);break;
     case "ir":if(celular())formAbrir(false);irPara(t.dataset.sec);break;
     case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);break;
-    case "exemplo":S.lanc=exemplo();salvar(false);renderTopo();break;
+    case "exemplo":abrirExemploVisual();break;
     case "xlsx":baixar();break;
     case "copiar":copiar();break;
     case "exp-limpar":gravarExport(true);break;case "exp-so":gravarExport(false);break;case "exp-nao":lastExport=null;renderTopo();break;
@@ -196,6 +197,17 @@ document.addEventListener("click",e=>{
     case "imp-limpar":{IMPQ=[];renderImp();break}
     case "imp-abrir":{const q=IMPQ.splice(+t.dataset.i,1)[0];renderImp();if(q)impAbrirArq(q.file);break}
     case "rom-nova":{romNovaPeca();break}
+    case "trabalho-toggle":trabalhoAberto=!trabalhoAberto;renderForm();break;
+    case "preset-salvar":{const el=document.querySelector("[data-preset-nome]"),nome=el&&el.value.trim();if(!nome){toast("Digite um nome para a combinação.");break}C.presetsLancamento=Array.isArray(C.presetsLancamento)?C.presetsLancamento:[];if(C.presetsLancamento.some(p=>semAc(p.nome)===semAc(nome))){toast("Já existe uma combinação com esse nome.");break}if(C.presetsLancamento.length>=30){toast("Limite de 30 combinações.");break}C.presetsLancamento.push(presetAtual(nome));salvar(true,false);renderForm();toast("Combinação salva.");break}
+    case "preset-usar":case "preset-excluir":{const el=document.querySelector("[data-preset-select]"),ps=C.presetsLancamento||[],i=el&&el.value!==""?Number(el.value):-1;if(!ps[i]){toast("Escolha uma combinação.");break}if(a==="preset-usar")presetAplicar(ps[i]);else{if(!confirm(`Excluir a combinação “${ps[i].nome}”?`))break;ps.splice(i,1);salvar(true,false);renderForm();toast("Combinação excluída.")}break}
+    case "banco-toggle":bancoAberto=!bancoAberto;renderForm();break;
+    case "banco-adicionar":{const f=S.form,c=catBy(f.v.I),el=document.querySelector('[data-banco-nova]');if(!c||!el)break;const palavras=el.value.split(";").map(x=>x.trim().replace(/\s+/g," ")).filter(x=>x&&x.length<=60);if(!palavras.length){toast("Digite uma palavra ou expressão.");break}const chave=f.v.J||"",lista=bancoLista(c.nome,chave).slice();palavras.forEach(w=>{if(!lista.some(x=>semAc(x)===semAc(w)))lista.push(w)});c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[chave]=lista.slice(0,100);salvar(true,false);renderForm();bancoEditarAbrir();toast("Palavras salvas para "+(chave||c.nome)+".");break}
+    case "banco-remover":{const f=S.form,c=catBy(f.v.I);if(!c)break;const chave=f.v.J||"";c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[chave]=bancoLista(c.nome,chave).filter(x=>semAc(x)!==semAc(t.dataset.w));salvar(true,false);renderForm();bancoEditarAbrir();break}
+    case "banco-restaurar":{const f=S.form,c=catBy(f.v.I);if(!c)break;const chave=f.v.J||"";if(c.bancoPalavras)delete c.bancoPalavras[chave];salvar(true,false);renderForm();bancoEditarAbrir();toast("Sugestões iniciais restauradas.");break}
+    case "desc-palavra":{const f=S.form,w=t.dataset.w,cur=String(f.v.F||"");f.v.F=cur.replace(/\s+$/,"")+(cur.trim()?" ":"")+w+" ";f._descAuto="";salvar(false);renderForm();setTimeout(()=>{const d=document.getElementById("f-F");if(d){d.focus();d.setSelectionRange(d.value.length,d.value.length)}},0);break}
+    case "fisc-aplicar":{fiscalAplicarTodas();break}
+    case "rom-lotear":{romLotear(+t.dataset.i);break}
+    case "rom-lote-off":{romLoteOff(+t.dataset.i);break}
     case "imp-ir":{rolarPane(document.getElementById("romWrap"));break}
     case "rom-foto-add":{romFotoEscolher(+t.dataset.i);break}
     case "rom-foto-del":{romFotoRemover(+t.dataset.i);break}
@@ -208,11 +220,11 @@ document.addEventListener("click",e=>{
     case "cor-off":{const f=S.form;f.corOn=false;f.csel=[];renderTopo();renderForm();break}
     case "rom-cor-on":{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);r.corOn=true;renderRom();break}
     case "go-del":C.grades.splice(+t.dataset.k,1);salvar(true,false);renderCfg();break;
-    case "sub-del":C.categorias[ci].subs.splice(+t.dataset.j,1);salvar(true,false);render();break;
+    case "sub-del":{const c=C.categorias[ci],old=c.subs[+t.dataset.j];c.subs.splice(+t.dataset.j,1);[c.bancoPalavras,c.subPalavra,c.subAlias,c.subPref,c.subSoRef].forEach(o=>{if(o)delete o[old]});salvar(true,false);render();break;}
     case "forn-add":{const nomeLivre=b0=>{let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);return n};C.fornecedores.push({nome:nomeLivre("Novo fornecedor"),desconto:"0",tipo:"bruta",codigo:""});salvar(true,false);render();break}
     case "forn-dup":{const i=+t.closest("[data-forn]").dataset.forn,f=clone(C.fornecedores[i]);{const b0=f.nome+" (cópia)";let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);f.nome=n}C.fornecedores.splice(i+1,0,f);salvar(true,false);render();break}
     case "forn-del":{const i=+t.closest("[data-forn]").dataset.forn,fo=C.fornecedores[i],n=S.lanc.filter(l=>l.v&&l.v.H===fo.nome).length,abertos=ROM?ROM.rows.filter(r=>r.forn===fo.nome).length:0;if(!confirm(`Remover o fornecedor “${fo.nome}” dos cadastros? ${n} peça(s) na tabela atual e ${abertos} item(ns) do romaneio aberto usam esse nome. Referências em tabelas e romaneios salvos não são alteradas; ele deixará de aparecer nas opções. As alterações de cadastro podem ser descartadas antes de salvar.`))break;C.fornecedores.splice(i,1);salvar(true,false);render();break}
-    case "bh-add":C.banhistas.push({id:uid(),nome:"Nova galvânica",verniz:"0.42",vernizOn:true,banhos:clone(BANHISTA0.banhos)});salvar(true,false);render();break;
+    case "bh-add":{const b={id:uid(),nome:"Nova galvânica",verniz:"",vernizOn:true,banhos:[]};C.banhistas.push(b);if(qGalvanicaSelecionar){trocarBanhista(S.form,b.id);qGalvanicaSelecionar=false}salvar(true,false);render();break;}
     case "bh-dup":{const b=clone(C.banhistas[bi]);b.id=uid();b.nome+=" (cópia)";C.banhistas.splice(bi+1,0,b);salvar(true,false);render();break}
     case "bh-del":{const id=C.banhistas[bi].id;{const n=S.lanc.filter(l=>l.banhista===id).length;if(n&&!confirm(`${n} peça(s) já lançadas usam esta galvânica. Remover mesmo assim? (Ctrl+Z desfaz)`))break}C.banhistas.splice(bi,1);C.fornecedores.forEach(f=>{if(f.banhista===id)f.banhista=""});salvar(true);render();break}
     case "bn-add":{const b=C.banhistas[bi],usadas=b.banhos.map(x=>x.letra);let L="A";while(usadas.some(u=>String(u).toUpperCase()===L)&&L<"Z")L=String.fromCharCode(L.charCodeAt(0)+1);if(usadas.some(u=>String(u).toUpperCase()===L)){toast("Já existem banhos de A a Z neste galvânica — não cabe mais um.");break}b.banhos.push({id:uid(),nome:"Ródio",letra:L,cor:"Ródio",mil:"",modo:"peso",mult:"",coluna:"S",sufixo:" banho ródio",marcado:false,vz:true});salvar(true,false);render();break}

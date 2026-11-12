@@ -36,6 +36,7 @@ with sync_playwright() as p:
     # renomear categoria -> mapa do romaneio
     pg.click('[data-act="ctab"][data-id="cat"]')
     nomes=pg.eval_on_selector_all('[data-cat] [data-cf="nome"]',"e=>e.map(x=>x.value)");i=nomes.index("Colares")
+    if pg.locator("#cfg .cards.cmp").count(): pg.locator(f'[data-cat="{i}"] .cx').click()
     pg.fill(f'[data-cat="{i}"] [data-cf="nome"]',"Colares X");pg.press(f'[data-cat="{i}"] [data-cf="nome"]',"Tab");pg.wait_for_timeout(500)
     pg.click('[data-act="ctab"][data-id="rom"]')
     vals=pg.eval_on_selector_all('[data-rom] [data-rm="c"]',"e=>e.map(x=>x.value)")

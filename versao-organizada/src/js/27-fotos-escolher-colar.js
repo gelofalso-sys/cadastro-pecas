@@ -92,7 +92,10 @@ function adicionar(limpar,quiet){
   if(!quiet)addTrava=Date.now()+500;
   if(quiet)delete novo.ft;
   if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
-  else{S.lanc.push(novo);undo={tipo:"add",id:novo.id,form:clone(f)};if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
+  else{S.lanc.push(novo);
+    /* criar em lote: N peças separadas, cada uma numerada i/N (1 = desligado) */
+    {const N=!quiet?Math.max(1,Math.min(200,Math.trunc(num(f.loteN)||1))):1;if(N>1){const lid=uid();novo.lote={id:lid,i:1,n:N};for(let k=2;k<=N;k++){const c=clone(novo);c.id=uid();c.lote={id:lid,i:k,n:N};if(c.v)delete c.v.E;S.lanc.push(c)}f.loteN=""}else if(!quiet)delete novo.lote}
+    undo={tipo:"add",id:novo.id,form:clone(f)};if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
   salvar(false);if(quiet)return true;renderForm();
   mostrarNoFim(novo.id);
   focarPrimeiro();return true;

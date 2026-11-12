@@ -22,13 +22,13 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1280,"height":900}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.goto(URL);pg.wait_for_timeout(800)
-    # cores na categoria Anél
+    # cores na categoria Anel
     pg.click('[data-act="ctab"][data-id="cor"]')
     pg.fill('[data-enter="cor"]',"Dourado; Rosé");pg.press('[data-enter="cor"]',"Enter");pg.wait_for_timeout(300)
     pg.fill('[data-lc] [data-lcf="sig"] >> nth=-1',"R");pg.press('[data-lc] [data-lcf="sig"] >> nth=-1',"Tab");pg.wait_for_timeout(300)
     pg.screenshot(path=SC+r"\s_cores_cfg.png")
     # lancar anel com tamanhos e cores
-    (pg.fill("#f-I","Anél"),pg.press("#f-I","Tab"));pg.wait_for_timeout(300)
+    (pg.fill("#f-I","Anel"),pg.press("#f-I","Tab"));pg.wait_for_timeout(300)
     pg.click('[data-act="cor-on"]');pg.wait_for_timeout(200)
     ok(pg.locator("[data-cs]").count()>=2,"form mostra as cores para selecionar")
     pg.fill("#f-F","Anel solitario");pg.fill("#f-N","2");pg.fill("#f-P","10")

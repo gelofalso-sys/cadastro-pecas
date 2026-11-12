@@ -104,14 +104,14 @@ async function migrarFotos(){let mexeu=0;
   return mexeu}
 function lerConfig(c){
   const o=clone(DEFAULT_CONFIG);if(!c)return o;
-  ["seqs","categorias","cores","coresMeta","catAlias","observacoes","ordem","grades","modelos","modelo","romaneios","vLib","vPeso","insumosItens","insumosModo"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
+  ["seqs","categorias","cores","coresMeta","catAlias","observacoes","ordem","grades","modelos","modelo","romaneios","vLib","vPeso","insumosItens","insumosModo","descAuto","continuo","presetsLancamento"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
   if(!Array.isArray(o.insumosItens))o.insumosItens=[];else o.insumosItens=o.insumosItens.filter(x=>x&&typeof x==="object"&&typeof x.nome==="string"&&(x.cat==null||typeof x.cat==="string")&&num(x.qtd)>0&&num(x.qtd)<=1000000&&num(x.valor)!=null&&num(x.valor)>=0&&num(x.valor)<=1000000).slice(0,100);
   if(!["off","somar","substituir"].includes(o.insumosModo))o.insumosModo="off";
   o.categorias.forEach(x=>{if(x&&!Array.isArray(x.subs))x.subs=[]});   /* cópia/backup com categoria sem lista de subcategorias não pode quebrar a tela */
   o.romaneios.forEach(t=>{if(t.id==="carlinha"&&!/Corrente=/.test(t.mapa||"")){const d=ROMS0()[0];t.mapa=d.mapa;t.valorRe=d.valorRe}});
   if(c.colcfg){LET.forEach(L=>{const x=c.colcfg[L]||{};const pad=o.colcfg[L].form;o.colcfg[L]={...o.colcfg[L],...x};if(!c.v6)o.colcfg[L].form=pad})}
   else{const fx=c.fixos||{};if(c.insumos!=null)o.colcfg.Q.padrao=c.insumos;if(fx.ncm!=null)o.colcfg.Y.padrao=fx.ncm;if(fx.cfop!=null)o.colcfg.AA.padrao=fx.cfop;if(fx.fcp!=null)o.colcfg.AB.padrao=fx.fcp;if(fx.catalogo)o.colcfg.AD.padrao=fx.catalogo;if(fx.status)o.colcfg.AE.padrao=fx.status}
-  if(c.banhistas&&c.banhistas.length)o.banhistas=c.banhistas.map(b=>({...b,banhos:b.banhos.map(x=>({modo:"peso",...x}))}));
+  if(Array.isArray(c.banhistas))o.banhistas=c.banhistas.map(b=>({...b,banhos:b.banhos.map(x=>({modo:"peso",...x}))}));
   else if(c.banhos){const b=clone(BANHISTA0);const bo=c.banhos.ouro||{},bp=c.banhos.prata||{};Object.assign(b.banhos[0],{letra:bo.letra||"A",cor:bo.cor||"Ouro",mil:bo.mil??"1",mult:bo.mult??"1.5"});Object.assign(b.banhos[1],{letra:bp.letra||"B",cor:bp.cor||"Prata",mil:bp.mil??"50",mult:bp.mult??"1.54",sufixo:bp.sufixo??" banho prata"});if(c.verniz!=null)b.verniz=c.verniz;o.banhistas=[b]}
   if(c.fornecedores)o.fornecedores=c.fornecedores.map(f=>({banhista:"",...f,tipo:f.tipo==="bruto"?"bruta":f.tipo==="pronto"?"pronta":(f.tipo||"bruta")}));
   if(!c.v7){const pc=o.categorias.find(x=>/prata\s*925/i.test(x.nome||""));const d=DEFAULT_CONFIG.categorias.find(x=>x.nome==="Prata 925");
@@ -143,7 +143,7 @@ function migrarJueri(){
     if(j.subSoRef){c.subSoRef=c.subSoRef||{};c.subs.forEach(x=>{if(!(x in c.subSoRef))c.subSoRef[x]=true})}
   });
   (C.grades||[]).forEach(g=>{
-    if(/an[eé]is/i.test(g.auto||"")&&!/an[eé]l/i.test(g.auto))g.auto=String(g.auto).replace(/an[eé]is/i,"Anél; Anéis");
+    if(/an[eé]is/i.test(g.auto||"")&&!/an[eé]l/i.test(g.auto))g.auto=String(g.auto).replace(/an[eé]is/i,"Anel; Anéis");
     /* Textos copiados no cadastro antigo: se todos têm o mesmo começo (ex.: " aro 12", " aro 14"), era uma cópia do rótulo — passam a seguir o rótulo atual, e o termo antigo ainda é reconhecido na Descrição. */
     const pre=g.itens.map(x=>x.texto!=null&&x.nome&&String(x.texto).endsWith(x.nome)?String(x.texto).slice(0,String(x.texto).length-x.nome.length):null);
     if(g.itens.length>1&&pre.every(v=>v!==null&&v===pre[0])){const o=String(pre[0]).trim();if(o&&o.toLowerCase()!==String(g.rotulo||"").trim().toLowerCase()){g.sin=g.sin||[];if(!g.sin.some(z=>z.toLowerCase()===o.toLowerCase()))g.sin.push(o)}g.itens.forEach(x=>{delete x.texto})}
@@ -152,7 +152,15 @@ function migrarJueri(){
 }
 /* Uma vez por conta: a variação (tamanhos de anel etc.) passa para dentro da categoria, cada banho ganha a marca de verniz e some o que estava fora do lugar (observação na lista de cores). */
 /* v11: a tabela passa a mostrar as peças na ordem em que foram lançadas (a opção "A depois B" continua disponível) */
-function migrarGrades(){const a=migrarGrades0(),C=cfg();let m=a;
+/* "Anél" era um erro de português: a categoria passa a se chamar "Anel" (peças, rascunho e romaneios salvos acompanham). A planilha também passa a usar "Anel"; outros nomes de exportação definidos pelo usuário são preservados. */
+function migrarAnel(){const C=cfg(),existente=(C.categorias||[]).find(x=>x.nome==="Anel"&&x.nomeExport==="Anél");if(existente)delete existente.nomeExport;const c=(C.categorias||[]).find(x=>x.nome==="Anél");if(!c||C.categorias.some(x=>x.nome==="Anel"))return !!existente;
+  c.nome="Anel";if(c.nomeExport==="Anél")delete c.nomeExport;
+  S.lanc.forEach(l=>{if(l.v&&l.v.I==="Anél")l.v.I="Anel"});if(S.form&&S.form.v&&S.form.v.I==="Anél")S.form.v.I="Anel";if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I==="Anél")rascunho.v.I="Anel";
+  C.catAlias=C.catAlias||{};C.catAlias["Anél"]="Anel";
+  (C.insumosItens||[]).forEach(x=>{if(x.cat==="Anél")x.cat="Anel"});(C.categorias||[]).forEach(x=>{if(x.grade&&x.grade.usa==="Anél")x.grade.usa="Anel"});
+  (C.romaneios||[]).forEach(T=>{if(T&&typeof T.mapa==="string")T.mapa=T.mapa.replace(/=\s*Anél(?=\s*[;>]|\s*$)/g,"=Anel")});
+  return true}
+function migrarGrades(){const a0=migrarAnel(),a=migrarGrades0()||a0,C=cfg();let m=a;
   if(!C.v11){C.ordem="int";C.v11=true;m=true}
   /* v12: a variação de anel passa a ter os tamanhos 11 a 25 (os que já existem e suas letras não mudam) */
   if(!C.v12){C.categorias.forEach(c=>{const g=c.grade;if(!g||!(/^aro/.test(g.id)||/anel|anéis|aro/i.test(g.nome||"")))return;

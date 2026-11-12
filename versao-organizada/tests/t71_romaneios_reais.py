@@ -10,7 +10,7 @@ url = (Path(__file__).resolve().parent.parent / 'Cadastro de Pecas - abrir no Ch
 PAT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.home() / 'Downloads' / 'patricinhasemijoias-andrelisesantanalavinobittencourt-link-2836.pdf'
 if not PAT.exists():
     print('PULADO: PDF não encontrado', PAT); sys.exit(0)
-TX = {'ouro': {'Brincos': 1, 'Anél': 2, 'Colares': 3}, 'prata': {'Brincos': .5, 'Anél': 1, 'Colares': 2}}
+TX = {'ouro': {'Brincos': 1, 'Anel': 2, 'Colares': 3}, 'prata': {'Brincos': .5, 'Anel': 1, 'Colares': 2}}
 FATOR = {'ouro': 3, 'prata': 2.5}
 VZ = .42
 
@@ -38,7 +38,7 @@ with sync_playwright() as p:
     for bn, f in FATOR.items():
         x = pg.locator(f'#romWrap [data-rp="mkg"][data-b="{bn}"]'); x.fill(str(f)); x.press('Tab')
     cards = lambda: pg.locator('#romWrap .rc:not(.lote)')
-    cats = ['Conjuntos', 'Anél', 'Brincos', 'Brincos', 'Brincos', 'Brincos', 'Anél', 'Anél', 'Anél', 'Anél', 'Brincos']
+    cats = ['Conjuntos', 'Anel', 'Brincos', 'Brincos', 'Brincos', 'Brincos', 'Anel', 'Anel', 'Anel', 'Anel', 'Brincos']
     for i, c in enumerate(cats):
         cards().nth(i).locator('[data-rp="cat"]').select_option(label=c)
 
@@ -62,7 +62,7 @@ with sync_playwright() as p:
     # 0: conjunto com 3 componentes de categorias diferentes
     r = cards().nth(0); r.locator('.rom-conjunto summary').click(); r.locator('[data-rcj="ativar"]').click(); r = cards().nth(0)
     while r.locator('[data-rcji]').count() < 3: r.locator('[data-rcj="adicionar"]').click()
-    for k, (d, c, qq, ps, cu) in enumerate([('Colar', 'Colares', '1', '2', '5'), ('Brinco', 'Brincos', '2', '0.8', '2.5'), ('Anel', 'Anél', '1', '1.5', '3.5')]):
+    for k, (d, c, qq, ps, cu) in enumerate([('Colar', 'Colares', '1', '2', '5'), ('Brinco', 'Brincos', '2', '0.8', '2.5'), ('Anel', 'Anel', '1', '1.5', '3.5')]):
         it = r.locator('[data-rcji]').nth(k)
         it.locator('[data-rcjf="desc"]').fill(d); it.locator('[data-rcjf="cat"]').select_option(label=c)
         it.locator('[data-rcjf="qtd"]').fill(qq); it.locator('[data-rcjf="peso"]').fill(ps); it.locator('[data-rcjf="custo"]').fill(cu)

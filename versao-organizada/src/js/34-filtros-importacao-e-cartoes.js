@@ -58,7 +58,7 @@ function renderImp(){const el=document.getElementById("impBar");if(!el)return;
   renderImp()}}
 /* ===== v20: cartões de categoria recolhíveis ===== */
 const CARDX=new Set();
-function cardsModoCompacto(){return abertos.catc==null?celular():!!abertos.catc}
+function cardsModoCompacto(){return abertos.catc==null?true:!!abertos.catc}
 function cardsDecorar(){
   const cs=document.querySelector("#cfg .cards");if(!cs||!cs.querySelector(".card[data-cat]"))return;
   const cmp=cardsModoCompacto();cs.classList.toggle("cmp",cmp);

@@ -5,7 +5,7 @@ function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){c
 const DLNAV={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};
 async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}return dl||DLNAV}
 /* pendências antes de exportar: obrigatório vazio, peso faltando (banho sem custo) e banho sem multiplicador */
-function pendenciasExport(g){
+function pendenciasExport(g,porPeca){
   const cc=cfg().colcfg,pend=[];
   g.linhas.forEach((r,i)=>{const falta=[];
     LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):(vazio(r.v[L]))))falta.push(NOME[L])});
@@ -16,19 +16,19 @@ function pendenciasExport(g){
     if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))falta.push("multiplicador do banho (custo do banho fica vazio)");
     if(falta.length)pend.push({i,r,falta})});
   /* o mesmo campo faltando em (quase) todas as peças vira UMA linha de aviso, não dezenas (ex.: sem Preço de Varejo definido) */
-  const cont={};pend.forEach(p=>p.falta.forEach(f=>cont[f]=(cont[f]||0)+1));const tot=g.linhas.length,todos=Object.keys(cont).filter(f=>tot>=4&&cont[f]>=Math.ceil(tot*0.8));
+  const cont={};pend.forEach(p=>p.falta.forEach(f=>cont[f]=(cont[f]||0)+1));const tot=g.linhas.length,todos=porPeca?[]:Object.keys(cont).filter(f=>tot>=4&&cont[f]>=Math.ceil(tot*0.8));
   const out=todos.map(f=>`Em ${cont[f]} de ${tot} peças falta: ${f}. Se isso é esperado (ex.: ainda sem preço de venda), pode seguir.`);
   pend.forEach(p=>{const fl=p.falta.filter(f=>!todos.includes(f));if(fl.length)out.push(`Linha ${p.i+2} (${p.r.v.E||"sem ref."}): ${fl.join(", ")}`)});
   {const dups=[...new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(dups.length)out.unshift(`Referência repetida em ${dups.length} peça(s): ${dups.slice(0,6).join(", ")}${dups.length>6?"…":""}. O arquivo sai assim; confira se o outro sistema aceita referências iguais.`)}
   return out}
 /* conferência antes de exportar: pendências da tabela + regras do modelo escolhido */
 let expPend=null;
-function conferirExport(g,cols){const ger=pendenciasExport(g),mod=validarModelo(g,cols);return {ger,mod,n:ger.length+mod.length}}
+function conferirExport(g,cols){const ger=pendenciasExport(g,true),mod=validarModelo(g,cols);return {ger,mod,n:ger.length+mod.length}}
 function abrirConferencia(g,cols,acao){const p=conferirExport(g,cols);if(!p.n)return false;expPend=acao||null;mostrarConferencia(p,!!acao);return true}
 function mostrarConferencia(p,podeSeguir){const LIM=300,mo=modeloAtual();
   repModal(`<div class="rep-h"><div><b class="rep-t">Conferência antes de exportar</b><div class="hint">Modelo <b>${esc(mo.nome)}</b> · ${p.n} ponto(s) para olhar${p.n>LIM*2?" (mostrando os primeiros)":""}</div></div><div class="rep-ac">${podeSeguir?`<button type="button" class="btn pri sm" data-act="exp-assim">Exportar mesmo assim</button>`:""}<button type="button" class="btn sm" data-act="rel-fechar">${podeSeguir?"Voltar e corrigir":"Fechar"}</button></div></div>
-  ${p.ger.length?`<div class="rep-rf"><b>Pendências da tabela (${p.ger.length})</b></div><div class="rep-tb"><table><tbody>${p.ger.slice(0,LIM).map(s=>`<tr><td>${esc(s)}</td></tr>`).join("")}</tbody></table></div>`:""}
-  ${p.mod.length?`<div class="rep-rf"><b>Regras do modelo (${p.mod.length})</b></div><div class="rep-tb"><table><thead><tr><th class="n">Linha</th><th>Referência</th><th>Coluna</th><th>Problema</th></tr></thead><tbody>${p.mod.slice(0,LIM).map(x=>`<tr><td class="n">${x.l}</td><td class="mono">${esc(x.ref)}</td><td>${esc(x.col)}</td><td class="al-t">${esc(x.msg)}</td></tr>`).join("")}</tbody></table></div>`:""}`)}
+  ${p.ger.length?`<div class="rep-rf"><b>Pendências da tabela (${p.ger.length})</b></div><div class="rep-tb"><table><tbody>${p.ger.slice(0,LIM).map(s=>{const m=s.match(/^Linha \d+ \(([^)]+)\)/);return `<tr><td>${esc(s)} ${m?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(m[1])}">Ir à peça</button>`:""}</td></tr>`}).join("")}</tbody></table></div>`:""}
+  ${p.mod.length?`<div class="rep-rf"><b>Regras do modelo (${p.mod.length})</b></div><div class="rep-tb"><table><thead><tr><th class="n">Linha</th><th>Referência</th><th>Coluna</th><th>Problema</th></tr></thead><tbody>${p.mod.slice(0,LIM).map(x=>`<tr><td class="n">${x.l}</td><td class="mono">${esc(x.ref)} ${x.ref&&x.ref!=="—"?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(x.ref)}" data-colnome="${esc(x.col)}">Ir à peça</button>`:""}</td><td>${esc(x.col)}</td><td class="al-t">${esc(x.msg)}</td></tr>`).join("")}</tbody></table></div>`:""}`)}
 /* arquivo CSV do modelo: separador, decimal e codificação escolhidos no modelo */
 function txtSaida(r,c,dec){if(!r)return "";const v=r.v;if(v==null)return r.f?"="+r.f:"";if(typeof v==="number")return (c.tipo==="dinheiro"?v.toFixed(2):String(v)).replace(".",dec);return String(v)}
 const protegeTxt=s=>{s=String(s==null?"":s);return /^[=+@\t\r]/.test(s)||(s[0]==="-"&&!/^-\d+([.,]\d+)?$/.test(s))?"'"+s:s};

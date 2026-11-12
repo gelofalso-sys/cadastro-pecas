@@ -31,6 +31,7 @@ with sync_playwright() as p:
     ok(tenta(pg,'#cfg input[data-bnf="fator"]',0,"2,5")=="2,5","fator '2,5' e aceito")
     ok(tenta(pg,'#cfg input[data-bhf="nome"]',0,"Scarlat  ")=="Scarlat","nome da galvanica sem espacos nas pontas")
     aba(pg,"Fornecedores")
+    if not pg.locator('#cfg input[data-ff="nome"]').count():pg.click('[data-act="forn-add"]');pg.wait_for_timeout(300)   # instalação nova começa sem fornecedores
     ok(tenta(pg,'#cfg input[data-ff="nome"]',0,"  xangai novo  ")=="xangai novo","nome do fornecedor sem espacos nas pontas")
     ok(not errs,"sem erro de pagina %s"%errs[:2])
     print("FALHAS",f)

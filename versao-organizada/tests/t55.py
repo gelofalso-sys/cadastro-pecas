@@ -31,7 +31,7 @@ with sync_playwright() as p:
     search = page.locator('.rep-busca')
     search.fill('sem correspondencia')
     assert not row.is_visible()
-    search.fill('xangai')
+    search.fill('informado')
     assert row.is_visible()
     page.set_viewport_size({'width':1200, 'height':800})
     page.wait_for_function("getComputedStyle(document.querySelector('.rep .rom-lista tbody tr')).display === 'table-row'")

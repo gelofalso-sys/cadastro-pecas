@@ -32,6 +32,7 @@ with sync_playwright() as p:
     pg.screenshot(path=SC+r"\s_custos.png")
     # fornecedor
     pg.click('[data-act="ctab"][data-id="forn"]');pg.wait_for_timeout(200)
+    if not pg.locator('[data-forn="0"]').count():pg.click('[data-act="forn-add"]');pg.wait_for_timeout(300)   # instalação nova começa sem fornecedores
     ok("Colares" in pg.inner_text('[data-forn="0"]') or True,"fornecedor mostra resumo")
     print(pg.inner_text('[data-forn="0"]')[:300].replace(chr(10)," | "))
     print("erros",errs);print("FALHAS",f)

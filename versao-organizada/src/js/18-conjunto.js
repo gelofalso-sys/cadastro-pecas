@@ -122,11 +122,12 @@ function atualizarGera(){
   const rows=g.linhas.filter(r=>r.lancId===id),ri0=g.linhas.findIndex(r=>r.lancId===id);let h="";
   const grf=gradeBy(f.grade);
   if(grf&&!(f.gsel||[]).length&&!(f.csel||[]).length)h=`<span class="warn">Escolha ${esc(grf.nome.toLowerCase())} acima.</span>`;
-  else if(!rows.length)h=`<span class="warn">${f.tipo==="bruta"?"Marque pelo menos um banho.":""}</span>`;
+  else if(!rows.length)h=`<span class="warn">${f.tipo==="bruta"?(!cfg().banhistas.length?"Cadastre uma galvânica e adicione um banho.":!banhistaBy(f.banhista).banhos.length?"Adicione um banho à galvânica.":"Marque pelo menos um banho."):""}</span>`;
   rows.forEach(r=>{const q=num(r.v.W);h+=`<span class="ch${r.dup?" dupe":""}" title="${esc(r.v.F)}${r.dup?" · referência repetida":""}">${esc(r.v.E)}${q>0?` · ${q}`:""}</span>`});
   if(g.semQ&&g.semQ[id])h+=`<span class="warn" title="Quando só algumas combinações têm quantidade, as sem quantidade não viram linha">⚠ ${g.semQ[id]} combinação(ões) sem quantidade ficam de fora da tabela.</span>`;
   if(erro&&!h.includes(">"+esc(erro)+"<"))h+=`<span class="err">${esc(erro)}</span>`;
   el.innerHTML=h;
+  {const ep=document.getElementById("descPrev");if(ep){const ds=[...new Set(rows.map(r=>String(r.v.F||"").trim()).filter(Boolean))];const base=comSufixoCat((f.v||{}).F,f.v.I);ep.innerHTML=ds.length?`<b>Descrição final:</b> ${ds.slice(0,3).map(esc).join(" · ")}${ds.length>3?` <span class="hint">e mais ${ds.length-3}</span>`:""}`:base?`<span class="hint">Descrição base: ${esc(base)}${f.tipo==="bruta"?" · selecione um banho para ver as variações":""}</span>`:""}}
   {const el2=document.getElementById("custos");if(el2){const ix=L=>LET.indexOf(L);let linhas=rows.slice(0,8).map((r,k)=>{const cs=celulas(r,ri0+k+2,true),n=L=>{const x=cs[ix(L)];return x&&typeof x.v==="number"?x.v:x&&x.v==null&&typeof x.calc==="number"?x.calc:null},P=n("P"),Q=n("Q"),B=r.banho?n(r.banho.coluna):(()=>{const q=["R","S","T"].map(L=>n(L));return q.some(x=>x!=null)?q.reduce((a,x)=>a+(x||0),0):null})(),U=n("U"),V=n("V"),peso=num(r.v.N),pt=[];
       if(P==null&&B==null&&U==null)return "";
       if(P!=null)pt.push(`Compra <b>${brl(P)}</b>${r.desconto>0?` <small>(com ${fmt(r.desconto)}% de desconto)</small>`:""}`);

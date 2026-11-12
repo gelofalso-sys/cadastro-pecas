@@ -125,3 +125,19 @@ body.vlista #paneTop .selbar{display:none}
 .rins-sug{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0;padding:6px 10px;border:1px solid #f0d9a0;background:#fff7e0;color:#6b4a00;border-radius:8px;font-size:13px}
 .rins-sug .btn{margin-left:auto}
 .rc.semtam{border-left:4px solid var(--bad,#b3261e)}
+.chip .sa{width:84px;margin-left:2px;font-size:11px;border-style:dashed}
+.loteN{display:block;font:700 10px/1.1 var(--mono);color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:1px 3px;margin-top:1px;white-space:nowrap}
+.lote-f{margin:0 6px 0 0;align-self:flex-end}
+.lote-tag .lote-num{font:700 12px var(--mono);background:var(--accent);color:#fff;border-radius:6px;padding:1px 7px;margin-right:6px}
+.desc-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 2px}
+.chip .sw{width:80px;margin-left:2px;font-size:11px;border-style:dotted}
+
+/* Palavras contextuais, sem ocupar espaço até a pessoa abrir a lista. */
+.banco-palavras{padding:5px 10px;border-top:1px solid var(--line)}.banco-rapido,.banco-lista,.banco-editar{display:flex;flex-wrap:wrap;align-items:center;gap:5px}.banco-painel{display:grid;gap:8px;padding:8px;background:var(--surface-2);border-radius:8px}.banco-painel label{display:inline-flex;align-items:center;gap:8px}.banco-painel input{max-width:300px;min-height:36px}.banco-painel details{font-size:12px}.banco-edit-item{border:1px solid var(--line);border-radius:6px;padding:3px 6px}.banco-edit-item button{border:0;background:transparent;cursor:pointer}.desc-prev{padding:3px 10px;color:var(--muted);font-size:12px}.desc-prev:empty{display:none}@media(max-width:900px){.banco-palavras button{min-height:38px}.banco-painel label{flex-wrap:wrap}}
+
+.banco-lista [hidden]{display:none!important}
+
+.trabalho{padding:5px 12px;border-top:1px solid var(--line)}.trabalho-painel{display:grid;gap:8px;padding:10px;margin-top:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px}.trabalho-opcoes,.trabalho-presets{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.trabalho-presets label{display:flex;align-items:center;gap:6px}.estado-galvanica{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--accent-soft);font-size:13px}.atalho-form{margin:4px 12px;font-size:11px}
+@media(max-width:900px){#form.lanc{display:flex;flex-direction:column}#form .mfh{order:0}#form .fbar{order:1}#form .z-orig{order:2}#form .z-main{order:3}#form .desc-chips{order:4}#form .banco-palavras{order:5}#form .desc-prev{order:6}#form .z-var{order:7}#form .z-banhos{order:8}#form .z-det{order:9}#form .trabalho,#form .atalho-form{order:10}#form .nf,#form .multi{order:2}#form .fbar .prox{display:none}#form .atalho-form{display:none}#form .trabalho-presets label{flex-wrap:wrap}#form .z-main .fq:has(#f-F){flex-basis:100%;width:100%}}
+
+@media(max-width:900px){#form .z-orig-extra{order:9}#form .z-det{order:10}#form .trabalho{order:11}}

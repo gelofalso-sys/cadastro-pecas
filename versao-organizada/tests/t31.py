@@ -30,8 +30,8 @@ with sync_playwright() as p:
     pesos=pg.locator('#romWrap .rc:has(.lote-tag) [data-rp="peso"]')
     pesos.nth(0).fill("40,5");pesos.nth(0).dispatch_event("input");pg.wait_for_timeout(200)
     custo=pg.locator('#romWrap .rc:has(.lote-tag) [data-rp="custo"]').nth(0).input_value()
-    ok(custo=="595,35","custo do item = peso × valor da grama (%s)"%custo)
-    ok("faltam" in pg.locator("#romWrap .rc.lote .lote-sum").first.inner_text(),"resumo avisa o peso que falta")
+    ok(custo=="1197,17","sem peso real final, o valor integral é rateado entre os itens já pesados (%s)"%custo)
+    ok("informados até agora" in pg.locator("#romWrap .rc.lote .lote-sum").first.inner_text(),"resumo informa que o rateio usa os pesos já informados")
     pesos.nth(1).fill("40,94");pesos.nth(1).dispatch_event("input");pg.wait_for_timeout(300)
     ok(pg.locator("#romWrap .rc.lote .lote-sum.ok").count()>=1,"soma dos pesos fecha com o lote")
     # criar não cria o lote em si, só os itens

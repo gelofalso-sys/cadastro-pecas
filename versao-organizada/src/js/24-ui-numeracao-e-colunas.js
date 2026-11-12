@@ -19,6 +19,7 @@
     bx.hidden=!vz.length;
     if(vz.length){tx.textContent=mostrar?"Mostrando as colunas vazias.":`${vz.length} coluna${vz.length>1?"s":""} vazia${vz.length>1?"s":""} escondida${vz.length>1?"s":""} (${vz.map(L=>NOME[L]).join(", ")}). A planilha baixada continua com todas as colunas.`;bt.textContent=mostrar?"Esconder colunas vazias":"Mostrar colunas vazias"}
   }finally{busy=false}};
+  nfVazAtualizar=run;
   if(sh&&bx){new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(run,120)}).observe(sh,{childList:true,subtree:true});
     bt.addEventListener("click",()=>{mostrar=!mostrar;try{localStorage.setItem(KV,mostrar?"1":"0")}catch(e){}run()});run()}}
 /* nf-fim */

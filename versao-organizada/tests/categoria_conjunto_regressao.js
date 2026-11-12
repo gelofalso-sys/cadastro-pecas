@@ -3,7 +3,7 @@ const s=fs.readFileSync('src/js/18-conjunto.js','utf8');
 const trechos=[s.slice(s.indexOf('function conjQtd'),s.indexOf('function conjResumoHTML')),s.slice(s.indexOf('function conjCat(c)'),s.indexOf('function conjCatOpts')),s.slice(s.indexOf('function conjCalc'),s.indexOf('/* ao sair'))];
 const cats={Brincos:{nome:'Brincos'},Colares:{nome:'Colares'},Conjuntos:{nome:'Conjuntos'}};
 const banho={id:'ouro',coluna:'R',modo:'peso',mult:'1',multCat:{Brincos:'2',Colares:'5',Conjuntos:'3'}};
-const ctx={cfg:()=>({categorias:Object.values(cats),catAlias:{Antiga:'Brincos'}}),catBy:x=>cats[x],vazio:x=>x==null||x==='',num:x=>x==null||x===''?null:Number(String(x).replace(',','.')),semAc:x=>String(x).toLowerCase(),bhDe:()=>({banhos:[banho],verniz:'0'}),bonP:()=>[banho],vzPad:()=>false,multItem:(f,b,cat)=>f.ov?.[b.id]?._m??b.multCat[cat]??b.mult};
+const ctx={banhoSemCalc:b=>!!b&&(b.modo==="nenhum"||!b.coluna),cfg:()=>({categorias:Object.values(cats),catAlias:{Antiga:'Brincos'}}),catBy:x=>cats[x],vazio:x=>x==null||x==='',num:x=>x==null||x===''?null:Number(String(x).replace(',','.')),semAc:x=>String(x).toLowerCase(),bhDe:()=>({banhos:[banho],verniz:'0'}),bonP:()=>[banho],vzPad:()=>false,multItem:(f,b,cat)=>f.ov?.[b.id]?._m??b.multCat[cat]??b.mult};
 vm.createContext(ctx);vm.runInContext(trechos.join('\n'),ctx);
 const f={v:{I:'Conjuntos'},comp:[{desc:'brinco',cat:'Brincos',peso:'1',custo:'1'},{desc:'colar',cat:'Colares',peso:'2',custo:'1'}]};
 assert.equal(ctx.conjCalc(f).tot.R,12,'taxa por categoria e peso');banho.modo='fixo';assert.equal(ctx.conjCalc(f).tot.R,7,'valores fixos não multiplicam pelo peso');banho.modo='peso';

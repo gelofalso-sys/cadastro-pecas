@@ -17,8 +17,10 @@ with sync_playwright() as p:
     pg.fill("#romWrap textarea",open(os.path.join(D,"tests","dados","rom_amostra.txt"),encoding="utf-8").read());pg.click('[data-act="rom-ler"]');pg.wait_for_timeout(1500)
     # + Banho no cabecalho
     n0=pg.locator('#romWrap [data-rp="bn"]').count()
-    pg.click('#romWrap [data-act="rom-q"][data-q="bn"]');pg.fill("#q1","Ródio negro");pg.press("#q1","Enter");pg.wait_for_timeout(700)
-    ok(pg.locator('#romWrap [data-rp="bn"]').count()==n0+1,"＋ Banho cria o banho e ele aparece no romaneio (%d -> %d)"%(n0,pg.locator('#romWrap [data-rp="bn"]').count()))
+    pg.click('#romWrap [data-act="rom-q"][data-q="bn"]');pg.wait_for_timeout(700)   # agora leva à página completa de Galvânicas e banhos
+    ok(pg.locator('[data-bh="0"] [data-act="bn-pronto"]').first.is_visible(),"＋ Banho leva à página da galvânica, com os modelos de banho")
+    pg.locator('[data-bh="0"] [data-act="bn-pronto"][data-tp="negro"]').first.click();pg.wait_for_timeout(700);pg.locator('#side [data-vis="tudo"]').click();pg.wait_for_timeout(500)
+    ok(pg.locator('#romWrap [data-rp="bn"]').count()==n0+1,"o banho criado na página aparece no romaneio (%d -> %d)"%(n0,pg.locator('#romWrap [data-rp="bn"]').count()))
     # 2o cartao = brinco (sem tamanhos): + P M G e + tamanho
     card=pg.locator("#romWrap .rc").nth(2)
     cat=card.locator('[data-rp="cat"]').input_value();print("categoria do cartão:",cat)

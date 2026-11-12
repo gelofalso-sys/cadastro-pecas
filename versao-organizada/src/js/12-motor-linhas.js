@@ -25,7 +25,7 @@ function gerar(list){
       {if(!(p in cont))cont[p]=ultimo(p);g.forEach(l2=>{[l2.v.E,...Object.values(l2.ov||{}).map(o=>o&&typeof o==="object"?o.E:"")].forEach(x=>{const m=String(x||"").trim().toUpperCase().match(/^([A-Z]+)([0-9]+)/);if(m&&m[1]===p&&+m[2]>cont[p])cont[p]=+m[2]})})}
       g.forEach((l,k)=>{
         const cat=val(l,"I")||"";const comum={};LET.forEach(L=>comum[L]=val(l,L));comum.I=cat;{const cj=catBy(cat);if(cj&&cj.subSoRef&&cj.subSoRef[comum.J])comum.J=""}
-        const meta={lancId:l.id,desconto:num(l.desconto)||0},mk=l.mk||{};
+        const meta={lancId:l.id,desconto:num(l.desconto)||0,lote:l.lote||null},mk=l.mk||{};
         if(l.tipo==="bruta"){
           const bh=bhDe(l);refs[l.id]=[];
           const vars=itensGrade(l),bon=bh.banhos.filter(b=>l.on&&l.on[b.id]),qv=k=>qtdPos(((l.ov||{})[k]||{}).W);let kk=0;

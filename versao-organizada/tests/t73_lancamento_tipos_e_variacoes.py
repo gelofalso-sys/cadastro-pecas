@@ -5,7 +5,7 @@ from pathlib import Path
 import math
 from playwright.sync_api import sync_playwright
 url = (Path(__file__).resolve().parent.parent / 'Cadastro de Pecas - abrir no Chrome.html').as_uri()
-TX = {'ouro': {'Brincos': 1, 'Anél': 2, 'Colares': 3, 'Pingentes': 2.5}, 'prata': {'Brincos': .5, 'Anél': 1, 'Colares': 1.5, 'Pingentes': 1.2}}
+TX = {'ouro': {'Brincos': 1, 'Anel': 2, 'Colares': 3, 'Pingentes': 2.5}, 'prata': {'Brincos': .5, 'Anel': 1, 'Colares': 1.5, 'Pingentes': 1.2}}
 VZ = .42
 
 
@@ -41,12 +41,12 @@ with sync_playwright() as p:
     # 1) bruta simples: brinco, ouro 3 + prata 2
     preencher('Brinco argola', 'Brincos', '1.2', '4'); pg.fill('#f-ouro-W', '3'); pg.fill('#f-prata-W', '2'); adicionar()
     # 2) bruta com 3 tamanhos: aros 12/13/14, 2 de cada em cada banho
-    preencher('Anel solitario', 'Anél', '1.8', '5.5')
+    preencher('Anel solitario', 'Anel', '1.8', '5.5')
     for t in ('a12', 'a13', 'a14'): pg.locator(f'label:has([data-gi="{t}"])').click()
     for bn in ('ouro', 'prata'): pg.fill(f'[data-qall="{bn}"]', '2')
     adicionar()
     # 3) bruta tamanho × cor (matriz): só ouro, 1 de cada combinação
-    preencher('Anel zirconia', 'Anél', '2.1', '6')
+    preencher('Anel zirconia', 'Anel', '2.1', '6')
     for t in ('a15', 'a16'): pg.locator(f'label:has([data-gi="{t}"])').click()
     pg.locator('[data-act="cor-on"]').click(); pg.wait_for_timeout(300)
     for c in ('L:rodio', 'L:preto'): pg.locator(f'label:has([data-cs="{c}"])').click()

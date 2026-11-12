@@ -23,7 +23,7 @@ with sync_playwright() as p:
     print('resumo:', pg.locator('#rinsRes').inner_text()[:140])
     # anel sem tamanho: aviso no topo e cartão marcado
     cards = lambda: pg.locator('#romWrap .rc:not(.lote)')
-    cards().nth(1).locator('[data-rp="cat"]').select_option(label='Anél'); pg.wait_for_timeout(500)
+    cards().nth(1).locator('[data-rp="cat"]').select_option(label='Anel'); pg.wait_for_timeout(500)
     chk = pg.locator('#romChk').inner_text(); print(chk)
     assert 'sem tamanho' in chk and cards().nth(1).evaluate("e=>e.classList.contains('semtam')")
     # banho sem quantidade não gera linha: card 0 só no ouro

@@ -90,6 +90,8 @@ function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g
   Object.keys(r.ex||{}).forEach(L=>{if(!vazio(r.ex[L]))f.v[L]=r.ex[L]});
   /* insumos próprios do romaneio: a parte desta peça (por unidade) soma ao custo de Insumos */
   {const ins=romInsRateio(r);if(ins>0){const base=num(!vazio(f.v.Q)?f.v.Q:padraoDe(f.v.I,"Q"))||0;f.v.Q=String(r2c(base+ins));f.insRom={base:r2c(base),ins,rom:ROM.doc||""}}else delete f.insRom}
+  /* item de lote: numerado i/N na tabela */
+  {const lot=r.loteDe?ROM.rows.find(x=>x.lote&&x.lid===r.loteDe):null;if(lot){const ks=romLoteKids(lot);f.lote={id:lot.lid,i:ks.indexOf(r)+1,n:ks.length}}else delete f.lote}
   if(!bruta){if(!vazio(r.cor))f.v.L=r.cor;if(!vazio(r.vp))f.v.V=r.vp}
   if(r.forn){f.v.H=r.forn;const fo=fornBy(r.forn);if(fo)f.desconto=fo.desconto}
   f.ft=r.fotoMini||null;f.ftR=r.fotoMini||null;f.grade=g?g.id:"";f.gsel=g?(r.gsel||[]).slice():[];f.csel=(r.csel||[]).slice();f.semGrade=!!r.semG;f.ov={};f.vinc=!bruta&&!!r.vinc&&!romIds(r).length&&(!cols.length||cols[0].id==="p");

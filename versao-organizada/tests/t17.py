@@ -21,6 +21,7 @@ with sync_playwright() as p:
     pg.click('[data-act="ctab"][data-id="cor"]')
     pg.fill('[data-enter="cor"]',"Dourado; Rosé");pg.press('[data-enter="cor"]',"Enter");pg.wait_for_timeout(300)
     pg.click('[data-act="ctab"][data-id="cat"]');pg.wait_for_timeout(300)
+    pg.locator(f'[data-cat="{cat}"] .cx').click()
     pg.click(f'[data-cat="{cat}"] details:has([data-cvg="padrao"]) summary')
     pg.fill(f'[data-cat="{cat}"] [data-cvg="padrao"]',"Rosé");pg.press(f'[data-cat="{cat}"] [data-cvg="padrao"]',"Tab")
     pg.select_option(f'[data-cat="{cat}"] [data-cvg="modoRef"]',"nome");pg.wait_for_timeout(200)

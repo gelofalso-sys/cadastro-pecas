@@ -16,7 +16,7 @@ const vazio=v=>v==null||String(v).trim()==="";
 const cfg=()=>S.config;
 const catBy=n=>cfg().categorias.find(c=>c.nome===n);
 const fornBy=n=>cfg().fornecedores.find(f=>f.nome===n);
-const banhistaBy=id=>cfg().banhistas.find(b=>b.id===id)||cfg().banhistas[0];
+const banhistaBy=id=>cfg().banhistas.find(b=>b.id===id)||cfg().banhistas[0]||{id:"",nome:"",banhos:[],verniz:"",vernizOn:false};
 /* bhDe: a galvânica de uma peça (hoje sempre a cadastrada: custo do banho e do verniz acompanham o cadastro) */
 const bhDe=x=>banhistaBy(x&&x.banhista);
 /* O Preço de Varejo só existe na peça lançada se o usuário o DIGITOU dentro da peça. O fator gera apenas uma SUGESTÃO (mostrada no formulário); o valor definitivo é do usuário. */
@@ -49,6 +49,50 @@ function compraGramaAuto(f){const c=catBy(f.v.I),r=c&&num(c.compraGrama);
   if(!(vazio(f.v.P)||f.v.P===f._pAuto))return;
   const n=num(f.v.N);if(n>0){f.v.P=r2c(n*r).toFixed(2).replace(".",",");f._pAuto=f.v.P}else{if(f.v.P===f._pAuto)delete f.v.P;f._pAuto=null}
   const el=document.getElementById("f-P");if(el&&document.activeElement!==el)el.value=f.v.P||""}
+/* Atalhos digitados: "argolinhas" vira Brincos › Argolas; "choker" vira Colares › Choker. Vale nome da categoria/subcategoria ou apelido cadastrado (singular/plural tanto faz). */
+const catSing=s=>semAc(s).replace(/[^a-z0-9]+/g," ").trim().split(" ").map(w=>w.length>3&&w.endsWith("s")?w.slice(0,-1):w).join(" ");
+const apelidosDe=t=>String(t||"").split(/[;,]/).map(x=>x.trim()).filter(Boolean);
+function resolverCatSub(txt,catAtual){const k=catSing(txt);if(!k)return null;const C=cfg();
+  for(const c of C.categorias){if([c.nome].concat(apelidosDe(c.apelidos)).some(n=>catSing(n)===k))return {cat:c.nome,sub:""}}
+  const ach=[];C.categorias.forEach(c=>(c.subs||[]).forEach(s=>{if([s].concat(apelidosDe((c.subAlias||{})[s])).some(n=>catSing(n)===k))ach.push({cat:c.nome,sub:s})}));
+  return !ach.length?null:(ach.find(a=>a.cat===catAtual)||ach[0])}
+/* descrição do fornecedor ("argolinhas lisas") → categoria e subcategoria pelos nomes e apelidos cadastrados */
+function catDaDescricao(desc){const ws=String(desc||"").split(/\s+/).filter(w=>w.length>2);let achado=null;
+  for(let i=0;i<ws.length&&!achado;i++){const r=resolverCatSub(ws[i],"");if(r&&r.sub)achado=r}
+  for(let i=0;i<ws.length&&!achado;i++){const r=resolverCatSub(ws[i],"");if(r)achado=r}
+  return achado}
+/* palavras que o usuário escreveria no começo da descrição: "Brinco" (categoria Brincos) e "Argola" (subcategoria Argolas). Cadastradas em Categorias; sem cadastro, deduz do nome (singular). */
+function palavraDeNome(n){n=String(n||"").trim();if(!n||/[\/;,]/.test(n))return "";
+  if(/éis$/i.test(n))return n.replace(/éis$/i,"el");if(/(res|zes|ses)$/i.test(n))return n.slice(0,-2);if(/s$/i.test(n)&&!/ss$/i.test(n))return n.slice(0,-1);return n}
+function palavrasDesc(cat,sub){const c=catBy(cat);if(!c)return {cat:"",sub:""};
+  const pc=c.palavra!=null?String(c.palavra).trim():palavraDeNome(c.nome),ps=sub?((c.subPalavra||{})[sub]!=null?String((c.subPalavra||{})[sub]).trim():palavraDeNome(sub)):"";
+  return {cat:pc==="-"?"":pc,sub:ps==="-"?"":ps}}
+/* Vocabulário inicial: termos observados no estoque, editáveis por categoria e subcategoria. */
+const BANCO_PALAVRAS={
+ "Brincos":{"": ["Coração","Flor","Gota","Zircônia","Ponto de luz","Cristal","Cravejado","Liso"],"Argolas":["Argolinha","Click","Cravejada","Lisa","Quadrada","Coração","Zircônias"],"Pequenos":["Coração","Zircônia","Ponto de luz","Flor","Gota","Oval","Cristal","Cravejado"],"Trios/duos":["Trio","Duo","Argolinhas","Ponto de luz"]},
+ "Anel":{"": ["Solitário","Cravejado","Liso","Regulável","Aparador","Coração","Zircônias","Entrelaçado"]},
+ "Colares":{"": ["Coração","Elos","Bolinhas","Cruz","Ponto de luz","Riviera"],"Correntes":["Corrente","Elos","Veneziana","Cartier","Riviera","Cordão baiano"],"Chokers":["Choker","Elos","Corações","Chapinhas","Bolinhas","Losangos"],"Gargantilhas":["Gargantilha","Coração","Ponto de luz","Zircônia"]},
+ "Pulseiras":{"": ["Elos","Riviera","Corações","Bracelete","Dupla","Zircônias","Bolinhas","Regulável"]},
+ "Pingentes":{"": ["Coração","Cruz","Medalha","Menino","Menina","Bonequinho"]},
+ "Conjuntos":{"": ["Coração","Pedra fusion","Borboleta","Trevo","Zircônia","Ponto de luz"]},
+ "Prata 925":{"Brincos":["Argolinha","Click","Coração","Ponto de luz","Zircônia"],"Anéis":["Solitário","Cravejado","Liso","Coração","Zircônias"],"Colares":["Corrente","Gargantilha","Coração","Veneziana"],"Pulseiras":["Elos","Coração","Riviera","Bolinhas"],"Pingentes":["Coração","Cruz","Medalha"]},
+ "Masculinos":{"Correntes":["Grumet","Veneziana","Aço inox"],"Pulseiras":["Grumet","Elo fígaro","Aço inox"]},
+ "Tornozeleiras":{"": ["Elos","Corações","Bolinhas","Miçangas"]},"Acessórios":{"": ["Tarraxa","Tarraxa mágica"]},
+ "Infantil":{"": ["Infantil","Borboletinhas","Estrelinha","Coloridas"]},"Personalizado":{"": ["Nome","Coração","Mandala","Filhos"]},"Relógios":{"": ["Bracelete","Quadrado","Aço"]}
+};
+let bancoAberto=false;
+function bancoLista(cat,sub){const c=catBy(cat);if(!c)return [];const chave=sub||"",pad=(BANCO_PALAVRAS[c.nome]||{})[chave]||[],b=c.bancoPalavras||{};return Array.isArray(b[chave])?b[chave].filter(w=>typeof w==="string"&&w.length<=60).slice(0,100):pad}
+function bancoSugestoes(cat,sub){const a=[...bancoLista(cat,sub),...(sub?bancoLista(cat,""):[])],vistos=new Set();return a.filter(w=>{const k=semAc(w);if(!k||vistos.has(k))return false;vistos.add(k);return true})}
+function bancoEditarAbrir(){const d=document.querySelector(".banco-painel details");if(d)d.open=true}
+function bancoHtml(f){const c=catBy(f.v.I);if(!c||f.conj)return "";const sub=f.v.J||"",lista=bancoSugestoes(c.nome,sub),escopo=sub?"subcategoria "+sub:"categoria "+c.nome,edit=bancoLista(c.nome,sub);return `<div class="banco-palavras"><div class="banco-rapido"><span class="hint">Palavras:</span>${lista.slice(0,6).map(w=>`<button type="button" class="gi tod" data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="banco-toggle" aria-expanded="${bancoAberto}">${bancoAberto?"Fechar palavras":"Mais palavras"}</button></div>${bancoAberto?`<div class="banco-painel"><label>Buscar palavra <input type="search" data-banco-busca placeholder="Digite para filtrar" aria-label="Buscar palavras"></label><div class="banco-lista">${lista.map(w=>`<button type="button" class="gi tod" data-banco-item data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")||'<span class="hint">Ainda não há sugestões para este contexto.</span>'}</div><details><summary>Editar palavras da ${esc(escopo)}</summary><p class="hint">Apenas esta ${sub?"subcategoria":"categoria"} será alterada. Separe várias palavras por ponto e vírgula.</p><div class="banco-editar">${edit.map(w=>`<span class="banco-edit-item">${esc(w)} <button type="button" data-act="banco-remover" data-w="${esc(w)}" aria-label="Remover ${esc(w)}">×</button></span>`).join("")}</div><label>Nova palavra ou expressão <input data-banco-nova maxlength="200" placeholder="ex.: Ponto de luz; Lisa"></label><button type="button" class="btn sm" data-act="banco-adicionar">Adicionar palavras</button><button type="button" class="btn ghost sm" data-act="banco-restaurar">Restaurar sugestões iniciais</button></details></div>`:""}</div>`}
+/* preenche a descrição sozinho com as palavras (só enquanto vazia ou ainda igual ao que foi preenchido antes) */
+function descAuto(f){if(editId||f.conj||cfg().descAuto===false)return;
+  const w=palavrasDesc(f.v.I,f.v.J),alvo=[w.cat,w.sub].filter(Boolean).join(" "),novo=alvo?alvo+" ":"",ant=f._descAuto||"",cur=String(f.v.F||"");
+  if(!cur.trim()||(ant&&cur===ant)){if(!cur.trim()){f.v.F=novo}else if(ant&&cur.startsWith(ant)){f.v.F=novo+cur.slice(ant.length)}f._descAuto=novo;setTimeout(()=>{const d=document.getElementById("f-F");if(d&&d.value===f._descAuto)try{d.setSelectionRange(d.value.length,d.value.length)}catch(x){}},0)}}   /* o cursor já fica depois das palavras para continuar digitando */
+/* entradas extras da lista de categorias do formulário: apelidos e subcategorias, cada uma com o caminho completo */
+function entradasAtalho(){const C=cfg(),out=[],vistos=new Set(C.categorias.map(c=>catSing(c.nome)));
+  C.categorias.forEach(c=>{apelidosDe(c.apelidos).forEach(a=>{if(!vistos.has(catSing(a))){vistos.add(catSing(a));out.push([a,c.nome])}});
+    (c.subs||[]).forEach(s=>[s].concat(apelidosDe((c.subAlias||{})[s])).forEach(a=>{if(!vistos.has(catSing(a))){vistos.add(catSing(a));out.push([a,c.nome+" › "+s])}}))});return out}
 function sincGrade(f){const g=gradeDaCat(f.v.I,f.v.J),id=g?g.id:"";if(id!==(f.grade||"")){f.grade=id;f.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];f.semGrade=false}}
 /* verniz por variação de banho: o que foi marcado nesta peça vale; sem marca, vale o padrão do banho */
 /* banhos marcados: peça bruta usa "on"; peça pronta usa "onP" (só cor, letra e milésimos — sem custo de banho) */

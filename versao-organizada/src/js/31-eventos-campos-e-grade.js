@@ -1,3 +1,5 @@
+document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.cont)return;const c=continuoCfg();cfg().continuo={...c,[t.dataset.cont]:!!t.checked};salvar(true,false)});
+document.addEventListener("input",e=>{if(!e.target.matches("[data-banco-busca]"))return;const q=semAc(e.target.value);document.querySelectorAll("[data-banco-item]").forEach(b=>{b.hidden=!semAc(b.dataset.w).includes(q)})});
 document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.dataset&&t.dataset.subren!==undefined&&catUI.ren)catUI.ren=null});
 document.addEventListener("dblclick",e=>{if(e.target.classList&&e.target.classList.contains("rz")){delete colW[e.target.dataset.rz];try{localStorage.setItem("cadpecas-colw",JSON.stringify(colW))}catch(x){}renderTopo()}});
 document.addEventListener("mouseover",e=>{const tr=e.target.closest("tr[data-l]");document.querySelectorAll("tr.hl").forEach(x=>{if(!tr||x.dataset.l!==tr.dataset.l)x.classList.remove("hl")});if(tr)document.querySelectorAll(`tr[data-l="${CSS.escape(String(tr.dataset.l))}"]`).forEach(x=>x.classList.add("hl"))});
@@ -86,6 +88,7 @@ function onField(t,isChange){
     itensGrade(f).forEach(it=>{const key=k+"~"+it.id;f.ov[key]=f.ov[key]||{};if(vazio(t.value))delete f.ov[key].W;else f.ov[key].W=t.value;const i=document.getElementById(`f-${key}-W`);if(i)i.value=t.value});
     atualizarGera();salvar(false);return}
   if(t.id==="celIn")return;
+  if(t.dataset&&(t.dataset.fk!==undefined||t.dataset.fall!==undefined)){fiscalCampo(t,isChange);return}
   if(t.dataset&&t.dataset.ult){const pf=t.dataset.ult,d=limpaUlt(t.value);C.seqs[pf]=d;if(t.value!==d)t.value=d;salvar(true,false);renderTopo();atualizarGera();if(ROM)romAtualSoon();if(isChange)renderCfg();return}
   if(t.closest&&t.closest("#romWrap")){romCampo(t,isChange);return}
   {const re=t.closest&&t.closest("[data-rom]");
@@ -98,11 +101,12 @@ function onField(t,isChange){
   if(t.dataset.col){
     const L=t.dataset.col;f.v[L]=t.value;erro="";if(L==="N")compraGramaAuto(f);
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){const rs=resolverCatSub(t.value,t.dataset.prev||"");if(rs){const dig=t.value.trim();f.v.I=rs.cat;t.value=rs.cat;if(rs.sub)f.v.J=rs.sub;else delete f.v.J;toast(`“${dig}” entendido como ${rs.cat}${rs.sub?" › "+rs.sub:""} · referência ${prefDe(rs.cat,rs.sub)}`)}}
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
       const nome=t.value.replace(/\s+/g," ").trim(),ant=t.dataset.prev!=null?t.dataset.prev:"";if(ant&&catBy(ant))f.v.I=ant;else delete f.v.I;
       quickPre=nome;quick="cat";quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
-    if(L==="I"&&isChange){f.csel=editId?(f.csel||[]).filter(id=>coresDaCat(t.value).some(x=>x.id===id)):[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);aplicarSemBanho(f);compraGramaAuto(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
-    if(L==="J"&&isChange){sincGrade(f);renderForm();refocar("#f-J");renderTopo();salvar(false);return}
+    if(L==="I"&&isChange){f.csel=editId?(f.csel||[]).filter(id=>coresDaCat(t.value).some(x=>x.id===id)):[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);aplicarSemBanho(f);compraGramaAuto(f);descAuto(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
+    if(L==="J"&&isChange){let atalho=false;if(!vazio(t.value)){const c0=catBy(f.v.I);if(!(c0&&c0.subs.includes(t.value))){const rs=resolverCatSub(t.value,f.v.I);if(rs&&rs.sub){const dig=t.value.trim();if(rs.cat!==f.v.I){f.v.I=rs.cat;f.csel=editId?[]:coresPadrao(rs.cat,rs.sub)}f.v.J=rs.sub;atalho=true;toast(`“${dig}” entendido como ${rs.cat} › ${rs.sub} · referência ${prefDe(rs.cat,rs.sub)}`)}}}sincGrade(f);descAuto(f);renderForm();if(!atalho)refocar("#f-J");renderTopo();salvar(false);return}   /* com apelido a subcategoria já foi trocada: o foco segue o Tab */
     if(L==="V"&&isChange)fatorDoPreco("p");
     atualizarGera();salvar(false);return;
   }
@@ -136,6 +140,9 @@ function onField(t,isChange){
       c.nome=nv;C.categorias.forEach(x=>{if(x.grade&&x.grade.usa===old)x.grade.usa=nv});if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I===old)rascunho.v.I=nv;if(typeof ROM!=="undefined"&&ROM)ROM.rows.forEach(r=>{if(r.cat===old)r.cat=nv});C.banhistas.forEach(b=>b.banhos.forEach(x=>{["milCat","multCat"].forEach(ch=>{if(x[ch]&&Object.prototype.hasOwnProperty.call(x[ch],old)){x[ch][nv]=x[ch][old];delete x[ch][old]}})}));S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=nv});if(f.v.I===old)f.v.I=nv;salvar(true)}
     else if(k==="prefixo"){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;trocarPrefixo(c,t.value)}
     else if(k==="sufixo"){c.sufixo=t.value;salvar(true,false)}
+    else if(k==="palavra"){if(vazio(t.value))delete c.palavra;else c.palavra=t.value.trim().slice(0,40);salvar(true,false);if(isChange)renderForm()}
+    else if(k==="nomeExport"){c.nomeExport=t.value.trim().slice(0,60);if(!c.nomeExport)delete c.nomeExport;salvar(true,false)}
+    else if(k==="apelidos"){c.apelidos=t.value.slice(0,160);if(vazio(c.apelidos))delete c.apelidos;salvar(true,false);if(isChange){renderListas();renderForm()}}
     else if(k==="semBanho"){c.semBanho=!!t.checked;salvar(true,false);if(isChange){renderCfg();toast(c.semBanho?`“${c.nome}” agora é lançada sem banho: já entra como peça pronta, sem galvânica, verniz nem milésimos.`:`“${c.nome}” voltou a usar banho.`)}}
     else if(k==="compraGrama"){if(isChange){const v=t.value.trim(),n=num(v);if(v!==""&&(n==null||n<0||n>1e6)){t.value=c.compraGrama||"";toast("Compra por grama precisa ser um número de 0 em diante (ex.: 12,50). Voltei ao valor anterior.");return}c.compraGrama=v;t.value=v;salvar(true,false);renderCfg()}}
     else if(k==="ncm"||k==="cfop"||k==="fcp"||k==="insumos"){
@@ -155,6 +162,9 @@ function onField(t,isChange){
     else x.texto=t.value;
     salvar(true,false);renderTopo();if(isChange)renderForm();return}
   if(t.dataset.sr&&ce){const c=C.categorias[+ce.dataset.cat];c.subSoRef=c.subSoRef||{};if(t.checked)c.subSoRef[t.dataset.sr]=true;else delete c.subSoRef[t.dataset.sr];salvar(true,false);renderTopo();return}
+  if(t.dataset.sw!==undefined&&ce){const c=C.categorias[+ce.dataset.cat];c.subPalavra=c.subPalavra||{};if(vazio(t.value))delete c.subPalavra[t.dataset.sw];else c.subPalavra[t.dataset.sw]=t.value.trim().slice(0,40);salvar(true,false);if(isChange)renderForm();return}
+  if(t.dataset.gcfg==="descAuto"){C.descAuto=!!t.checked;salvar(true,false);return}
+  if(t.dataset.sa!==undefined&&ce){const c=C.categorias[+ce.dataset.cat];c.subAlias=c.subAlias||{};if(vazio(t.value))delete c.subAlias[t.dataset.sa];else c.subAlias[t.dataset.sa]=t.value.slice(0,120);salvar(true,false);if(isChange){renderListas();renderForm()}return}
   if(t.dataset.sp&&ce){t.value=t.value.toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);if(!isChange)return;const c=C.categorias[+ce.dataset.cat],v=t.value.toUpperCase().replace(/[^A-Z]/g,"");c.subPref=c.subPref||{};if(v){c.subPref[t.dataset.sp]=v;if(!(v in C.seqs))C.seqs[v]="0"}else delete c.subPref[t.dataset.sp];salvar(true,false);renderTopo();if(isChange){renderForm()}return}
   const ge=t.closest("[data-gr]");
   if("gcp" in t.dataset){const ci=+t.closest("[data-cat]").dataset.cat,src=C.categorias.find(x=>x.nome===t.value);

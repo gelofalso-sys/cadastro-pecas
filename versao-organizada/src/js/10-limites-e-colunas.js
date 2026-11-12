@@ -53,7 +53,7 @@ function colcfgPadrao(){
   c.Q.padrao="0.5";c.Y.padrao="71131100";c.AA.padrao="5102";c.AB.padrao="2";c.AD.padrao="Não";c.AE.padrao="Ativo";
   return c;
 }
-const BANHISTA0={id:"scarlat",nome:"Scarlat",verniz:"0.42",vernizOn:true,banhos:[
+const BANHISTA0={id:"scarlat",nome:"Galvânica 1",verniz:"0.42",vernizOn:true,banhos:[
   {id:"ouro",nome:"Ouro",letra:"A",cor:"Ouro",mil:"1",modo:"peso",mult:"1.5",coluna:"R",sufixo:"",marcado:true,vz:true},
   {id:"prata",nome:"Prata",letra:"B",cor:"Prata",mil:"50",modo:"peso",mult:"1.54",coluna:"T",sufixo:" banho prata",marcado:true,vz:true}]};
 /* A variação (tamanhos de anel, letras…) fica dentro da categoria: subs vazio = vale para toda a categoria; com nomes = só nessas subcategorias. */
@@ -66,7 +66,7 @@ function proxLetra(us){for(let i=0;i<702;i++){const s=letraN(i);if(!us.includes(
 const PRATA_SUBS=["Brincos","Colares","Anéis","Pulseiras","Pingentes","Conjuntos"];
 const JUERI_CATS=[
   {nome:"Acessórios",prefixo:"AC",subs:[]},
-  {nome:"Anél",prefixo:"AN",subs:[],alias:["Anéis","Anel","Aneis"],remover:["Solitários","Aparadores","Falanges","Ajustáveis"],gr:{id:"aro",subs:[]}},
+  {nome:"Anel",prefixo:"AN",subs:[],alias:["Anéis","Anél","Aneis"],remover:["Solitários","Aparadores","Falanges","Ajustáveis"],gr:{id:"aro",subs:[]}},
   {nome:"Brincos",prefixo:"BR",subs:["Argolas","Grandes","Médios","Pequenos","Piercings","Trios/duos"],trocas:{Piergings:"Piercings"}},
   {nome:"Colares",prefixo:"CO",subs:["Chokers","Correntes","Gargantilhas","Longos"],trocas:{Choker:"Chokers"}},
   {nome:"Conjuntos",prefixo:"CJ",subs:[]},
@@ -78,23 +78,19 @@ const JUERI_CATS=[
   {nome:"Pulseiras",prefixo:"PU",subs:[],remover:["Riviera","Elos","Braceletes","Berloques"]},
   {nome:"Relógios",prefixo:"RL",subs:[]},
   {nome:"Tornozeleiras",prefixo:"TZ",subs:[]}];
-const ROM_PESO=()=>({id:"pedido-peso",nome:"Pedido com itens por peso (GR)",padrao:"{item} {cod} {desc} {u}{qv} {pu} {total}",ini:"Unit. Total",fim:"Total Produtos",obsRe:"N. Pedido:\\s*(\\d+)",mapa:"Brinco=Brincos; Corrente=Colares>Correntes; Pingente=Pingentes; Anel=Anél; Pulseira=Pulseiras; Colar=Colares",auto:false,custo:"preco",valorRe:"Total Produtos:\\s*(\\d[\\d.]*,\\d{2})"});
+const ROM_PESO=()=>({id:"pedido-peso",nome:"Pedido com itens por peso (GR)",padrao:"{item} {cod} {desc} {u}{qv} {pu} {total}",ini:"Unit. Total",fim:"Total Produtos",obsRe:"N. Pedido:\\s*(\\d+)",mapa:"Brinco=Brincos; Corrente=Colares>Correntes; Pingente=Pingentes; Anel=Anel; Pulseira=Pulseiras; Colar=Colares",auto:false,custo:"preco",valorRe:"Total Produtos:\\s*(\\d[\\d.]*,\\d{2})"});
 const ROMS0=()=>[{id:"carlinha",nome:"Clube de Compras da Carlinha",
   padrao:"{desc} [#{cod}] R$ {preco} R$ {precod} {qtd} R$ {total}",ini:"Valor Total",fim:"Valor Produtos",lixo:"P.gina \\d+/\\d+",
-  obsRe:"Romaneio do (.+?) Pedido",mapa:"Colar=Colares; Corrente=Colares>Correntes; Choker=Colares>Chokers; Brinco=Brincos; Argola=Brincos>Argolas; Pingente=Pingentes; Anel=Anél; Pulseira=Pulseiras; Conjunto=Conjuntos",
+  obsRe:"Romaneio do (.+?) Pedido",mapa:"Colar=Colares; Corrente=Colares>Correntes; Choker=Colares>Chokers; Brinco=Brincos; Argola=Brincos>Argolas; Pingente=Pingentes; Anel=Anel; Pulseira=Pulseiras; Conjunto=Conjuntos",
   custo:"precod",qtdRe:"Quantidade Total de Produtos:\\s*(\\d+)",valorRe:"Valor Produtos(?: \\(sem desconto\\))?:\\s*R\\$\\s*(\\d[\\d.]*,\\d{2})"},ROM_PESO()];
 const DEFAULT_CONFIG={
-  modelos:[modeloJueri()],modelo:"jueri",v9:true,v10:true,v12:true,seqs:{BR:"1669",CO:"0",AN:"0",PU:"0",TZ:"0",CJ:"0",PG:"0",AC:"0",IN:"0",MA:"0",PE:"0",RL:"0"},ordem:"int",v11:true,colcfg:colcfgPadrao(),banhistas:[BANHISTA0],grades:[],romaneios:ROMS0(),
+  modelos:[modeloJueri()],modelo:"jueri",v9:true,v10:true,v12:true,seqs:{BR:"1669",CO:"0",AN:"0",PU:"0",TZ:"0",CJ:"0",PG:"0",AC:"0",IN:"0",MA:"0",PE:"0",RL:"0"},ordem:"int",v11:true,colcfg:colcfgPadrao(),banhistas:[],grades:[],romaneios:ROMS0(),
   categorias:JUERI_CATS.map(j=>({nome:j.nome,prefixo:j.prefixo,...(j.sufixo?{sufixo:j.sufixo}:{}),subs:[...j.subs],...(j.subPref?{subPref:{...j.subPref}}:{}),...(j.subSoRef?{subSoRef:{...j.subSoRef}}:{}),...(j.gr?{grade:mkGrade(j.gr.subs,j.gr.id)}:{})})),
-  fornecedores:[
-    {nome:"xangai",desconto:"0",tipo:"bruta",banhista:"scarlat"},
-    {nome:"Rosah",desconto:"10",tipo:"bruta",banhista:"scarlat"},
-    {nome:"Evidência",desconto:"15",tipo:"pronta",banhista:""},
-    {nome:"Spina Joias",desconto:"0",tipo:"pronta",banhista:""}],
+  fornecedores:[],   /* instalação nova começa sem fornecedores, galvânica de exemplo nem observações: o usuário cadastra os dele */
   cores:["Ouro","Prata","Ródio","Prata 925","Ródio negro","Rosé","Azul","Cristal","Branco","Preto","Verde","Vermelho","Rosa","Lilás","Roxo","Amarelo","Laranja","Marrom","Grafite","Champagne","Nude","Turquesa","Pérola","Bege","Cinza","Multicolorido"],
-  observacoes:["Link 211 - Xangai Brutos Banho Scarlat 2026 setembro","Link 206 - Argolinhas R$ 1,99 Banho setembro 2026 Scarlat","Link 182 - Xangai Brutos 3 Banho setembro 2026 Scarlat","Compra em setembro 2026 Banho scarlat","Compra em setembro de 2026"]
+  observacoes:[]
 };
-const FORM0=()=>({tipo:"bruta",desconto:"0",banhista:"scarlat",v:{H:"xangai",I:"Brincos"},on:{ouro:true,prata:true},ov:{},vz:{},vinc:false,grade:"",gsel:[],csel:[],semGrade:false});
+const FORM0=()=>({tipo:"bruta",desconto:"0",banhista:"",v:{I:"Brincos"},on:{},ov:{},vz:{},vinc:false,grade:"",gsel:[],csel:[],semGrade:false});
 
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* miniatura de foto só vale se for imagem em data: URL (nada de javascript:, http: ou aspas) */

@@ -13,7 +13,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");pg=b.new_context(viewport={"width":1400,"height":1000}).new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.goto("http://127.0.0.1:8795/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(900)
-    (pg.fill("#f-I","Anél"),pg.press("#f-I","Tab"));pg.wait_for_timeout(300)
+    (pg.fill("#f-I","Anel"),pg.press("#f-I","Tab"));pg.wait_for_timeout(300)
     pg.click('[data-act="cor-on"]');pg.wait_for_timeout(200)
     pg.click('[data-act="q"][data-q="cv"]');pg.fill("#q1","Azul; Lilás; Verde");pg.press("#q1","Enter");pg.wait_for_timeout(400)
     gi=pg.eval_on_selector_all("[data-gi]","e=>e.map(x=>x.dataset.gi)")

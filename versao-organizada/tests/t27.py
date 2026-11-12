@@ -88,7 +88,7 @@ with sync_playwright() as p:
             ok(num_(novo_ref)==(max(outros)+1 if outros else 1),"mudou a categoria: %s é a próxima referência da sequência %s (maior das outras: %s)"%(novo_ref,pn,max(outros) if outros else "-"))
         else:
             ok(True,"categoria nova tem o mesmo prefixo (%s): referência mantida %s"%(pn,novo_ref))
-    # 3) banho marcado sem quantidade continua existindo como linha (igual ao lançamento individual)
+    # 3) no romaneio, banho sem quantidade não gera linha vazia
     pg=b.new_context(viewport={"width":1500,"height":1100}).new_page();pg.on("pageerror",lambda e:errs.append(str(e)));pg.on("dialog",lambda d:d.accept())
     pg.goto("http://127.0.0.1:8801/Cadastro%20de%20Pecas%20-%20abrir%20no%20Chrome.html");pg.wait_for_timeout(900)
     pg.click('[data-act="rom-abrir"]') if pg.locator('[data-act="rom-abrir"]').count() else None;pg.wait_for_timeout(500)
@@ -106,7 +106,7 @@ with sync_playwright() as p:
         prev=pg.locator('#romWrap .rc').nth(0).locator('[data-px] .rch').count()
         criar(pg)
         rr=refs(pg);n=len([x for x in rr if base(x)==base(rr[0])])
-        ok(n>=2,"banho marcado sem quantidade gera a linha mesmo assim (%d linhas na 1ª peça; prévia %d)"%(n,prev))
+        ok(n==1,"banho sem quantidade fica fora do romaneio (%d linha na 1ª peça; prévia %d)"%(n,prev))
     # 4) faixa de tamanhos e "todos =" no cartão
     pg.click('[data-act="rom-abrir"]');pg.wait_for_timeout(500);pg.fill("#romWrap textarea",TXT);pg.click('[data-act="rom-ler"]');pg.wait_for_timeout(1500)
     gi=[i for i in range(pg.locator("#romWrap .rc").count()) if pg.locator("#romWrap .rc").nth(i).locator('[data-rp="gi"]').count()]

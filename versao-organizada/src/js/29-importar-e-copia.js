@@ -45,7 +45,7 @@ function exemplo(){
     p("Piercing fake cristal ródio","P-221",false),p("Piercing fake turmalina ródio","P-222",true),p("Piercing fake citrino ródio","P-224",true),
     /* um item de demonstração de cada uma das outras categorias (brutas vão para o banho; prontas entram direto) */
     c("Acessórios","","Chaveiro coração com strass","Rosah","bruta",{N:"4,2",P:"5,10",V:"29,90",qa:"2",qb:"2"}),
-    c("Anél","","Anel solitário zircônia","xangai","bruta",{N:"2,1",P:"3,40",V:"39,90",qa:"2",qb:"1"}),
+    c("Anel","","Anel solitário zircônia","xangai","bruta",{N:"2,1",P:"3,40",V:"39,90",qa:"2",qb:"1"}),
     c("Colares","Correntes","Corrente veneziana 45cm","xangai","bruta",{N:"6,8",P:"9,20",V:"79,90",qa:"2",qb:"2"}),
     c("Conjuntos","","Conjunto colar e brinco gota","Evidência","pronta",{L:"Ouro",P:"32,00",V:"119,90",W:"1",G:"CJ-301"}),
     c("Infantil","Brincos","Brinco infantil estrela","Spina Joias","pronta",{L:"Ouro",P:"7,50",V:"34,90",W:"2",G:"IN-110"}),
@@ -58,3 +58,6 @@ function exemplo(){
     c("Tornozeleiras","","Tornozeleira corrente e estrelas","Rosah","bruta",{N:"3,9",P:"4,70",V:"34,90",qa:"2",qb:"2"})];
 }
 
+
+/* Exemplo apenas visual: não grava peças ou cadastros. */
+function abrirExemploVisual(){repModal(`<div class="rep-h"><div><b class="rep-t">Exemplo de lançamento</b><div class="hint">Demonstração ilustrativa: não altera sua tabela nem seus cadastros.</div></div><button class="btn sm" type="button" data-act="rel-fechar">Fechar exemplo</button></div><div class="rep-tb"><table><thead><tr><th>Referência</th><th>Descrição</th><th>Categoria</th><th>Banho</th><th>Quantidade</th></tr></thead><tbody><tr><td>BR0001A</td><td>Brinco argolinha lisa</td><td>Brincos › Argolas</td><td>Ouro</td><td>2</td></tr><tr><td>BR0001B</td><td>Brinco argolinha lisa</td><td>Brincos › Argolas</td><td>Prata</td><td>1</td></tr><tr><td>AN0001A</td><td>Anel solitário aro 16</td><td>Anel</td><td>Ouro</td><td>1</td></tr></tbody></table></div><p class="hint">Uma mesma peça pode gerar uma linha para cada banho ou variação selecionada.</p>`)}

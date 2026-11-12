@@ -83,3 +83,65 @@ function romExtrasAtual(){
   if(!ROM)return;const res=document.getElementById("rinsRes");if(res)res.textContent=romInsResumoTxt();
   const ctx=romInsCtx();
   ROM.rows.forEach((r,i)=>{if(r.lote)return;const rc=document.querySelector(`#romWrap .rc[data-i="${i}"]`),ch=rc&&rc.querySelector("[data-rins-c]");if(!ch)return;const v=romInsRateio(r,ctx);ch.hidden=!(v>0);if(v>0)ch.textContent=`+ insumos do romaneio R$ ${brl(v)}/un`})}
+
+/* ---------- lote para qualquer item do romaneio (pesar peça por peça) e desativar ---------- */
+function romLotear(i){
+  const r=ROM&&ROM.rows[i];if(!r)return;
+  if(r.lote||r.loteDe){toast("Este item já é um lote.");return}
+  if(r.feito||(r.lancIds||[]).length){toast("Este item já foi lançado: revogue o lançamento antes de transformá-lo em lote.");return}
+  if(Array.isArray(r.conjComp)){toast("Desfaça o conjunto antes de transformar o item em lote.");return}
+  const qtd=Math.max(1,Math.min(60,Math.trunc(num(r.qtd)||1))),cu=num(r.custo)||0,pesoUn=num(r.peso)||0;
+  r.lote=true;r.lid=uid();r.semPeso=true;r.und="";r.total=r2c(cu*qtd);r.loteG=null;r.precoG=null;r.ratear=true;r.qtdAntes=r.qtd;r.skip=true;r.aviso="lote: pese as peças";
+  r.custoUn=r.custo;r.pesoUn=r.peso;r.peso="";r.q={};
+  romLoteAdd(r,qtd,pesoUn>0?pesoUn:null);
+  toast(`${qtd} item(ns) criados no lote, numerados 1/${qtd}. Pese cada um: o valor do lote (R$ ${brl(r.total)}) se reparte pelo peso.`)}
+function romLoteOff(i){
+  const lot=ROM&&ROM.rows[i];if(!lot||!lot.lote)return;
+  const kids=romLoteKids(lot);
+  if(kids.some(k=>k.feito||(k.lancIds||[]).length)){toast("Há itens deste lote já lançados: revogue os lançamentos antes de desativar o lote.");return}
+  if(kids.length&&!confirm(`Desativar o lote? Os ${kids.length} item(ns) criados nele serão removidos e volta um cartão comum.`))return;
+  ROM.rows=ROM.rows.filter(x=>x.loteDe!==lot.lid);
+  const n=lot.semPeso?(lot.qtdAntes||kids.length||1):1,tot=lot.total!=null?lot.total:(lot.loteG||0)*(lot.precoG||0);
+  lot.qtd=n;lot.custo=lot.custoUn!=null&&lot.semPeso?lot.custoUn:virg(r2c(tot/n));lot.peso=lot.semPeso?(lot.pesoUn||""):(lot.loteG?g3(lot.loteG):"");
+  ["lote","lid","semPeso","und","loteG","precoG","ratear","pesoReal","qtdAntes","custoUn","pesoUn"].forEach(k=>delete lot[k]);
+  lot.skip=false;lot.aviso="";lot.q={};
+  romSalvarSoon();renderRom();toast("Lote desativado: o item voltou a ser um cartão comum.")}
+
+/* ＋ Galvânica / ＋ Banho dentro do lançamento ou do romaneio levam à página completa de Galvânicas e banhos (letra, cor, cálculo, coluna, milésimos…), em vez de um mini-cadastro limitado */
+let qGalvanicaSelecionar=false;
+function qIrGalvanica(q){
+  const C=cfg();
+  if(celular())formAbrir(false);irPara("banho");
+  if(q==="bh"){qGalvanicaSelecionar=true;const botao=document.querySelector('#cfg [data-act="bh-add"]');if(botao){botao.click();setTimeout(()=>cadConferir(),0)}else qGalvanicaSelecionar=false}
+  setTimeout(()=>{const bi=q==="bh"?C.banhistas.length-1:Math.max(0,C.banhistas.findIndex(b=>b.id===S.form.banhista)),el=document.querySelector(`[data-bh="${bi}"]`);
+    if(el){el.scrollIntoView({block:"start",behavior:"smooth"});const f=el.querySelector(q==="bh"?'[data-bhf="nome"]':'[data-act="bn-pronto"]');if(f)f.focus({preventScroll:true})}},150);
+  toast(q==="bh"?"Galvânica nova criada na página de Galvânicas e banhos: dê um nome, ajuste os banhos e use no lançamento.":"Escolha o banho (+ Ouro, + Ródio, + Prata, + Outro…) acima da tabela de milésimos; ele já aparece no lançamento.")}
+
+/* ---------- fiscal (NCM, CFOP, FCP) e insumos de todas as categorias numa tabela só ---------- */
+const FISC_COLS=[["ncm","NCM","8 números (ex.: 71131100)",96],["cfop","CFOP","4 números (ex.: 5102)",64],["fcp","FCP %","0 a 100",64],["insumos","Insumos R$","0 em diante (ex.: 0,50)",84]],FISC_PAD={ncm:"Y",cfop:"AA",fcp:"AB",insumos:"Q"};
+function fiscalErro(k,v){v=String(v||"").trim();if(v==="")return "";const n=num(v);
+  if(k==="ncm")return /^\d{8}$/.test(v)?"":"O NCM tem 8 números (ex.: 71131100).";
+  if(k==="cfop")return /^\d{4}$/.test(v)?"":"O CFOP tem 4 números (ex.: 5102).";
+  if(k==="fcp")return n!=null&&n>=0&&n<=100?"":"O FCP é um percentual de 0 a 100.";
+  return n!=null&&n>=0&&n<=1e6?"":"Insumos precisa ser um número de 0 em diante (ex.: 0,50)."}
+function fiscalTodasHTML(C){
+  const pad=k=>esc((C.colcfg[FISC_PAD[k]]||{}).padrao||"");
+  return `<details class="gdet" data-open="fiscall" ${abertos.fiscall?"open":""}><summary><b>Fiscal e insumos de todas as categorias</b><span>edite tudo numa tabela só, ou aplique um valor a todas de uma vez</span></summary><div class="gb">
+    <p class="hint">Vazio = usa o padrão da coluna (Cadastros › Padrões das colunas). A linha de cima aplica o valor digitado a todas as categorias.</p>
+    <div class="tw"><table class="cfg"><thead><tr><th>Categoria</th>${FISC_COLS.map(c=>`<th class="n" title="${c[2]}">${c[1]}</th>`).join("")}</tr></thead><tbody>
+      <tr class="fall"><td><b>Todas as categorias</b></td>${FISC_COLS.map(c=>`<td><input class="n" data-fall="${c[0]}" placeholder="${pad(c[0])||"valor"}" style="width:${c[3]}px" inputmode="${c[0]==="ncm"||c[0]==="cfop"?"numeric":"decimal"}" aria-label="${c[1]} para todas as categorias"></td>`).join("")}</tr>
+      <tr><td colspan="${FISC_COLS.length+1}" style="text-align:right"><button type="button" class="btn sm pri" data-act="fisc-aplicar" title="Grava os campos preenchidos acima em todas as categorias (os vazios não mudam nada)">Aplicar a todas as categorias</button></td></tr>
+      ${C.categorias.map((c,i)=>`<tr><td>${esc(c.nome)}</td>${FISC_COLS.map(f=>`<td><input class="n" data-fc="${i}" data-fk="${f[0]}" value="${esc(c[f[0]]||"")}" placeholder="${pad(f[0])}" style="width:${f[3]}px" inputmode="${f[0]==="ncm"||f[0]==="cfop"?"numeric":"decimal"}" aria-label="${f[1]} de ${esc(c.nome)}"></td>`).join("")}</tr>`).join("")}
+    </tbody></table></div></div></details>`}
+function fiscalCampo(t,fin){
+  if(t.dataset.fall!==undefined)return;   /* a linha "todas" só vale ao clicar em Aplicar */
+  const C=cfg(),c=C.categorias[+t.dataset.fc],k=t.dataset.fk;if(!c)return;
+  if(!fin)return;const v=t.value.trim(),m=fiscalErro(k,v);
+  if(m){t.value=c[k]||"";toast(m+" Voltei ao valor anterior.");return}
+  if(v==="")delete c[k];else c[k]=v;t.value=v;salvar(true,false);renderTopo();renderForm()}
+function fiscalAplicarTodas(){
+  const C=cfg(),vals={};let n=0;
+  for(const [k] of FISC_COLS){const el=document.querySelector(`[data-fall="${k}"]`),v=el?el.value.trim():"";if(v==="")continue;const m=fiscalErro(k,v);if(m){toast(m);if(el)el.focus();return}vals[k]=v}
+  Object.entries(vals).forEach(([k,v])=>{C.categorias.forEach(c=>{c[k]=v;n++})});
+  if(!n){toast("Preencha pelo menos um campo na linha “Todas as categorias”.");return}
+  abertos.fiscall=true;guardarAbertos();salvar(true,false);render();toast(`${Object.keys(vals).length} campo(s) aplicado(s) a ${C.categorias.length} categorias.`)}

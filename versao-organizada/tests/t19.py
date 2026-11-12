@@ -20,6 +20,7 @@ with sync_playwright() as p:
     pg.keyboard.press("End");pg.wait_for_timeout(300);pg.keyboard.press("Home");pg.wait_for_timeout(300)
     ok("Galvânicas" in pg.inner_text('#cfg [data-act="ctab"].on'),"Home volta à primeira")
     pg.click('[data-act="ctab"][data-id="cat"]');pg.wait_for_timeout(300)
+    pg.locator('[data-cat="0"] .cx').click()
     # Tab depois de editar NCM numa categoria nao perde o foco
     pg.fill('[data-cat="0"] [data-cf="ncm"]',"71131100");pg.keyboard.press("Tab");pg.wait_for_timeout(300)
     ok(pg.evaluate("document.activeElement.tagName")!="BODY","Tab após editar NCM mantém o foco ("+pg.evaluate("document.activeElement.tagName")+")")

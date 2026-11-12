@@ -34,7 +34,7 @@ with sync_playwright() as p:
     ok(pg.locator("#conj").count()>0,"categoria Conjuntos ativa a aba de conjuntos")
     pg.screenshot(path=SC+r"\s_conj.png")
     # faixa sem erro
-    (pg.fill("#f-I","Anél"),pg.press("#f-I","Tab"));pg.wait_for_timeout(400)
+    (pg.fill("#f-I","Anel"),pg.press("#f-I","Tab"));pg.wait_for_timeout(400)
     if pg.locator("[data-faixa]").count():
         pg.fill("[data-faixa]","12 - 14");pg.press("[data-faixa]","Enter");pg.wait_for_timeout(300)
     ok(not errs,"sem erro de console: %s"%errs)
