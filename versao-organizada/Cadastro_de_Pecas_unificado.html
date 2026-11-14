@@ -2393,6 +2393,96 @@ function validaBanho$(S,bh,b,campo,valor){
     const n=num(v);if(n==null||n<0)return `${campo==="mil"?"Milésimos":campo==="mult"?"Multiplicador":"Verniz"} precisa ser um número maior ou igual a 0 (sem texto nem negativo).`}
   return ""}
 const cadLancSig$=(S)=>JSON.stringify(S.lanc,(k,v)=>(k==="ft"||k==="ftR"||k==="foto")?undefined:v);
+/* ===== Tarefa 8: cálculo do conjunto (sem DOM) e motor lançamentos -> linhas, recebendo o estado S ===== */
+/* grava as somas na peça: Peso e Compra (iguais em todas as linhas), Banhos e Verniz (de cada banho marcado, em f.ov[banho]) e a Descrição; o Fator × de cada linha dá o Preço de Varejo */
+/* foto dos custos de banho/verniz gravados no conjunto: se continuam iguais à última soma, ninguém digitou por cima e o cadastro de galvânicas pode atualizar */
+function conjCalcular$(S,f){
+  if(!f.conj||!Array.isArray(f.comp))return null;
+  const R=conjCalc$(S,f),temComp=f.comp.some(c=>!vazio(c.peso)||!vazio(c.custo));f.v=f.v||{};f.ov=f.ov||{};
+  if(temComp){f.v.N=txtN(R.tot.N);f.v.P=txtN(R.tot.P);f.somaNP=1}else if(f.somaNP){delete f.v.N;delete f.v.P;delete f.somaNP}   /* só apaga Peso/Compra se foram as somas do conjunto que os criaram */
+  if(R.temBanho){CJ_COL.forEach(L=>delete f.v[L]);
+    const ids=R.vars.map(x=>x.b.id);
+    R.vars.forEach(x=>{const o=f.ov[x.b.id]=f.ov[x.b.id]||{};CJ_COL.forEach(L=>{if(temComp&&x.tot[L]>0)o[L]=txtN(x.tot[L]);else delete o[L]})});
+    Object.keys(f.ov).forEach(k=>{if(!ids.includes(k)&&k!=="p"&&k.indexOf("~")<0){const o=f.ov[k];if(o&&typeof o==="object")CJ_COL.forEach(L=>delete o[L])}})}
+  else{CJ_COL.forEach(L=>{if(temComp&&R.tot[L]>0)f.v[L]=txtN(R.tot[L]);else delete f.v[L]});
+    Object.keys(f.ov).forEach(k=>{if(k!=="p"&&k.indexOf("~")<0){const o=f.ov[k];if(o&&typeof o==="object")CJ_COL.forEach(L=>delete o[L])}})}
+  Object.keys(f.ov).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"&&!Object.keys(o).length)delete f.ov[k]});
+  const nomes=f.comp.map(c=>String(c.desc||"").trim()).filter(Boolean),auto=nomes.length?"Conjunto "+nomes.join(" + "):"";
+  if(vazio(f.v.F)||f.fConj===f.v.F){if(auto)f.v.F=auto;else delete f.v.F;f.fConj=auto}
+  f.cjSnap=conjSnap(f);
+  return R;
+}
+/* a referência de cada peça fica FIXA depois de lançada (excluir ou trocar a categoria de outra peça não renumera as demais); "Renumerar" refaz na ordem */
+function fixarRefs$(S){if(!S.lanc.some(l=>l&&l.v&&vazio(l.v.E)&&!(l.tipo==="pronta"&&l.vinc)))return false;const g=gerar$(S,S.lanc);let ch=false;
+  S.lanc.forEach(l=>{if(!l||!l.v||!vazio(l.v.E)||(l.tipo==="pronta"&&l.vinc))return;const rw=g.linhas.find(x=>x.lancId===l.id);if(!rw)return;const E=String(rw.v.E||""),pt=String(rw.part||""),b=pt&&E.endsWith(pt)?E.slice(0,E.length-pt.length):E;if(b){l.v.E=b;l.rf=1;ch=true}});return ch}
+function renumerarRefs$(S){S.lanc.forEach(l=>{if(l&&l.rf&&l.v){delete l.v.E;delete l.rf}});fixarRefs$(S)}
+function gerar$(S,list){
+  list=list||S.lanc;list.forEach(l=>{if(l&&l.conj&&Array.isArray(l.comp)&&(l.cjSnap===undefined||l.cjSnap===conjSnap(l))){try{conjCalcular$(S,l)}catch(e){}}});   /* conjunto lançado acompanha o cadastro de galvânicas (a menos que alguém tenha digitado o custo na planilha) */
+  const C=cfg$(S),cont={},usados={},linhas=[],refs={},semQ={};
+  /* referências digitadas à mão (no lançamento, coladas ou digitadas na planilha): a numeração automática continua depois da maior */
+  const manual={},manualReal={};let curI=0;const addM=(x,i,rf)=>{const m=String(x||"").replace(/\s+/g,"").toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)return;const u=(usados[m[1]]=usados[m[1]]||new Map());if(!u.has(+m[2])||u.get(+m[2])>i)u.set(+m[2],i);manual[m[1]]=Math.max(manual[m[1]]||0,+m[2]);if(!rf)manualReal[m[1]]=Math.max(manualReal[m[1]]||0,+m[2])};
+  list.forEach((l,i)=>{if(!vazio(l.v.E))addM(l.v.E,i,!!l.rf);Object.values(l.ov||{}).forEach(o=>{if(o&&typeof o==="object")addM(o.E,i)})});
+  /* uma referência digitada só "reserva" o número para as peças lançadas depois dela; a peça antiga não é empurrada (se coincidir, aparece como repetida) */
+  const next=p=>{if(!(p in cont))cont[p]=ultimo$(S,p);do{cont[p]++}while(usados[p]&&usados[p].has(cont[p])&&usados[p].get(cont[p])<=curI);return cont[p]};
+  const cats=[null];
+  const aplicaOv=(row,l)=>{row.ovs=[];const ov=l.ov||{},put=(o,pai)=>{if(o&&typeof o==="object")Object.keys(o).forEach(L=>{if(L[0]==="_")return;if(FORMULA.has(L)&&vazio(o[L]))return;if(pai&&(L==="W"||L==="E"))return;row.v[L]=o[L];if(!(l.conj&&CJ_COL.includes(L))&&!row.ovs.includes(L))row.ovs.push(L)})};
+    if(row.bid&&row.key!==row.bid)put(ov[row.bid],true);row.v0={...row.v};put(ov[row.key],false);return row};
+  cats.forEach(cat=>{
+    const its=list,grupos=[];
+    its.forEach((l,i)=>{const pv=its[i-1];if(l.tipo==="pronta"&&l.vinc&&!temGrade$(S,l)&&!bonP$(S,l).length&&pv&&pv.tipo==="pronta"&&!temGrade$(S,pv)&&!bonP$(S,pv).length&&prefDe$(S,val$(S,l,"I")||"",val$(S,l,"J"))===prefDe$(S,val$(S,pv,"I")||"",val$(S,pv,"J")))grupos[grupos.length-1].push(l);else grupos.push([l])});
+    const baldes={},seq=[],prontas=[];
+    grupos.forEach(g=>{
+      curI=list.indexOf(g[0]);const ov=String(g[0].v.E||"").replace(/\s+/g,"").toUpperCase(),p=prefDe$(S,val$(S,g[0],"I")||"",val$(S,g[0],"J"));
+      const base=ov?ov.replace(/(\d)[A-Z]$/,"$1"):p+fnum$(S,p,next(p));
+      /* referência digitada à mão (no lançamento ou na célula): só as peças lançadas depois dela continuam a partir daí; as anteriores mantêm o número */
+      {if(!(p in cont))cont[p]=ultimo$(S,p);g.forEach(l2=>{[l2.v.E,...Object.values(l2.ov||{}).map(o=>o&&typeof o==="object"?o.E:"")].forEach(x=>{const m=String(x||"").trim().toUpperCase().match(/^([A-Z]+)([0-9]+)/);if(m&&m[1]===p&&+m[2]>cont[p])cont[p]=+m[2]})})}
+      g.forEach((l,k)=>{
+        const cat=val$(S,l,"I")||"";const comum={};LET.forEach(L=>comum[L]=val$(S,l,L));comum.I=cat;{const cj=catBy$(S,cat);if(cj&&cj.subSoRef&&cj.subSoRef[comum.J])comum.J=""}
+        const meta={lancId:l.id,desconto:num(l.desconto)||0,lote:l.lote||null},mk=l.mk||{};
+        if(l.tipo==="bruta"){
+          const bh=bhDe$(S,l);refs[l.id]=[];
+          const vars=itensGrade$(S,l),bon=bh.banhos.filter(b=>l.on&&l.on[b.id]),qv=k=>qtdPos(((l.ov||{})[k]||{}).W);let kk=0;
+          /* com variação: se alguma combinação tem quantidade, as que ficaram sem quantidade não viram linha */
+          const soComQ=vars.length&&bon.some(b=>vars.some(it=>qv(b.id+"~"+it.id)));
+          bh.banhos.forEach((b,i)=>{
+            if(!(l.on&&l.on[b.id]))return;
+            (vars.length?vars:[null]).forEach(it=>{
+              if(it&&soComQ&&!qv(b.id+"~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}
+              const letra=refParte(b,it);kk++;
+              const v={...comum,E:base+letra,F:descVar(descBanho$(S,l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};["R","S","T"].forEach(c=>v[c]="");
+              if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
+              const semCalc=banhoSemCalc(b);   /* banho sem cálculo (ex.: Prata 925): só marca a linha; sem custo de banho nem verniz */
+              const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna||"",v,...(semCalc?{}:{banho:{coluna:b.coluna,modo:b.modo||"peso",mult:num(multItem(l,b,cat))},verniz:vzOn(l,bh,b)?num(bh.verniz):null})},l);
+              refs[l.id].push(row.v.E);
+              if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row);
+            });
+          });
+        }else{
+          const vars=itensGrade$(S,l),bp=bonP$(S,l);
+          if(bp.length){const bh=bhDe$(S,l),qvk=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.length&&bp.some(b=>vars.some(it=>qvk(b.id+"~"+it.id)));let kk=0;refs[l.id]=[];
+            bh.banhos.forEach((b,i)=>{if(!bp.includes(b))return;(vars.length?vars:[null]).forEach(it=>{if(it&&soComQ&&!qvk(b.id+"~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}
+              const letra=refParte(b,it);kk++;
+              const v={...comum,E:base+letra,F:descVar(descBanho$(S,l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
+              const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna,v},l);refs[l.id].push(row.v.E);
+              if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row)})});return}
+          if(vars.length){refs[l.id]=[];const qv=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.some(it=>qv("p~"+it.id));vars.forEach(it=>{if(soComQ&&!qv("p~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}const v={...comum,E:base+refParte(null,it),F:descVar(comSufixoCat$(S,comum.F,cat,l.semSufixoCat),it),W:""};if(it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it.extra)Object.assign(v,it.extra);
+            const row=aplicaOv({...meta,mk:num(mk.p),key:"p~"+it.id,bid:"p",gi:it.id,part:refParte(null,it),v},l);refs[l.id].push(row.v.E);if(C.ordem==="ab")prontas.push(row);else seq.push(row)});return}
+          const ref=ov&&g.length===1?ov:base+(g.length>1?letraN(k):"");
+          const row=aplicaOv({...meta,mk:num(mk.p),key:"p",part:"",v:{...comum,E:ref,F:comSufixoCat$(S,comum.F,cat,l.semSufixoCat)}},l);
+          refs[l.id]=[row.v.E];
+          if(C.ordem==="ab")prontas.push(row);else seq.push(row);
+        }
+      });
+    });
+    Object.keys(baldes).sort((a,b)=>a-b).forEach(k=>linhas.push(...baldes[k]));
+    linhas.push(...seq,...prontas);
+  });
+  {const ex={};list.forEach(l=>{if(l.excl&&l.excl.length)ex[l.id]=new Set(l.excl)});
+    if(Object.keys(ex).length)for(let i=linhas.length-1;i>=0;i--){const r=linhas[i];if(ex[r.lancId]&&ex[r.lancId].has(r.key)){const a=refs[r.lancId];if(a){const j=a.indexOf(r.v.E);if(j>=0)a.splice(j,1)}linhas.splice(i,1)}}}
+  const conta={};linhas.forEach(r=>{const k=String(r.v.E||"").toUpperCase();conta[k]=(conta[k]||0)+1});
+  linhas.forEach(r=>r.dup=conta[String(r.v.E||"").toUpperCase()]>1);
+  return {linhas,refs,cont,manual,manualReal,semQ};
+}
 // Registro de ações de clique: cada fatia registra suas ações (data-act) sem tocar no switch central.
 const ORIGEM = Symbol.for("cp.acoes.origem");
 
@@ -3061,6 +3151,10 @@ function gradeDoEl(...a){return gradeDoEl$(S,...a)}
 function validaBanho(...a){return validaBanho$(S,...a)}
 function romSit(...a){return romSit$(S,...a)}
 function cadLancSig(...a){return cadLancSig$(S,...a)}
+function fixarRefs(...a){return fixarRefs$(S,...a)}
+function renumerarRefs(...a){return renumerarRefs$(S,...a)}
+function gerar(...a){return gerar$(S,...a)}
+function conjCalcular(...a){return conjCalcular$(S,...a)}
 /* ===== limites de entrada (conferidos ANTES de ler o arquivo, com mensagem clara) ===== */
        /* caracteres de uma lista colada ou lida do PDF (medido: ~130 mil caracteres levam uns 5 s para ler; acima de 200 mil a aba ficaria travada por mais de 8 s) */
 /* confere o tamanho do arquivo antes de ler; lanca erro com mensagem clara se passar */
@@ -3162,77 +3256,6 @@ function listaDe(L,catNome){const C=cfg();let base=[];
 function toast(msg,acao){if(/NÃO (?:consegui|salv|foi possível)|não consegui (?:salvar|gravar|guardar)|dados (?:danificados|corrompidos)|memória (?:do navegador )?cheia/i.test(String(msg))){let box=document.getElementById("avisosCriticos");if(!box){box=document.createElement("div");box.id="avisosCriticos";box.setAttribute("aria-live","assertive");box.style.cssText="position:fixed;top:12px;right:12px;z-index:10000;display:grid;gap:8px;max-width:min(440px,calc(100vw - 24px))";document.body.appendChild(box)}if([...box.children].some(x=>x.dataset.msg===String(msg)))return;const item=document.createElement("div");item.dataset.msg=String(msg);item.setAttribute("role","alert");item.style.cssText="background:#fff;border:2px solid #a52222;color:#621717;padding:12px;border-radius:8px;box-shadow:0 4px 16px #0003";const texto=document.createElement("span");texto.textContent=msg;item.appendChild(texto);if(acao){const botao=document.createElement("button");botao.type="button";botao.textContent=acao.t;botao.onclick=()=>{item.remove();acao.fn()};item.appendChild(botao)}const fechar=document.createElement("button");fechar.type="button";fechar.textContent="Fechar";fechar.setAttribute("aria-label","Fechar aviso crítico");fechar.onclick=()=>item.remove();item.appendChild(fechar);box.appendChild(item);return}const t=document.getElementById("toast");t.innerHTML=`<span>${esc(msg)}</span>`+(acao?`<button type="button" id="tBtn">${esc(acao.t)}</button>`:"")+`<button type="button" id="tFechar" aria-label="Fechar aviso">×</button>`;t.hidden=false;if(acao)document.getElementById("tBtn").onclick=()=>{t.hidden=true;acao.fn()};document.getElementById("tFechar").onclick=()=>{t.hidden=true;clearTimeout(toast._t)};clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,Math.min(20000,Math.max(acao?10000:6000,String(msg).length*90)))}
 
 /* ===== motor: lançamentos -> linhas ===== */
-/* a referência de cada peça fica FIXA depois de lançada (excluir ou trocar a categoria de outra peça não renumera as demais); "Renumerar" refaz na ordem */
-function fixarRefs(){if(!S.lanc.some(l=>l&&l.v&&vazio(l.v.E)&&!(l.tipo==="pronta"&&l.vinc)))return false;const g=gerar(S.lanc);let ch=false;
-  S.lanc.forEach(l=>{if(!l||!l.v||!vazio(l.v.E)||(l.tipo==="pronta"&&l.vinc))return;const rw=g.linhas.find(x=>x.lancId===l.id);if(!rw)return;const E=String(rw.v.E||""),pt=String(rw.part||""),b=pt&&E.endsWith(pt)?E.slice(0,E.length-pt.length):E;if(b){l.v.E=b;l.rf=1;ch=true}});return ch}
-function renumerarRefs(){S.lanc.forEach(l=>{if(l&&l.rf&&l.v){delete l.v.E;delete l.rf}});fixarRefs()}
-function gerar(list){
-  list=list||S.lanc;list.forEach(l=>{if(l&&l.conj&&Array.isArray(l.comp)&&(l.cjSnap===undefined||l.cjSnap===conjSnap(l))){try{conjSync(l)}catch(e){}}});   /* conjunto lançado acompanha o cadastro de galvânicas (a menos que alguém tenha digitado o custo na planilha) */
-  const C=cfg(),cont={},usados={},linhas=[],refs={},semQ={};
-  /* referências digitadas à mão (no lançamento, coladas ou digitadas na planilha): a numeração automática continua depois da maior */
-  const manual={},manualReal={};let curI=0;const addM=(x,i,rf)=>{const m=String(x||"").replace(/\s+/g,"").toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)return;const u=(usados[m[1]]=usados[m[1]]||new Map());if(!u.has(+m[2])||u.get(+m[2])>i)u.set(+m[2],i);manual[m[1]]=Math.max(manual[m[1]]||0,+m[2]);if(!rf)manualReal[m[1]]=Math.max(manualReal[m[1]]||0,+m[2])};
-  list.forEach((l,i)=>{if(!vazio(l.v.E))addM(l.v.E,i,!!l.rf);Object.values(l.ov||{}).forEach(o=>{if(o&&typeof o==="object")addM(o.E,i)})});
-  /* uma referência digitada só "reserva" o número para as peças lançadas depois dela; a peça antiga não é empurrada (se coincidir, aparece como repetida) */
-  const next=p=>{if(!(p in cont))cont[p]=ultimo(p);do{cont[p]++}while(usados[p]&&usados[p].has(cont[p])&&usados[p].get(cont[p])<=curI);return cont[p]};
-  const cats=[null];
-  const aplicaOv=(row,l)=>{row.ovs=[];const ov=l.ov||{},put=(o,pai)=>{if(o&&typeof o==="object")Object.keys(o).forEach(L=>{if(L[0]==="_")return;if(FORMULA.has(L)&&vazio(o[L]))return;if(pai&&(L==="W"||L==="E"))return;row.v[L]=o[L];if(!(l.conj&&CJ_COL.includes(L))&&!row.ovs.includes(L))row.ovs.push(L)})};
-    if(row.bid&&row.key!==row.bid)put(ov[row.bid],true);row.v0={...row.v};put(ov[row.key],false);return row};
-  cats.forEach(cat=>{
-    const its=list,grupos=[];
-    its.forEach((l,i)=>{const pv=its[i-1];if(l.tipo==="pronta"&&l.vinc&&!temGrade(l)&&!bonP(l).length&&pv&&pv.tipo==="pronta"&&!temGrade(pv)&&!bonP(pv).length&&prefDe(val(l,"I")||"",val(l,"J"))===prefDe(val(pv,"I")||"",val(pv,"J")))grupos[grupos.length-1].push(l);else grupos.push([l])});
-    const baldes={},seq=[],prontas=[];
-    grupos.forEach(g=>{
-      curI=list.indexOf(g[0]);const ov=String(g[0].v.E||"").replace(/\s+/g,"").toUpperCase(),p=prefDe(val(g[0],"I")||"",val(g[0],"J"));
-      const base=ov?ov.replace(/(\d)[A-Z]$/,"$1"):p+fnum(p,next(p));
-      /* referência digitada à mão (no lançamento ou na célula): só as peças lançadas depois dela continuam a partir daí; as anteriores mantêm o número */
-      {if(!(p in cont))cont[p]=ultimo(p);g.forEach(l2=>{[l2.v.E,...Object.values(l2.ov||{}).map(o=>o&&typeof o==="object"?o.E:"")].forEach(x=>{const m=String(x||"").trim().toUpperCase().match(/^([A-Z]+)([0-9]+)/);if(m&&m[1]===p&&+m[2]>cont[p])cont[p]=+m[2]})})}
-      g.forEach((l,k)=>{
-        const cat=val(l,"I")||"";const comum={};LET.forEach(L=>comum[L]=val(l,L));comum.I=cat;{const cj=catBy(cat);if(cj&&cj.subSoRef&&cj.subSoRef[comum.J])comum.J=""}
-        const meta={lancId:l.id,desconto:num(l.desconto)||0,lote:l.lote||null},mk=l.mk||{};
-        if(l.tipo==="bruta"){
-          const bh=bhDe(l);refs[l.id]=[];
-          const vars=itensGrade(l),bon=bh.banhos.filter(b=>l.on&&l.on[b.id]),qv=k=>qtdPos(((l.ov||{})[k]||{}).W);let kk=0;
-          /* com variação: se alguma combinação tem quantidade, as que ficaram sem quantidade não viram linha */
-          const soComQ=vars.length&&bon.some(b=>vars.some(it=>qv(b.id+"~"+it.id)));
-          bh.banhos.forEach((b,i)=>{
-            if(!(l.on&&l.on[b.id]))return;
-            (vars.length?vars:[null]).forEach(it=>{
-              if(it&&soComQ&&!qv(b.id+"~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}
-              const letra=refParte(b,it);kk++;
-              const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};["R","S","T"].forEach(c=>v[c]="");
-              if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
-              const semCalc=banhoSemCalc(b);   /* banho sem cálculo (ex.: Prata 925): só marca a linha; sem custo de banho nem verniz */
-              const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna||"",v,...(semCalc?{}:{banho:{coluna:b.coluna,modo:b.modo||"peso",mult:num(multItem(l,b,cat))},verniz:vzOn(l,bh,b)?num(bh.verniz):null})},l);
-              refs[l.id].push(row.v.E);
-              if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row);
-            });
-          });
-        }else{
-          const vars=itensGrade(l),bp=bonP(l);
-          if(bp.length){const bh=bhDe(l),qvk=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.length&&bp.some(b=>vars.some(it=>qvk(b.id+"~"+it.id)));let kk=0;refs[l.id]=[];
-            bh.banhos.forEach((b,i)=>{if(!bp.includes(b))return;(vars.length?vars:[null]).forEach(it=>{if(it&&soComQ&&!qvk(b.id+"~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}
-              const letra=refParte(b,it);kk++;
-              const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
-              const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna,v},l);refs[l.id].push(row.v.E);
-              if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row)})});return}
-          if(vars.length){refs[l.id]=[];const qv=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.some(it=>qv("p~"+it.id));vars.forEach(it=>{if(soComQ&&!qv("p~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}const v={...comum,E:base+refParte(null,it),F:descVar(comSufixoCat(comum.F,cat,l.semSufixoCat),it),W:""};if(it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it.extra)Object.assign(v,it.extra);
-            const row=aplicaOv({...meta,mk:num(mk.p),key:"p~"+it.id,bid:"p",gi:it.id,part:refParte(null,it),v},l);refs[l.id].push(row.v.E);if(C.ordem==="ab")prontas.push(row);else seq.push(row)});return}
-          const ref=ov&&g.length===1?ov:base+(g.length>1?letraN(k):"");
-          const row=aplicaOv({...meta,mk:num(mk.p),key:"p",part:"",v:{...comum,E:ref,F:comSufixoCat(comum.F,cat,l.semSufixoCat)}},l);
-          refs[l.id]=[row.v.E];
-          if(C.ordem==="ab")prontas.push(row);else seq.push(row);
-        }
-      });
-    });
-    Object.keys(baldes).sort((a,b)=>a-b).forEach(k=>linhas.push(...baldes[k]));
-    linhas.push(...seq,...prontas);
-  });
-  {const ex={};list.forEach(l=>{if(l.excl&&l.excl.length)ex[l.id]=new Set(l.excl)});
-    if(Object.keys(ex).length)for(let i=linhas.length-1;i>=0;i--){const r=linhas[i];if(ex[r.lancId]&&ex[r.lancId].has(r.key)){const a=refs[r.lancId];if(a){const j=a.indexOf(r.v.E);if(j>=0)a.splice(j,1)}linhas.splice(i,1)}}}
-  const conta={};linhas.forEach(r=>{const k=String(r.v.E||"").toUpperCase();conta[k]=(conta[k]||0)+1});
-  linhas.forEach(r=>r.dup=conta[String(r.v.E||"").toUpperCase()]>1);
-  return {linhas,refs,cont,manual,manualReal,semQ};
-}
 /* validação de número digitado/colado: sem texto, sem negativo; Quantidade = inteiro de 1 em diante */
 /* fórmula aceita: só números, células (ex.: P2, AB10), + - * / e parênteses — nenhum nome de função (=RAND(), =HYPERLINK(...) etc.) */
 /* quantidade da variação: número maior que zero, ou fórmula (ex.: =1) — a fórmula não pode fazer a linha sumir da exportação */
@@ -3912,22 +3935,9 @@ async function conjExcluirCategoria(nome){
 }
 /* banho que vale para uma peça do conjunto: "" = o banho da linha do conjunto · "-" = sem banho · id = sempre esse banho */
 /* ao sair de Conjunto (ou limpar): tira da peça as somas e a descrição automática; as peças ficam guardadas para quando voltar */
-/* grava as somas na peça: Peso e Compra (iguais em todas as linhas), Banhos e Verniz (de cada banho marcado, em f.ov[banho]) e a Descrição; o Fator × de cada linha dá o Preço de Varejo */
-/* foto dos custos de banho/verniz gravados no conjunto: se continuam iguais à última soma, ninguém digitou por cima e o cadastro de galvânicas pode atualizar */
+/* conjunto na tela: calcula e grava as somas na peça (conjCalcular, no núcleo) e, com dom, atualiza os campos e quadros do formulário */
 function conjSync(f,dom){
-  if(!f.conj||!Array.isArray(f.comp))return;
-  const R=conjCalc(f),temComp=f.comp.some(c=>!vazio(c.peso)||!vazio(c.custo));f.v=f.v||{};f.ov=f.ov||{};
-  if(temComp){f.v.N=txtN(R.tot.N);f.v.P=txtN(R.tot.P);f.somaNP=1}else if(f.somaNP){delete f.v.N;delete f.v.P;delete f.somaNP}   /* só apaga Peso/Compra se foram as somas do conjunto que os criaram */
-  if(R.temBanho){CJ_COL.forEach(L=>delete f.v[L]);
-    const ids=R.vars.map(x=>x.b.id);
-    R.vars.forEach(x=>{const o=f.ov[x.b.id]=f.ov[x.b.id]||{};CJ_COL.forEach(L=>{if(temComp&&x.tot[L]>0)o[L]=txtN(x.tot[L]);else delete o[L]})});
-    Object.keys(f.ov).forEach(k=>{if(!ids.includes(k)&&k!=="p"&&k.indexOf("~")<0){const o=f.ov[k];if(o&&typeof o==="object")CJ_COL.forEach(L=>delete o[L])}})}
-  else{CJ_COL.forEach(L=>{if(temComp&&R.tot[L]>0)f.v[L]=txtN(R.tot[L]);else delete f.v[L]});
-    Object.keys(f.ov).forEach(k=>{if(k!=="p"&&k.indexOf("~")<0){const o=f.ov[k];if(o&&typeof o==="object")CJ_COL.forEach(L=>delete o[L])}})}
-  Object.keys(f.ov).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"&&!Object.keys(o).length)delete f.ov[k]});
-  const nomes=f.comp.map(c=>String(c.desc||"").trim()).filter(Boolean),auto=nomes.length?"Conjunto "+nomes.join(" + "):"";
-  if(vazio(f.v.F)||f.fConj===f.v.F){if(auto)f.v.F=auto;else delete f.v.F;f.fConj=auto}
-  f.cjSnap=conjSnap(f);
+  const R=conjCalcular(f);if(!R)return;
   if(dom){["N","P","F"].forEach(L=>{const el=document.getElementById("f-"+L);if(el&&document.activeElement!==el)el.value=f.v[L]??""});
     f.comp.forEach((c,i)=>{const e=document.getElementById("cj-c-"+i);if(e)e.innerHTML=conjLinTxt(R,i,c)});
     const t=document.getElementById("conjTot");if(t)t.innerHTML=conjTotHTML(f);

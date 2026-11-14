@@ -31,7 +31,7 @@ JS="""()=>{
   g.linhas.forEach((r,i)=>{(por[r.lancId]=por[r.lancId]||[]).push(r);
     der.push({peso:pesoLinha(r),banho:r.banho?calcBanho(r,r.banho.coluna,i+2):null,verniz:r.banho?calcBanho(r,"U",i+2):null})});
   const sl=m=>saidaLinhas(g,m).map(e=>({t:e.t,pai:e.pai||null,attrs:e.attrs||null,row:e.row}));
-  return JSON.stringify({pecas:por,linhas:g.linhas,derivados:der,saida_normal:sl(null),saida_pai:sl({agrupar:"sim"}),estado:{config:S.config,lanc:S.lanc,form:S.form}})}"""
+  return JSON.stringify({pecas:por,linhas:g.linhas,derivados:der,saida_normal:sl(null),saida_pai:sl({agrupar:"sim"}),gerar_resto:{refs:g.refs,cont:g.cont,manual:g.manual,manualReal:g.manualReal,semQ:g.semQ},estado:{config:S.config,lanc:S.lanc,form:S.form}})}"""
 with sync_playwright() as p:
     b=p.chromium.launch(channel="msedge");ctx=b.new_context(viewport={"width":1500,"height":1000});pg=ctx.new_page()
     errs=[];pg.on("pageerror",lambda e:errs.append(str(e)))

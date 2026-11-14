@@ -15,22 +15,9 @@ async function conjExcluirCategoria(nome){
 }
 /* banho que vale para uma peça do conjunto: "" = o banho da linha do conjunto · "-" = sem banho · id = sempre esse banho */
 /* ao sair de Conjunto (ou limpar): tira da peça as somas e a descrição automática; as peças ficam guardadas para quando voltar */
-/* grava as somas na peça: Peso e Compra (iguais em todas as linhas), Banhos e Verniz (de cada banho marcado, em f.ov[banho]) e a Descrição; o Fator × de cada linha dá o Preço de Varejo */
-/* foto dos custos de banho/verniz gravados no conjunto: se continuam iguais à última soma, ninguém digitou por cima e o cadastro de galvânicas pode atualizar */
+/* conjunto na tela: calcula e grava as somas na peça (conjCalcular, no núcleo) e, com dom, atualiza os campos e quadros do formulário */
 function conjSync(f,dom){
-  if(!f.conj||!Array.isArray(f.comp))return;
-  const R=conjCalc(f),temComp=f.comp.some(c=>!vazio(c.peso)||!vazio(c.custo));f.v=f.v||{};f.ov=f.ov||{};
-  if(temComp){f.v.N=txtN(R.tot.N);f.v.P=txtN(R.tot.P);f.somaNP=1}else if(f.somaNP){delete f.v.N;delete f.v.P;delete f.somaNP}   /* só apaga Peso/Compra se foram as somas do conjunto que os criaram */
-  if(R.temBanho){CJ_COL.forEach(L=>delete f.v[L]);
-    const ids=R.vars.map(x=>x.b.id);
-    R.vars.forEach(x=>{const o=f.ov[x.b.id]=f.ov[x.b.id]||{};CJ_COL.forEach(L=>{if(temComp&&x.tot[L]>0)o[L]=txtN(x.tot[L]);else delete o[L]})});
-    Object.keys(f.ov).forEach(k=>{if(!ids.includes(k)&&k!=="p"&&k.indexOf("~")<0){const o=f.ov[k];if(o&&typeof o==="object")CJ_COL.forEach(L=>delete o[L])}})}
-  else{CJ_COL.forEach(L=>{if(temComp&&R.tot[L]>0)f.v[L]=txtN(R.tot[L]);else delete f.v[L]});
-    Object.keys(f.ov).forEach(k=>{if(k!=="p"&&k.indexOf("~")<0){const o=f.ov[k];if(o&&typeof o==="object")CJ_COL.forEach(L=>delete o[L])}})}
-  Object.keys(f.ov).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"&&!Object.keys(o).length)delete f.ov[k]});
-  const nomes=f.comp.map(c=>String(c.desc||"").trim()).filter(Boolean),auto=nomes.length?"Conjunto "+nomes.join(" + "):"";
-  if(vazio(f.v.F)||f.fConj===f.v.F){if(auto)f.v.F=auto;else delete f.v.F;f.fConj=auto}
-  f.cjSnap=conjSnap(f);
+  const R=conjCalcular(f);if(!R)return;
   if(dom){["N","P","F"].forEach(L=>{const el=document.getElementById("f-"+L);if(el&&document.activeElement!==el)el.value=f.v[L]??""});
     f.comp.forEach((c,i)=>{const e=document.getElementById("cj-c-"+i);if(e)e.innerHTML=conjLinTxt(R,i,c)});
     const t=document.getElementById("conjTot");if(t)t.innerHTML=conjTotHTML(f);

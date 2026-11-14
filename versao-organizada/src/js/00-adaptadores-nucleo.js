@@ -107,3 +107,7 @@ function gradeDoEl(...a){return gradeDoEl$(S,...a)}
 function validaBanho(...a){return validaBanho$(S,...a)}
 function romSit(...a){return romSit$(S,...a)}
 function cadLancSig(...a){return cadLancSig$(S,...a)}
+function fixarRefs(...a){return fixarRefs$(S,...a)}
+function renumerarRefs(...a){return renumerarRefs$(S,...a)}
+function gerar(...a){return gerar$(S,...a)}
+function conjCalcular(...a){return conjCalcular$(S,...a)}
