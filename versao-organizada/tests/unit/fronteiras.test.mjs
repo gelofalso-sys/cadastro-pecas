@@ -1,7 +1,7 @@
 // Testes de tools/acoplamento.mjs e tools/checar_fronteiras.mjs (funcoes puras), com decls montado a mao.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { arestas, violacoes, globaisPorFatia } from "../../tools/acoplamento.mjs";
+import { arestas, violacoes, globaisPorFatia, fronteiraDoConjunto } from "../../tools/acoplamento.mjs";
 import { donoDoArquivo } from "../../tools/fatias.mjs";
 import { novasDuplicadas } from "../../tools/checar_fronteiras.mjs";
 
@@ -57,4 +57,10 @@ test("novasDuplicadas ignora as listadas na base e acusa as novas", () => {
   const dup = [{ nome: "f", arqs: ["a", "b"] }, { nome: "g", arqs: ["a", "b"] }];
   assert.deepEqual(novasDuplicadas(dup, [{ nome: "f", arqs: ["a", "b"] }]).map(x => x.nome), ["g"]);
   assert.equal(novasDuplicadas(dup, []).length, 2);
+});
+test("fronteiraDoConjunto lista o que o conjunto usa de fora e o que dele e usado de fora", () => {
+  const decls = new Map([["a1", d("x.js", ["a2", "ext"])], ["a2", d("x.js")], ["ext", d("y.js")], ["out", d("z.js", ["a2", "ext"])]]);
+  const f = fronteiraDoConjunto(decls, ["x.js"]);
+  assert.deepEqual(f.usa, [{ simbolo: "ext", arqs: ["y.js"] }]);
+  assert.deepEqual(f.usados, [{ simbolo: "a2", arqs: ["z.js"] }]);
 });

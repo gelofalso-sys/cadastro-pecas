@@ -78,6 +78,20 @@ export function acoplamentoPorFatia(decls) {
   return r;
 }
 
+// Fronteira de um conjunto de arquivos (passo 1 do procedimento de fatia): simbolos de fora que ele usa e simbolos dele usados de fora.
+export function fronteiraDoConjunto(decls, arqs) {
+  const dentro = new Set(arqs), usa = new Map(), usados = new Map();
+  const juntar = (m, simbolo, arq) => { if (!m.has(simbolo)) m.set(simbolo, new Set()); m.get(simbolo).add(arq) };
+  for (const [, d] of decls) for (const r of d.refs) {
+    const alvo = decls.get(r); if (!alvo) continue;
+    const dIn = dentro.has(d.arq), aIn = dentro.has(alvo.arq);
+    if (dIn && !aIn) juntar(usa, r, alvo.arq);
+    else if (!dIn && aIn) juntar(usados, r, d.arq);
+  }
+  const lista = m => [...m].map(([simbolo, arqs]) => ({ simbolo, arqs: [...arqs].sort() })).sort((a, b) => a.simbolo.localeCompare(b.simbolo));
+  return { usa: lista(usa), usados: lista(usados) };
+}
+
 function relatorio() {
   const { decls } = analisar();
   const L = [];
@@ -107,7 +121,16 @@ function relatorio() {
   return L.join("\n") + "\n";
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+const opcao = n => (process.argv.find(a => a.startsWith("--" + n + "=")) || "").slice(n.length + 3);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) && (opcao("fatia") || opcao("arquivos"))) {
+  // --fatia=<nome> le os arquivos do FATIA.json; --arquivos=a.js,b.js (relativos a src/) serve antes de a fatia existir.
+  let arqs = opcao("arquivos") ? opcao("arquivos").split(",") : [];
+  if (opcao("fatia")) { const f = carregarFatias().find(x => x.nome === opcao("fatia")); if (!f) { console.error("fatia nao encontrada: " + opcao("fatia")); process.exit(1) } arqs = f.arquivos.map(a => `fatias/${f.nome}/${a}`); }
+  const { usa, usados } = fronteiraDoConjunto(analisar().decls, arqs);
+  const NL = String.fromCharCode(10);
+  const fmt = l => l.map(x => `  ${x.simbolo}  (${x.arqs.join(", ")})`).join(NL) || "  (nenhum)";
+  console.log([`Simbolos de fora usados pelos arquivos (${usa.length}):`, fmt(usa), "", `Simbolos dos arquivos usados de fora (${usados.length}) -> candidatos a expoe:`, fmt(usados)].join(NL));
+} else if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const t = relatorio();
   if (process.argv.includes("--escrever")) { fs.writeFileSync(path.join(raiz, "docs", "acoplamento-base.md"), t, "utf8"); console.log("docs/acoplamento-base.md escrito"); }
   else console.log(t);
