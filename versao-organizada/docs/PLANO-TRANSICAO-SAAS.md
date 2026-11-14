@@ -210,13 +210,13 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 **O que existe agora**
 - `src/core/` com 8 módulos ES (`formulas`, `colunas`, `utilidades`, `romaneio`, `notafiscal`, `backup`, `exportacao`, `dominio`): 255 declarações que **não tocam em estado, DOM, armazenamento nem rede**, movidas de `src/js` **sem alterar o código**. O montador as embute no mesmo bloco único do navegador (sem `import`/`export`), então o HTML final segue offline e de arquivo único.
 - `tools/grafo_puro.mjs` classifica cada declaração (895) como pura ou dependente de estado/DOM, com a causa raiz. É a lista de trabalho da etapa. `tools/extrair_para_core.mjs` faz a movimentação sem retocar o texto; `tools/checar_ordem.mjs` confere que nenhum `const` do núcleo é usado na carga antes de ser declarado.
-- `tests/unit/` roda em Node puro (`npm run test:unit`) e já faz parte de `run_all.py`. 12 testes antigos que recortavam texto de `src/js` passaram a ler o núcleo por `tests/_fonte.js` (ponte transitória; o destino é importar o módulo).
+- `tests/unit/` roda em Node puro (`npm run test:unit`) e já faz parte de `run_all.py`. Os testes antigos que recortavam texto do núcleo agora importam os módulos (`tests/unit/_contexto.mjs` devolve as funções ligadas a um `S`); a ponte `tests/_fonte.js` foi apagada. Os trechos de `src/js` (fora do núcleo) seguem recortados e rodando em `vm`.
 
 **O que falta para fechar a Etapa 2**
 1. As 109 funções que só dependem de `S` (`cfg`, `catBy`, `bhDe`, `val`, `valorCol`, `saidaLinhas`, `validarModelo`, `pendenciasExport`, `conjCalc`, `romBh`…) precisam receber `config` e a lista de peças como argumento. São a ponte entre o núcleo puro e o motor `gerar`.
 2. `gerar()` e `fixarRefs()` dependem de `conjSync`, que toca no DOM (`dom`). Separar o cálculo da escrita no formulário.
 3. Teste de caracterização com o backup real: dado `config` + `lanc`, as linhas exportadas pelo núcleo em Node são idênticas às do app.
 4. Ciclos entre módulos do núcleo (`colunas` ↔ `formulas` ↔ `utilidades`): funcionam porque só funções se chamam entre si, mas devem ser desfeitos ao mover `DEFAULT_CONFIG`/`semAc`.
-5. Migrar de vez os testes que ainda recortam texto (`tests/_fonte.js`) para importar os módulos.
+5. (feito na Tarefa 9) testes importam os módulos do núcleo; resta recortar de `src/js` só o que ainda não foi para o núcleo.
 
 **Dívida técnica registrada:** o conjunto de pureza é *estrutural* (o grafo não vê mutação de objetos recebidos por argumento nem de constantes-objeto como `DEFAULT_CONFIG`); revisar quando o servidor reutilizar o núcleo.

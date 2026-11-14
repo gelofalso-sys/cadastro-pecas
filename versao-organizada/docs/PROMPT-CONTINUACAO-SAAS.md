@@ -27,7 +27,7 @@ Suíte completa verde com o backup real (`CP_BACKUP`), 164 OK. `t19` falha só e
 - Adaptadores gerados: [src/js/00-adaptadores-nucleo.js](../src/js/00-adaptadores-nucleo.js) (`f(...)` chama `f$(S, ...)`)
 - Montador: [tools/montar.py](../tools/montar.py) (embute o núcleo sem `import`/`export` no bloco único)
 - Ferramentas da Etapa 2: [tools/grafo_puro.mjs](../tools/grafo_puro.mjs) (lista o que é puro e a causa da impureza), [tools/extrair_para_core.mjs](../tools/extrair_para_core.mjs), [tools/injetar_estado.mjs](../tools/injetar_estado.mjs), [tools/checar_ordem.mjs](../tools/checar_ordem.mjs), [tools/lint.mjs](../tools/lint.mjs)
-- Testes: [tests/run_all.py](../tests/run_all.py) (`--so=<regex>`, `--paralelo=N`), [tests/unit/](../tests/unit/) (Node puro), [tests/_fonte.js](../tests/_fonte.js) (ponte que lê o núcleo para testes que recortam texto)
+- Testes: [tests/run_all.py](../tests/run_all.py) (`--so=<regex>`, `--paralelo=N`), [tests/unit/](../tests/unit/) (Node puro), [tests/unit/_contexto.mjs](../tests/unit/_contexto.mjs) (importa o núcleo e liga as funções a um `S`, para testes que ainda rodam trechos de `src/js` em `vm`)
 - Ver o app no navegador com dados do backup: [tools/ao_vivo.py](../tools/ao_vivo.py), depois `python -m http.server 8765 --directory ../arquivo/ao-vivo` e abrir `http://127.0.0.1:8765/app.html`
 - Pacote Netlify: `python tools/publicar.py` e `python tools/verificar_pacote.py` (saída em `publicar-netlify-unificado/`)
 - Backup real para os testes: `C:/Users/mathe/Downloads/cadastro-pecas-backup-completo-2026-11-08.json`
@@ -46,7 +46,7 @@ Tudo que falhar no modo paralelo deve ser rodado sozinho antes de ser tratado co
    - Separar o cálculo da escrita no DOM em `conjSync` (em [src/js/18-conjunto.js](../src/js/18-conjunto.js)) e `fixarRefs` (em [src/js/12-motor-linhas.js](../src/js/12-motor-linhas.js)); depois levar `gerar` para o núcleo.
    - Teste de caracterização com o backup real: dado `config` + `lanc`, as linhas exportadas pelo núcleo em Node são idênticas às do app (`tests/unit/`).
    - Desfazer os ciclos entre `colunas`, `formulas` e `utilidades` (mover `DEFAULT_CONFIG` e `semAc`).
-   - Trocar `tests/_fonte.js` por importação direta dos módulos.
+   - (feito) `tests/_fonte.js` foi trocado por importação direta dos módulos.
 2. **Etapa 3 — camada `store`** (cuidado máximo: é onde se perde dado). Interface assíncrona com adaptador local sobre `localStorage` e IndexedDB, preferências separadas dos dados, nada fora de `src/store/` tocando armazenamento. Testes de quota, conflito, duas abas e restauração (`t58`–`t63`, `t94`) sempre com o backup real.
 3. **Etapa 4 — estado explícito**: objeto de estado único e ações nomeadas; migrar os 53 globais por grupos (domínio, edição, interface).
 4. **Etapa 5 — interface em módulos**: dividir os arquivos de eventos por tela, trocar strings HTML longas por funções de template, uma definição só para menu mobile e desktop.

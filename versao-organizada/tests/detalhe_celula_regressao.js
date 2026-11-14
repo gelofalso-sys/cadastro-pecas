@@ -1,4 +1,4 @@
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const s=fs.readFileSync('src/js/16-selecao.js','utf8');const part=s.slice(s.indexOf('function detalheCelulaSelecionada'),s.indexOf('function renderSelBar'));
-const ctx={S:{config:{categorias:[],colcfg:{},seqs:{},banhistas:[]},lanc:[{id:'x'}]}};vm.createContext(ctx);vm.runInContext(require('./_fonte').tudo(),ctx);
-const r={lancId:'x',v:{N:'3',W:'2'},ovs:[],banho:{coluna:'R',modo:'peso',mult:2},verniz:0.5};let t=ctx.detalheCelulaSelecionada(r,'R',0);assert.match(t,/3 g × R\$ 2\/g = R\$ 6,00 por unidade × 2 un\. = R\$ 12,00/);r.banho.modo='fixo';t=ctx.detalheCelulaSelecionada(r,'R',0);assert.match(t,/valor fixo/);r.ovs=['R'];assert.match(ctx.detalheCelulaSelecionada(r,'R',0),/informado na peça/);ctx.S.lanc[0].conj=true;assert.match(ctx.detalheCelulaSelecionada(r,'R',0),/componentes/);console.log('OK explicação da célula: grama, quantidade, fixo, manual e conjunto');
+const assert=require('node:assert/strict');
+const {ligar}=require('./unit/_contexto.mjs');
+const S={config:{categorias:[],colcfg:{},seqs:{},banhistas:[]},lanc:[{id:'x'}]};const f=ligar(S);
+const r={lancId:'x',v:{N:'3',W:'2'},ovs:[],banho:{coluna:'R',modo:'peso',mult:2},verniz:0.5};let t=f.detalheCelulaSelecionada(r,'R',0);assert.match(t,/3 g × R\$ 2\/g = R\$ 6,00 por unidade × 2 un\. = R\$ 12,00/);r.banho.modo='fixo';t=f.detalheCelulaSelecionada(r,'R',0);assert.match(t,/valor fixo/);r.ovs=['R'];assert.match(f.detalheCelulaSelecionada(r,'R',0),/informado na peça/);S.lanc[0].conj=true;assert.match(f.detalheCelulaSelecionada(r,'R',0),/componentes/);console.log('OK explicação da célula: grama, quantidade, fixo, manual e conjunto');

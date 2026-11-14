@@ -1,10 +1,8 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const FONTE=require('./_fonte');
-const trechos=[FONTE.tudo()];
+const {ligar}=require('./unit/_contexto.mjs');
 const cats={Brincos:{nome:'Brincos'},Colares:{nome:'Colares'},Conjuntos:{nome:'Conjuntos'}};
 const banho={id:'ouro',coluna:'R',modo:'peso',mult:'1',multCat:{Brincos:'2',Colares:'5',Conjuntos:'3'}};
-const config={categorias:Object.values(cats),catAlias:{Antiga:'Brincos'},banhistas:[{id:'h',banhos:[banho],verniz:'0',vernizOn:false}]},ctx={S:{config,lanc:[]}};
-vm.createContext(ctx);vm.runInContext(trechos.join('\n'),ctx);
+const config={categorias:Object.values(cats),catAlias:{Antiga:'Brincos'},banhistas:[{id:'h',banhos:[banho],verniz:'0',vernizOn:false}]},S={config,lanc:[]},ctx=ligar(S);
 const f={tipo:'pronta',v:{I:'Conjuntos'},onP:{ouro:true},comp:[{desc:'brinco',cat:'Brincos',peso:'1',custo:'1'},{desc:'colar',cat:'Colares',peso:'2',custo:'1'}]};
 assert.equal(ctx.conjCalc(f).tot.R,12,'taxa por categoria e peso');banho.modo='fixo';assert.equal(ctx.conjCalc(f).tot.R,7,'valores fixos não multiplicam pelo peso');banho.modo='peso';
 f.comp[0].cat='Antiga';assert.equal(ctx.conjCalc(f).tot.R,12,'alias da categoria renomeada');delete f.comp[0].cat;assert.equal(ctx.conjCalc(f).tot.R,13,'componente antigo herda categoria do conjunto');

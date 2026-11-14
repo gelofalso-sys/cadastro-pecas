@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('src/js/21-edicao-em-lote-e-revisao.js', 'utf8');
-const resumo = require('./_fonte').core('colunas','romaneio') + source.slice(source.indexOf('function romLoteResumo'), source.indexOf('function romLoteHTML'));
+const {ligar, nucleo} = require('./unit/_contexto.mjs');
+const resumo = source.slice(source.indexOf('function romLoteResumo'), source.indexOf('function romLoteHTML'));
 const partir = source.slice(source.indexOf('function romPartir'), source.indexOf('function romJuntar'));
 const ctx = {
   ROM: {rows: []}, uid: () => 'grupo', clone: x => structuredClone(x),
@@ -13,6 +14,7 @@ const ctx = {
   brl: x => Number(x).toFixed(2).replace('.', ','), toast: () => {},
   romSalvarSoon: () => {}, renderRom: () => {}
 };
+Object.assign(ctx, ligar(() => ctx.S));   /* núcleo importado (antes recortado do código-fonte); os stubs acima valem só para o que o núcleo não define */
 vm.createContext(ctx);
 vm.runInContext('const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);\n' + resumo + '\n' + partir, ctx);
 const lote = {lote:true, lid:'l', loteG:10, pesoReal:'10', precoG:2, total:20};
@@ -33,11 +35,7 @@ ctx.ROM.rows = [{loteDe:'l', peso:'5', custo:'10,024'}, {loteDe:'l', peso:'5', c
 assert.equal(ctx.romLoteResumo(lote).cls, 'warn', 'diferença de quatro centavos não deve aparecer como conferida');
 assert.match(ctx.romLoteResumo(lote).txt, /0,04/);
 console.log('Regras de lote e divisão: OK');
-const pesoSource = require('./_fonte').core('formulas');
-const lerValor = pesoSource.slice(pesoSource.indexOf('function lerValor('), pesoSource.indexOf('/* avalia uma fórmula segura'));
-const pesoCtx = {NUM: new Set(['N','P']), DUAS: new Set(['P']), num: ctx.num, r2c: n => Math.round(n*100)/100};
-vm.createContext(pesoCtx);
-vm.runInContext(lerValor, pesoCtx);
+const pesoCtx = {lerValor: nucleo.lerValor};
 assert.equal(pesoCtx.lerValor('0,333','N').v, 0.333, 'peso conserva milésimos até a planilha');
 assert.equal(pesoCtx.lerValor('0,333','P').v, 0.33, 'dinheiro permanece em centavos');
 const lote2 = {lote:true, lid:'l2', loteG:1, precoG:1, total:1};
@@ -51,11 +49,10 @@ assert.equal(ctx.romLoteResumo(lote2).cls, 'ok');
 console.log('Precisão de peso e divisão em centavos: OK');
 const cjSource=fs.readFileSync('src/js/19c-colar-romaneio.js','utf8');
 const validar=cjSource.slice(cjSource.indexOf('function romConjVerificar()'));
-const conjSource=fs.readFileSync('src/js/18-conjunto.js','utf8');
-const conjErro=require('./_fonte').tudo();
 let avisos=0,confirmacoes=0;
 const cctx={ROM:{rows:[]},num:ctx.num,vazio:x=>x==null||String(x).trim()==='',semAc:x=>String(x||'').toLowerCase(),brl:ctx.brl,S:{config:{categorias:[],catAlias:{},banhistas:[{id:'h',banhos:[{id:'ouro'}]}]},lanc:[],form:{}},toast:()=>avisos++,alert:()=>avisos++,confirm:()=>{confirmacoes++;return false}};
-vm.createContext(cctx);vm.runInContext(conjErro+'\n'+validar,cctx);
+Object.assign(cctx,ligar(()=>cctx.S));
+vm.createContext(cctx);vm.runInContext(validar,cctx);
 cctx.ROM.rows=[{desc:'Conjunto',conjOriginal:{custo:'10'},conjComp:[{desc:'Colar',peso:'1',custo:'5'},{desc:'',peso:'',custo:''}]}];
 assert.equal(cctx.romConjVerificar(),false,'aviso de componente vazio pode ser cancelado');
 confirmacoes=0;

@@ -2,14 +2,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const source = fs.readFileSync('src/js/18-conjunto.js','utf8');
-const code = require('./_fonte').tudo();
-const core = '';
-const mult = '';
+const {ligar}=require('./unit/_contexto.mjs');
 const bh = {verniz: 0, banhos:[{id:'ouro',coluna:'R',modo:'peso',mult:'9',multCat:{Brincos:'2',Colares:'5',Conjuntos:'9'}},{id:'prata',coluna:'T',modo:'peso',mult:'4',multCat:{Brincos:'3',Colares:'6'}}]};
 const cats=new Set(['Brincos','Colares','Conjuntos']);
-const ctx={S:{config:{catAlias:{Antiga:'Brincos'},categorias:[...cats].map(nome=>({nome})),banhistas:[{id:'h',vernizOn:false,...bh}]},lanc:[]}};
-vm.createContext(ctx);vm.runInContext(mult+'\n'+code,ctx);
+const ctx=ligar({config:{catAlias:{Antiga:'Brincos'},categorias:[...cats].map(nome=>({nome})),banhistas:[{id:'h',vernizOn:false,...bh}]},lanc:[]});
 const f={tipo:'pronta',v:{I:'Conjuntos'},onP:{ouro:true},ov:{},comp:[{desc:'Brinco',cat:'Brincos',peso:'1',custo:'2',banho:''},{desc:'Colar',cat:'Colares',peso:'2',custo:'3',banho:''}]};
 let out=ctx.conjCalc(f);assert.equal(out.tot.R,12,'por grama: 1×2 + 2×5');assert.equal(out.tot.N,3);assert.equal(out.tot.P,5);
 bh.banhos[0].modo='fixo';out=ctx.conjCalc(f);assert.equal(out.tot.R,7,'fixo por componente: 2+5');

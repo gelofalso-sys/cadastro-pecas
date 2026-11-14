@@ -1,12 +1,8 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const src=fs.readFileSync('src/js/18-conjunto.js','utf8');
-const codigo=require('./_fonte').core('dominio');
-const ctx={num:x=>x==null||x===''?null:Number(String(x).replace(',','.')),vazio:x=>x==null||x==='',pesoLinha:r=>Number(r.v.N),fmt:x=>String(x).replace('.',','),brl:x=>Number(x).toFixed(2).replace('.',',')};vm.createContext(ctx);vm.runInContext(codigo,ctx);
+const {detalheBanhoLinha}=require('../src/core/dominio.js');
 let r={v:{I:'Brincos',N:'2',W:'3',R:''},banho:{coluna:'R',modo:'peso',mult:5}};
-assert.match(ctx.detalheBanhoLinha(r,10),/2 g × R\$ 5\/g = R\$ 10,00 por peça/);
-assert.match(ctx.detalheBanhoLinha(r,10),/3 peças × R\$ 10,00 = R\$ 30,00/);
-r.banho.modo='fixo';assert.match(ctx.detalheBanhoLinha(r,5),/valor fixo R\$ 5 por peça = R\$ 5,00/);
-r.v.R='7';assert.match(ctx.detalheBanhoLinha(r,7),/valor de banho informado: R\$ 7,00/);assert.doesNotMatch(ctx.detalheBanhoLinha(r,7),/2 g ×/);
+assert.match(detalheBanhoLinha(r,10),/2 g × R\$ 5\/g = R\$ 10,00 por peça/);
+assert.match(detalheBanhoLinha(r,10),/3 peças × R\$ 10,00 = R\$ 30,00/);
+r.banho.modo='fixo';assert.match(detalheBanhoLinha(r,5),/valor fixo R\$ 5 por peça = R\$ 5,00/);
+r.v.R='7';assert.match(detalheBanhoLinha(r,7),/valor de banho informado: R\$ 7,00/);assert.doesNotMatch(detalheBanhoLinha(r,7),/2 g ×/);
 console.log('OK explicação por peso, fixo e valor informado');
