@@ -16,6 +16,18 @@ Exportar a tabela (xlsx/csv/copiar) com conferencia previa, assistente de outro 
 - Globais mutaveis: 0
 - Fronteira: falha
 
+### tabelas
+
+Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV), ver romaneio, indice de tabelas no localStorage, historico de sugestoes e varredura de fotos vivas/orfas.
+
+- Arquivos: `19d-tabelas-indice-e-fotos.js`, `19d2-tabelas-salvar-e-ver.js`, `acoes.js`
+- Expoe: `arqRef`, `estadoTabelas`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos`, `varrerTudo`
+- Usa: `core`
+- Usada por: `legado`
+- Testes: `^backup_auditoria_integridade\.js$`, `^interrupcao_exclusao\.js$`, `^interrupcao_exclusao_real\.js$`, `^t101_tabela_exclusao\.py$`, `^t44\.py$`, `^t58_backup_integridade\.py$`, `^tabela_exclusao_integridade\.js$`
+- Globais mutaveis: 0
+- Fronteira: falha
+
 ## Dependencias reais entre donos
 
 | de -> para | simbolos |
@@ -23,9 +35,12 @@ Exportar a tabela (xlsx/csv/copiar) com conferencia previa, assistente de outro 
 | exportacao -> core | 33: `COLW`, `DUAS`, `LET`, `LIM_EXPORT`, `MAX_BACKUP_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `NOME`, ... |
 | exportacao -> legado | 30: `S`, `casa`, `cfg`, `chaveDoCabecalho`, `checaLinhasPlan`, `colunasExport`, `conferirExport`, `faixaRefs`, ... |
 | legado -> exportacao | 3: `abrirNovoSistema`, `estadoExportacao`, `obterDL` |
+| legado -> tabelas | 8: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos` |
+| tabelas -> core | 19: `LET`, `PONTO_IDS`, `TABDEL`, `brl`, `candFoto`, `celulas`, `clone`, `codsDe`, ... |
+| tabelas -> legado | 35: `ARQ`, `AUTOR`, `HIST`, `HIST_SUG`, `REDO`, `S`, `TABS`, `avisoEdicao`, ... |
 
 ## Globais mutaveis por dono
 
 | dono | globais |
 |---|---|
-| legado | 98 |
+| legado | 95 |

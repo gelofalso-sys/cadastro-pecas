@@ -4332,8 +4332,9 @@ function romConjVerificar(){const diverg=[],avisos=[];for(const r of ROM.rows){i
   return confirm("Alertas nos conjuntos (nada impede a criação):"+NL+NL+avisos.concat(diverg.map(x=>"compra: "+x)).slice(0,10).join(NL)+NL+NL+"OK = criar mesmo assim"+NL+"Cancelar = voltar e corrigir")}
 /* ===== rascunho do romaneio (salvo sozinho: neste navegador e na conta) ===== */
 /* ===== tabelas salvas: histórico de tabelas, quem montou e o que cada romaneio fez ===== */
-let histSugT=null,histSugSeq=0;
-function histSugAgendar(){clearTimeout(histSugT);const seq=++histSugSeq;histSugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await idbGet("tabs",t.id);if(seq!==histSugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==histSugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
+/* estado da fatia: sugT/sugSeq = temporizador e geração do histórico de sugestões; semVarredura = o app abriu sem varrer fotos (33 liga) */
+const estadoTabelas={sugT:null,sugSeq:0,semVarredura:false};
+function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await idbGet("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
 function setAutor(v){AUTOR=String(v||"").trim().slice(0,40);try{localStorage.setItem("cadpecas-autor",AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==AUTOR)ai.value=AUTOR}
 function arqRef(){ARQ={};TABS.forEach(t=>(t.ids||[]).forEach(i=>{ARQ[i]=t.nome}))}
 /* índices (romaneios/tabelas) no localStorage: ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
@@ -4346,13 +4347,12 @@ function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.
   if(i<0)TABS.unshift(m);else TABS[i]=m;TABDEL.delete(m.id);const ok=gravarIdx("cadpecas-tabs",TABS,TABDEL);arqRef();return ok}
 /* fotos órfãs: ao excluir uma peça/tabela, a foto (e a miniatura) some do IndexedDB — mas só quando nenhuma peça atual,
    tabela salva ou passo do "desfazer/refazer" ainda precisa dela */
-let exSemVarredura=false;
    /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
 async function pontosIds(){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await idbGet("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
 function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(PONTO_IDS.has(id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
   if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
-function varrerFotos(){if(exSemVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
-async function varrerTudo(){if(exSemVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
+function varrerFotos(){if(estadoTabelas.semVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
+async function varrerTudo(){if(estadoTabelas.semVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
   for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await idbDel("fotos",k)}}
 /* tabelas salvas antes desta versão não guardavam cód.+fornecedor no índice: lê do IndexedDB uma vez */
 async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await idbGet("tabs",t.id);if(rec===null)return false;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou&&!gravarIdx("cadpecas-tabs",TABS,TABDEL))return false;
@@ -6425,15 +6425,7 @@ document.addEventListener("click",e=>{
     case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());Promise.resolve(romAbrirSalvo(t.dataset.id)).catch(e=>{try{console.error("romaneio salvo",e)}catch(x){}toast("Não consegui abrir esse romaneio: "+((e&&e.message)||e)+". Abra “Diagnóstico dos dados” na lista de romaneios salvos.")});break}
     case "rom-salvo-del":{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(romArm);romArm=null;romListaRef();renderForm()}break}
     case "backup-total":backupTotal();break;
-    case "tab-lista":tabListaAbrir();break;
     case "renumerar":{if(!S.lanc.length){toast("Nenhuma peça para renumerar.");break}if(!confirm("Renumerar as referências na ordem da tabela? As referências automáticas (as que você não digitou) serão refeitas do começo da sequência, e as peças já enviadas ao fornecedor podem mudar de número. Dá para desfazer."))break;renumerarRefs();salvar(false);renderTopo();toast("Referências renumeradas na ordem da tabela.",{t:"Desfazer",fn:desfazer});break}
-    case "tab-salvar-abrir":tabSalvarAbrir();break;
-    case "tab-salvar-ok":tabSalvarOk();break;
-    case "tab-ver":tabVer(t.dataset.id);break;
-    case "tab-del":{if(tabArm!==t.dataset.id){tabArm=t.dataset.id;tabListaAbrir()}else{const id=tabArm;tabArm=null;tabExcluirSalvo(id).then(ok=>{if(ok)toast("Tabela excluída.");const rep=document.querySelector(".rep");if(rep&&rep.querySelector('[data-act="tab-salvar-abrir"]'))tabListaAbrir()}).catch(()=>toast("Não consegui excluir a tabela; confira o armazenamento."))}break}
-    case "tab-restaurar":tabRestaurar(t.dataset.id);break;
-    case "tab-csv":idbGet("tabs",t.dataset.id).then(rc=>{if(rc)arqSalvar("tabela-"+String(rc.nome).replace(/[^A-Za-z0-9 _-]/g,"-")+".csv",tabCsv(rc))});break;
-    case "rom-ver":romVer(t.dataset.id,t.dataset.de);break;
     case "rel-abrir":relAbrir();break;
     case "rel-fechar":{tabArm=null;romArm=null;const o=document.querySelector(".rep");if(o)o.remove();renderForm();break}
     case "rel-print":window.print();break;
@@ -6506,6 +6498,18 @@ registrarAcoes(ACOES,"exportacao",{
   "exp-agrupar":()=>{estadoExportacao.agrupa=!estadoExportacao.agrupa;if(estadoExportacao.ult)mostrarConferencia(estadoExportacao.ult.p,estadoExportacao.ult.podeSeguir);return},
   "imp-ok":()=>{aplicarImp()},
   "backup":()=>{backup()}
+});
+/* Ações de clique (data-act) da fatia tabelas. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+   Convenção: o que era `break` no switch virou `return`. `tabArm` (tabela "armada" para excluir) continua global em src/js/20. */
+registrarAcoes(ACOES,"tabelas",{
+  "tab-lista":()=>{tabListaAbrir()},
+  "tab-salvar-abrir":()=>{tabSalvarAbrir()},
+  "tab-salvar-ok":()=>{tabSalvarOk()},
+  "tab-ver":({t})=>{tabVer(t.dataset.id)},
+  "tab-del":({t})=>{if(tabArm!==t.dataset.id){tabArm=t.dataset.id;tabListaAbrir()}else{const id=tabArm;tabArm=null;tabExcluirSalvo(id).then(ok=>{if(ok)toast("Tabela excluída.");const rep=document.querySelector(".rep");if(rep&&rep.querySelector('[data-act="tab-salvar-abrir"]'))tabListaAbrir()}).catch(()=>toast("Não consegui excluir a tabela; confira o armazenamento."))}},
+  "tab-restaurar":({t})=>{tabRestaurar(t.dataset.id)},
+  "tab-csv":({t})=>{idbGet("tabs",t.dataset.id).then(rc=>{if(rc)arqSalvar("tabela-"+String(rc.nome).replace(/[^A-Za-z0-9 _-]/g,"-")+".csv",tabCsv(rc))})},
+  "rom-ver":({t})=>{romVer(t.dataset.id,t.dataset.de)}
 });
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.cont)return;const c=continuoCfg();cfg().continuo={...c,[t.dataset.cont]:!!t.checked};salvar(true,false)});
 document.addEventListener("change",e=>{const t=e.target;if(!t||!t.dataset)return;const palavras=v=>[...new Map(String(v).split(/[;\n]/).map(x=>x.trim().replace(/\s+/g," ")).filter(x=>x&&x.length<=60).map(x=>[semAc(x),x])).values()];if(t.hasAttribute("data-cbank")){const el=t.closest("[data-cat]"),c=el&&cfg().categorias[+el.dataset.cat];if(!c)return;c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[t.dataset.cbank]=palavras(t.value).slice(0,100);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral")){cfg().bancoGeral=palavras(t.value).slice(0,500);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral-on")){cfg().bancoGeralAtivo=t.checked;salvar(true,false);renderForm()}});
@@ -6845,7 +6849,7 @@ function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!l
 /* Aguarda eventual recuperação de backup antes de expor os dados para edição. */
 {const tela=document.createElement("div");tela.setAttribute("role","alert");tela.style.cssText="position:fixed;inset:0;z-index:100001;background:#fff;display:grid;place-content:center;padding:24px;font:16px system-ui;text-align:center";tela.textContent="Verificando a recuperação dos dados…";document.documentElement.appendChild(tela);document.body.inert=true;
   let etapa="verificar a recuperação";
-  const abrir=(semVarredura=false)=>{document.body.inert=false;tela.remove();try{if(sessionStorage.getItem("cadpecas-recuperou-backup")){sessionStorage.removeItem("cadpecas-recuperou-backup");toast("Uma restauração interrompida foi revertida para os dados anteriores.")}}catch(e){}lembreteBackup();if(semVarredura){exSemVarredura=true;const aviso=document.createElement("div");aviso.setAttribute("role","status");aviso.style.cssText="padding:10px;background:#fff3cd;color:#664d03;font:14px system-ui";aviso.textContent="Aberto sem verificar o armazenamento de arquivos. Romaneios, tabelas e fotos podem estar incompletos; a limpeza automática de fotos foi desativada. Recarregue quando o armazenamento voltar a funcionar.";document.body.prepend(aviso);return}return varrerTudo()};
+  const abrir=(semVarredura=false)=>{document.body.inert=false;tela.remove();try{if(sessionStorage.getItem("cadpecas-recuperou-backup")){sessionStorage.removeItem("cadpecas-recuperou-backup");toast("Uma restauração interrompida foi revertida para os dados anteriores.")}}catch(e){}lembreteBackup();if(semVarredura){estadoTabelas.semVarredura=true;const aviso=document.createElement("div");aviso.setAttribute("role","status");aviso.style.cssText="padding:10px;background:#fff3cd;color:#664d03;font:14px system-ui";aviso.textContent="Aberto sem verificar o armazenamento de arquivos. Romaneios, tabelas e fotos podem estar incompletos; a limpeza automática de fotos foi desativada. Recarregue quando o armazenamento voltar a funcionar.";document.body.prepend(aviso);return}return varrerTudo()};
   const falhou=(e,podeForcar)=>{try{console.error("Falha ao abrir os dados (etapa: "+etapa+")",e)}catch(x){}
     tela.textContent="Não foi possível verificar ou recuperar uma restauração interrompida. Seus dados não foram abertos para edição. Libere espaço, feche outras abas e recarregue. Se o problema continuar, guarde uma cópia do backup e procure suporte.";
     const det=document.createElement("p");det.style.cssText="font:12px system-ui;color:#555;max-width:640px;margin:10px auto";det.textContent="Detalhe técnico — etapa: "+etapa+" · "+String((e&&e.message)||e||"o armazenamento do navegador (IndexedDB) não respondeu").slice(0,200);tela.appendChild(det);

@@ -226,3 +226,8 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 - Mover os arquivos manteve o HTML idêntico (hash `18394219…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
 - Globais mutáveis: 103 -> 98 (as cinco `NOVO`, `expPend`, `expAgrupa`, `expUlt`, `impPend` viraram `estadoExportacao`). `lastExport` fica em `src/js/10` (usada também por 15 e 19d).
 - `tools/acoplamento.mjs` ganhou `--fatia=<nome>` e `--arquivos=a.js,b.js`.
+
+### Fatia `tabelas` — concluída em 14/11/2026 (Tarefa 11, segunda fatia)
+- `src/fatias/tabelas/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core"]`; `armazenamento` ainda não é fatia, então `idbOp`, `TABS`, `tabArm` etc. são legado isento), `LEIA-ME.md`, 19d dividido em `19d-tabelas-indice-e-fotos.js` e `19d2-tabelas-salvar-e-ver.js`, e `acoes.js` (8 ações: tab-lista, tab-salvar-abrir, tab-salvar-ok, tab-ver, tab-del, tab-restaurar, tab-csv, rom-ver). `repModal` (janela genérica, usada também por exportacao, 21c, 21d, 29b) saiu para `src/js/19d1-modal-rep.js`, o que evita exportacao depender de tabelas: sem ciclos entre fatias.
+- Mover/dividir manteve o HTML idêntico (hash `5b5bcb5f…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
+- Globais mutáveis: 98 -> 95 (`histSugT`, `histSugSeq`, `exSemVarredura` viraram `estadoTabelas`; 33 liga `estadoTabelas.semVarredura`).

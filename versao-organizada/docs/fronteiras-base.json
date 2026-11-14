@@ -1,5 +1,5 @@
 {
-  "globaisMutaveisTotal": 98,
+  "globaisMutaveisTotal": 95,
   "globaisMutaveisPorArquivo": {
     "js/14-persistencia.js": 17,
     "js/20-armazenamento-idb.js": 14,
@@ -9,7 +9,6 @@
     "js/19-configuracoes-e-catalogo.js": 5,
     "js/30-eventos-mouse-e-clique.js": 5,
     "js/21-edicao-em-lote-e-revisao.js": 4,
-    "js/19d-tabelas-salvas.js": 3,
     "js/21d-novidades.js": 3,
     "js/25-relatorio-romaneio.js": 3,
     "js/27-fotos-escolher-colar.js": 3,
