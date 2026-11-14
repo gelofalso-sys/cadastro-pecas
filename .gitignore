@@ -12,3 +12,8 @@ versao-organizada/auditoria-ui-temporario/
 versao-organizada/auditoria-ui-temporario.py
 versao-organizada/founder/
 versao-organizada/.claude/
+arquivo/
+versao-organizada/publicar-netlify-unificado/
+__pycache__/
+*.pyc
+node_modules/
