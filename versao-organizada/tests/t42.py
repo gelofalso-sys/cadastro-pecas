@@ -24,7 +24,7 @@ src="\n".join([
  grab("12-motor-linhas.js","const FORM_SEGURA"),grab("12-motor-linhas.js","const QTD_MAX"),grab("12-motor-linhas.js","function qtdPos"),
  grab("12-motor-linhas.js","function lerValor"),grab("12-motor-linhas.js","function calcExpr"),
  grab("12-motor-linhas.js","function avalF"),grab("12-motor-linhas.js","function sintaxeF"),grab("12-motor-linhas.js","function numRaw"),
- grab("13-modelo-e-variacoes.js","const r2c"),grab("13-modelo-e-variacoes.js","const kDesc"),grab("13-modelo-e-variacoes.js","const fLinha"),grab("19c-colar-romaneio.js","const rxPerigo"),
+ grab("13-modelo-e-variacoes.js","const r2c"),grab("13-modelo-e-variacoes.js","const kDesc"),grab("13-modelo-e-variacoes.js","const fLinha"),grab("../fatias/romaneio/19c-colar-romaneio.js","const rxPerigo"),
 
 ])
 teste='''

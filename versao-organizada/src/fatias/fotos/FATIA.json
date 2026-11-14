@@ -2,6 +2,7 @@
   "nome": "fotos",
   "descricao": "Fotos das pecas: escolher, arrastar ou colar (Ctrl+V), anexar/remover, copia ao duplicar, envio ao imgbb (link publico), teste da chave e ampliacao com zoom.",
   "arquivos": [
+    "21b1-fotos-romaneio.js",
     "22b-zoom-foto.js",
     "23-fotos-imgbb.js",
     "27-fotos-escolher-colar.js",

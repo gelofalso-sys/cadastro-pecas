@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const src = fs.readFileSync('src/js/22-importar-pdf-romaneio.js','utf8');
+const src = fs.readFileSync('src/fatias/romaneio/22-importar-pdf-romaneio.js','utf8');
 const fn = src.slice(src.indexOf('function romFotos('),src.indexOf('async function romPdf('));
 const ctx={ROM:{pdf:{itens:[
  {pg:1,y:700,s:'Endereço: Rua X, 61'},

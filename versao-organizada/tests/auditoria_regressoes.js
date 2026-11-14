@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const source = fs.readFileSync('src/js/21-edicao-em-lote-e-revisao.js', 'utf8');
+const source = fs.readFileSync('src/fatias/romaneio/21a3-lote-e-partes.js', 'utf8');
 const {ligar, nucleo} = require('./unit/_contexto.mjs');
 const resumo = source.slice(source.indexOf('function romLoteResumo'), source.indexOf('function romLoteHTML'));
 const partir = source.slice(source.indexOf('function romPartir'), source.indexOf('function romJuntar'));
@@ -47,7 +47,7 @@ assert.deepEqual(partes2.map(x => x.peso), ['0,334','0,333','0,333']);
 assert.equal(Math.round(partes2.reduce((s,x) => s + ctx.num(x.custo), 0)*100), 100, 'divisão preserva centavos do custo');
 assert.equal(ctx.romLoteResumo(lote2).cls, 'ok');
 console.log('Precisão de peso e divisão em centavos: OK');
-const cjSource=fs.readFileSync('src/js/19c-colar-romaneio.js','utf8');
+const cjSource=fs.readFileSync('src/fatias/romaneio/19c-colar-romaneio.js','utf8');
 const validar=cjSource.slice(cjSource.indexOf('function romConjVerificar()'));
 let avisos=0,confirmacoes=0;
 const cctx={ROM:{rows:[]},num:ctx.num,vazio:x=>x==null||String(x).trim()==='',semAc:x=>String(x||'').toLowerCase(),brl:ctx.brl,S:{config:{categorias:[],catAlias:{},banhistas:[{id:'h',banhos:[{id:'ouro'}]}]},lanc:[],form:{}},toast:()=>avisos++,alert:()=>avisos++,confirm:()=>{confirmacoes++;return false}};

@@ -1,9 +1,3 @@
-/* ===== colar romaneio: lê a lista do fornecedor com um modelo de leitura ===== */
-/* padrão com quantificador dentro de grupo também quantificado, ex.: (a+)+ ou (\d*)* , pode travar a aba: não é aceito */
-   /* o mesmo limite vale para texto colado e para o texto lido do PDF */
-const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(ROM&&ROM.tid))||C.romaneios[0]};
-   /* preço com 3-4 casas não é arredondado */
-let ROM=null;
 /* reconhece sozinho o formato da lista: testa o modelo e variações comuns e fica com o que lê mais linhas */
 
 /* lista copiada do Excel (colunas separadas por tabulação): lê por coluna, pelo cabeçalho ou deduzindo a ordem (qtd × unitário = total) */
