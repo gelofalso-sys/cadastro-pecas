@@ -3,6 +3,7 @@ core/colunas.js
 core/utilidades.js
 core/configuracao.js
 core/dominio.js
+core/acoes.js
 core/romaneio.js
 core/backup.js
 core/notafiscal.js

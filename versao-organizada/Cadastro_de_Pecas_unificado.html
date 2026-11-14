@@ -2393,6 +2393,24 @@ function validaBanho$(S,bh,b,campo,valor){
     const n=num(v);if(n==null||n<0)return `${campo==="mil"?"Milésimos":campo==="mult"?"Multiplicador":"Verniz"} precisa ser um número maior ou igual a 0 (sem texto nem negativo).`}
   return ""}
 const cadLancSig$=(S)=>JSON.stringify(S.lanc,(k,v)=>(k==="ft"||k==="ftR"||k==="foto")?undefined:v);
+// Registro de ações de clique: cada fatia registra suas ações (data-act) sem tocar no switch central.
+const ORIGEM = Symbol.for("cp.acoes.origem");
+
+function registrarAcoes(registro, fatia, mapa) {
+  if (!Object.prototype.hasOwnProperty.call(registro, ORIGEM)) {
+    Object.defineProperty(registro, ORIGEM, { value: new Map(), enumerable: false });
+  }
+  const origem = registro[ORIGEM];
+  for (const nome of Object.keys(mapa)) {
+    if (Object.prototype.hasOwnProperty.call(registro, nome)) {
+      throw new Error(`Ação "${nome}" já registrada pela fatia "${origem.get(nome) || "?"}"; duplicada na fatia "${fatia}".`);
+    }
+  }
+  for (const nome of Object.keys(mapa)) {
+    registro[nome] = mapa[nome];
+    origem.set(nome, fatia);
+  }
+}
 /* ===== núcleo: romaneio — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
 
@@ -6159,6 +6177,8 @@ document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
 function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=(cfg().banhistas[0]||{}).id||"";conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del","cv-del","cv-todas","cv-num"];
+/* Registro de ações de clique (data-act). Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
+const ACOES={};
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo==="conjunto"){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];
@@ -6168,7 +6188,8 @@ document.addEventListener("click",e=>{
   const a=t.dataset.act,C=cfg(),tr=t.closest("tr[data-l],.pc[data-l]");
   const ci=t.closest("[data-cat]")?+t.closest("[data-cat]").dataset.cat:-1,bi=t.closest("[data-bh]")?+t.closest("[data-bh]").dataset.bh:-1;
   const snapCfg=CFG_UNDO.includes(a)?clone(S.config):null;
-  switch(a){
+  const ctx={t,e,a,C,tr,ci,bi};
+  if(ACOES[a]){if(ACOES[a](ctx)===false)return}else switch(a){
     case "insitem-add":{C.insumosItens=Array.isArray(C.insumosItens)?C.insumosItens:[];if(C.insumosItens.length>=100){toast("Limite de 100 itens de insumo.");break}C.insumosItens.push({nome:"Novo insumo",cat:"",qtd:"1",valor:"0"});salvar(true,false);renderCfg();renderTopo();renderForm();break}
     case "insitem-del":{const i=+t.dataset.i;if(!Array.isArray(C.insumosItens)||!C.insumosItens[i])break;if(!confirm(`Excluir o insumo “${C.insumosItens[i].nome}”? O custo de insumos será recalculado quando os itens estiverem ativos.`))break;C.insumosItens.splice(i,1);salvar(true,false);renderCfg();renderTopo();renderForm();break}
     case "editar":editar(tr.dataset.l);if(celular())formAbrir(true);break;
