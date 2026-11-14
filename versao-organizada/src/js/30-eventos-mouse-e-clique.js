@@ -338,15 +338,7 @@ document.addEventListener("click",e=>{
     case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());Promise.resolve(romAbrirSalvo(t.dataset.id)).catch(e=>{try{console.error("romaneio salvo",e)}catch(x){}toast("Não consegui abrir esse romaneio: "+((e&&e.message)||e)+". Abra “Diagnóstico dos dados” na lista de romaneios salvos.")});break}
     case "rom-salvo-del":{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(romArm);romArm=null;romListaRef();renderForm()}break}
     case "backup-total":backupTotal();break;
-    case "tab-lista":tabListaAbrir();break;
     case "renumerar":{if(!S.lanc.length){toast("Nenhuma peça para renumerar.");break}if(!confirm("Renumerar as referências na ordem da tabela? As referências automáticas (as que você não digitou) serão refeitas do começo da sequência, e as peças já enviadas ao fornecedor podem mudar de número. Dá para desfazer."))break;renumerarRefs();salvar(false);renderTopo();toast("Referências renumeradas na ordem da tabela.",{t:"Desfazer",fn:desfazer});break}
-    case "tab-salvar-abrir":tabSalvarAbrir();break;
-    case "tab-salvar-ok":tabSalvarOk();break;
-    case "tab-ver":tabVer(t.dataset.id);break;
-    case "tab-del":{if(tabArm!==t.dataset.id){tabArm=t.dataset.id;tabListaAbrir()}else{const id=tabArm;tabArm=null;tabExcluirSalvo(id).then(ok=>{if(ok)toast("Tabela excluída.");const rep=document.querySelector(".rep");if(rep&&rep.querySelector('[data-act="tab-salvar-abrir"]'))tabListaAbrir()}).catch(()=>toast("Não consegui excluir a tabela; confira o armazenamento."))}break}
-    case "tab-restaurar":tabRestaurar(t.dataset.id);break;
-    case "tab-csv":idbGet("tabs",t.dataset.id).then(rc=>{if(rc)arqSalvar("tabela-"+String(rc.nome).replace(/[^A-Za-z0-9 _-]/g,"-")+".csv",tabCsv(rc))});break;
-    case "rom-ver":romVer(t.dataset.id,t.dataset.de);break;
     case "rel-abrir":relAbrir();break;
     case "rel-fechar":{tabArm=null;romArm=null;const o=document.querySelector(".rep");if(o)o.remove();renderForm();break}
     case "rel-print":window.print();break;

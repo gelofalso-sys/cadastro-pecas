@@ -1,0 +1,34 @@
+{
+  "nome": "tabelas",
+  "descricao": "Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV), ver romaneio, indice de tabelas no localStorage, historico de sugestoes e varredura de fotos vivas/orfas.",
+  "arquivos": [
+    "19d-tabelas-indice-e-fotos.js",
+    "19d2-tabelas-salvar-e-ver.js",
+    "acoes.js"
+  ],
+  "expoe": [
+    "estadoTabelas",
+    "histSugAgendar",
+    "setAutor",
+    "arqRef",
+    "gravarIdx",
+    "tabIndex",
+    "pontosIds",
+    "varrerFotos",
+    "varrerTudo",
+    "tabsMigrar"
+  ],
+  "usa": [
+    "core"
+  ],
+  "testes": [
+    "^t44\\.py$",
+    "^t58_backup_integridade\\.py$",
+    "^t101_tabela_exclusao\\.py$",
+    "^backup_auditoria_integridade\\.js$",
+    "^interrupcao_exclusao\\.js$",
+    "^interrupcao_exclusao_real\\.js$",
+    "^tabela_exclusao_integridade\\.js$"
+  ],
+  "fronteira": "falha"
+}
