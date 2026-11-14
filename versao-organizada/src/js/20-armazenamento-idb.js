@@ -108,7 +108,7 @@ function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){cons
   if(v.length){r.feito=true;if(!r.refaz||r.arq){r.refaz=false;r.skip=true;r.aviso="· já lançada"}}else if(r.feito){r.feito=false;r.refaz=false;r.skip=false;r.aviso=""}})}
 async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await idbGet("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
   rec.rows.forEach((r,i)=>{const o=ROM.rows[i];if(o&&r.foto&&!o.foto&&(o.cod||"")===(r.cod||"")){o.foto=r.foto;o.fotoMini=o.fotoMini||r.fotoMini;n++}});if(n)renderRom()}
-async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição antes.");return}if(ROM&&romConflito){toast("Resolva o conflito do romaneio antes de abrir outro.");return}
+async function romAbrirSalvo(id){if(editId){avisoEdicao(()=>romAbrirSalvo(id));return}if(ROM&&romConflito){toast("Resolva o conflito do romaneio antes de abrir outro.");return}
   if(ROM&&ROM.rows.length){const lsOk=romSalvar();const idbOk=await Promise.resolve(romGravP);if(!idbOk){toast("Não consegui guardar o romaneio atual e seu índice; ele continua aberto. Baixe o backup antes de trocar.");return}}
   else if(romGravP)await Promise.resolve(romGravP);
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}

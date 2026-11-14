@@ -14,8 +14,11 @@ with sync_playwright() as p:
  assert page.locator('#romWrap .rc').count()==2
  page.keyboard.press('Control+y');page.wait_for_timeout(700);assert page.locator('#romWrap .rc').count()==0
  page.keyboard.press('Control+z');page.wait_for_timeout(700);assert page.locator('#romWrap .rc').count()==2
- page.locator('#romWrap [data-rp="desc"]').first.fill('Alteração posterior');page.locator('#romWrap [data-act="rom-fechar"]').focus();page.locator('#mobileMenu summary').click();page.keyboard.press('Control+y');page.wait_for_timeout(300)
+ page.locator('#romWrap [data-rp="desc"]').first.fill('Alteração posterior');page.locator('#romWrap [data-act="rom-fechar"]').focus();page.locator('#mobileMenu summary').click();page.wait_for_timeout(1200);page.keyboard.press('Control+y');page.wait_for_timeout(300)   # a edição do romaneio é gravada com atraso: espera gravar antes de refazer
  assert page.locator('#romWrap .rc').count()==2
+ for _ in range(50):   # o aviso chega após a leitura assíncrona do histórico
+  if 'alterado depois' in page.locator('#toast').inner_text().lower():break
+  page.wait_for_timeout(100)
  assert 'alterado depois' in page.locator('#toast').inner_text().lower()
  page.locator('.mobile-menu-close').click()
  page.locator('#romWrap [data-act="rom-fechar"]').click();page.reload();page.locator('#mobileMenu summary').click();page.locator('[data-mobile="act:rom-lista"]').click();page.locator('[data-act="rom-salvo-abrir"]').first.click();page.locator('#romWrap .rc').first.wait_for()

@@ -1418,7 +1418,7 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
 /* O selo do provedor pode ocupar o canto inferior direito. O menu continua
    disponível quando a gaveta de lançamento ou o teclado estiver aberto. */
 @media(max-width:900px){
-  body:not(.fopen) #mbar{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  body:not(.fopen) #mbar{bottom:0}   /* encostada no rodapé da tela (o respiro do iPhone vem do padding da barra) */
   body.fopen #mbar{display:block;position:fixed;top:8px;left:8px;right:auto;bottom:auto;z-index:50;padding:0;background:none;border:0;backdrop-filter:none}
   body.fopen:has(input:focus,select:focus,textarea:focus) #mbar{display:block}
   body.fopen #mbar > :not(.mobile-menu){display:none}
@@ -1583,5 +1583,27 @@ select,#modSel,.mod select,[data-rp="tid"]{font-size:16px!important}.mod select{
 /* Celular: avisos no topo (não cobrem formulário nem o botão Adicionar) e fecham com alvo de 44px */
 @media(max-width:900px){
 .toast{top:calc(8px + env(safe-area-inset-top,0px))!important;bottom:auto!important;left:64px!important;right:10px!important;max-width:none;z-index:70!important;font-size:13px;line-height:1.3}
-.toast button{min-width:44px;min-height:44px}
+.toast{pointer-events:none}.toast button{pointer-events:auto;min-width:44px;min-height:44px}
+}
+
+/* Numeração do sistema (última peça do prefixo) dentro do formulário no celular; no desktop ela fica na barra de numeração */
+@media(min-width:901px){#numFormHost{display:none}}
+@media(max-width:900px){#numFormHost{flex:1 1 100%;width:100%}#numFormHost .nb-tog{width:100%;min-height:44px;text-align:left;justify-content:flex-start}#numFormHost .numbar{margin:6px 0 0}#numFormHost .nb input{min-height:44px}#numFormHost .nb-h{display:none}}
+
+/* Menu do celular espelha o menu lateral do desktop (ícone + nome) */
+@media(max-width:900px){
+.mobile-menu-panel button[data-mobile]{display:flex;align-items:center;gap:12px}
+.mobile-menu-panel button[data-mobile] .ic{display:inline-flex;flex:none;width:22px;height:22px}
+.mobile-menu-panel button[data-mobile] .ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+}
+
+/* Celular: três botões na barra fixa (Adicionar, Adicionar e limpar, Cancelar) e "Em lote de" em linha própria compacta */
+@media(max-width:900px){
+#form .z-end{flex-wrap:wrap}
+#form .z-end .lote-f{flex:1 1 100%!important;display:flex;flex-direction:row;align-items:center;gap:8px;margin:0}
+#form .z-end .lote-f span{flex:none}
+#form .z-end .lote-f input{width:72px;min-height:36px}
+#form .z-end .btn{font-size:14px;padding-left:6px;padding-right:6px}
+#form .z-end .btn.pri{flex-grow:1.3}
+#form.lanc{padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))}
 }

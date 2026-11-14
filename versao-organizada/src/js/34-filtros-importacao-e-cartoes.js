@@ -34,7 +34,7 @@ function impStatusFim(ok,msg){const nome=(ROM&&ROM.doc)||(IMPST&&IMPST.nome)||""
   if(ok&&ROM&&ROM.rows&&ROM.rows.length){const n=ROM.rows.length;IMPST={nome,estado:"ok",n,conf:ROM.conf||""};toast(`Romaneio importado: ${n} peça${n===1?"":"s"} lida${n===1?"":"s"}. Revise abaixo e clique em “Criar peças”.`)}
   else IMPST={nome,estado:"erro",msg:msg||(ROM&&ROM.msg)||"não encontrei peças nesse arquivo"};renderImp()}
 async function impAbrirArq0(f){
-  if(editId){toast("Termine ou cancele a edição antes.");return}
+  if(editId){avisoEdicao(()=>impAbrirArq0(f));return}
   if(ROM&&ROM.rows&&ROM.rows.length){romSalvar();ROM=null;renderRom()}
   const n=f.name||"";
   if(/[.](xlsx?|csv)$/i.test(n)){romGaranteRom();renderRom();rolarPane(document.getElementById("romWrap"));return romPlanilha(f)}

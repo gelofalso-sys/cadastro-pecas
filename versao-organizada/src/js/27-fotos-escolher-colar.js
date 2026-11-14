@@ -162,6 +162,12 @@ function editar(id){
   if(Object.values(S.form.ov||{}).some(o=>o&&Object.keys(o).some(L=>!["W","V"].includes(L))))abertos.det=true;
   salvar(false);renderTopo();renderForm();focarPrimeiro();editSnap=JSON.stringify(S.form);
 }
+/* abre (ou retoma) o romaneio: usado pelo botão e pelo aviso de edição em curso */
+function romAbrirNovo(){if(!romRetomar()){ROM={tid:abertos.romT&&cfg().romaneios.some(x=>x.id===abertos.romT)?abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};
+      {const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}}
+      renderRom();const w=document.getElementById("romWrap");if(w){rolarPane(w);const ta=w.querySelector("textarea");if(ta)ta.focus({preventScroll:true})}}
+/* há uma peça em edição e o usuário pediu outra coisa (abrir romaneio, importar, salvar tabela…): o aviso traz o botão que cancela a edição na hora e segue com o pedido, sem trocar de página */
+function avisoEdicao(seguir){toast("Há uma peça em edição. Termine ou cancele a edição para continuar (cancelar descarta o que foi mudado nessa peça e ainda não foi gravado).",{t:"Cancelar edição e continuar",fn:()=>{cancelar();if(seguir)setTimeout(()=>{try{seguir()}catch(e){try{console.error(e)}catch(x){}}},0)}})}
 function cancelar(){editId=null;if(rascunho)S.form=rascunho;rascunho=null;erro="";salvar(false);renderTopo();renderForm()}
 /* a cópia leva a foto original (qualidade cheia) do banco, não só a miniatura */
 function fotoCopia(de,para){try{idbGet("fotos",de).then(v=>{if(v)idbPut("fotos",para,v)}).catch(()=>{})}catch(e){}}

@@ -47,7 +47,7 @@ async function enviarFotos(soIds){if(fotosEnv)return;
   renderTopo();
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
-async function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a edição antes.");return}
+async function romCriar(){const f=S.form;if(editId){avisoEdicao(()=>romCriar());return}
   if(romConflito){toast("Outra aba alterou este romaneio. Use “Recarregar” ou “Manter esta aba” no aviso amarelo antes de criar as peças.");return}
   if(ROM.rows.some(romLoteDistribuicaoInvalida)){toast("Corrija a quantidade dos itens de lote ou desmarque-os antes de criar.");return}
   const antesConf=romInsAssinatura(),insPend=await romInsConferirArquivos();if(!insPend)return;if(antesConf!==romInsAssinatura()){toast("Os dados mudaram durante a conferência. Revise o romaneio novamente.");return}if(insPend.length){toast("O rateio mudou ou não foi possível conferir itens já lançados. Restaure a tabela salva e confira esses itens antes de criar.");return}
@@ -187,7 +187,7 @@ function nfOv(html){let el=document.getElementById("nfRev");if(!el){el=document.
 function nfFechar(){const el=document.getElementById("nfRev");if(el)el.remove();NF=null}
 function nfErro(msg){nfOv(`<div class="rev-h"><b>Importar nota fiscal</b></div><div class="nf-body"><div class="nf-al bad" role="alert">${esc(msg)}</div></div><div class="rev-f"><label class="btn" style="cursor:pointer">Escolher outro arquivo<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" class="vh"></label><button type="button" class="btn pri" data-nfa="fechar">Fechar</button></div>`)}
 async function nfAbrir(f,its){
-  if(editId){toast("Termine ou cancele a edição antes.");return}
+  if(editId){avisoEdicao(()=>nfAbrir(f,its));return}
   const eXml=/xml/i.test(f.type)||/\.xml$/i.test(f.name),ePdf=/pdf/i.test(f.type)||/\.pdf$/i.test(f.name);
   if(!eXml&&!ePdf){nfErro("Esse arquivo não é uma nota fiscal. Escolha o PDF (DANFE) ou o XML da nota.");return}
   nfOv(`<div class="rev-h"><b>Importar nota fiscal</b></div><div class="nf-body"><p class="hint">Lendo a nota fiscal…</p></div>`);
@@ -254,7 +254,7 @@ function nfRender(){const el=nfOv();if(!NF){nfFechar();return}const N=NF.nota,C=
   <div class="rev-f"><button type="button" class="btn" data-nfa="fechar">Cancelar</button><button type="button" class="btn pri big" id="nfGo" data-nfa="importar">Importar</button></div>`);
   const l2=document.querySelector("#nfRev .nf-list");if(l2)l2.scrollTop=st;nfResumo()}
 function nfConfirmar(){if(!NF)return;const N=NF.nota;
-  if(editId){toast("Termine ou cancele a edição antes.");return}
+  if(editId){avisoEdicao(()=>nfConfirmar());return}
   if(NF.dup&&!NF.dupOk){toast("Esta nota já foi importada. Marque “Importar de novo mesmo assim” se quiser repetir.");return}
   {const ni=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r))).length;if(ni&&!confirm(ni+" item(ns) da nota estão com custo ausente ou inválido (a nota pode estar com defeito).\n\nOK = importar com os dados como foram lidos (esses itens ficam com custo R$ 0,00 para você corrigir depois)\nCancelar = voltar e corrigir o custo ou desmarcar o item"))return}
   const lin=nfLinhas();if(!lin.length){toast("Nenhum item marcado para importar.");return}

@@ -1430,7 +1430,7 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
 /* O selo do provedor pode ocupar o canto inferior direito. O menu continua
    disponível quando a gaveta de lançamento ou o teclado estiver aberto. */
 @media(max-width:900px){
-  body:not(.fopen) #mbar{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  body:not(.fopen) #mbar{bottom:0}   /* encostada no rodapé da tela (o respiro do iPhone vem do padding da barra) */
   body.fopen #mbar{display:block;position:fixed;top:8px;left:8px;right:auto;bottom:auto;z-index:50;padding:0;background:none;border:0;backdrop-filter:none}
   body.fopen:has(input:focus,select:focus,textarea:focus) #mbar{display:block}
   body.fopen #mbar > :not(.mobile-menu){display:none}
@@ -1595,7 +1595,29 @@ select,#modSel,.mod select,[data-rp="tid"]{font-size:16px!important}.mod select{
 /* Celular: avisos no topo (não cobrem formulário nem o botão Adicionar) e fecham com alvo de 44px */
 @media(max-width:900px){
 .toast{top:calc(8px + env(safe-area-inset-top,0px))!important;bottom:auto!important;left:64px!important;right:10px!important;max-width:none;z-index:70!important;font-size:13px;line-height:1.3}
-.toast button{min-width:44px;min-height:44px}
+.toast{pointer-events:none}.toast button{pointer-events:auto;min-width:44px;min-height:44px}
+}
+
+/* Numeração do sistema (última peça do prefixo) dentro do formulário no celular; no desktop ela fica na barra de numeração */
+@media(min-width:901px){#numFormHost{display:none}}
+@media(max-width:900px){#numFormHost{flex:1 1 100%;width:100%}#numFormHost .nb-tog{width:100%;min-height:44px;text-align:left;justify-content:flex-start}#numFormHost .numbar{margin:6px 0 0}#numFormHost .nb input{min-height:44px}#numFormHost .nb-h{display:none}}
+
+/* Menu do celular espelha o menu lateral do desktop (ícone + nome) */
+@media(max-width:900px){
+.mobile-menu-panel button[data-mobile]{display:flex;align-items:center;gap:12px}
+.mobile-menu-panel button[data-mobile] .ic{display:inline-flex;flex:none;width:22px;height:22px}
+.mobile-menu-panel button[data-mobile] .ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+}
+
+/* Celular: três botões na barra fixa (Adicionar, Adicionar e limpar, Cancelar) e "Em lote de" em linha própria compacta */
+@media(max-width:900px){
+#form .z-end{flex-wrap:wrap}
+#form .z-end .lote-f{flex:1 1 100%!important;display:flex;flex-direction:row;align-items:center;gap:8px;margin:0}
+#form .z-end .lote-f span{flex:none}
+#form .z-end .lote-f input{width:72px;min-height:36px}
+#form .z-end .btn{font-size:14px;padding-left:6px;padding-right:6px}
+#form .z-end .btn.pri{flex-grow:1.3}
+#form.lanc{padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))}
 }
 </style>
 </head>
@@ -2893,7 +2915,7 @@ function renderForm(){
     return `<label class="fq gq all" title="Mesma quantidade em todas as combinações marcadas"><span>todos</span><input class="n" data-qall="${k}" placeholder="=" inputmode="numeric" ${dis?"disabled":""} aria-label="Quantidade para todas as combinações"></label><div class="qmxw"><table class="qmx"><thead><tr><th></th>${col.map(c=>`<th>${esc(c.nome)}</th>`).join("")}</tr></thead><tbody>${lin.map(a=>`<tr><th>${esc(a.nome||a.letra)}</th>${col.map(c=>{const id=a.id+"+"+c.id,o=f.ov[k+"~"+id]||{};return `<td><input class="n" id="f-${k}~${id}-W" data-bo="${k}~${id}" data-k="W" value="${esc(o.W??"")}" inputmode="numeric" placeholder="0" ${dis?"disabled":""} aria-label="Quantidade ${esc(a.nome||a.letra)} ${esc(c.nome)}"></td>`}).join("")}</tr>`).join("")}</tbody></table></div>`};
   const qtdVar=(k,dis)=>gIts.length&&gIts.every(it=>it.seq&&it.seq.length===2)?qtdMatriz(k,dis):(gIts.length>1?`<label class="fq gq all" title="Mesma quantidade em todos os tamanhos marcados"><span>todos</span><input class="n" data-qall="${k}" placeholder="=" inputmode="numeric" ${dis?"disabled":""} aria-label="Quantidade para todos os tamanhos"></label>`:"")+gIts.map(it=>{const o=f.ov[k+"~"+it.id]||{};return `<label class="fq gq" title="Quantidade ${esc(it.nome||it.letra)}"><span>${esc(it.nome||it.letra)}</span><input class="n" id="f-${k}~${it.id}-W" data-bo="${k}~${it.id}" data-k="W" value="${esc(o.W??"")}" inputmode="numeric" placeholder="0" ${dis?"disabled":""} aria-label="Quantidade ${esc(it.nome)}"></label>`}).join("");
   const loteF=editId?"":`<label class="fq lote-f" title="Cria esta peça várias vezes, cada uma separada e numerada 1/N, 2/N… (ex.: para pesar uma a uma). Vazio ou 1 = desligado."><span>Em lote de</span><input class="n" data-f="loteN" value="${esc(f.loteN||"")}" inputmode="numeric" placeholder="1" style="width:54px" aria-label="Criar em lote: quantidade de peças separadas"></label>`;
-  const addBtn=loteF+`<button class="btn pri big" type="submit">${editId?"Salvar":"Adicionar"} <kbd>Enter</kbd></button>${editId?"":`<button class="btn big" type="button" data-act="add-limpar" title="Adiciona a peça e esvazia o formulário para começar outra do zero">Adicionar e limpar</button>`}`;
+  const addBtn=loteF+`<button class="btn pri big" type="submit">${editId?"Salvar":"Adicionar"} <kbd>Enter</kbd></button>${editId?`<button class="btn big" type="button" data-act="cancel" title="Descarta as alterações desta peça e volta ao que estava (Esc)">Cancelar edição</button>`:`<button class="btn big" type="button" data-act="add-limpar" title="Adiciona a peça e esvazia o formulário para começar outra do zero">Adicionar e limpar</button><button class="btn big" type="button" data-act="cancel" title="Cancela o que está sendo digitado e esvazia o formulário, sem adicionar nada">Cancelar</button>`}`;
   const bhCampo=`<label class="fq w-m"><span>${bruta?"Galvânica":"Banhos de"}${auto}</span><div class="ip"><select data-f="banhista">${opts(C.banhistas.map(b=>[b.id,b.nome]),bh.id)}</select><button type="button" class="plus" data-act="q" data-q="bh" title="Cadastrar galvânica">＋</button></div></label>`;
   const onF=onDe(f),bpOn=!bruta&&bh.banhos.some(b=>onF[b.id]);
   const cards=bh.banhos.map(b=>{const on=!!onF[b.id],o=f.ov[b.id]||{},vz=vzOn(f,bh,b);return `<div class="bcard${on?"":" off"}">
@@ -2914,7 +2936,7 @@ function renderForm(){
     :`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n",dis:!!f.conj,nome:f.conj?"Peso (soma)":undefined})}${c("P",{w:"c",dis:!!f.conj,nome:f.conj?"Compra (soma)":undefined})}${bhCampo}${simples?`${gIts.length?`<div class="bf gv">${qtdVar("p",false)}</div>`:c("W",{w:"n"})}${c("L",{w:"s",q:"cor"})}<label class="fq w-n" title="Fator do preço: o Preço de Varejo = (Custo de Compra + Insumos + Banhos + Verniz) × este número"><span>Fator ×</span><div class="ip">${mkIn("p")}</div></label>${c("V",{w:"c"})}<small class="bfx" data-bf="p" aria-live="polite"></small>${vincL}`:""}`;
   const dica=f.conj?`<span class="hint" style="align-self:center">Conjunto: marque os banhos (Ouro, Prata…) e sai uma linha de conjunto em cada um; todas as peças levam esse banho, menos as que você fixar um banho só delas.</span>`:!bruta&&!bpOn?`<span class="hint" style="align-self:center">Peça pronta com banhos: marque um ou mais para gerar uma linha por cor (A ouro, B prata…); sem marcar, use Cor, Quantidade e Preço acima.</span>`:"";
   const rowBanhos=`<div class="z-row z-banhos"><div class="flow-label"><b>Banhos e valores</b><span>Marque os banhos e informe quantidade e fator.</span></div>${cards}${!C.banhistas.length?'<div class="estado-galvanica"><b>Nenhuma galvânica cadastrada</b><span>Cadastre uma galvânica e adicione os banhos que você usa para lançar peças brutas.</span><button type="button" class="btn pri sm" data-act="q" data-q="bh">Cadastrar galvânica</button></div>':!bh.banhos.length?'<div class="estado-galvanica"><span>Esta galvânica ainda não tem banhos.</span><button type="button" class="btn sm" data-act="q" data-q="bn">Adicionar banho</button></div>':`<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn">＋ Banho de ${esc(bh.nome)}</button>`}${dica}<span class="z-end">${addBtn}</span></div>`;
-const rowOrig=`<div class="z-row z-orig"><div class="flow-label"><b>Classificação</b><span>Escolha a categoria e, se necessário, a subcategoria.</span></div>${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}</div>`;
+const rowOrig=`<div class="z-row z-orig"><div class="flow-label"><b>Classificação</b><span>Escolha a categoria e, se necessário, a subcategoria.</span></div>${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}<div class="numform-host" id="numFormHost"></div></div>`;
   const rowOrigExtra=`<div class="z-row z-orig z-orig-extra"><div class="flow-label"><b>Fornecedor e observações</b><span>Informações complementares da peça.</span></div>${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
   const detBanhos=bh.banhos.filter(b=>onF[b.id]).map(b=>{const vz=vzOn(f,bh,b);return `<div class="lb"><b><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</b>
       ${bruta&&!banhoSemCalc(b)?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${banhoSemCalc(b)?"":campoHTML("O",f,{banho:b.id,ph:milDe(b,f.v.I),w:"c",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s",q:"cor",qb:b.id,qn:"cor do banho "+b.letra})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
@@ -2951,7 +2973,7 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
     <div class="dg"><h3>Cadastro</h3><div class="dgrid">${cadastro}</div></div>
   </div>`:""}</div>
   </form>`;
-  document.getElementById("formWrap").innerHTML=h;
+  numFormGuardar();document.getElementById("formWrap").innerHTML=h;numFormMover();
   atualizarGera();{const fm=document.getElementById("form");if(roForm)roForm.observe(fm);fm.classList.toggle("auto-mini",foraDaPlanilha&&!S.form.conj)}ajustarAltura();
   if(quick){const i=document.getElementById("q1");if(i)i.focus()}
 }
@@ -3014,6 +3036,15 @@ function fatorDoPreco(k){
   f.mk[k]=txt;const mi=document.querySelector(`#form [data-mk="${k}"]`);if(mi)mi.value=txt;
   atualizarGera();salvar(false);
 }
+
+/* celular: a numeração do sistema (botão + barra de últimas peças) mora dentro do formulário, expansível como no desktop; antes de refazer o formulário os dois voltam ao lugar de origem para não serem apagados */
+const NUMORIG={};
+function numFormGuardar(){const tog=document.getElementById("nbTog"),nb=document.getElementById("numbar");if(!tog||!nb||!NUMORIG.tog)return;
+  const volta=(el,[pai,ref])=>{if(el.parentNode!==pai)pai.insertBefore(el,ref&&ref.parentNode===pai?ref:null)};volta(tog,NUMORIG.tog);volta(nb,NUMORIG.nb)}
+function numFormMover(){const tog=document.getElementById("nbTog"),nb=document.getElementById("numbar");if(!tog||!nb)return;
+  if(!NUMORIG.tog){NUMORIG.tog=[tog.parentNode,tog.nextSibling];NUMORIG.nb=[nb.parentNode,nb.nextSibling]}
+  const host=document.getElementById("numFormHost");
+  if(celular()&&host){if(tog.parentNode!==host)host.append(tog,nb)}else numFormGuardar()}
 /* ===== conjunto: soma de peças individuais (brincos + colar…). Cada peça tem peso, compra e banho (o do conjunto, ou só dela).
    Marcando banhos no conjunto (Ouro, Prata, Ródio…) sai UMA linha de conjunto por banho, igual às peças individuais; sem marcar, sai uma linha só. ===== */
 /* Cada componente informa valores por unidade; registros antigos sem qtd valem uma unidade. */
@@ -3728,9 +3759,9 @@ function tabSalvarAbrir(){const d=new Date(),nm="Tabela "+String(d.getDate()).pa
   <div class="rep-rf" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start"><label class="fq"><span>Nome da tabela</span><input id="tsNome" value="${esc(nm)}" style="min-width:260px"></label><label class="fq"><span>Montada por</span><input id="tsPor" value="${esc(AUTOR)}" placeholder="seu nome" style="min-width:260px"></label>
   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="tsNova" checked> Começar uma tabela nova depois de salvar (a numeração continua de onde parou)</label></div>
   <div class="rep-ac" style="padding:12px 16px"><button type="button" class="btn pri" data-act="tab-salvar-ok">Salvar</button><button type="button" class="btn" data-act="tab-lista">Cancelar</button></div>`)}
-async function tabSalvarOk(){if(editId){toast("Termine ou cancele a edição antes.");return}const nome=(document.getElementById("tsNome").value||"").trim()||("Tabela "+new Date().toLocaleDateString("pt-BR")),por=(document.getElementById("tsPor").value||"").trim(),nova=document.getElementById("tsNova").checked;
+async function tabSalvarOk(){if(editId){avisoEdicao(()=>tabSalvarOk());return}const nome=(document.getElementById("tsNome").value||"").trim()||("Tabela "+new Date().toLocaleDateString("pt-BR")),por=(document.getElementById("tsPor").value||"").trim(),nova=document.getElementById("tsNova").checked;
   document.querySelectorAll(".rep").forEach(x=>x.remove());await tabSalvar(nome,por,nova);tabListaAbrir()}
-async function tabRestaurar(id){if(editId){toast("Termine ou cancele a edição antes.");return}const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
+async function tabRestaurar(id){if(editId){avisoEdicao(()=>tabRestaurar(id));return}const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
   if(!Array.isArray(rec.lanc)){toast("Esta tabela salva está danificada (sem as peças): não restaurei nada.");return}
   if(S.lanc.length){const bk=await tabSalvar("Antes de restaurar · "+dtbr(Date.now()),AUTOR,false,true);if(!bk){toast("Não restaurei: não consegui guardar a tabela atual no histórico antes.");return}}
   S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();lastExport=null;ftSalvas.clear();ftRSalvas.clear();salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
@@ -3861,7 +3892,7 @@ function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){cons
   if(v.length){r.feito=true;if(!r.refaz||r.arq){r.refaz=false;r.skip=true;r.aviso="· já lançada"}}else if(r.feito){r.feito=false;r.refaz=false;r.skip=false;r.aviso=""}})}
 async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await idbGet("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
   rec.rows.forEach((r,i)=>{const o=ROM.rows[i];if(o&&r.foto&&!o.foto&&(o.cod||"")===(r.cod||"")){o.foto=r.foto;o.fotoMini=o.fotoMini||r.fotoMini;n++}});if(n)renderRom()}
-async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição antes.");return}if(ROM&&romConflito){toast("Resolva o conflito do romaneio antes de abrir outro.");return}
+async function romAbrirSalvo(id){if(editId){avisoEdicao(()=>romAbrirSalvo(id));return}if(ROM&&romConflito){toast("Resolva o conflito do romaneio antes de abrir outro.");return}
   if(ROM&&ROM.rows.length){const lsOk=romSalvar();const idbOk=await Promise.resolve(romGravP);if(!idbOk){toast("Não consegui guardar o romaneio atual e seu índice; ele continua aberto. Baixe o backup antes de trocar.");return}}
   else if(romGravP)await Promise.resolve(romGravP);
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
@@ -4873,7 +4904,7 @@ async function enviarFotos(soIds){if(fotosEnv)return;
   renderTopo();
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
-async function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a edição antes.");return}
+async function romCriar(){const f=S.form;if(editId){avisoEdicao(()=>romCriar());return}
   if(romConflito){toast("Outra aba alterou este romaneio. Use “Recarregar” ou “Manter esta aba” no aviso amarelo antes de criar as peças.");return}
   if(ROM.rows.some(romLoteDistribuicaoInvalida)){toast("Corrija a quantidade dos itens de lote ou desmarque-os antes de criar.");return}
   const antesConf=romInsAssinatura(),insPend=await romInsConferirArquivos();if(!insPend)return;if(antesConf!==romInsAssinatura()){toast("Os dados mudaram durante a conferência. Revise o romaneio novamente.");return}if(insPend.length){toast("O rateio mudou ou não foi possível conferir itens já lançados. Restaure a tabela salva e confira esses itens antes de criar.");return}
@@ -5013,7 +5044,7 @@ function nfOv(html){let el=document.getElementById("nfRev");if(!el){el=document.
 function nfFechar(){const el=document.getElementById("nfRev");if(el)el.remove();NF=null}
 function nfErro(msg){nfOv(`<div class="rev-h"><b>Importar nota fiscal</b></div><div class="nf-body"><div class="nf-al bad" role="alert">${esc(msg)}</div></div><div class="rev-f"><label class="btn" style="cursor:pointer">Escolher outro arquivo<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" class="vh"></label><button type="button" class="btn pri" data-nfa="fechar">Fechar</button></div>`)}
 async function nfAbrir(f,its){
-  if(editId){toast("Termine ou cancele a edição antes.");return}
+  if(editId){avisoEdicao(()=>nfAbrir(f,its));return}
   const eXml=/xml/i.test(f.type)||/\.xml$/i.test(f.name),ePdf=/pdf/i.test(f.type)||/\.pdf$/i.test(f.name);
   if(!eXml&&!ePdf){nfErro("Esse arquivo não é uma nota fiscal. Escolha o PDF (DANFE) ou o XML da nota.");return}
   nfOv(`<div class="rev-h"><b>Importar nota fiscal</b></div><div class="nf-body"><p class="hint">Lendo a nota fiscal…</p></div>`);
@@ -5080,7 +5111,7 @@ function nfRender(){const el=nfOv();if(!NF){nfFechar();return}const N=NF.nota,C=
   <div class="rev-f"><button type="button" class="btn" data-nfa="fechar">Cancelar</button><button type="button" class="btn pri big" id="nfGo" data-nfa="importar">Importar</button></div>`);
   const l2=document.querySelector("#nfRev .nf-list");if(l2)l2.scrollTop=st;nfResumo()}
 function nfConfirmar(){if(!NF)return;const N=NF.nota;
-  if(editId){toast("Termine ou cancele a edição antes.");return}
+  if(editId){avisoEdicao(()=>nfConfirmar());return}
   if(NF.dup&&!NF.dupOk){toast("Esta nota já foi importada. Marque “Importar de novo mesmo assim” se quiser repetir.");return}
   {const ni=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r))).length;if(ni&&!confirm(ni+" item(ns) da nota estão com custo ausente ou inválido (a nota pode estar com defeito).\n\nOK = importar com os dados como foram lidos (esses itens ficam com custo R$ 0,00 para você corrigir depois)\nCancelar = voltar e corrigir o custo ou desmarcar o item"))return}
   const lin=nfLinhas();if(!lin.length){toast("Nenhum item marcado para importar.");return}
@@ -5507,6 +5538,12 @@ function editar(id){
   if(Object.values(S.form.ov||{}).some(o=>o&&Object.keys(o).some(L=>!["W","V"].includes(L))))abertos.det=true;
   salvar(false);renderTopo();renderForm();focarPrimeiro();editSnap=JSON.stringify(S.form);
 }
+/* abre (ou retoma) o romaneio: usado pelo botão e pelo aviso de edição em curso */
+function romAbrirNovo(){if(!romRetomar()){ROM={tid:abertos.romT&&cfg().romaneios.some(x=>x.id===abertos.romT)?abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};
+      {const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}}
+      renderRom();const w=document.getElementById("romWrap");if(w){rolarPane(w);const ta=w.querySelector("textarea");if(ta)ta.focus({preventScroll:true})}}
+/* há uma peça em edição e o usuário pediu outra coisa (abrir romaneio, importar, salvar tabela…): o aviso traz o botão que cancela a edição na hora e segue com o pedido, sem trocar de página */
+function avisoEdicao(seguir){toast("Há uma peça em edição. Termine ou cancele a edição para continuar (cancelar descarta o que foi mudado nessa peça e ainda não foi gravado).",{t:"Cancelar edição e continuar",fn:()=>{cancelar();if(seguir)setTimeout(()=>{try{seguir()}catch(e){try{console.error(e)}catch(x){}}},0)}})}
 function cancelar(){editId=null;if(rascunho)S.form=rascunho;rascunho=null;erro="";salvar(false);renderTopo();renderForm()}
 /* a cópia leva a foto original (qualidade cheia) do banco, não só a miniatura */
 function fotoCopia(de,para){try{idbGet("fotos",de).then(v=>{if(v)idbPut("fotos",para,v)}).catch(()=>{})}catch(e){}}
@@ -5856,7 +5893,7 @@ document.addEventListener("click",e=>{
         else{l.v[L]=v;if(l.ov)Object.values(l.ov).forEach(o=>delete o[L])}});
       undo={tipo:"bulk",antes};salvar(false);renderTopo();toast(`${NOME[L]} = “${v}” em ${antes.length} peça(s).`,{t:"Desfazer",fn:desfazer});break}
     case "excl-volta":S.form.excl=[];salvar(false);renderForm();toast("As linhas excluídas voltam quando você clicar em Salvar.");break;
-    case "cancel":cancelar();break;
+    case "cancel":if(editId)cancelar();else{limparForm();salvar(false);renderTopo();renderForm();focarPrimeiro()}break;   /* sem peça em edição, Cancelar esvazia o formulário */
     case "limpar":limparForm();salvar(false);renderTopo();renderForm();focarPrimeiro();break;
     case "s-edit":{const r=G.linhas[selR.fr];if(r)editar(r.lancId);break}
     case "s-nova":{const r=G.linhas[selR.fr];if(r)usarModelo(r.lancId);break}
@@ -6040,10 +6077,7 @@ document.addEventListener("click",e=>{
     case "gi-del":{const g=gradeDoEl(t);g.itens.splice(+t.closest("[data-gii]").dataset.gii,1);sincGrade(S.form);salvar(true);render();break}
     case "reset":if(resetArm!==t.dataset.r){resetArm=t.dataset.r;renderCfg()}else resetar(resetArm);break;
     case "reset-no":resetArm=null;renderCfg();break;
-    case "rom-abrir":{if(editId){toast("Termine ou cancele a edição antes.");break}
-      if(!romRetomar()){ROM={tid:abertos.romT&&C.romaneios.some(x=>x.id===abertos.romT)?abertos.romT:C.romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};
-      {const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}}
-      renderRom();const w=document.getElementById("romWrap");if(w){rolarPane(w);const ta=w.querySelector("textarea");if(ta)ta.focus({preventScroll:true})}break}
+    case "rom-abrir":{if(editId){avisoEdicao(romAbrirNovo);break}romAbrirNovo();break}
     case "rom-fechar":{const lsOk=romSalvar(),pr=romGravP;ROM=null;renderRom();renderForm();
       Promise.resolve(pr).then(idbOk=>toast(lsOk?"Romaneio guardado — use “Retomar romaneio” quando quiser continuar.":idbOk?"O rascunho rápido não gravou, mas o romaneio ficou em “Romaneios salvos” (Cadastros): abra por lá para continuar.":"ATENÇÃO: não consegui guardar o romaneio (memória do navegador cheia, bloqueada ou outra aba alterou). Baixe o backup antes de sair."));break}
     case "rom-descartar":{if(romConflito){const b=document.getElementById("outraAbaRom");if(b)b.remove();romConflito=false;ROM=null;renderRom();renderForm();toast("Fechei este romaneio sem apagar nada: outra aba alterou o rascunho e a versão dela foi mantida.");break}
@@ -6448,7 +6482,7 @@ document.addEventListener("keydown",e=>{
 document.addEventListener("scroll",()=>{if(!celular()){const se=document.scrollingElement;if(se&&se.scrollTop)se.scrollTop=0;if(document.body.scrollTop)document.body.scrollTop=0}},true);
 try{romTem=!!localStorage.getItem(ROMKEY);romInfo=localStorage.getItem("cadpecas-rom-info")||"";relTem=!!localStorage.getItem("cadpecas-rel");ROMS=JSON.parse(localStorage.getItem("cadpecas-roms")||"[]");TABS=JSON.parse(localStorage.getItem("cadpecas-tabs")||"[]");AUTOR=localStorage.getItem("cadpecas-autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
 document.addEventListener("dragover",e=>{if(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files"))e.preventDefault()});
-document.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&document.querySelector(".rep [data-novo]")&&/[.](csv|xlsx?)$/i.test(f.name)){e.preventDefault();lerNovo(f);return}if(f&&/pdf|xml/i.test(f.type+f.name)){e.preventDefault();if(editId){toast("Termine ou cancele a edição antes.");return}nfRotear(f)}});
+document.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&document.querySelector(".rep [data-novo]")&&/[.](csv|xlsx?)$/i.test(f.name)){e.preventDefault();lerNovo(f);return}if(f&&/pdf|xml/i.test(f.type+f.name)){e.preventDefault();if(editId){avisoEdicao();return}nfRotear(f)}});
 document.addEventListener("keydown",e=>{if(ROM&&ROM.rows.length&&(e.ctrlKey||e.metaKey)&&e.key==="Enter"&&e.target.closest&&e.target.closest("#romWrap")){e.preventDefault();romRevisar();return}},true);
 /* abas que rolam para o lado: a seta "›" some quando chega ao fim */
 {const at=el=>{if(el.scrollWidth<=el.clientWidth+2||el.scrollLeft+el.clientWidth>=el.scrollWidth-4)el.classList.add("fim");else el.classList.remove("fim")};
@@ -6633,7 +6667,7 @@ function impStatusFim(ok,msg){const nome=(ROM&&ROM.doc)||(IMPST&&IMPST.nome)||""
   if(ok&&ROM&&ROM.rows&&ROM.rows.length){const n=ROM.rows.length;IMPST={nome,estado:"ok",n,conf:ROM.conf||""};toast(`Romaneio importado: ${n} peça${n===1?"":"s"} lida${n===1?"":"s"}. Revise abaixo e clique em “Criar peças”.`)}
   else IMPST={nome,estado:"erro",msg:msg||(ROM&&ROM.msg)||"não encontrei peças nesse arquivo"};renderImp()}
 async function impAbrirArq0(f){
-  if(editId){toast("Termine ou cancele a edição antes.");return}
+  if(editId){avisoEdicao(()=>impAbrirArq0(f));return}
   if(ROM&&ROM.rows&&ROM.rows.length){romSalvar();ROM=null;renderRom()}
   const n=f.name||"";
   if(/[.](xlsx?|csv)$/i.test(n)){romGaranteRom();renderRom();rolarPane(document.getElementById("romWrap"));return romPlanilha(f)}
@@ -6719,18 +6753,34 @@ function hdrLayout(){const hin=document.querySelector("header .hin");if(!hin)ret
   const st=document.getElementById("saveStatus"),ud=document.querySelector(".udo"),sp=document.getElementById("autorIn")?.closest(".sp"),top=document.getElementById("sideTop"),ex=document.getElementById("sideExp");if(!st||!ud||!sp||!top||!ex)return;
   if(!celular()){if(st.parentNode!==top)top.append(st,ud);if(sp.parentNode!==ex)ex.append(sp)}
   else{const mobile=document.getElementById("mobileSettings");if(mobile){if(st.parentNode!==mobile)mobile.append(st,ud);if(sp.parentNode!==mobile)mobile.append(sp)}}}
-window.addEventListener("resize",()=>{hdrLayout();sideAplicar(abertos.side);if(!celular()){const menu=document.getElementById("mobileMenu");if(menu)menu.open=false}});
+window.addEventListener("resize",()=>{hdrLayout();numFormMover();sideAplicar(abertos.side);if(!celular()){const menu=document.getElementById("mobileMenu");if(menu)menu.open=false}});
 hdrLayout()
 
 /* Menu móvel reúne os mesmos destinos do menu lateral. */
-{const menu=document.getElementById("mobileMenu");if(menu){const summary=menu.querySelector("summary"),close=menu.querySelector(".mobile-menu-close");menu.addEventListener("toggle",()=>{if(menu.open){menu.querySelectorAll("[data-mobile^=\"vis:\"]").forEach(b=>{if(b.dataset.mobile==="vis:"+visAtual())b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")})}});close.addEventListener("click",()=>{menu.open=false;summary.focus()});menu.addEventListener("click",e=>{const b=e.target.closest("[data-mobile]");if(!b)return;const [tipo,id]=b.dataset.mobile.split(":");menu.open=false;if(tipo==="vis"){visPara(id)}else if(tipo==="sec"){formAbrir(false);irPara(id)}else{if(id==="imp-pick")visPara("lancar");const alvo=document.querySelector('#impBar [data-act="'+id+'"]')||document.querySelector('[data-act="'+id+'"]');if(alvo)alvo.click()}});document.addEventListener("click",e=>{if(menu.open&&!menu.contains(e.target))menu.open=false});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&menu.open){menu.open=false;menu.querySelector("summary").focus()}})}}
+{const menu=document.getElementById("mobileMenu");if(menu){const summary=menu.querySelector("summary"),close=menu.querySelector(".mobile-menu-close");menu.addEventListener("toggle",()=>{if(menu.open){menu.querySelectorAll("[data-mobile^=\"vis:\"]").forEach(b=>{if(b.dataset.mobile==="vis:"+visAtual())b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")})}});close.addEventListener("click",()=>{menu.open=false;summary.focus()});menu.addEventListener("click",e=>{const b=e.target.closest("[data-mobile]");if(!b)return;const [tipo,id]=b.dataset.mobile.split(":");menu.open=false;if(tipo==="vis"){visPara(id)}else if(tipo==="sec"){formAbrir(false);irPara(id)}else if(id==="rom-abrir"){if(editId)avisoEdicao(romAbrirNovo);else romAbrirNovo()}else{if(id==="imp-pick")visPara("lancar");const alvo=document.querySelector('#impBar [data-act="'+id+'"]')||document.querySelector('[data-act="'+id+'"]');if(alvo)alvo.click()}});document.addEventListener("click",e=>{if(menu.open&&!menu.contains(e.target))menu.open=false});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&menu.open){menu.open=false;menu.querySelector("summary").focus()}})}}
 
+/* menu do celular = o mesmo menu lateral do desktop (grupos, nomes, ícones e ordem), gerado a partir dele; o celular só acrescenta as telas que no desktop são fixas (Lançar peça, Cadastros) e a lista de romaneios salvos */
+function menuCelularDoLateral(){const panel=document.querySelector("#mobileMenu .mobile-menu-panel"),side=document.getElementById("side");if(!panel||!side)return;
+  panel.querySelectorAll(":scope > b,:scope > button[data-mobile]").forEach(x=>x.remove());
+  const IC=d=>'<i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+d+'"/></svg></i>';
+  const extras={"Principal":[["Lançar peça","vis:lancar",IC("M12 5v14M5 12h14")],["Cadastros","vis:cad",IC("M4 7h16M4 12h16M4 17h10")]],"Romaneios":[["Romaneios salvos","act:rom-lista",IC("M21 8v13H3V8M1 3h22v5H1zM10 12h4")]]};
+  const ico=b=>{const i=b.querySelector("i.ic");return i?i.outerHTML:""},rot=b=>{const t=b.querySelector("span.sl");return t?t.textContent.trim():b.title||""};
+  const mapa=b=>b.dataset.vis?"vis:"+(b.dataset.vis==="tudo"?"planilha":b.dataset.vis):b.dataset.go?b.dataset.go:b.dataset.act?"act:"+b.dataset.act:"";
+  const botao=(r,m,ic)=>{const x=document.createElement("button");x.type="button";x.dataset.mobile=m;x.innerHTML=(ic||"")+"<span>"+esc(r)+"</span>";return x};
+  let grupo="";const solta=()=>{(extras[grupo]||[]).forEach(([r,m,i])=>panel.appendChild(botao(r,m,i)));};
+  side.querySelectorAll("nav.sn > *").forEach(el=>{
+    if(el.classList.contains("sg")){solta();grupo=el.textContent.trim();const h=document.createElement("b");h.textContent=grupo;panel.appendChild(h);return}
+    if(el.tagName!=="BUTTON")return;const m=mapa(el);if(!m)return;
+    panel.appendChild(botao(m==="vis:planilha"?"Tabela":rot(el),m,ico(el)))});
+  solta()}
+menuCelularDoLateral();
 document.getElementById("sideT").addEventListener("click",()=>sideAplicar(abertos.side==="mini"?"open":"mini"));
 document.getElementById("side").addEventListener("click",e=>{
   const v=e.target.closest("button[data-vis]");if(v){visPara(v.dataset.vis);if(v.dataset.vis==="lancar")refocar("#f-F");return}
   const g=e.target.closest("[data-go]");if(!g)return;const [k,id]=g.dataset.go.split(":");
   if(k==="sec"){if(celular())formAbrir(false);irPara(id);return}
   /* ações: aciona o botão que já existe no app (o menu não tem cópia deles) */
+  if(id==="rom-abrir"){if(editId)avisoEdicao(romAbrirNovo);else romAbrirNovo();return}   /* o botão "Colar romaneio" some da barra enquanto uma peça está em edição: abre direto */
   const alvo=document.querySelector('[data-act="'+id+'"]');if(alvo)alvo.click()});
 document.addEventListener("click",()=>setTimeout(sideMarcar,0));
 document.addEventListener("keydown",e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&e.code==="KeyB"){e.preventDefault();document.getElementById("vside").click()}});

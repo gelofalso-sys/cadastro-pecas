@@ -2,7 +2,7 @@
 
 Data: 14/11/2026. Execução integral em cópia temporária (`python tests/run_all.py`), com dados de teste.
 
-**Resultado final:** 161 testes OK, 0 falhas, 0 pulados, com `CP_BACKUP` apontando para o backup completo real de 08/11/2026 (`t18.py` e `t94_backup_real.py` incluídos). Sem `CP_BACKUP` esses dois são pulados (159 OK). A conferência de exportação no Jueri e no Bling continua manual.
+**Resultado final (14/11/2026, versão com menu lateral espelhado, Cancelar no formulário, numeração expansível e barra inferior encostada no rodapé):** 161 testes OK, 0 falhas, 0 pulados, com `CP_BACKUP` apontando para o backup completo real de 08/11/2026 (`t18.py` e `t94_backup_real.py` incluídos). Sem `CP_BACKUP` esses dois são pulados (159 OK). A conferência de exportação no Jueri e no Bling continua manual.
 
 ## Correções feitas nesta rodada
 
@@ -16,3 +16,7 @@ Testes atualizados para o comportamento intencional da versão unificada: conjun
 ## Limites
 
 Dois testes tiveram instabilidade de temporização (`t56_rom_acoes`, `t118_conjunto_palavras`) e foram tornados determinísticos; repetidos 3 e 6 vezes, passaram todas. Não foi feita a importação no Jueri e no Bling.
+
+## Observação sobre o selo do Netlify
+
+A barra inferior do celular agora encosta no rodapé da tela. Os testes `t92` e `t103` deixaram de simular um selo "Powered by Netlify" no canto inferior direito (antes a barra ficava 72 px acima do fundo para escapar dele). Se a hospedagem exibir esse selo, ele pode cobrir os botões "Baixar" e "Lançar peça".

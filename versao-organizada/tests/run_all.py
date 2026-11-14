@@ -40,7 +40,7 @@ except Exception as e:
 # nova continua vazia e é verificada separadamente no t87 e no t88.
 COM_GALVANICA=set("""t1.py t10.py t15.py t2.py t20.py t21.py t22.py t23.py t24.py t25.py t26.py t27.py t3.py t30.py t31.py t32.py t33.py t34.py t35.py t36.py t38.py t39.py t40.py t41.py t44.py t45.py t46.py t48.py t49.py t50.py t51.py t54.py t56_conjunto_romaneio.py t58.py t6.py t64_acessibilidade.py t65_categoria_conjunto.py t65_div_categoria.py t66_clique_celula.py t67_referencias_cores.py t68_referencias_tamanhos.py t69_banho_categoria_quantidade.py t69_banho_divisoes_exportacao.py t69_banho_fixo_categoria_quantidade.py t69_contas_banho.py t69_insumos.py t69_lote_por_grama_categorias.py t7.py t70_conta_tabela.py t71_romaneios_reais.py t72_romaneio_peso_e_trios.py t73_lancamento_tipos_e_variacoes.py t74_romaneio_extras.py t75_romaneio_frete_e_pendencias.py t76_subcategoria_tamanhos.py t77_lote_sem_bloqueio.py t78_baixar_selecionadas.py t79_sem_banho_por_grama.py t80_abrir_sem_idb.py t81_banho_sem_coluna_abre.py t82_lote_peso_real.py t85_lote_numerado.py t96_fluxos.py t96_auditoria_calculos.py t97_xml_criacao.py t98_banho_componente.py t99_rateio_exato.py t100_xml_precisao.py t101_rom_descartar.py t9.py""".split())
 COM_GALVANICA.add("t103_insumos_frete.py")
-COM_GALVANICA.update(("t47.py","t56.py","t56_rom_acoes.py","t60_varejo.py","t67_rom_acesso.py"))
+COM_GALVANICA.update(("t47.py","t56.py","t56_rom_acoes.py","t60_varejo.py","t67_rom_acesso.py","t120_edicao_romaneio_menu_numeracao.py"))
 falhas=0;pulos=0
 for n in testes_python():
     precisa_real=n in ("t16.py","t18.py")

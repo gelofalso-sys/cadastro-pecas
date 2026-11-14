@@ -34,8 +34,8 @@ with sync_playwright() as p:
     search.fill('informado')
     assert row.is_visible()
     page.set_viewport_size({'width':1200, 'height':800})
-    page.wait_for_function("getComputedStyle(document.querySelector('.rep .rom-lista tbody tr')).display === 'table-row'")
-    page.wait_for_function("!!document.querySelector('#sideExp #autorIn')")
+    page.locator('.rep .rom-lista tbody tr').first.wait_for(state='visible')   # sem eval: a CSP da página não permite
+    page.locator('#sideExp #autorIn').wait_for(state='attached')
     if not page.locator('#sideExp #autorIn').is_visible(): page.locator('#sideT').click()
     assert page.locator('#sideExp #autorIn').is_visible()
     assert not errors, errors

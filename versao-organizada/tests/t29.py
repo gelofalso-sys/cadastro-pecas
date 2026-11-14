@@ -37,9 +37,9 @@ with sync_playwright() as p:
         if pg.locator("#cfg .expl").count()!=1:sem.append(i)
     ok(not sem,"todas as abas têm explicação no fim (sem: %s)"%sem)
     ok(len(ids)==10,"10 abas (%d)"%len(ids))
-    # estreito: abas uma embaixo da outra
+    # estreito: abas em uma única faixa horizontal com rolagem (a lista vertical ocupava a tela do celular)
     pg.set_viewport_size({"width":700,"height":900});pg.wait_for_timeout(400)
     ys=pg.eval_on_selector_all('#cfg .ctabs .ctab',"e=>e.map(x=>Math.round(x.getBoundingClientRect().top))")
-    ok(len(set(ys))==len(ys),"em tela estreita as abas ficam uma embaixo da outra")
+    ok(len(set(ys))==1,"em tela estreita as abas ficam numa faixa horizontal única com rolagem")
     print("erros",errs,"FALHAS",f)
     if errs:f.append("erros de página")

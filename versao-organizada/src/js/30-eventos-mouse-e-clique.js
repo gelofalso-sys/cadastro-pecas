@@ -133,7 +133,7 @@ document.addEventListener("click",e=>{
         else{l.v[L]=v;if(l.ov)Object.values(l.ov).forEach(o=>delete o[L])}});
       undo={tipo:"bulk",antes};salvar(false);renderTopo();toast(`${NOME[L]} = “${v}” em ${antes.length} peça(s).`,{t:"Desfazer",fn:desfazer});break}
     case "excl-volta":S.form.excl=[];salvar(false);renderForm();toast("As linhas excluídas voltam quando você clicar em Salvar.");break;
-    case "cancel":cancelar();break;
+    case "cancel":if(editId)cancelar();else{limparForm();salvar(false);renderTopo();renderForm();focarPrimeiro()}break;   /* sem peça em edição, Cancelar esvazia o formulário */
     case "limpar":limparForm();salvar(false);renderTopo();renderForm();focarPrimeiro();break;
     case "s-edit":{const r=G.linhas[selR.fr];if(r)editar(r.lancId);break}
     case "s-nova":{const r=G.linhas[selR.fr];if(r)usarModelo(r.lancId);break}
@@ -317,10 +317,7 @@ document.addEventListener("click",e=>{
     case "gi-del":{const g=gradeDoEl(t);g.itens.splice(+t.closest("[data-gii]").dataset.gii,1);sincGrade(S.form);salvar(true);render();break}
     case "reset":if(resetArm!==t.dataset.r){resetArm=t.dataset.r;renderCfg()}else resetar(resetArm);break;
     case "reset-no":resetArm=null;renderCfg();break;
-    case "rom-abrir":{if(editId){toast("Termine ou cancele a edição antes.");break}
-      if(!romRetomar()){ROM={tid:abertos.romT&&C.romaneios.some(x=>x.id===abertos.romT)?abertos.romT:C.romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};
-      {const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}}
-      renderRom();const w=document.getElementById("romWrap");if(w){rolarPane(w);const ta=w.querySelector("textarea");if(ta)ta.focus({preventScroll:true})}break}
+    case "rom-abrir":{if(editId){avisoEdicao(romAbrirNovo);break}romAbrirNovo();break}
     case "rom-fechar":{const lsOk=romSalvar(),pr=romGravP;ROM=null;renderRom();renderForm();
       Promise.resolve(pr).then(idbOk=>toast(lsOk?"Romaneio guardado — use “Retomar romaneio” quando quiser continuar.":idbOk?"O rascunho rápido não gravou, mas o romaneio ficou em “Romaneios salvos” (Cadastros): abra por lá para continuar.":"ATENÇÃO: não consegui guardar o romaneio (memória do navegador cheia, bloqueada ou outra aba alterou). Baixe o backup antes de sair."));break}
     case "rom-descartar":{if(romConflito){const b=document.getElementById("outraAbaRom");if(b)b.remove();romConflito=false;ROM=null;renderRom();renderForm();toast("Fechei este romaneio sem apagar nada: outra aba alterou o rascunho e a versão dela foi mantida.");break}
