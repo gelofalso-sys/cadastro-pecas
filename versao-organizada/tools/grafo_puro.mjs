@@ -8,7 +8,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { arquivosDoBloco, lerBloco } from "./_nucleo.mjs";
 export function analisar() {
-const decls = new Map();           // nome -> {arq, linha, tipo, refs:Set, mut}
+const decls = new Map();           // nome -> {arq, linha, tipo, refs:Set, mut, escritas:Set}
+const arqsPorNome = new Map();     // nome -> arquivos que o declaram (para achar duplicadas)
 const IMPUROS = new Set("matchMedia innerWidth innerHeight screen getComputedStyle self globalThis document window navigator localStorage sessionStorage indexedDB toast setTimeout setInterval clearTimeout requestAnimationFrame alert confirm prompt fetch XLSX pdfjsLib Blob URL FileReader Date Math.random crypto console location history".split(" "));
 IMPUROS.delete("Date"); IMPUROS.delete("Math.random");
 for (const a of arquivosDoBloco()) {
@@ -23,9 +24,13 @@ for (const a of arquivosDoBloco()) {
     const dentro = r => d.node.range && r.identifier.range[0] >= d.node.range[0] && r.identifier.range[1] <= d.node.range[1];
     const todas = []; const colhe = s => { s.references.forEach(r => todas.push(r)); s.childScopes.forEach(colhe) }; colhe(glob);
     for (const r of todas) if (dentro(r) && r.resolved === null || (dentro(r) && r.resolved && r.resolved.scope === glob)) refs.add(r.identifier.name);
+    const escritas = new Set();
+    for (const r of todas) if (dentro(r) && r.isWrite() && (r.resolved === null || r.resolved.scope === glob) && r.identifier.name !== v.name) escritas.add(r.identifier.name);
+    if (!arqsPorNome.has(v.name)) arqsPorNome.set(v.name, []);
+    arqsPorNome.get(v.name).push(arq);
     const mut = d.kind === "let" || d.kind === "var" || (d.type === "Variable" && d.parent && d.parent.kind !== "const");
     // escrita fora da declaração em variável const é impossível; em let/var conta como estado
-    decls.set(v.name, { arq, linha: d.node.loc.start.line, tipo: d.type, mut, refs: new Set([...refs].filter(n => n !== v.name)) });
+    decls.set(v.name, { arq, linha: d.node.loc.start.line, tipo: d.type, mut, refs: new Set([...refs].filter(n => n !== v.name)), escritas });
   }
 }
 // semente de impureza: estado mutável de nível superior, globais de navegador com efeito e nomes S/G/ROM
@@ -38,7 +43,8 @@ for (const [n, d] of decls) {
 let mudou = true;
 while (mudou) { mudou = false; for (const [n, d] of decls) { if (impuro.has(n)) continue; for (const r of d.refs) if (impuro.has(r)) { marca(n, "depende de " + r); mudou = true; break } } }
 const puras = [...decls].filter(([n]) => !impuro.has(n));
-return { decls, impuro, puras };
+const duplicadas = [...arqsPorNome].filter(([, a]) => new Set(a).size > 1).map(([nome, a]) => ({ nome, arqs: [...new Set(a)] }));
+return { decls, impuro, puras, duplicadas };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

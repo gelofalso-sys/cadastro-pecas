@@ -10,7 +10,7 @@
   "scripts": {
     "build": "python tools/montar.py",
     "test": "python tests/run_all.py",
-    "lint": "node tools/lint.mjs && node tools/fatias.mjs --validar",
+    "lint": "node tools/lint.mjs && node tools/fatias.mjs --validar && node tools/checar_fronteiras.mjs",
     "lint:estrito": "node tools/lint.mjs --estrito",
     "format": "prettier --write",
     "format:check": "prettier --check src/js",

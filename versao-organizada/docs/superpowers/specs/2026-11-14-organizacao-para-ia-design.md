@@ -72,6 +72,15 @@ Mapeamento inicial dos arquivos atuais; os arquivos de eventos `30` a `35` são 
 | `armazenamento` | `14`, `20`, `21c` (persistência, IndexedDB, diagnóstico, backup) |
 | `app` | `33`, `35`, `21d` (janelas, busca, paleta, menu, novidades) |
 
+**Ajuste após medição** (Tarefa 4; dados em `docs/acoplamento-base.md`, gerado por `node tools/acoplamento.mjs --escrever`). Medido: 103 variáveis globais mutáveis em 55 declarações `let` (os "53" contam declarações, não variáveis), nenhum nome declarado em dois arquivos. A proposta acima fica de pé, com estes ajustes a seguir nas tarefas de fatia:
+
+- `armazenamento` é o destino mais acoplado de `19d`, `27`, `36`, `21d`: é infraestrutura (persistência), não motivo para juntar fatias. Esses arquivos continuam nas fatias propostas e passam a acessar a persistência só pelo que `armazenamento` expõe (e depois por `src/store/`).
+- `23` (nota fiscal) tem 18 símbolos compartilhados com o romaneio e nenhum com outro arquivo proposto para `notafiscal`: tratar `notafiscal` como parte de `romaneio` (mesma pasta) até que `fotos` (`27`) dê coesão própria a uma fatia separada.
+- `34`: a parte de importação vai para `romaneio` (11 símbolos, como já previsto); filtros e cartões ficam em `planilha`.
+- `15` (planilha) acopla mais com `lancamento` (22) que com os irmãos de `planilha` (15): a fronteira `planilha`/`lancamento` é a mais frouxa; definir na Tarefa de fatia o que `lancamento` expõe a `planilha` antes de mover `15`.
+- `19` (configuração e catálogo) acopla com `romaneio` (9) e `25` com `configuracao` (8): ligações de dependência a declarar em `usa`, sem mudar o agrupamento.
+- `00`, `10`, `11` (adaptadores, limites, utilidades) e `30`, `31` não têm fatia na tabela: os três primeiros vão para `core`; `30` e `31` são repartidos por tela, como já dito.
+
 ### Mapa e lint desde o começo
 
 - `tools/mapa.mjs` lê todos os `FATIA.json` e o grafo de dependências real (`tools/grafo_puro.mjs`) e gera `docs/ARQUITETURA.md`: fatias, o que cada uma expõe, quem usa quem, arquivos e testes. Se `FATIA.json` e código divergirem, o comando falha. O mapa não se escreve à mão.
