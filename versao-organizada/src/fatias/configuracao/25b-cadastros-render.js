@@ -1,5 +1,4 @@
-let resetArm=null;
-function resetBar(id){const nome={cat:"categorias e variações",banho:"banhos e galvânicas",forn:"fornecedores",cor:"cores e observações",mod:"modelos da planilha",rom:"modelos de romaneio"}[id];if(!nome)return "";const on=resetArm===id;
+function resetBar(id){const nome={cat:"categorias e variações",banho:"banhos e galvânicas",forn:"fornecedores",cor:"cores e observações",mod:"modelos da planilha",rom:"modelos de romaneio"}[id];if(!nome)return "";const on=estadoConfig.resetArm===id;
   return `<div class="row rst"><button class="btn sm danger" type="button" data-act="reset" data-r="${id}">${on?"Confirmar: voltar "+nome+" ao padrão":"↺ Voltar "+nome+" ao padrão"}</button>${on?`<button class="btn sm" type="button" data-act="reset-no">Cancelar</button>`:""}<span class="hint">Não apaga as peças já lançadas nem a numeração (última peça).</span></div>`}
 function resetar(id){const C=cfg(),D=clone(DEFAULT_CONFIG);
   if(id==="cat"){C.categorias=D.categorias;Object.keys(D.seqs).forEach(k=>{if(!(k in C.seqs))C.seqs[k]="0"});C.categorias.forEach(c=>Object.values(c.subPref||{}).forEach(v=>{if(!(v in C.seqs))C.seqs[v]="0"}));
@@ -9,10 +8,10 @@ function resetar(id){const C=cfg(),D=clone(DEFAULT_CONFIG);
   if(id==="cor"){C.cores=D.cores;C.observacoes=D.observacoes}
   if(id==="mod"){C.modelos=D.modelos;C.modelo="jueri"}
   if(id==="rom")C.romaneios=D.romaneios;
-  resetArm=null;salvar(true);render();toast("Voltou ao padrão.")}
+  estadoConfig.resetArm=null;salvar(true);render();toast("Voltou ao padrão.")}
 function renderCfg(){renderCfg0();pontosCarregar()}
 function renderCfg0(){
-  SECS=[];const C=cfg(),usoPref={};C.categorias.forEach(c=>{const p=(c.prefixo||"").toUpperCase();(usoPref[p]=usoPref[p]||[]).push(c.nome)});
+  estadoConfig.secs=[];const C=cfg(),usoPref={};C.categorias.forEach(c=>{const p=(c.prefixo||"").toUpperCase();(usoPref[p]=usoPref[p]||[]).push(c.nome)});
   let h=`<h2 id="sec-topo">Cadastros e personalização</h2>`;
   h+=secCat(C,usoPref);
   h+=sec("banho","Banhos e custos",C.banhistas.map(b=>`${b.nome}: ${b.banhos.map(x=>`${x.letra} ${x.nome} ${x.modo==="fixo"?"R$ "+fmt(num(x.mult)):"R$ "+fmt(num(x.mult))+"/g"}`).join(", ")}`).join(" · "),
@@ -66,7 +65,7 @@ function renderCfg0(){
       <div class="tw"><table class="cfg bnt"><thead><tr><th>Cor</th><th title="Letras que entram na referência quando a cor é escolhida">Sigla</th><th>Usar na referência</th><th title="Palavra que entra na descrição (vazio = o nome da cor)">Palavra na descrição</th><th>Usar na descrição</th><th title="Aparece na escolha da cor da pedra/detalhe ao lançar">Pedra/detalhe</th><th></th></tr></thead><tbody>
       ${C.cores.map((n,j)=>{const k=corKey(n),m=M[k]||{};return `<tr data-lc="${j}"><td data-th="Cor"><input data-lcf="nome" value="${esc(n)}" aria-label="Nome da cor ${esc(n)}" style="width:140px"></td><td data-th="Sigla"><input data-lcf="sig" value="${esc(m.sig||"")}" placeholder="${esc(SG[k]||"")}" maxlength="2" style="width:52px;text-transform:uppercase" aria-label="Sigla da cor ${esc(n)}"></td><td class="c" data-th="Usar na referência"><input type="checkbox" data-lcf="ref" ${m.semRef?"":"checked"} aria-label="Usar ${esc(n)} na referência"></td><td data-th="Palavra na descrição"><input data-lcf="txt" value="${esc(m.txt||"")}" placeholder="${esc(n)}" style="width:150px" aria-label="Palavra na descrição da cor ${esc(n)}"></td><td class="c" data-th="Usar na descrição"><input type="checkbox" data-lcf="textoOn" ${m.semTexto||m.txt==="-"?"":"checked"} aria-label="Usar ${esc(n)} na descrição"></td><td class="c" data-th="Pedra/detalhe"><input type="checkbox" data-lcf="ped" ${libPedra(n)?"checked":""} aria-label="${esc(n)} é cor de pedra/detalhe"></td><td class="acts"><button type="button" class="x" data-act="cor-del" data-j="${j}" aria-label="Remover ${esc(n)}">×</button></td></tr>`}).join("")}
       </tbody></table></div></section></div>
-    ${LIBTAM}`);}
+    ${estadoConfig.libtam}`);}
   h+=secRom(C);h+=secModelo(C);
   h+=sec("roml","Romaneios lançados",`${ROMS.length} guardado(s)`,`<p class="d">Cada romaneio colado ou importado fica guardado aqui, com as fotos e quantidades. Abra um para lançar o que faltou ou editar todas as peças de novo, sem importar o arquivo outra vez.</p>${romListaTabela()}`);
   h+=sec("foto","Fotos (link)",fotoKey()?"imgbb conectado neste navegador":"sem chave do imgbb ainda",
@@ -90,9 +89,9 @@ function renderCfg0(){
     <div class="row"><button type="button" class="btn sm" data-act="ponto-novo">Criar ponto agora</button></div>
     <div class="row"><button class="btn sm" type="button" data-act="backup" title="Salva só categorias, galvânicas, banhos, fornecedores, cores e modelos (sem as peças), para levar a outro computador">Exportar só os cadastros</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBk" title="Carrega categorias, galvânicas, fornecedores etc. de uma cópia dos cadastros">Importar cadastros</button><input type="file" id="fileBk" accept=".json" class="vh"></div>
     <div class="row"><button class="btn sm pri" type="button" data-act="backup-total" title="Um arquivo só com TUDO: peças da tabela, cadastros, romaneios salvos e fotos">Backup completo (peças, romaneios e fotos)</button><button class="btn sm" type="button" data-act="abrir-arq" data-alvo="fileBkT">Restaurar backup completo</button><input type="file" id="fileBkT" accept=".json" class="vh"></div><p class="hint">Antes de trocar de arquivo, de navegador ou de computador, baixe o backup completo e restaure no novo.</p>`);
-  {const T={banho:"Galvânicas e banhos",cor:"Cores, tamanhos e variações",cat:"Categorias",forn:"Fornecedores",col:"Padrões das colunas",mod:"Modelo da planilha",rom:"Leitura de romaneios",roml:"Romaneios lançados",foto:"Fotos",opc:"Importar e backup"},O=Object.keys(T);SECS.forEach(x=>{if(T[x.id])x.titulo=T[x.id]});SECS.sort((a,b)=>O.indexOf(a.id)-O.indexOf(b.id))}
-  const at=abaCfg(),cur=SECS.find(s=>s.id===at);
-  document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${SECS.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]?`<span class="cgrp">${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]}</span>`:""}<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" tabindex="${s.id===at?0:-1}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
+  {const T={banho:"Galvânicas e banhos",cor:"Cores, tamanhos e variações",cat:"Categorias",forn:"Fornecedores",col:"Padrões das colunas",mod:"Modelo da planilha",rom:"Leitura de romaneios",roml:"Romaneios lançados",foto:"Fotos",opc:"Importar e backup"},O=Object.keys(T);estadoConfig.secs.forEach(x=>{if(T[x.id])x.titulo=T[x.id]});estadoConfig.secs.sort((a,b)=>O.indexOf(a.id)-O.indexOf(b.id))}
+  const at=abaCfg(),cur=estadoConfig.secs.find(s=>s.id===at);
+  document.getElementById("cfg").innerHTML=h+`<div class="ctabs" role="tablist" aria-label="Cadastros">${estadoConfig.secs.map(s=>{const n={cat:C.categorias.length,banho:C.banhistas.length,forn:C.fornecedores.length,cor:C.cores.length,mod:C.modelos.length,rom:C.romaneios.length}[s.id];return `${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]?`<span class="cgrp">${{banho:"1 · Cadastros, na ordem",col:"2 · Planilha",rom:"3 · Romaneios",foto:"4 · Arquivos"}[s.id]}</span>`:""}<button type="button" role="tab" class="ctab${s.id===at?" on":""}" aria-selected="${s.id===at}" tabindex="${s.id===at?0:-1}" data-act="ctab" data-id="${s.id}">${s.titulo}${n!=null?`<i class="bdg">${n}</i>`:""}</button>`}).join("")}</div>
     <section class="sec tabp" id="sec-${cur.id}" role="tabpanel"><div class="tabres">${esc(cur.resumo)}</div><div class="sb">${cur.corpo}${resetBar(cur.id)}${EXPL[cur.id]||""}</div></section>`;
   if(ROM&&document.getElementById("romWrap"))renderRom();
 }

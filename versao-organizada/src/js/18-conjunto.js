@@ -8,10 +8,10 @@ async function conjExcluirCategoria(nome){
   let tabs,roms;try{[tabs,roms]=await Promise.all([idbOp("tabs","readonly",st=>st.getAll()),idbOp("roms","readonly",st=>st.getAll())])}catch(e){tabs=null}
   if(!Array.isArray(tabs)||!Array.isArray(roms)){toast("Não excluí a categoria: não consegui verificar os conjuntos salvos. Tente novamente.");return}
   if(tabs.some(t=>(t.lanc||[]).some(emLanc))||roms.some(r=>(r.rows||[]).some(emRom))){toast(`Não excluí “${nome}”: conjuntos em tabelas ou romaneios salvos usam esta categoria.`);return}
-  const i=cfgAntes.categorias.findIndex(c=>c.nome===nome);if(cfg()!==cfgAntes||i<0||delCat!==nome){toast("Os cadastros mudaram durante a verificação. Tente novamente.");return}
+  const i=cfgAntes.categorias.findIndex(c=>c.nome===nome);if(cfg()!==cfgAntes||i<0||estadoConfig.delCat!==nome){toast("Os cadastros mudaram durante a verificação. Tente novamente.");return}
   if((S.lanc||[]).some(l=>val(l,"I")===nome||emLanc(l))||tem((S.form||{}).comp)||(ROM&&ROM.rows||[]).some(emRom)){toast("Não excluí a categoria: ela passou a estar em uso.");return}
   if(!CADAUTO&&!CAD.snap)cadTirarFoto();
-  cfgAntes.categorias.splice(i,1);delCat=null;if(S.form.v.I===nome){S.form.v.I=cfgAntes.categorias.length?cfgAntes.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}salvar(true);if(!CADAUTO)cadConferir();render();toast(`Categoria “${nome}” excluída.`)
+  cfgAntes.categorias.splice(i,1);estadoConfig.delCat=null;if(S.form.v.I===nome){S.form.v.I=cfgAntes.categorias.length?cfgAntes.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}salvar(true);if(!CADAUTO)cadConferir();render();toast(`Categoria “${nome}” excluída.`)
 }
 /* banho que vale para uma peça do conjunto: "" = o banho da linha do conjunto · "-" = sem banho · id = sempre esse banho */
 /* ao sair de Conjunto (ou limpar): tira da peça as somas e a descrição automática; as peças ficam guardadas para quando voltar */

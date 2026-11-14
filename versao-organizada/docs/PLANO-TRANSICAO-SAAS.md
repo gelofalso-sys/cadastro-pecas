@@ -231,3 +231,8 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 - `src/fatias/tabelas/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core"]`; `armazenamento` ainda não é fatia, então `idbOp`, `TABS`, `tabArm` etc. são legado isento), `LEIA-ME.md`, 19d dividido em `19d-tabelas-indice-e-fotos.js` e `19d2-tabelas-salvar-e-ver.js`, e `acoes.js` (8 ações: tab-lista, tab-salvar-abrir, tab-salvar-ok, tab-ver, tab-del, tab-restaurar, tab-csv, rom-ver). `repModal` (janela genérica, usada também por exportacao, 21c, 21d, 29b) saiu para `src/js/19d1-modal-rep.js`, o que evita exportacao depender de tabelas: sem ciclos entre fatias.
 - Mover/dividir manteve o HTML idêntico (hash `5b5bcb5f…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
 - Globais mutáveis: 98 -> 95 (`histSugT`, `histSugSeq`, `exSemVarredura` viraram `estadoTabelas`; 33 liga `estadoTabelas.semVarredura`).
+
+### Fatia `configuracao` — concluída em 14/11/2026 (Tarefa 12, terceira fatia)
+- `src/fatias/configuracao/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core"]`; `romaneio` ainda não é fatia, então `ROM`, `renderRom` etc. são legado isento), `LEIA-ME.md`, 19 dividido em 4 arquivos por assunto, a parte de configurações de 25 (`resetar`, `renderCfg`) em `25b-cadastros-render.js`, `36-cadastros-salvar.js`, `37-moeda.js` e `acoes.js` (66 ações; `snapCfg`/`CFG_UNDO` seguem no listener de 30).
+- Mover/dividir manteve o HTML idêntico (hash `c2628e0d…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
+- Globais mutáveis: 95 -> 88 (`SECS`, `LIBTAM`, `renBusy`, `faixaBusy`, `resetArm`, `delCat` viraram `estadoConfig`; `catUI` passou a `const`). `delCat` saiu de `src/js/10`.

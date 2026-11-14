@@ -107,8 +107,6 @@ document.addEventListener("click",e=>{
   const snapCfg=CFG_UNDO.includes(a)?clone(S.config):null;
   const ctx={t,e,a,C,tr,ci,bi};
   if(ACOES[a]){if(ACOES[a](ctx)===false)return}else switch(a){
-    case "insitem-add":{C.insumosItens=Array.isArray(C.insumosItens)?C.insumosItens:[];if(C.insumosItens.length>=100){toast("Limite de 100 itens de insumo.");break}C.insumosItens.push({nome:"Novo insumo",cat:"",qtd:"1",valor:"0"});salvar(true,false);renderCfg();renderTopo();renderForm();break}
-    case "insitem-del":{const i=+t.dataset.i;if(!Array.isArray(C.insumosItens)||!C.insumosItens[i])break;if(!confirm(`Excluir o insumo “${C.insumosItens[i].nome}”? O custo de insumos será recalculado quando os itens estiverem ativos.`))break;C.insumosItens.splice(i,1);salvar(true,false);renderCfg();renderTopo();renderForm();break}
     case "editar":editar(tr.dataset.l);if(celular())formAbrir(true);break;
     case "form-fechar":formAbrir(false);break;
     case "form-alt":{abertos.malt=(Number(abertos.malt==null?2:abertos.malt)+1)%3;guardarAbertos();gavetaAlt();break}
@@ -117,7 +115,6 @@ document.addEventListener("click",e=>{
     case "vista":try{localStorage.setItem("cadpecas-vista",t.dataset.v)}catch(x){}renderTopo();break;
     case "ir-form":{if(celular()){formAbrir(true);break}const fm=document.getElementById("form");if(fm)fm.scrollIntoView({block:"start",behavior:"smooth"});setTimeout(focarPrimeiro,350);break}
     case "ir-lista":document.getElementById("paneTop").scrollIntoView({block:"start",behavior:"smooth"});break;
-    case "forn-esq":{const fo=C.fornecedores[+t.closest("[data-forn]").dataset.forn];delete fo.mem;salvar(true,false);renderCfg();toast(`${fo.nome}: lembrança apagada.`);break}
     case "dup":duplicarLinha(+tr.dataset.ri);break;
     case "del":excluirLinhas([+tr.dataset.ri]);break;
 
@@ -145,23 +142,11 @@ document.addEventListener("click",e=>{
     case "s-clear":limparSel();break;
     case "s-fill":preencherAbaixo();break;
     case "s-del":{const b=selBox(),rs=[];if(b)for(let r=b.r1;r<=b.r2;r++)if(G.linhas[r]&&vis(r))rs.push(r);excluirLinhas(rs);break}
-    case "graf":abertos.graf=t.dataset.v;guardarAbertos();renderTopo();break;
     case "repetir":{const l=S.lanc[S.lanc.length-1];if(l)usarModelo(l.id);else toast("Ainda não há peça para repetir.");break}
     case "form-extras":{const f=t.closest("#form"),abriu=f.classList.toggle("fextra-open");t.setAttribute("aria-expanded",String(abriu));t.textContent=abriu?"Menos opções de lançamento":"Mais opções de lançamento";break}
     case "faixa-salvar":{const f=S.form,gr=gradeBy(f.grade);if(gr){gr.faixa=gr.itens.filter(x=>(f.gsel||[]).includes(x.id)).map(x=>x.nome).join(", ");salvar(true,false);renderCfg();toast(gr.faixa?`Tamanhos padrão: ${gr.faixa}`:"Padrão removido: nenhum tamanho vem marcado.")}break}
-    case "mc-add":{modeloAtual().cols.push({k:"",h:"Nova coluna",on:true});salvar(true,false);renderCfg();renderTopo();break}
-    case "mc-del":{modeloAtual().cols.splice(+t.closest("[data-mc]").dataset.mc,1);salvar(true,false);renderCfg();renderTopo();break}
-    case "mc-up":case "mc-down":{const cs=modeloAtual().cols,i=+t.closest("[data-mc]").dataset.mc,j=a==="mc-up"?i-1:i+1;if(j>=0&&j<cs.length){[cs[i],cs[j]]=[cs[j],cs[i]];salvar(true,false);renderCfg()}break}
-    case "mod-sel":{if(!C.modelos.some(x=>x.id===t.dataset.id))break;C.modelo=t.dataset.id;salvar(true,false);renderTopo();renderCfg();break}
-    case "mod-dup":{const mo=JSON.parse(JSON.stringify(modeloAtual()));mo.id=uid();mo.nome+=" (cópia)";C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();break}
-    case "mod-del":{if(C.modelos.length>1){C.modelos=C.modelos.filter(x=>x.id!==C.modelo);C.modelo=C.modelos[0].id;salvar(true,false);render()}break}
     case "fotos-enviar":enviarFotos();break;
     case "zoom":{const k=t.dataset.z,d=+t.dataset.d;ZM[k]=d===0?1:Math.min(1.6,Math.max(0.7,Math.round((ZM[k]+d*0.1)*10)/10));zoomAplicar(true);break}
-    case "mod-av":abertos.modAv=!abertos.modAv;guardarAbertos();renderCfg();break;
-    case "mod-brancas":abertos.modTodas=!abertos.modTodas;guardarAbertos();renderCfg();break;
-    case "mod-bling":{const mo=modeloBling();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast("Modelo Bling criado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele (depois de cadastrá-los, ligue-os em “Recebe o dado de”). Use o botão Validar do Bling antes de Importar.");break}
-    case "mod-jueri":{const mo=modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();break}
-    case "ordem":C.ordem=t.dataset.v;salvar(true,false);renderTopo();break;
     case "add-limpar":adicionar(true);break;
     case "tg-min":abertos.min=!abertos.min;guardarAbertos();renderForm();break;
     case "tg-det":abertos.det=!abertos.det;guardarAbertos();renderForm();break;
@@ -188,50 +173,8 @@ document.addEventListener("click",e=>{
     case "ponto-novo":pontoSalvar("criado por você").then(ok=>{toast(ok?"Ponto de restauração criado.":"Não consegui criar o ponto (armazenamento do navegador).");pontosCarregar()});break;
     case "ponto-voltar":pontoRestaurar(t.dataset.k);break;
     case "ir":if(celular())formAbrir(false);irPara(t.dataset.sec);break;
-    case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);break;
     case "exemplo":abrirExemploVisual();break;
-    case "cat-add":{const inp=document.getElementById("novaCat"),v=inp.value.replace(/\s+/g," ").trim();
-      const er=nomeCatErro(C,v,null);if(er){toast(er);inp.focus();break}
-      const pf=prefixoNovo(C,v),p=pf.p;
-      C.categorias.push({nome:v,prefixo:p,subs:[]});if(!(p in C.seqs))C.seqs[p]="0";salvar(true,false);render();
-      toast(`Categoria “${v}” criada com o prefixo ${p}.${pf.rep?` O prefixo ${p} já é de outra categoria: as duas vão dividir a mesma numeração. Troque o prefixo se não quiser.`:""} Agora é só digitar as subcategorias.`,{t:"Desfazer",fn:desfazer});
-      refocar(`[data-cat="${C.categorias.length-1}"] [data-enter="sub"]`);break}
-    case "colar-abrir":{catUI.colar=true;if(abertos.tab!=="cat"){abertos.tab="cat";guardarAbertos()}renderCfg();refocar("#colarTx");break}
-    case "colar-fechar":catUI.colar=false;renderCfg();break;
-    case "banner-fechar":abertos.catBanner=true;guardarAbertos();renderCfg();break;
-    case "colar-ok":{const pl=planoLista(C,catUI.txt),[nc,ns]=contaPlano(pl);if(!nc&&!ns){toast("Nada novo para criar.");break}
-      aplicaPlano(C,pl);catUI.colar=false;catUI.txt="";salvar(true,false);render();
-      const rep=pl.novas.filter(n=>n.rep).map(n=>n.nome);
-      refocar('[data-act="colar-abrir"]');toast(`Criei ${nc} categoria(s) e ${ns} subcategoria(s).${rep.length?` Atenção: ${rep.join(", ")} repete o prefixo de outra categoria (dividem a numeração).`:""}`,{t:"Desfazer",fn:desfazer});break}
-    case "modelo-add":{const ms=t.dataset.m==="todos"?MODELOS_CAT:MODELOS_CAT.filter(m=>m.id===t.dataset.m);let nc=0,ns=0,ng=0;
-      ms.forEach(m=>{const pl=planoLista(C,m.linha),[a,b2]=contaPlano(pl);aplicaPlano(C,pl);nc+=a;ns+=b2;
-        if(m.grade){const cat=acharCat(C,"Anéis");if(cat&&!cat.grade){cat.grade=mkGrade([],uid());ng++}}});
-      if(!nc&&!ns&&!ng){toast("Já estava tudo cadastrado — nada foi mudado.");break}
-      salvar(true,false);render();toast(`Modelo aplicado: ${nc} categoria(s) e ${ns} subcategoria(s) novas${ng?", com os tamanhos dos anéis":""}.`,{t:"Desfazer",fn:desfazer});break}
-    case "cat-az":case "cat-up":case "cat-down":{catUI.dup=null;
-      if(a==="cat-az")C.categorias.sort((x,y)=>semAc(x.nome).localeCompare(semAc(y.nome),"pt"));
-      else{const j=a==="cat-up"?ci-1:ci+1;if(j<0||j>=C.categorias.length)break;[C.categorias[ci],C.categorias[j]]=[C.categorias[j],C.categorias[ci]];salvar(true,false);render();refocar(`[data-cat="${j}"] [data-act="${a}"]`);break}
-      salvar(true,false);render();toast("Categorias em ordem de A a Z.",{t:"Desfazer",fn:desfazer});break}
-    case "sub-az":case "sub-up":case "sub-down":{const c=C.categorias[ci],sb=c.subs;
-      if(a==="sub-az"){sb.sort((x,y)=>semAc(x).localeCompare(semAc(y),"pt"));salvar(true,false);render();toast(`Subcategorias de ${c.nome} em ordem de A a Z.`,{t:"Desfazer",fn:desfazer});break}
-      const j0=+t.dataset.j,j=a==="sub-up"?j0-1:j0+1;if(j<0||j>=sb.length)break;[sb[j0],sb[j]]=[sb[j],sb[j0]];salvar(true,false);render();refocar(`[data-cat="${ci}"] [data-act="${a}"][data-j="${j}"]`)||0;break}
-    case "sub-ren":{catUI.ren={i:ci,j:+t.dataset.j};renderCfg();const el=document.querySelector(`[data-cat="${ci}"] [data-subren]`);if(el){el.focus();el.select()}break}
-    case "bn-pronto":{const b=C.banhistas[bi],tp=BANHOS_PRONTOS[t.dataset.tp];if(!b||!tp)break;const L=letraBanhoLivre(b);if(!L){toast("Já existem banhos de A a Z neste galvânica — não cabe mais um.");break}
-      const nome=nomeBanhoLivre(b,tp.nome);let cor=tp.cor;if(cor){const ach=C.cores.find(c=>semAc(c)===semAc(cor));if(ach)cor=ach;else C.cores.push(cor)}else cor="";
-      b.banhos.push({id:uid(),nome,letra:L,cor,mil:"",modo:"peso",mult:"",coluna:tp.coluna,sufixo:tp.sufixo,marcado:false,vz:true});salvar(true,false);render();
-      toast(`Banho “${nome}” (letra ${L}) criado em ${b.nome}. Preencha milésimos e valor na tabela por categoria, logo abaixo.`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${bi}"] [data-bmv="${b.banhos.length-1}"][data-mcat="__padrao"]`);break}
-    case "bn-dup":{const b=C.banhistas[bi],j=+t.closest("[data-bn]").dataset.bn,o=b.banhos[j];const L=letraBanhoLivre(b);if(!L){toast("Já existem banhos de A a Z neste galvânica — não cabe mais um.");break}
-      const n=clone(o);n.id=uid();n.letra=L;n.marcado=false;n.nome=nomeBanhoLivre(b,o.nome);b.banhos.splice(j+1,0,n);salvar(true,false);render();
-      toast(`Banho duplicado como “${n.nome}” (letra ${L}).`,{t:"Desfazer",fn:desfazer});refocar(`[data-bh="${bi}"] [data-bn="${j+1}"] [data-bnf="nome"]`);break}
-    case "cor-nova-ok":corNovaOk();break;
-    case "cor-nova-no":{const cn0=catUI.corNova;catUI.corNova=null;renderCfg();if(cn0)refocar(`[data-bh="${cn0.bi}"] [data-bn="${cn0.j}"] [data-bnf="cor"]`);break}
-    case "cat-dup":dupAbrir(ci);break;
-    case "cat-dup-ok":dupOk();break;
-    case "cat-dup-no":{const di=catUI.dup?catUI.dup.i:0;catUI.dup=null;renderCfg();refocar(`[data-cat="${di}"] [data-act="cat-dup"]`);break}
 
-    case "cat-del":catUI.dup=null;delCat=C.categorias[ci].nome;renderCfg();break;
-    case "cat-del-no":delCat=null;renderCfg();break;
-    case "cat-del-ok":{const nome=C.categorias[ci].nome;if((C.insumosItens||[]).some(x=>x.cat===nome)){delCat=null;toast(`Não excluí “${nome}”: há itens de insumo vinculados. Altere-os antes.`);renderCfg();break}const nUso=S.lanc.filter(l=>val(l,"I")===nome).length;if(nUso){delCat=null;toast(`Não excluí “${nome}”: ${nUso} peça(s) lançadas usam esta categoria (a referência delas mudaria). Mude a categoria dessas peças antes.`);render();return}conjExcluirCategoria(nome);break}
     case "lote-add":{const r=ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));break}
     case "rom-partir":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i];if(!r)break;const bx=rc.querySelector(".partbox");if(bx){bx.remove();break}
       t.insertAdjacentHTML("afterend",`<span class="partbox"><label class="fq"><span>Partes</span><input class="n" data-partn value="3" inputmode="numeric" style="width:48px" aria-label="Quantas partes"></label><button type="button" class="btn pri sm" data-act="rom-partir-ok">Partir</button></span>`);const pi=rc.querySelector("[data-partn]");pi.focus();pi.select();break}
@@ -276,37 +219,12 @@ document.addEventListener("click",e=>{
     case "rom-foto-del":{romFotoRemover(+t.dataset.i);break}
     case "rins-add":{if(!ROM)break;ROM.ins=ROM.ins||{itens:[],base:"un"};if(ROM.ins.itens.length>=30){toast("Limite de 30 insumos por romaneio.");break}ROM.ins.itens.push({nome:"",valor:""});abertos.rins=true;guardarAbertos();romSalvarSoon();renderRom();break}
     case "rins-del":{if(!ROM||!ROM.ins)break;ROM.ins.itens.splice(+t.dataset.i,1);romSalvarSoon();renderRom();break}
-    case "lib-grade-add":{C.grades=C.grades||[];C.grades.push({id:uid(),nome:"Nova variação",rotulo:" ",col:"",modoRef:"letra",subs:[],itens:[]});abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();break}
-    case "lib-grade-pmg":{C.grades=C.grades||[];const g={id:uid(),nome:"P M G",rotulo:" tamanho ",col:"K",modoRef:"letra",subs:[],itens:[]};addTamanhos(g,"P M G");C.grades.push(g);abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();break}
     case "cor-on":{const f=S.form;f.corOn=true;renderForm();break}
     case "cor-off":{const f=S.form;f.corOn=false;f.csel=[];renderTopo();renderForm();break}
     case "rom-cor-on":{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);r.corOn=true;renderRom();break}
-    case "go-del":C.grades.splice(+t.dataset.k,1);salvar(true,false);renderCfg();break;
-    case "sub-del":{const c=C.categorias[ci],old=c.subs[+t.dataset.j];c.subs.splice(+t.dataset.j,1);[c.bancoPalavras,c.subPalavra,c.subAlias,c.subPref,c.subSoRef].forEach(o=>{if(o)delete o[old]});salvar(true,false);render();break;}
-    case "forn-add":{const nomeLivre=b0=>{let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);return n};C.fornecedores.push({nome:nomeLivre("Novo fornecedor"),desconto:"0",tipo:"bruta",codigo:""});salvar(true,false);render();break}
-    case "forn-dup":{const i=+t.closest("[data-forn]").dataset.forn,f=clone(C.fornecedores[i]);{const b0=f.nome+" (cópia)";let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);f.nome=n}C.fornecedores.splice(i+1,0,f);salvar(true,false);render();break}
-    case "forn-del":{const i=+t.closest("[data-forn]").dataset.forn,fo=C.fornecedores[i],n=S.lanc.filter(l=>l.v&&l.v.H===fo.nome).length,abertos=ROM?ROM.rows.filter(r=>r.forn===fo.nome).length:0;if(!confirm(`Remover o fornecedor “${fo.nome}” dos cadastros? ${n} peça(s) na tabela atual e ${abertos} item(ns) do romaneio aberto usam esse nome. Referências em tabelas e romaneios salvos não são alteradas; ele deixará de aparecer nas opções. As alterações de cadastro podem ser descartadas antes de salvar.`))break;C.fornecedores.splice(i,1);salvar(true,false);render();break}
-    case "bh-add":{const b={id:uid(),nome:"Nova galvânica",verniz:"",vernizOn:true,banhos:[]};C.banhistas.push(b);if(qGalvanicaSelecionar){trocarBanhista(S.form,b.id);qGalvanicaSelecionar=false}salvar(true,false);render();break;}
-    case "bh-dup":{const b=clone(C.banhistas[bi]);b.id=uid();b.nome+=" (cópia)";C.banhistas.splice(bi+1,0,b);salvar(true,false);render();break}
-    case "bh-del":{const id=C.banhistas[bi].id;{const n=S.lanc.filter(l=>l.banhista===id).length;if(n&&!confirm(`${n} peça(s) já lançadas usam esta galvânica. Remover mesmo assim? (Ctrl+Z desfaz)`))break}C.banhistas.splice(bi,1);C.fornecedores.forEach(f=>{if(f.banhista===id)f.banhista=""});salvar(true);render();break}
-    case "bn-add":{const b=C.banhistas[bi],usadas=b.banhos.map(x=>x.letra);let L="A";while(usadas.some(u=>String(u).toUpperCase()===L)&&L<"Z")L=String.fromCharCode(L.charCodeAt(0)+1);if(usadas.some(u=>String(u).toUpperCase()===L)){toast("Já existem banhos de A a Z neste galvânica — não cabe mais um.");break}b.banhos.push({id:uid(),nome:"Ródio",letra:L,cor:"Ródio",mil:"",modo:"peso",mult:"",coluna:"S",sufixo:" banho ródio",marcado:false,vz:true});salvar(true,false);render();break}
-    case "bn-del":{const bh0=C.banhistas[bi],bn0=bh0&&bh0.banhos[+t.closest("[data-bn]").dataset.bn];if(bn0)bnExcluirSeguro(bh0,bn0).catch(e=>{console.error("Falha ao excluir banho",e);alert("Não consegui conferir ou salvar a exclusão do banho. Confira os cadastros antes de continuar.")});break}
-    case "cc-reset":C.colcfg=colcfgPadrao();salvar(true,false);render();break;
-    case "cor-add":case "obs-add":{const inp=t.closest(".add")&&t.closest(".add").querySelector("input");if(inp){if(!inp.value.trim())inp.focus();else inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))}break}
-    case "cor-del":C.cores.splice(+t.dataset.j,1);salvar(true,false);render();break;
-    case "obs-del":C.observacoes.splice(+t.dataset.j,1);salvar(true,false);render();break;
     case "cs-padrao":{const f=S.form,c=catBy(f.v.I);if(!c)break;c.coresCfg=c.coresCfg||{};c.coresCfg.padrao=(f.csel||[]).slice();salvar(true,false);renderCfg();toast((f.csel||[]).length?"Cores padrão salvas: ao escolher "+f.v.I+" elas já vêm marcadas.":"Padrão removido: nenhuma cor vem marcada.");break}
     case "cs-todas":{const f=S.form,l=coresDaCat(f.v.I,f.v.J);f.csel=f.csel&&f.csel.length===l.length?[]:l.map(x=>x.id);renderTopo();renderForm();salvar(false);break}
-    case "cv-del":{const c=C.categorias[ci],j=+t.closest("[data-cvi]").dataset.cvi;c.cores.splice(j,1);abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
-    case "cv-num":{const c=C.categorias[ci];(c.cores||[]).forEach(x=>{if(vazio(x.letra))x.letra=proxCorLetra(c,x.nome)});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
-    case "cv-todas":{const c=C.categorias[ci];c.cores=c.cores||[];C.cores.forEach(n=>{if(!c.cores.some(y=>semAc(y.nome)===semAc(n)))c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c,n)})});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
     case "gi-todos":{const f=S.form,gr=gradeBy(f.grade);if(gr){f.gsel=f.gsel&&f.gsel.length===gr.itens.length?[]:gr.itens.map(x=>x.id);renderTopo();renderForm();salvar(false)}break}
-    case "gr-add":{const c=C.categorias[ci];c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};abertos["g:"+c.nome]=true;guardarAbertos();salvar(true,false);render();break}
-    case "gr-own":{const c=C.categorias[ci],e=effGrade(c),sb=c.grade.subs,id=c.grade.id;c.grade={...clone(e),id,subs:sb};delete c.grade.usa;salvar(true,false);render();break}
-    case "gr-del":{const c=C.categorias[ci];c.grade=null;delete c.grade;sincGrade(S.form);salvar(true);render();break}
-    case "gi-del":{const g=gradeDoEl(t);g.itens.splice(+t.closest("[data-gii]").dataset.gii,1);sincGrade(S.form);salvar(true);render();break}
-    case "reset":if(resetArm!==t.dataset.r){resetArm=t.dataset.r;renderCfg()}else resetar(resetArm);break;
-    case "reset-no":resetArm=null;renderCfg();break;
     case "rom-abrir":{if(editId){avisoEdicao(romAbrirNovo);break}romAbrirNovo();break}
     case "rom-fechar":{const lsOk=romSalvar(),pr=romGravP;ROM=null;renderRom();renderForm();
       Promise.resolve(pr).then(idbOk=>toast(lsOk?"Romaneio guardado — use “Retomar romaneio” quando quiser continuar.":idbOk?"O rascunho rápido não gravou, mas o romaneio ficou em “Romaneios salvos” (Cadastros): abra por lá para continuar.":"ATENÇÃO: não consegui guardar o romaneio (memória do navegador cheia, bloqueada ou outra aba alterou). Baixe o backup antes de sair."));break}

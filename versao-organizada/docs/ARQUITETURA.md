@@ -4,6 +4,18 @@ Gerado por `npm run mapa` (tools/mapa.mjs). Nao edite a mao; `node tools/mapa.mj
 
 ## Fatias
 
+### configuracao
+
+Tela Cadastros e personalizacao (categorias, banhos, fornecedores, insumos, cores, variacoes, modelos de exportacao), catalogo rapido, salvar/descartar cadastros e campos em reais.
+
+- Arquivos: `19-catalogo-rapido.js`, `19a-secao-categorias.js`, `19a2-grafico-rosca.js`, `19a3-secao-exportar-para.js`, `25b-cadastros-render.js`, `36-cadastros-salvar.js`, `37-moeda.js`, `acoes.js`
+- Expoe: `CAD`, `CADAUTO`, `atualizaPrevia`, `cadConferir`, `cadTirarFoto`, `catUI`, `corNovaOk`, `dupCampo`, `dupOk`, `estadoConfig`, `focoChip`, `renderCfg`, `renderGraf`, `sec`, `subRenomear`
+- Usa: `core`
+- Usada por: `legado`
+- Testes: `^categoria_exclusao_regressao.js$`, `^t1.py$`, `^t10.py$`, `^t102_banho_concorrencia.py$`, `^t115_auditoria_layout.js$`, `^t13.py$`, `^t17.py$`, `^t18.py$`, `^t19.py$`, `^t2.py$`, `^t20.py$`, `^t21.py$`, `^t24.py$`, `^t25.py$`, `^t28.py$`, `^t29.py$`, `^t3.py$`, `^t30.py$`, `^t49.py$`, `^t51.py$`, `^t54.py$`, `^t58.py$`, `^t6.py$`, `^t69_insumos.py$`, `^t7.py$`, `^t87_ajustes_cadastros.py$`, `^t88_fluxo_cadastro.js$`, `^t91_fluxo_agil.js$`, `^t98_banho_componente.py$`
+- Globais mutaveis: 0
+- Fronteira: falha
+
 ### exportacao
 
 Exportar a tabela (xlsx/csv/copiar) com conferencia previa, assistente de outro sistema, modelos em .json, importar planilha de referencia e copia/restauracao dos cadastros.
@@ -32,8 +44,11 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 
 | de -> para | simbolos |
 |---|---|
+| configuracao -> core | 34: `BANHO_COLS`, `DEFAULT_CONFIG`, `EXPL`, `FORMULA`, `JUERI_CATS`, `LET`, `MODELOS_CAT`, `NOME`, ... |
+| configuracao -> legado | 52: `G`, `HIST`, `REDO`, `ROM`, `ROMS`, `S`, `abertos`, `bancoGeralLista`, ... |
 | exportacao -> core | 33: `COLW`, `DUAS`, `LET`, `LIM_EXPORT`, `MAX_BACKUP_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `NOME`, ... |
 | exportacao -> legado | 30: `S`, `casa`, `cfg`, `chaveDoCabecalho`, `checaLinhasPlan`, `colunasExport`, `conferirExport`, `faixaRefs`, ... |
+| legado -> configuracao | 12: `CAD`, `CADAUTO`, `atualizaPrevia`, `cadConferir`, `cadTirarFoto`, `catUI`, `dupCampo`, `estadoConfig`, ... |
 | legado -> exportacao | 3: `abrirNovoSistema`, `estadoExportacao`, `obterDL` |
 | legado -> tabelas | 8: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos` |
 | tabelas -> core | 19: `LET`, `PONTO_IDS`, `TABDEL`, `brl`, `candFoto`, `celulas`, `clone`, `codsDe`, ... |
@@ -43,4 +58,4 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 
 | dono | globais |
 |---|---|
-| legado | 95 |
+| legado | 88 |

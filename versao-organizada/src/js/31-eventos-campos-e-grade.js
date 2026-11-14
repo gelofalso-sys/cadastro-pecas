@@ -44,7 +44,7 @@ function onField(t,isChange){
     if(t.dataset.rexn!==undefined){romUI.nome=t.value;return}
     if(t.dataset.colar!==undefined){catUI.txt=t.value;atualizaPrevia();return}
     if(t.dataset.ncor!==undefined)return;
-    if(t.dataset.subren!==undefined){if(isChange&&!renBusy){const ce2=t.closest("[data-cat]");if(ce2){const ci2=+ce2.dataset.cat,j2=+t.dataset.subren,c2=cfg().categorias[ci2],velho=c2&&c2.subs[j2],novo=t.value;let feito=false;const go=()=>{if(feito)return;feito=true;document.removeEventListener("click",go,true);setTimeout(()=>{const c3=cfg().categorias[ci2],jj=c3?c3.subs.indexOf(velho):-1;if(jj>=0)subRenomear(ci2,jj,novo)},0)};document.addEventListener("click",go,true);setTimeout(go,700)}}return}
+    if(t.dataset.subren!==undefined){if(isChange&&!estadoConfig.renBusy){const ce2=t.closest("[data-cat]");if(ce2){const ci2=+ce2.dataset.cat,j2=+t.dataset.subren,c2=cfg().categorias[ci2],velho=c2&&c2.subs[j2],novo=t.value;let feito=false;const go=()=>{if(feito)return;feito=true;document.removeEventListener("click",go,true);setTimeout(()=>{const c3=cfg().categorias[ci2],jj=c3?c3.subs.indexOf(velho):-1;if(jj>=0)subRenomear(ci2,jj,novo)},0)};document.addEventListener("click",go,true);setTimeout(go,700)}}return}
     if(t.dataset.dup!==undefined&&catUI.dup){dupCampo(t);return}
   }
   if(t.dataset&&t.dataset.cjpick!==undefined){const f=S.form,l=S.lanc.find(x=>x.id===t.value);t.value="";if(!l||!f.conj)return;f.comp=f.comp||[];if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");return}
@@ -56,7 +56,7 @@ function onField(t,isChange){
   const C=cfg(),f=S.form;
   if(t.dataset&&t.dataset.fauto!==undefined){if(t.checked&&!confirm("Ativar envio automático? As fotos anexadas serão enviadas ao imgbb, um serviço de terceiros, e qualquer pessoa com o link poderá acessá-las.")){t.checked=false;return}try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0");localStorage.setItem("cadpecas-imgbb-consent-v1",t.checked?"1":"0")}catch(e){t.checked=false;toast("Não consegui salvar a preferência de envio automático.")}return}
   if(t.dataset&&t.dataset.fkey!==undefined){try{localStorage.setItem("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
-  if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange&&!faixaBusy){faixaBusy=true;try{aplicaFaixa(t.value)}finally{faixaBusy=false}}return}
+  if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange&&!estadoConfig.faixaBusy){estadoConfig.faixaBusy=true;try{aplicaFaixa(t.value)}finally{estadoConfig.faixaBusy=false}}return}
   if(t.dataset&&t.dataset.nv!==undefined){if(!estadoExportacao.novo)return;
     if(t.dataset.nv==="nome"){estadoExportacao.novo.nome=String(t.value).slice(0,60);return}
     if(t.dataset.nv==="k"&&isChange){const c=estadoExportacao.novo.cols[+t.dataset.i];if(c){c.k=t.value;c.auto=false;if(c.k&&TIPO_PAD[c.k]&&!c.tipo)c.tipo=TIPO_PAD[c.k];const tr=t.closest("tr");if(tr){tr.className=c.k?"":"nv-nao";const h=tr.querySelector(".hint");if(h)h.textContent=c.k?"escolhida por você":"em branco"}}}

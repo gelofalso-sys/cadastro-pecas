@@ -1,12 +1,11 @@
 /* ===== configurações ===== */
 /* cadastros em abas na horizontal: o nome de cada um fica sempre à vista e o conteúdo abre embaixo */
-let SECS=[],LIBTAM="";
+const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null};
 
-function sec(id,titulo,resumo,corpo){SECS.push({id,titulo,resumo,corpo});return ""}
-function abaCfg(){return SECS.some(s=>s.id===abertos.tab)?abertos.tab:SECS[0].id}
+function sec(id,titulo,resumo,corpo){estadoConfig.secs.push({id,titulo,resumo,corpo});return ""}
+function abaCfg(){return estadoConfig.secs.some(s=>s.id===abertos.tab)?abertos.tab:estadoConfig.secs[0].id}
 /* ===== Catálogo rápido: colar lista, modelos, duplicar seguro, renomear e ordenar ===== */
-let renBusy=false,faixaBusy=false;
-let catUI={colar:false,txt:"",dup:null,ren:null,corNova:null};
+const catUI={colar:false,txt:"",dup:null,ren:null,corNova:null};
 /* lê "Anéis: Solitário; Aparador" (uma categoria por linha) e diz o que seria criado, sem mexer em nada */
 function previaInfo(C){const tx=String(catUI.txt||"");
   if(!tx.trim())return{html:`<span class="hint">Cole ou digite uma categoria por linha. As subcategorias vêm depois dos dois-pontos, separadas por ponto e vírgula.</span>`,ok:false};
@@ -47,7 +46,7 @@ function dupOk(){const C=cfg(),d=catUI.dup;if(!d)return;const c=C.categorias[d.i
   C.categorias.splice(d.i+1,0,n);if(!(pre in C.seqs))C.seqs[pre]="0";catUI.dup=null;salvar(true,false);render();
   toast(`Categoria “${nome}” criada com o prefixo ${pre}.${av?" "+av:""}`,{t:"Desfazer",fn:desfazer});refocar(`[data-cat="${d.i+1}"] [data-enter="sub"]`)}
 function focoChip(ci,j){const el=document.querySelectorAll(`[data-cat="${ci}"] .chip .cn`)[j];if(el)el.focus()}
-function subRenomear(ci,j,novo){if(renBusy)return;renBusy=true;try{subRenomear0(ci,j,novo)}finally{renBusy=false}}
+function subRenomear(ci,j,novo){if(estadoConfig.renBusy)return;estadoConfig.renBusy=true;try{subRenomear0(ci,j,novo)}finally{estadoConfig.renBusy=false}}
 function subRenomear0(ci,j,novo){const C=cfg(),c=C.categorias[ci];catUI.ren=null;if(!c||j>=c.subs.length){renderCfg();return}
   const old=c.subs[j];novo=String(novo||"").replace(/\s+/g," ").trim();
   if(!novo||novo===old){renderCfg();return}
