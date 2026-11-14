@@ -1417,6 +1417,17 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
 .build-version{display:block;padding:4px 12px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
 
 .foto-abrir{border:0;background:transparent;padding:0;line-height:0;cursor:zoom-in}.foto-abrir:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.ftslot.has .foto-abrir{width:100%;height:100%}
+
+/* O selo do provedor pode ocupar o canto inferior direito. O menu continua
+   disponível quando a gaveta de lançamento ou o teclado estiver aberto. */
+@media(max-width:900px){
+  body:not(.fopen) #mbar{bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  body.fopen #mbar{display:block;position:fixed;top:8px;left:8px;right:auto;bottom:auto;z-index:50;padding:0;background:none;border:0;backdrop-filter:none}
+  body.fopen:has(input:focus,select:focus,textarea:focus) #mbar{display:block}
+  body.fopen #mbar > :not(.mobile-menu){display:none}
+  body.fopen #mbar .mobile-menu{position:relative;inset:auto}
+}
 
 /* Reserva espaço fixo para as ações da seleção, evitando deslocar a tabela no primeiro clique. */
 #paneTop .selbar,#paneTop:has(.issues span:not(.ok)) .selbar:has(>.hint:only-child){display:flex;height:32px;min-height:32px;max-height:32px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
@@ -1513,7 +1524,7 @@ table.t th small{font-size:11px}
 #side .prim-p{border-radius:8px;padding:4px 8px 4px 4px;text-align:left;min-height:0;font-size:12.5px}
 </style>
 
-<aside class="side" id="side" aria-label="Menu lateral" hidden><div class="side-h"><b class="sl">Cadastro de Peças</b><button type="button" class="side-t" id="sideT" aria-label="Recolher ou expandir o menu" title="Recolher / expandir (Alt+B)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></i></button></div><div class="side-top sl" id="sideTop"></div><div id="primeirosWrap" class="sl"></div><nav class="sn"><div class="sg g0"><span class="sl">Principal</span></div><button type="button" data-vis="tudo" title="Tabela e formulário"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></i><span class="sl">Tabela e formulário</span></button><div class="sg g1"><span class="sl">Romaneios</span></div><button type="button" data-go="act:imp-pick" title="Importar romaneio"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></i><span class="sl">Importar romaneio</span></button><button type="button" data-go="act:rom-abrir" title="Novo / continuar"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6M9 15h6"/></svg></i><span class="sl">Novo / continuar</span></button><button type="button" data-go="sec:roml" title="Romaneios lançados"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></i><span class="sl">Romaneios lançados</span></button><button type="button" data-act="renumerar" title="Renumerar as referências na ordem da tabela"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M4 12h10M4 17h10M18 6v12M16 16l2 2 2-2"/></svg></i><span class="sl">Renumerar referências</span></button><button type="button" data-go="act:tab-lista" title="Tabelas salvas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg></i><span class="sl">Tabelas salvas</span></button><div class="sg g2"><span class="sl">Cadastros</span></div><button type="button" data-go="sec:banho" title="Galvânicas e banhos"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.7l5.7 5.6a8 8 0 1 1-11.4 0z"/></svg></i><span class="sl">Galvânicas e banhos</span></button><button type="button" data-go="sec:cor" title="Cores, tamanhos e variações"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></i><span class="sl">Cores, tamanhos e variações</span></button><button type="button" data-go="sec:cat" title="Categorias"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01"/></svg></i><span class="sl">Categorias</span></button><button type="button" data-go="sec:forn" title="Fornecedores"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></i><span class="sl">Fornecedores</span></button><div class="sg g3"><span class="sl">Planilha</span></div><button type="button" data-go="sec:col" title="Padrões das colunas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/></svg></i><span class="sl">Padrões das colunas</span></button><button type="button" data-go="sec:mod" title="Modelo da planilha"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h8"/></svg></i><span class="sl">Modelo da planilha</span></button><div class="sg g4"><span class="sl">Leitura e arquivos</span></div><button type="button" data-go="sec:rom" title="Leitura de romaneios"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg></i><span class="sl">Leitura de romaneios</span></button><button type="button" data-go="sec:foto" title="Fotos (link)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21"/></svg></i><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc" title="Importar e backup"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3zM21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></i><span class="sl">Importar e backup</span></button><button type="button" data-go="act:xlsx" title="Baixar .xlsx" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></i><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar" title="Copiar para o Excel" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></i><span class="sl">Copiar para o Excel</span></button></nav><div class="side-exp sl" id="sideExp"></div><small class="build-version sl">Versão 2026-11-12 · f0b6d49464d1 · <button type="button" class="link-nov" data-act="novidades">O que mudou</button></small></aside>
+<aside class="side" id="side" aria-label="Menu lateral" hidden><div class="side-h"><b class="sl">Cadastro de Peças</b><button type="button" class="side-t" id="sideT" aria-label="Recolher ou expandir o menu" title="Recolher / expandir (Alt+B)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></i></button></div><div class="side-top sl" id="sideTop"></div><div id="primeirosWrap" class="sl"></div><nav class="sn"><div class="sg g0"><span class="sl">Principal</span></div><button type="button" data-vis="tudo" title="Tabela e formulário"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></i><span class="sl">Tabela e formulário</span></button><div class="sg g1"><span class="sl">Romaneios</span></div><button type="button" data-go="act:imp-pick" title="Importar romaneio"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></i><span class="sl">Importar romaneio</span></button><button type="button" data-go="act:rom-abrir" title="Novo / continuar"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M12 18v-6M9 15h6"/></svg></i><span class="sl">Novo / continuar</span></button><button type="button" data-go="sec:roml" title="Romaneios lançados"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></i><span class="sl">Romaneios lançados</span></button><button type="button" data-act="renumerar" title="Renumerar as referências na ordem da tabela"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M4 12h10M4 17h10M18 6v12M16 16l2 2 2-2"/></svg></i><span class="sl">Renumerar referências</span></button><button type="button" data-go="act:tab-lista" title="Tabelas salvas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg></i><span class="sl">Tabelas salvas</span></button><div class="sg g2"><span class="sl">Cadastros</span></div><button type="button" data-go="sec:banho" title="Galvânicas e banhos"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.7l5.7 5.6a8 8 0 1 1-11.4 0z"/></svg></i><span class="sl">Galvânicas e banhos</span></button><button type="button" data-go="sec:cor" title="Cores, tamanhos e variações"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></i><span class="sl">Cores, tamanhos e variações</span></button><button type="button" data-go="sec:cat" title="Categorias"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01"/></svg></i><span class="sl">Categorias</span></button><button type="button" data-go="sec:forn" title="Fornecedores"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg></i><span class="sl">Fornecedores</span></button><div class="sg g3"><span class="sl">Planilha</span></div><button type="button" data-go="sec:col" title="Padrões das colunas"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/></svg></i><span class="sl">Padrões das colunas</span></button><button type="button" data-go="sec:mod" title="Modelo da planilha"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h8"/></svg></i><span class="sl">Modelo da planilha</span></button><div class="sg g4"><span class="sl">Leitura e arquivos</span></div><button type="button" data-go="sec:rom" title="Leitura de romaneios"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg></i><span class="sl">Leitura de romaneios</span></button><button type="button" data-go="sec:foto" title="Fotos (link)"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21"/></svg></i><span class="sl">Fotos (link)</span></button><button type="button" data-go="sec:opc" title="Importar e backup"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c4.97 0 9-1.34 9-3s-4.03-3-9-3-9 1.34-9 3 4.03 3 9 3zM21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></i><span class="sl">Importar e backup</span></button><button type="button" data-go="act:xlsx" title="Baixar .xlsx" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></i><span class="sl">Baixar .xlsx</span></button><button type="button" data-go="act:copiar" title="Copiar para o Excel" class="railonly"><i class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></i><span class="sl">Copiar para o Excel</span></button></nav><div class="side-exp sl" id="sideExp"></div><small class="build-version sl">Versão 2026-11-12 · daa55a7677d8 · <button type="button" class="link-nov" data-act="novidades">O que mudou</button></small></aside>
 <header><div class="gut hin">
   <h1>Cadastro de Peças</h1><span id="saveStatus" class="status">Carregando…</span><span class="udo"><button type="button" class="btn sm" id="btnHist" data-act="historico" title="Ver as últimas alterações e voltar a um ponto" aria-label="Histórico de alterações">Histórico</button><button type="button" class="btn sm" id="btnUndo" data-act="undo-b" title="Desfazer a última alteração (Ctrl+Z)" aria-label="Desfazer" disabled>↶ Desfazer</button><button type="button" class="btn sm" id="btnRedo" data-act="redo-b" title="Refazer (Ctrl+Y)" aria-label="Refazer" disabled>↷ Refazer</button></span>
   <nav class="ir" aria-label="Ir para"><button type="button" data-act="ir" data-sec="lancar">Lançar</button><button type="button" data-act="ir" data-sec="banho">Galvânicas e banhos</button><button type="button" data-act="ir" data-sec="cor">Cores, tamanhos e variações</button><button type="button" data-act="ir" data-sec="cat">Categorias</button><button type="button" data-act="ir" data-sec="forn">Fornecedores</button><button type="button" data-act="ir" data-sec="col">Padrões das colunas</button><button type="button" data-act="ir" data-sec="mod">Modelo da planilha</button><button type="button" data-act="ir" data-sec="opc">Importar</button></nav>
@@ -1537,7 +1548,7 @@ table.t th small{font-size:11px}
     <div class="gut inner"><div class="impbar" id="impBar" aria-label="Importar romaneios"></div><input type="file" id="impFile" multiple hidden accept=".pdf,.xml,.xlsx,.xls,.csv,.txt"><button type="button" id="nbTog" class="btn sm nb-tog" aria-expanded="false" aria-controls="numbar" title="Mostra a última peça de cada categoria (AC, AN, BR…) para conferir a numeração das referências">Numeração do sistema ▸</button><div id="numbar" class="numbar" aria-label="Numeração do sistema"></div><div id="romWrap"></div><div class="fwrap"><div id="formWrap"></div><aside id="graf" class="graf" aria-label="Gráfico da tabela"></aside></div><div class="secs" id="cfg"></div></div>
   </section>
 </div>
-<div class="mbar" id="mbar"><details class="mobile-menu" id="mobileMenu"><summary aria-label="Abrir menu de navegação">☰ Menu</summary><nav class="mobile-menu-panel" aria-label="Menu principal"><div class="mobile-menu-title"><b>Cadastro de Peças</b><button type="button" class="mobile-menu-close" aria-label="Fechar menu">×</button></div><div class="build-version">Versão 2026-11-12 · f0b6d49464d1 · <button type="button" class="link-nov" data-act="novidades">O que mudou</button></div><div id="mobileSettings"></div><b>Principal</b><button type="button" data-mobile="vis:planilha">Tabela</button><button type="button" data-mobile="vis:lancar">Lançar peça</button><button type="button" data-mobile="vis:cad">Cadastros</button><b>Romaneios</b><button type="button" data-mobile="act:imp-pick">Importar arquivos</button><button type="button" data-mobile="act:rom-abrir">Novo ou continuar romaneio</button><button type="button" data-mobile="act:rom-lista">Romaneios salvos</button><button type="button" data-mobile="sec:rom">Leitura de romaneios</button><b>Cadastros</b><button type="button" data-mobile="sec:banho">Galvânicas e banhos</button><button type="button" data-mobile="sec:cor">Cores, tamanhos e variações</button><button type="button" data-mobile="sec:cat">Categorias</button><button type="button" data-mobile="sec:forn">Fornecedores</button><b>Planilha e arquivos</b><button type="button" data-mobile="act:renumerar">Renumerar referências</button><button type="button" data-mobile="sec:col">Padrões das colunas</button><button type="button" data-mobile="sec:mod">Modelo da planilha</button><button type="button" data-mobile="act:tab-lista">Tabelas salvas</button><button type="button" data-mobile="sec:foto">Fotos (link)</button><button type="button" data-mobile="sec:opc">Importar e backup</button><button type="button" data-mobile="act:copiar">Copiar para o Excel</button><button type="button" data-mobile="act:xlsx">Baixar planilha</button></nav></details><button type="button" class="btn" data-act="ir-lista">↑ Lista</button><button type="button" class="btn" data-act="xlsx" title="Baixar a planilha para importar no sistema">⬇ Baixar</button><button type="button" class="btn pri" data-act="ir-form">＋ Lançar peça</button></div>
+<div class="mbar" id="mbar"><details class="mobile-menu" id="mobileMenu"><summary aria-label="Abrir menu de navegação">☰ Menu</summary><nav class="mobile-menu-panel" aria-label="Menu principal"><div class="mobile-menu-title"><b>Cadastro de Peças</b><button type="button" class="mobile-menu-close" aria-label="Fechar menu">×</button></div><div class="build-version">Versão 2026-11-12 · daa55a7677d8 · <button type="button" class="link-nov" data-act="novidades">O que mudou</button></div><div id="mobileSettings"></div><b>Principal</b><button type="button" data-mobile="vis:planilha">Tabela</button><button type="button" data-mobile="vis:lancar">Lançar peça</button><button type="button" data-mobile="vis:cad">Cadastros</button><b>Romaneios</b><button type="button" data-mobile="act:imp-pick">Importar arquivos</button><button type="button" data-mobile="act:rom-abrir">Novo ou continuar romaneio</button><button type="button" data-mobile="act:rom-lista">Romaneios salvos</button><button type="button" data-mobile="sec:rom">Leitura de romaneios</button><b>Cadastros</b><button type="button" data-mobile="sec:banho">Galvânicas e banhos</button><button type="button" data-mobile="sec:cor">Cores, tamanhos e variações</button><button type="button" data-mobile="sec:cat">Categorias</button><button type="button" data-mobile="sec:forn">Fornecedores</button><b>Planilha e arquivos</b><button type="button" data-mobile="act:renumerar">Renumerar referências</button><button type="button" data-mobile="sec:col">Padrões das colunas</button><button type="button" data-mobile="sec:mod">Modelo da planilha</button><button type="button" data-mobile="act:tab-lista">Tabelas salvas</button><button type="button" data-mobile="sec:foto">Fotos (link)</button><button type="button" data-mobile="sec:opc">Importar e backup</button><button type="button" data-mobile="act:copiar">Copiar para o Excel</button><button type="button" data-mobile="act:xlsx">Baixar planilha</button></nav></details><button type="button" class="btn" data-act="ir-lista">↑ Lista</button><button type="button" class="btn" data-act="xlsx" title="Baixar a planilha para importar no sistema">⬇ Baixar</button><button type="button" class="btn pri" data-act="ir-form">＋ Lançar peça</button></div>
 <button type="button" class="dpill" id="dpill" hidden></button>
 
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
@@ -1747,8 +1758,15 @@ const BANCO_PALAVRAS={
 let bancoAberto=false;
 function bancoLista(cat,sub){const c=catBy(cat);if(!c)return [];const chave=sub||"",pad=(BANCO_PALAVRAS[c.nome]||{})[chave]||[],b=c.bancoPalavras||{};return Array.isArray(b[chave])?b[chave].filter(w=>typeof w==="string"&&w.length<=60).slice(0,100):pad}
 function bancoSugestoes(cat,sub){const a=[...bancoLista(cat,sub),...(sub?bancoLista(cat,""):[])],vistos=new Set();return a.filter(w=>{const k=semAc(w);if(!k||vistos.has(k))return false;vistos.add(k);return true})}
+/* Só esconde sugestões redundantes; o banco personalizado continua intacto. */
+function bancoComplementos(f){const c=catBy(f.v.I),auto=palavrasDesc(f.v.I,f.v.J),bh=banhistaBy(f.banhista),on=f.tipo==="bruta"?f.on:f.onP;
+  const termos=[f.v.I,f.v.J,f.v.L,auto.cat,auto.sub,c&&c.sufixo];
+  (bh&&bh.banhos||[]).filter(b=>on&&on[b.id]).forEach(b=>termos.push(b.nome,b.cor,b.sufixo));
+  const normal=s=>semAc(s).replace(/[^\p{L}\p{N}]+/gu," ").trim(),ocupados=new Set(termos.map(normal).filter(Boolean)),descricao=" "+normal(f.v.F)+" ";
+  return bancoSugestoes(f.v.I,f.v.J).filter(w=>{const k=normal(w);return k&&!ocupados.has(k)&&!descricao.includes(" "+k+" ")})}
 function bancoEditarAbrir(){const d=document.querySelector(".banco-painel details");if(d)d.open=true}
-function bancoHtml(f){const c=catBy(f.v.I);if(!c||f.conj)return "";const sub=f.v.J||"",lista=bancoSugestoes(c.nome,sub),w0=palavrasDesc(f.v.I,f.v.J),base=[w0.cat,w0.sub].filter(Boolean),rapidas=[...base,...lista.filter(x=>!base.some(b=>semAc(b)===semAc(x)))].slice(0,8),escopo=sub?"subcategoria "+sub:"categoria "+c.nome,edit=bancoLista(c.nome,sub);return `<div class="banco-palavras"><div class="banco-rapido"><span class="hint">Palavras:</span>${rapidas.map(w=>`<button type="button" class="gi tod" data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="banco-toggle" aria-expanded="${bancoAberto}">${bancoAberto?"Fechar palavras":"Mais palavras"}</button></div>${bancoAberto?`<div class="banco-painel"><label>Buscar palavra <input type="search" data-banco-busca placeholder="Digite para filtrar" aria-label="Buscar palavras"></label><div class="banco-lista">${lista.map(w=>`<button type="button" class="gi tod" data-banco-item data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")||'<span class="hint">Ainda não há sugestões para este contexto.</span>'}</div><details><summary>Editar palavras da ${esc(escopo)}</summary><p class="hint">Apenas esta ${sub?"subcategoria":"categoria"} será alterada. Separe várias palavras por ponto e vírgula.</p><div class="banco-editar">${edit.map(w=>`<span class="banco-edit-item">${esc(w)} <button type="button" data-act="banco-remover" data-w="${esc(w)}" aria-label="Remover ${esc(w)}">×</button></span>`).join("")}</div><label>Nova palavra ou expressão <input data-banco-nova maxlength="200" placeholder="ex.: Ponto de luz; Lisa"></label><button type="button" class="btn sm" data-act="banco-adicionar">Adicionar palavras</button><button type="button" class="btn ghost sm" data-act="banco-restaurar">Restaurar sugestões iniciais</button></details></div>`:""}</div>`}
+function bancoAtualizar(){const el=document.querySelector("#form .banco-palavras");if(!el)return;const busca=el.querySelector("[data-banco-busca]"),texto=busca?busca.value:"",aberto=!!el.querySelector("details[open]");el.outerHTML=bancoHtml(S.form);const novo=document.querySelector("#form .banco-palavras"),campo=novo&&novo.querySelector("[data-banco-busca]"),det=novo&&novo.querySelector("details");if(det&&aberto)det.open=true;if(campo&&texto){campo.value=texto;campo.dispatchEvent(new Event("input",{bubbles:true}))}}
+function bancoHtml(f){const c=catBy(f.v.I);if(!c||f.conj)return "";const sub=f.v.J||"",lista=bancoComplementos(f),rapidas=lista.slice(0,8),escopo=sub?"subcategoria "+sub:"categoria "+c.nome,edit=bancoLista(c.nome,sub);return `<div class="banco-palavras"><div class="banco-rapido"><span class="hint">Complementos:</span>${rapidas.map(w=>`<button type="button" class="gi tod" data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="banco-toggle" aria-expanded="${bancoAberto}">${bancoAberto?"Fechar palavras":"Mais palavras"}</button></div>${bancoAberto?`<div class="banco-painel"><label>Buscar palavra <input type="search" data-banco-busca placeholder="Digite para filtrar" aria-label="Buscar palavras"></label><div class="banco-lista">${lista.map(w=>`<button type="button" class="gi tod" data-banco-item data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")||'<span class="hint">Ainda não há sugestões para este contexto.</span>'}</div><details><summary>Editar palavras da ${esc(escopo)}</summary><p class="hint">Apenas esta ${sub?"subcategoria":"categoria"} será alterada. Separe várias palavras por ponto e vírgula.</p><div class="banco-editar">${edit.map(w=>`<span class="banco-edit-item">${esc(w)} <button type="button" data-act="banco-remover" data-w="${esc(w)}" aria-label="Remover ${esc(w)}">×</button></span>`).join("")}</div><label>Nova palavra ou expressão <input data-banco-nova maxlength="200" placeholder="ex.: Ponto de luz; Lisa"></label><button type="button" class="btn sm" data-act="banco-adicionar">Adicionar palavras</button><button type="button" class="btn ghost sm" data-act="banco-restaurar">Restaurar sugestões iniciais</button></details></div>`:""}</div>`}
 /* preenche a descrição sozinho com as palavras (só enquanto vazia ou ainda igual ao que foi preenchido antes) */
 function descAuto(f){if(editId||f.conj||cfg().descAuto===false)return;
   const w=palavrasDesc(f.v.I,f.v.J),alvo=[w.cat,w.sub].filter(Boolean).join(" "),novo=alvo?alvo+" ":"",ant=f._descAuto||"",cur=String(f.v.F||"");
@@ -1981,7 +1999,7 @@ const modeloAtual=()=>{const C=cfg();return (C.modelos||[]).find(x=>x.id===C.mod
 const colunasExport=()=>modeloAtual().cols.filter(c=>c.on!==false);
 const nomeTela=L=>{const c=modeloAtual().cols.find(x=>x.on!==false&&x.k===L);return c?c.h:NOME[L]};
 /* ===== modelo configurável: regras de cada coluna do arquivo (tipo, obrigatória, padrão, tamanho, lista) ===== */
-const TIPOS_COL=[["","Como vem"],["texto","Texto"],["numero","Número"],["inteiro","Inteiro"],["dinheiro","Dinheiro (2 casas)"]];
+const TIPOS_COL=[["","Como vem"],["texto","Texto"],["numero","Número"],["inteiro","Inteiro"],["dinheiro","Dinheiro (2 casas; compra até 4)"]];
 const listaCol=c=>String(c&&c.lista||"").split(";").map(s=>s.trim()).filter(Boolean);
 const maxCol=c=>{const n=Math.trunc(num(c&&c.max)||0);return n>0?n:0};
 const abaNome=mo=>{let s=String(mo&&mo.aba||"").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31).replace(/^'+|'+$/g,"").trim();if(/^history$/i.test(s))s+="_";return s||"Worksheet"};   /* o Excel recusa apóstrofo nas pontas e o nome History */
@@ -1995,15 +2013,15 @@ function valorCol(c,x){
   if(t==="texto")return {v:o.v==null?(o.txt||(o.f?"="+o.f:"")):String(o.v)};
   if(o.v==null&&o.f){const fz0=(t==="numero"||t==="inteiro"||t==="dinheiro")?num(c.fator):null;   /* fórmula também recebe o fator da coluna */
     const fat=fz0!=null&&fz0>0&&fz0!==1;let f=fat?"("+o.f+")*"+String(fz0):o.f,calc=o.calc!=null?(fat?o.calc*fz0:o.calc):undefined;
-    if(t==="dinheiro")return {...o,f:"ROUND("+f+",2)",calc:calc!=null?r2c(calc):undefined,z:"0.00"};
+    if(t==="dinheiro"){const d=c.k==="P"?4:2,m=10**d;return {...o,f:"ROUND("+f+","+d+")",calc:calc!=null?Math.round(calc*m)/m:undefined,z:c.k==="P"?"0.00##":"0.00"}};
     return fat?{...o,f,calc}:o}
   if(t==="numero"||t==="inteiro"||t==="dinheiro"){
     const n=typeof o.v==="number"?o.v:num(o.v);
     if(n==null)return {v:o.v,erro:1};
     const fz=num(c.fator);   /* fator: multiplica o número (ex.: peso em gramas × 0,001 = quilos); sem fórmula, o valor já sai convertido */
     const lim=x=>parseFloat(x.toPrecision(12));   /* tira o ruído de ponto flutuante (0,1×3 = 0,30000000000000004) */
-    if(fz!=null&&fz>0&&fz!==1){const r=Math.round(lim(n*fz*1e6))/1e6;return {v:t==="dinheiro"?Math.round(lim(r*100))/100:lim(r)}}
-    if(t==="dinheiro")return {v:Math.round(lim(n*100))/100,f:o.f?"ROUND("+o.f+",2)":o.f,z:"0.00"};   /* a fórmula também arredonda: o Excel recalcula o mesmo centavo do CSV */
+    if(fz!=null&&fz>0&&fz!==1){const r=Math.round(lim(n*fz*1e6))/1e6;return {v:t==="dinheiro"?Math.round(lim(r*(c.k==="P"?10000:100)))/(c.k==="P"?10000:100):lim(r)}}
+    if(t==="dinheiro"){const d=c.k==="P"?4:2,m=10**d;return {v:Math.round(lim(n*m))/m,f:o.f?"ROUND("+o.f+","+d+")":o.f,z:c.k==="P"?"0.00##":"0.00"}};   /* a fórmula também arredonda: o Excel recalcula o mesmo centavo do CSV */
     return {v:n,f:o.f}}
   return o}
 /* ===== variações no arquivo: produto pai + variações (modelo com "Agrupar em produto pai + variações") =====
@@ -2170,12 +2188,16 @@ setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)"
 const BK_DIAS=7,BK_INTERVALO=30*60*1000;
 async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
 async function bkPerm(h,pedir){try{let p=await h.queryPermission({mode:"readwrite"});if(p==="prompt"&&pedir)p=await h.requestPermission({mode:"readwrite"});return p==="granted"}catch(e){return false}}
-async function bkEscrever(h){const {o,falhas,hoje}=await bkMontar(),nome=`cadastro-pecas-auto-${hoje}${falhas.length?"-INCOMPLETO":""}.json`,fh=await h.getFileHandle(nome,{create:true}),w=await fh.createWritable();await w.write(JSON.stringify(o));await w.close();
-  try{const ns=[];for await(const [n] of h.entries())if(/^cadastro-pecas-auto-\d{4}-\d{2}-\d{2}/.test(n))ns.push(n);ns.sort();for(const n of ns.slice(0,Math.max(0,ns.length-BK_DIAS)))await h.removeEntry(n)}catch(e){}
+async function bkEscrever(h){const {o,falhas,hoje}=await bkMontar();
+  /* Uma cópia incompleta ou que o próprio aplicativo não consegue restaurar não substitui as últimas cópias boas. */
+  if(falhas.length)return "incompleto";
+  const json=JSON.stringify(o);if(new Blob([json],{type:"application/json"}).size>MAX_BACKUP_BYTES)return "grande-demais";
+  const nome=`cadastro-pecas-auto-${hoje}.json`,fh=await h.getFileHandle(nome,{create:true}),w=await fh.createWritable();await w.write(json);await w.close();
+  try{const ns=[];for await(const [n] of h.entries())if(/^cadastro-pecas-auto-\d{4}-\d{2}-\d{2}\.json$/.test(n))ns.push(n);ns.sort();for(const n of ns.slice(0,Math.max(0,ns.length-BK_DIAS)))await h.removeEntry(n)}catch(e){}
   try{localStorage.setItem("cadpecas-bk-ult",String(Date.now()))}catch(e){}return nome}
 async function bkAuto(pedir,forcar){const h=await bkPasta();if(!h)return null;
   if(!forcar){let u=0;try{u=+localStorage.getItem("cadpecas-bk-ult")||0}catch(e){}if(Date.now()-u<BK_INTERVALO)return "recente"}
-  if(!(await bkPerm(h,pedir)))return "perm";try{return await bkEscrever(h)}catch(e){console.error("cadastro-pecas: backup em pasta falhou",e);return "erro"}}
+  if(!(await bkPerm(h,pedir)))return "perm";try{const r=await bkEscrever(h);if(r==="incompleto")toast("Backup automático NÃO concluído: não foi possível conferir todos os dados. As cópias anteriores foram mantidas.");if(r==="grande-demais")toast("Backup automático NÃO concluído: o arquivo ultrapassa o limite de restauração. Use o backup manual e confira a opção leve.");return r}catch(e){console.error("cadastro-pecas: backup em pasta falhou",e);return "erro"}}
 setInterval(()=>{if(S.lanc.length)bkAuto(false)},10*60*1000);
 async function bkStatus(){const el=document.getElementById("bkStatus");if(!el)return;
   if(typeof showDirectoryPicker!=="function"&&!(await bkPasta())){el.innerHTML=`<span class="warn">Este navegador não deixa escolher pasta. Use o Chrome ou o Edge, ou a cópia manual abaixo.</span>`;return}
@@ -2468,7 +2490,7 @@ function renderTopo(){try{romResync()}catch(e){}
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
-      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(L==="N"?(Math.round(x.v*1000)/1000).toFixed(3).replace(/0$/,"").replace(".",","):DUAS.has(L)?brl(x.v):fmt(x.v)):x.v;
+      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(L==="N"?(Math.round(x.v*1000)/1000).toFixed(3).replace(/0$/,"").replace(".",","):DUAS.has(L)?(L==="P"&&Math.abs(x.v*100-Math.round(x.v*100))>1e-7?virg(x.v):brl(x.v)):fmt(x.v)):x.v;
       h+=`<td class="${isN?"n":""}${x.f?" fx":""}${ov}" data-c="${L}" title="${x.f?"="+esc(x.f):esc(x.v)}">${esc(txt)}</td>`});
     h+=`</tr>`;return h};
   const nb=Math.max(4,10-g.linhas.length);   /* poucas linhas em branco: a tabela vazia não precisa ocupar a tela */
@@ -2624,9 +2646,7 @@ function detalheCelulaSelecionada(row,L,ri){
   const x=celulas(row,ri+2)[LET.indexOf(L)],valor=x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null;
   const l=S.lanc.find(p=>p.id===row.lancId),q=numRaw(row.v.W,row.v,0,row.desconto);
   if(L==="P"){
-    if(valor==null)return "";const cg=l&&catBy(l.v.I)&&num(catBy(l.v.I).compraGrama),pe=pesoLinha(row);
-    if(cg>0&&pe!=null&&Math.abs(r2c(pe*cg)-valor)<0.011)return `Compra: ${fmt(pe)} g × R$ ${brl(cg)}/g (compra por grama da categoria) = R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}.`;
-    return `Compra: R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}${l&&l.lote?` · item ${l.lote.i}/${l.lote.n} de um lote`:""}.`}
+    if(valor==null)return "";return `Compra: R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}${l&&l.lote?` · item ${l.lote.i}/${l.lote.n} de um lote`:""}.`}
   if(L==="V"){
     const cs=celulas(row,ri+2),nv=k=>{const c=cs[LET.indexOf(k)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:0},custo=r2c(["P","Q","R","S","T","U"].reduce((t,k)=>t+nv(k),0));
     if(valor!=null)return `Preço de varejo digitado: R$ ${brl(valor)}${custo>0?` · custo R$ ${brl(custo)} (compra + insumos + banho + verniz) → fator ${fmt(Math.round(valor/custo*100)/100)} · lucro R$ ${brl(r2c(valor-custo))} (${fmt(Math.round((valor-custo)/valor*1000)/10)}%)`:""}.`;
@@ -2739,9 +2759,9 @@ function renderForm(){
   const vincL=gIts.length?"":`<label class="vchk" title="Mesma peça em outra cor ou pedra: mesmo número, próxima letra"><input type="checkbox" data-f="vinc" ${f.vinc?"checked":""}> Variação da anterior</label>`;
   const simples=!bruta&&!bpOn;
   const ftSlot=(()=>{const ft=S.form.ft&&ftOk(S.form.ft)?S.form.ft:"";
-    return ft?`<div class="ftslot has" title="Foto da peça (clique para ampliar)"><img src="${fs(ft)}" alt="Foto da peça" data-act="tab-foto" ${editId?`data-lid="${editId}"`:""}><button type="button" class="ftt" data-act="foto-form" title="Trocar a foto: escolha um arquivo, arraste para cá ou cole com Ctrl+V">trocar</button><button type="button" class="ftx" data-act="foto-rem" title="Tirar a foto desta peça" aria-label="Tirar a foto">×</button></div>`
+    return ft?`<div class="ftslot has" title="Foto da peça"><button type="button" class="foto-abrir" data-act="tab-foto" aria-label="Ampliar foto da peça" ${editId?`data-lid="${editId}"`:""}><img src="${fs(ft)}" alt=""></button><button type="button" class="ftt" data-act="foto-form" title="Trocar a foto: escolha um arquivo, arraste para cá ou cole com Ctrl+V">trocar</button><button type="button" class="ftx" data-act="foto-rem" title="Tirar a foto desta peça" aria-label="Tirar a foto">×</button></div>`
       :`<button type="button" class="ftslot" data-act="foto-form" title="Foto da peça: clique para escolher, arraste uma foto para cá ou cole com Ctrl+V"><span class="ftic">📷</span><small>foto</small></button>`})();
-  const ftRomHtml=(()=>{const r=S.form.ftR&&ftOk(S.form.ftR)?S.form.ftR:"";if(!r||r===S.form.ft)return "";return `<div class="ftslot has ftr" title="Foto que veio do romaneio (fica guardada; a outra é a que gera o link)"><img src="${fs(r)}" alt="Foto do romaneio" data-act="tab-foto"><small>romaneio</small><button type="button" class="ftx" data-act="foto-rem-rom" title="Tirar a foto do romaneio desta peça" aria-label="Tirar a foto do romaneio">×</button></div>`})();
+  const ftRomHtml=(()=>{const r=S.form.ftR&&ftOk(S.form.ftR)?S.form.ftR:"";if(!r||r===S.form.ft)return "";return `<div class="ftslot has ftr" title="Foto que veio do romaneio (fica guardada; a outra é a que gera o link)"><button type="button" class="foto-abrir" data-act="tab-foto" aria-label="Ampliar foto do romaneio"><img src="${fs(r)}" alt=""></button><small>romaneio</small><button type="button" class="ftx" data-act="foto-rem-rom" title="Tirar a foto do romaneio desta peça" aria-label="Tirar a foto do romaneio">×</button></div>`})();
   const rowMain=bruta?`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n"})}${c("P",{w:"c"})}${bhCampo}`
     :`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n",dis:!!f.conj,nome:f.conj?"Peso (soma)":undefined})}${c("P",{w:"c",dis:!!f.conj,nome:f.conj?"Compra (soma)":undefined})}${bhCampo}${simples?`${gIts.length?`<div class="bf gv">${qtdVar("p",false)}</div>`:c("W",{w:"n"})}${c("L",{w:"s",q:"cor"})}<label class="fq w-n" title="Fator do preço: o Preço de Varejo = (Custo de Compra + Insumos + Banhos + Verniz) × este número"><span>Fator ×</span><div class="ip">${mkIn("p")}</div></label>${c("V",{w:"c"})}<small class="bfx" data-bf="p" aria-live="polite"></small>${vincL}`:""}`;
   const dica=f.conj?`<span class="hint" style="align-self:center">Conjunto: marque os banhos (Ouro, Prata…) e sai uma linha de conjunto em cada um; todas as peças levam esse banho, menos as que você fixar um banho só delas.</span>`:!bruta&&!bpOn?`<span class="hint" style="align-self:center">Peça pronta com banhos: marque um ou mais para gerar uma linha por cor (A ouro, B prata…); sem marcar, use Cor, Quantidade e Preço acima.</span>`:"";
@@ -3321,7 +3341,7 @@ function lerRomaneio(texto,T){
   if(!R.rows.length){R.erro="Não reconheci nenhuma peça. Confira se copiou a tabela inteira (com código e valores). Se o fornecedor usa outro formato, veja Cadastros › Romaneios › Avançado.";return R}
   const sq=R.rows.reduce((t,r)=>t+r.qtd,0),sv=R.rows.reduce((t,r)=>t+(r.lote?(r.total||0):(r.preco!=null?r.preco*r.qtd:(r.total||0))),0),pt=[];
   if(T.qtdRe){const r=rxs(T.qtdRe),m2=r&&full.match(r);if(m2){const n=+String(m2[1]).replace(/\D/g,"");pt.push(n===sq?`✓ ${sq} peças conferem`:`⚠ a lista diz ${n} peças e li ${sq}`)}}
-  if(T.valorRe){const r=rxs(T.valorRe),m2=r&&full.match(r);if(m2){const v=num(m2[1]);pt.push(v!=null&&Math.abs(v-sv)<0.05?`✓ valor R$ ${brl(sv)} confere`:`⚠ a lista diz R$ ${brl(v||0)} e li R$ ${brl(sv)}`)}}
+  if(T.valorRe){const r=rxs(T.valorRe),m2=r&&full.match(r);if(m2){const v=num(m2[1]);pt.push(v!=null&&Math.round(v*100)===Math.round(sv*100)?`✓ valor R$ ${brl(sv)} confere`:`⚠ a lista diz R$ ${brl(v||0)} e li R$ ${brl(sv)}`)}}
   if(corte)pt.push("⚠ A LISTA FOI CORTADA: li só as primeiras 3.000 peças e ainda havia mais linhas. Divida o texto em partes e cole de novo.");
   if(R.cab)pt.push(`⚠ ignorei o cabeçalho “${R.cab}” antes da 1ª peça`);
   {const cont={};R.rows.forEach(r=>{if(r.cod)cont[r.cod]=(cont[r.cod]||0)+1});const rep=Object.keys(cont).filter(k=>cont[k]>1);
@@ -3364,11 +3384,12 @@ const romCols=()=>romColsR(null);
 /* monta, para uma peça do romaneio, o mesmo lançamento que o formulário montaria */
 function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g=gradeDaCat(r.cat,r.sub),cols=romColsR(r),f=clone(snap);f.tipo=romTipo(r);f.banhista=romBh(r).id;
   if(snap.conj){delete f.conj;delete f.comp;delete f.fConj}
+  if(Object.prototype.hasOwnProperty.call(r,"nfSemDesc"))f.compra4=true;else delete f.compra4;
   f.v={...snap.v,F:r.desc,I:r.cat||snap.v.I,N:r.peso,P:r.custo,M:!vazio(r.obs)?r.obs:(ROM.obs||snap.v.M)};
   if(r.sub)f.v.J=r.sub;else delete f.v.J;delete f.v.V;delete f.v.W;if(snap.conj)["R","S","T","U"].forEach(L=>delete f.v[L]);if(r.cod)f.v.G=r.cod;
   Object.keys(r.ex||{}).forEach(L=>{if(!vazio(r.ex[L]))f.v[L]=r.ex[L]});
   /* insumos próprios do romaneio: a parte desta peça (por unidade) soma ao custo de Insumos */
-  {const ins=romInsRateio(r);if(ins>0){const base=num(!vazio(f.v.Q)?f.v.Q:padraoDe(f.v.I,"Q"))||0;f.v.Q=String(r2c(base+ins));f.insRom={base:r2c(base),ins,rom:ROM.doc||""}}else delete f.insRom}
+  {const ins=romInsRateio(r);if(ins>0){const valor=!vazio(f.v.Q)?f.v.Q:padraoDe(f.v.I,"Q"),base=vazio(valor)?0:num(valor);if(base!=null){f.v.Q=String(r2c(base+ins));f.insRom={base:r2c(base),ins,rom:ROM.doc||""}}else{f.v.Q=valor;delete f.insRom}}else delete f.insRom}
   /* item de lote: numerado i/N na tabela */
   {const lot=r.loteDe?ROM.rows.find(x=>x.lote&&x.lid===r.loteDe):null;if(lot){const ks=romLoteKids(lot);f.lote={id:lot.lid,i:ks.indexOf(r)+1,n:ks.length}}else delete f.lote}
   if(!bruta){if(!vazio(r.cor))f.v.L=r.cor;if(!vazio(r.vp))f.v.V=r.vp}
@@ -3407,8 +3428,8 @@ function romPreview(){const out=[],base=S.lanc.slice();
   ROM.rows.forEach((r,i)=>{out[i]=null;if(r.skip)return;const {f}=romForm(r,true),t=romMonta(base,r,{...f,id:"__rom"+i});out[i]={rows:[],troca:t.troca}});
   if(!base.some(l=>String(l.id).startsWith("__rom")))return out;let g;try{g=gerar(base)}catch(e){return out}
   g.linhas.forEach((row,ri)=>{const id=String(row.lancId);if(!id.startsWith("__rom"))return;const o=out[+id.slice(5)];if(!o)return;
-    const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:null};
-    o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),sugerido:vazio(row.v.V),cb:row.banho?n(row.banho.coluna):null,contaBanho:detalheBanhoLinha(row,row.banho?n(row.banho.coluna):null),custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
+    const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null};
+    o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),sugerido:vazio(row.v.V),compra:n("P"),cb:row.banho?n(row.banho.coluna):null,contaBanho:detalheBanhoLinha(row,row.banho?n(row.banho.coluna):null),custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
 const fm=n=>n==null?"—":"R$ "+brl(n);
 function romLinhasHTML(pv,r,cols){if(!pv||!pv.rows.length)return `<span class="hint">Escolha a categoria (e os banhos) para ver as referências desta peça.</span>`;
@@ -3442,11 +3463,11 @@ function renderRom0(){const el=document.getElementById("romWrap");if(!el)return;
 
 /* Componentes do conjunto ficam no próprio item do romaneio e são lançados juntos. */
 function romConjDecora(){if(!ROM)return;document.querySelectorAll("#romWrap .rc[data-i]").forEach(rc=>{const r=ROM.rows[+rc.dataset.i];if(!r||r.lote)return;const box=document.createElement("details");box.className="rom-conjunto";box.open=!!r.conjComp;box.innerHTML=`<summary>Conjunto: ${r.conjComp?"editar componentes":"configurar componentes"}</summary><div class="rom-conjunto-body">${r.conjComp?romConjCampos(r):'<p class="hint">Cadastre os componentes deste item e confira a soma de peso e compra.</p><button type="button" class="btn sm" data-rcj="ativar">Configurar conjunto</button>'}</div>`;rc.appendChild(box);if(r.conjComp){["peso","custo"].forEach(k=>{const el=rc.querySelector(`[data-rp="${k}"]`);if(el){el.readOnly=true;el.title="Calculado pela soma dos componentes do conjunto"}});const total=box.querySelector("[data-rcj-total]");if(total)total.textContent=`Soma: ${fmt(r.conjComp.reduce((t,c)=>t+(num(c.peso)||0)*(conjQtd(c)||0),0))} g · compra R$ ${brl(r.conjComp.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0))}${r.conjOriginal&&num(r.conjOriginal.custo)!=null?` · compra original R$ ${brl(num(r.conjOriginal.custo))}`:""}`}})}
-function romConjCampos(r){const bh=romBh(r),opts=c=>`<option value="">Banho do conjunto</option><option value="-" ${c.banho==="-"?"selected":""}>Sem banho</option>${(bh.banhos||[]).map(b=>`<option value="${esc(b.id)}" ${c.banho===b.id?"selected":""}>${esc(b.nome)}</option>`).join("")}`;return `<p class="hint">Informe a quantidade de cada componente por conjunto; peso e compra são por unidade e multiplicados pela quantidade. A categoria de cada componente determina o valor por grama do banho; se não escolher, usa a categoria do conjunto.</p>${r.conjComp.map((c,i)=>`<div class="rom-conjunto-linha" data-rcji="${i}"><label>Peça <input data-rcjf="desc" value="${esc(c.desc||"")}" aria-label="Nome do componente ${i+1}"></label><label>Categoria <select data-rcjf="cat" aria-label="Categoria do componente ${i+1}">${conjCatOpts(c)}</select></label><label>Quantidade <input data-rcjf="qtd" inputmode="numeric" value="${esc(c.qtd??"1")}" aria-label="Quantidade do componente ${i+1} por conjunto"></label><label>Peso unitário (g) <input data-rcjf="peso" inputmode="decimal" value="${esc(c.peso||"")}" aria-label="Peso do componente ${i+1}"></label><label>Compra unitária (R$) <input data-rcjf="custo" inputmode="decimal" value="${esc(c.custo||"")}" aria-label="Compra do componente ${i+1}"></label><label>Banho <select data-rcjf="banho" aria-label="Banho do componente ${i+1}">${opts(c)}</select></label><button type="button" class="btn sm" data-rcj="remover" aria-label="Remover componente ${i+1}">×</button></div>`).join("")}<p class="hint" data-rcj-total></p><div data-rcj-contas>${conjContasHTML(romForm(r,true).f)}</div><button type="button" class="btn sm" data-rcj="adicionar">＋ Componente</button> <button type="button" class="btn sm" data-rcj="desativar">Desfazer conjunto</button>`}
+function romConjCampos(r){const bh=romBh(r),opts=c=>`${c.banho&&c.banho!=="-"&&!(bh.banhos||[]).some(b=>b.id===c.banho)?`<option value="${esc(c.banho)}" selected>⚠ Banho indisponível — escolha outro</option>`:""}<option value="">Banho do conjunto</option><option value="-" ${c.banho==="-"?"selected":""}>Sem banho</option>${(bh.banhos||[]).map(b=>`<option value="${esc(b.id)}" ${c.banho===b.id?"selected":""}>${esc(b.nome)}</option>`).join("")}`;return `<p class="hint">Informe a quantidade de cada componente por conjunto; peso e compra são por unidade e multiplicados pela quantidade. A categoria de cada componente determina o valor por grama do banho; se não escolher, usa a categoria do conjunto.</p>${r.conjComp.map((c,i)=>`<div class="rom-conjunto-linha" data-rcji="${i}"><label>Peça <input data-rcjf="desc" value="${esc(c.desc||"")}" aria-label="Nome do componente ${i+1}"></label><label>Categoria <select data-rcjf="cat" aria-label="Categoria do componente ${i+1}">${conjCatOpts(c)}</select></label><label>Quantidade <input data-rcjf="qtd" inputmode="numeric" value="${esc(c.qtd??"1")}" aria-label="Quantidade do componente ${i+1} por conjunto"></label><label>Peso unitário (g) <input data-rcjf="peso" inputmode="decimal" value="${esc(c.peso||"")}" aria-label="Peso do componente ${i+1}"></label><label>Compra unitária (R$) <input data-rcjf="custo" inputmode="decimal" value="${esc(c.custo||"")}" aria-label="Compra do componente ${i+1}"></label><label>Banho <select data-rcjf="banho" aria-label="Banho do componente ${i+1}">${opts(c)}</select></label><button type="button" class="btn sm" data-rcj="remover" aria-label="Remover componente ${i+1}">×</button></div>`).join("")}<p class="hint" data-rcj-total></p><div data-rcj-contas>${conjContasHTML(romForm(r,true).f)}</div><button type="button" class="btn sm" data-rcj="adicionar">＋ Componente</button> <button type="button" class="btn sm" data-rcj="desativar">Desfazer conjunto</button>`}
 function romConjSomar(r,rc){const cs=r.conjComp||[],peso=cs.reduce((t,c)=>t+(num(c.peso)||0)*(conjQtd(c)||0),0),custo=cs.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0);r.peso=txtN(peso);r.custo=txtN(custo);const a=rc.querySelector('[data-rp="peso"]'),b=rc.querySelector('[data-rp="custo"]');if(a)a.value=r.peso;if(b)b.value=r.custo;const t=rc.querySelector('[data-rcj-total]');if(t)t.textContent=`Soma: ${fmt(peso)} g · compra R$ ${brl(custo)}${r.conjOriginal&&num(r.conjOriginal.custo)!=null?` · compra original R$ ${brl(num(r.conjOriginal.custo))}`:""}`;const contas=rc.querySelector("[data-rcj-contas]");if(contas)contas.innerHTML=conjContasHTML(romForm(r,true).f);romAtualSoon()}
 {const wrap=document.getElementById("romWrap");wrap.addEventListener("click",e=>{const b=e.target.closest("[data-rcj]");if(!b||!ROM)return;const rc=b.closest(".rc"),r=ROM.rows[+rc.dataset.i];if(!r)return;e.preventDefault();e.stopPropagation();if(r.arq){toast("Restaure a tabela salva antes de editar este item.");return}romArma(r);const a=b.dataset.rcj;if(a==="ativar"){const cols=romColsR(r);r.conjOriginal={peso:r.peso,custo:r.custo,tipo:r.tipo,on:clone(r.on||{})};r.on=Object.fromEntries(cols.filter(c=>c.id!=="p").map(c=>[c.id,true]));r.tipo="pronta";r.conjComp=[novaComp(),novaComp()]}else if(a==="desativar"){const o=r.conjOriginal||{};r.peso=o.peso;r.custo=o.custo;r.tipo=o.tipo;r.on=o.on||{};delete r.conjOriginal;delete r.conjComp}else if(a==="adicionar"&&r.conjComp.length<60)r.conjComp.push(novaComp());else if(a==="remover"&&r.conjComp.length>1)r.conjComp.splice(+b.closest("[data-rcji]").dataset.rcji,1);romSalvarSoon();renderRom();const newrc=document.querySelector(`#romWrap .rc[data-i="${rc.dataset.i}"]`);if(r.conjComp&&newrc)romConjSomar(r,newrc)},true);wrap.addEventListener("input",e=>{const t=e.target;if(!t.dataset.rcjf||!ROM)return;const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i],i=+t.closest("[data-rcji]").dataset.rcji;if(!r||!r.conjComp||!r.conjComp[i]||r.arq)return;romArma(r);r.conjComp[i][t.dataset.rcjf]=t.value;romConjSomar(r,rc)});wrap.addEventListener("change",e=>{const t=e.target;if(t.tagName!=="SELECT"||!t.dataset.rcjf)return;t.dispatchEvent(new Event("input",{bubbles:true}))})}
 
-function romConjVerificar(){const diverg=[],avisos=[];for(const r of ROM.rows){if(r.skip||!Array.isArray(r.conjComp))continue;const f={comp:r.conjComp};for(let i=0;i<f.comp.length;i++){const c=f.comp[i],v=conjErro(f,i);if(c.banho&&c.banho!=="-"&&!(romBh(r).banhos||[]).some(b=>b.id===c.banho)){avisos.push(`“${r.desc}”, componente ${i+1}: o banho escolhido não existe na galvânica atual (será usado o banho do conjunto)`);c.banho=""}if((v&&v!=="nome repetido")||(!String(c.desc||"").trim()&&vazio(c.peso)&&vazio(c.custo)))avisos.push(`“${r.desc}”, componente ${i+1}: ${v||"sem nome, peso e custo"}`)}const orig=num((r.conjOriginal||{}).custo),atual=f.comp.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0);if(orig!=null&&Math.abs(orig-atual)>=0.005)diverg.push(`${r.desc}: original R$ ${brl(orig)}, componentes R$ ${brl(atual)}`)}
+function romConjVerificar(){const diverg=[],avisos=[];for(const r of ROM.rows){if(r.skip||!Array.isArray(r.conjComp))continue;const f={comp:r.conjComp};for(let i=0;i<f.comp.length;i++){const c=f.comp[i],v=conjErro(f,i);if(c.banho&&c.banho!=="-"&&!(romBh(r).banhos||[]).some(b=>b.id===c.banho)){alert(`“${r.desc}”, componente ${i+1}: o banho escolhido não existe na galvânica atual. Escolha um banho válido, “Banho do conjunto” ou “Sem banho” antes de criar.`);return false}if((v&&v!=="nome repetido")||(!String(c.desc||"").trim()&&vazio(c.peso)&&vazio(c.custo)))avisos.push(`“${r.desc}”, componente ${i+1}: ${v||"sem nome, peso e custo"}`)}const orig=num((r.conjOriginal||{}).custo),atual=f.comp.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0);if(orig!=null&&Math.abs(orig-atual)>=0.005)diverg.push(`${r.desc}: original R$ ${brl(orig)}, componentes R$ ${brl(atual)}`)}
   if(!diverg.length&&!avisos.length)return true;const NL=String.fromCharCode(10);
   return confirm("Alertas nos conjuntos (nada impede a criação):"+NL+NL+avisos.concat(diverg.map(x=>"compra: "+x)).slice(0,10).join(NL)+NL+NL+"OK = criar mesmo assim"+NL+"Cancelar = voltar e corrigir")}
 /* ===== rascunho do romaneio (salvo sozinho: neste navegador e na conta) ===== */
@@ -3466,22 +3487,34 @@ function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.
   if(i<0)TABS.unshift(m);else TABS[i]=m;TABDEL.delete(m.id);const ok=gravarIdx("cadpecas-tabs",TABS,TABDEL);arqRef();return ok}
 /* fotos órfãs: ao excluir uma peça/tabela, a foto (e a miniatura) some do IndexedDB — mas só quando nenhuma peça atual,
    tabela salva ou passo do "desfazer/refazer" ainda precisa dela */
-const candFoto=new Set();
+const candFoto=new Set();let exSemVarredura=false;
 const PONTO_IDS=new Set();   /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
 async function pontosIds(){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await idbGet("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
 function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(PONTO_IDS.has(id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
   if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
-function varrerFotos(){[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
-async function varrerTudo(){if(!S.lanc.length&&!TABS.length)return;await pontosIds();const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
+function varrerFotos(){if(exSemVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
+async function varrerTudo(){if(exSemVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
   for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await idbDel("fotos",k)}}
 /* tabelas salvas antes desta versão não guardavam cód.+fornecedor no índice: lê do IndexedDB uma vez */
-async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await idbGet("tabs",t.id);if(rec===null)continue;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou)gravarIdx("cadpecas-tabs",TABS,TABDEL);
+async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await idbGet("tabs",t.id);if(rec===null)return false;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou&&!gravarIdx("cadpecas-tabs",TABS,TABDEL))return false;
   /* se a lista (índice) de tabelas falhou ao ser gravada, as tabelas continuam no IndexedDB: refaz a lista a partir de lá */
-  try{const ks=(await idbOp("tabs","readonly",st=>st.getAllKeys()))||[];let n=0;
+  try{const ks=await idbOp("tabs","readonly",st=>st.getAllKeys());if(!Array.isArray(ks))return false;let n=0;
     for(const k of ks){if(typeof k!=="string"||TABS.some(t=>t.id===k)||TABDEL.has(k))continue;const rec=await idbGet("tabs",k);
+      if(rec===null)return false;
       if(!ehObj(rec)||!Array.isArray(rec.lanc)||!rec.lanc.every(ehObj))continue;if(!rec.id)rec.id=k;if(!ehNumLike(rec.em))rec.em=Date.now();
-      try{tabIndex(rec);n++}catch(e){}}
-    if(n)toast(`Encontrei ${n} tabela(s) salva(s) que não apareciam na lista e coloquei de volta em “Tabelas salvas”.`)}catch(e){}}
+      if(!tabIndex(rec))return false;n++}
+    if(n)toast(`Encontrei ${n} tabela(s) salva(s) que não apareciam na lista e coloquei de volta em “Tabelas salvas”.`);return true}catch(e){return false}}
+/* O diário permite recuperar o registro se a aba fechar antes de retirar o índice. */
+const tabExcluindo=new Set();
+async function tabExcluirSalvo(id){if(tabExcluindo.has(id))return false;tabExcluindo.add(id);
+  try{return await exComLock(async()=>{const prep=await exPreparar("tabs",id);if(!prep){toast("Não consegui proteger e excluir a tabela no armazenamento. Ela continua na lista.");return false}
+    const antiga=TABS,jaApagado=TABDEL.has(id),atual=TABS.find(x=>x.id===id),nova=TABS.filter(x=>x.id!==id);TABDEL.add(id);
+    if(!gravarIdx("cadpecas-tabs",nova,TABDEL)){if(!jaApagado)TABDEL.delete(id);TABS=antiga;
+      const voltou=await exReverter(prep.key);
+      toast(voltou?"Não consegui atualizar a lista; a tabela foi mantida.":"ATENÇÃO: não consegui atualizar a lista nem restaurar a tabela excluída. Confira seu backup.");return false}
+    if(prep.key&&await idbDel("pontos",prep.key)===null){if(!jaApagado)TABDEL.delete(id);TABS=antiga;const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; a tabela foi mantida.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar a tabela e confira seu backup.");return false}
+    TABS=nova;arqRef();if(atual)(atual.ids||[]).forEach(i=>candFoto.add(i));varrerFotos();return true;
+  })}finally{tabExcluindo.delete(id)}}
 const dtbr=t=>new Date(t).toLocaleString("pt-BR");
 function repModal(inner){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";ov.innerHTML=`<div class="rep-c">${inner}</div>`;document.body.appendChild(ov)}
 async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabela está vazia.");return null}
@@ -3491,8 +3524,8 @@ async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabel
   const ids=new Set(lancSnap.map(l=>l.id)),ks=(await idbOp("roms","readonly",st=>st.getAllKeys()))||[],roms=[];
   for(const k of ks){const r=await idbGet("roms",k);if(r&&r.rows.some(x=>(x.lancIds||[]).some(i=>ids.has(i))))roms.push(k)}
   const rec={id:uid(),nome,em:Date.now(),por:por||AUTOR,lanc:lancSnap,seqs:seqsSnap,linhas,roms};
-  if(await idbPut("tabs",rec.id,rec)===null){toast("NÃO consegui salvar a tabela — memória do navegador cheia. Baixe o backup completo. A tabela atual foi mantida.");setStatus("Tabela NÃO salva (memória cheia)",true);return null}
-  if(!tabIndex(rec)){toast("A tabela foi guardada, mas NÃO consegui anotá-la na lista de tabelas salvas (memória do navegador cheia). Por segurança, NÃO limpei a tabela atual nem comecei outra. Baixe o backup completo e libere espaço; a tabela guardada reaparece na lista quando você reabrir o programa.");setStatus("Tabela guardada, mas fora da lista (memória cheia)",true);return null}
+  const gravou=await exSalvarComLock(async()=>{if(await idbPut("tabs",rec.id,rec)===null){toast("NÃO consegui salvar a tabela — memória do navegador cheia. Baixe o backup completo. A tabela atual foi mantida.");setStatus("Tabela NÃO salva (memória cheia)",true);return false}
+    if(!tabIndex(rec)){toast("A tabela foi guardada, mas NÃO consegui anotá-la na lista de tabelas salvas (memória do navegador cheia). Por segurança, NÃO limpei a tabela atual nem comecei outra. Baixe o backup completo e libere espaço; a tabela guardada reaparece na lista quando você reabrir o programa.");setStatus("Tabela guardada, mas fora da lista (memória cheia)",true);return false}return true});if(!gravou)return null;
   if(nova){const c=contFinal(g);Object.entries(c).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});let ficou=0;S.lanc=S.lanc.filter(l=>{if(sigT[l.id]!==undefined&&sigT[l.id]===JSON.stringify(l))return false;ficou++;return true});sel.clear();lastExport=null;salvar(true);render();if(ficou)setTimeout(()=>toast(ficou+" peça(s) lançadas ou editadas durante o salvamento ficaram na lista."),50)}
   if(!quieto)toast(`Tabela “${nome}” salva${nova?" — nova tabela começada, a numeração continua de onde parou":""}.`);
   return rec}
@@ -3532,11 +3565,51 @@ let ROMS=[],romArm=null,TABS=[],ARQ={},AUTOR="",tabArm=null;
 function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.open("cadpecas-big",3);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};rq.onerror=()=>res(null);
   rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(store,mode),st=tx.objectStore(store);let out=null;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>{d.close();res(out)};tx.onerror=tx.onabort=()=>{d.close();res(null)}}catch(e){d.close();res(null)}}}catch(e){res(null)}})}
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
+/* Diário de exclusões: registro e diário mudam na mesma transação. Se a aba
+   fechar antes de concluir o índice, a próxima abertura recupera o registro. */
+const EX_PREFIXO="exclusao-pendente-v1:";
+function exPreparar(loja,id){return new Promise(resolve=>{let fim=false;const done=x=>{if(!fim){fim=true;resolve(x)}};try{
+  const rq=indexedDB.open("cadpecas-big",3);rq.onerror=()=>done(null);rq.onsuccess=()=>{const db0=rq.result;try{
+    const tx=db0.transaction([loja,"pontos"],"readwrite"),st=tx.objectStore(loja),pt=tx.objectStore("pontos"),key=EX_PREFIXO+loja+":"+encodeURIComponent(id);let resultado=null;
+    const get=st.get(id);get.onsuccess=()=>{try{const rec=get.result;if(rec===undefined){resultado={key:null};return}resultado={key};pt.put({loja,id,rec},key);st.delete(id)}catch(e){try{tx.abort()}catch(x){db0.close();done(null)}}};
+    tx.oncomplete=()=>{db0.close();done(resultado)};tx.onabort=tx.onerror=()=>{db0.close();done(null)}
+  }catch(e){db0.close();done(null)}}
+}catch(e){done(null)}})}
+/* Não substitui um registro que outra aba tenha criado depois da exclusão. */
+function exRestaurar(j){return new Promise(resolve=>{let fim=false;const done=x=>{if(!fim){fim=true;resolve(x)}};try{
+  const rq=indexedDB.open("cadpecas-big",3);rq.onerror=()=>done(null);rq.onsuccess=()=>{const db0=rq.result;try{
+    const tx=db0.transaction(j.loja,"readwrite"),st=tx.objectStore(j.loja);let rec=null;const get=st.get(j.id);
+    get.onsuccess=()=>{try{rec=get.result===undefined?j.rec:get.result;if(get.result===undefined)st.put(rec,j.id)}catch(e){try{tx.abort()}catch(x){db0.close();done(null)}}};
+    tx.oncomplete=()=>{db0.close();done(rec)};tx.onabort=tx.onerror=()=>{db0.close();done(null)}
+  }catch(e){db0.close();done(null)}}
+}catch(e){done(null)}})}
+async function exComLock(fn){if(!navigator.locks){toast("A exclusão segura exige um navegador com bloqueios entre abas. A tabela ou romaneio foi mantido.");return false}return navigator.locks.request("cadpecas-exclusoes",fn)}
+function exSalvarComLock(fn){return navigator.locks?navigator.locks.request("cadpecas-exclusoes",fn):fn()}
+async function exReverter(key){if(!key)return true;const j=await idbGet("pontos",key);if(!j||!(["tabs","roms"].includes(j.loja))||typeof j.id!=="string"||!ehObj(j.rec))return false;
+  try{if(key!==EX_PREFIXO+j.loja+":"+encodeURIComponent(j.id))return false}catch(e){return false}
+  const rec=await exRestaurar(j);if(!rec)return false;
+  if(!ehObj(rec)||(rec.id&&rec.id!==j.id))return false;if(!rec.id)rec.id=j.id;
+  /* O índice pode já ter sido retirado quando a aba fechou. */
+  try{if(!(j.loja==="tabs"?tabIndex(rec):romIndex(rec)))return false}catch(e){return false}
+  return (await idbDel("pontos",key))!==null
+}
+async function exRecuperarSemLock(){const atuais=await idbOp("pontos","readonly",st=>st.getAllKeys());if(!Array.isArray(atuais))return false;let n=0;
+    for(const k of atuais){if(typeof k!=="string"||!k.startsWith(EX_PREFIXO))continue;if(!await exReverter(k))return false;n++}
+    if(n)toast(`Recuperei ${n} exclusão(ões) interrompida(s); confira as tabelas e os romaneios salvos.`);return true
+}
+async function exRecuperar(){if(navigator.locks)return navigator.locks.request("cadpecas-exclusoes",exRecuperarSemLock);const ks=await idbOp("pontos","readonly",st=>st.getAllKeys());return Array.isArray(ks)&&!ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO))}
+async function exMigrarIndicesSemLock(){if(!await tabsMigrar())return false;const ks=await idbOp("roms","readonly",st=>st.getAllKeys());if(!Array.isArray(ks))return false;let n=0;
+  for(const k of ks){if(typeof k!=="string"||ROMS.some(x=>x.id===k)||ROMDEL.has(k))continue;const rec=await idbGet("roms",k);if(rec===null)return false;if(!ehObj(rec)||!Array.isArray(rec.rows)||!rec.rows.every(ehObj))continue;
+    if(!rec.id)rec.id=k;if(!ehNumLike(rec.em))rec.em=Date.now();if(!romIndex(rec))return false;n++}
+  if(n)toast(`Encontrei ${n} romaneio(s) salvo(s) que não apareciam na lista.`);return true}
+async function exAbrirIndices(){const abrir=async()=>{try{const r=JSON.parse(localStorage.getItem("cadpecas-roms")||"[]"),t=JSON.parse(localStorage.getItem("cadpecas-tabs")||"[]");if(!Array.isArray(r)||!Array.isArray(t))return false;ROMS=r;TABS=t;arqRef()}catch(e){return false}
+  if(navigator.locks){if(!await exRecuperarSemLock())return false}else{const ks=await idbOp("pontos","readonly",st=>st.getAllKeys());if(!Array.isArray(ks)||ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO)))return false}
+  return exMigrarIndicesSemLock()};return exSalvarComLock(abrir)}
 function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,ins:ROM.ins||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
 function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",hash:rec.hash||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);const ok=gravarIdx("cadpecas-roms",ROMS,ROMDEL);try{romAtualizarListaAberta()}catch(e){console.error("cadastro-pecas: não atualizei a lista de romaneios",e)}return ok}
 let romGravP=null;const romHistUltimo=new Map();
-function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>idbPut("roms",rec.id,rec)).then(r=>{if(r===null){avisoIdb("o romaneio");return false}romIndex(rec);return true})}
+function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>exSalvarComLock(async()=>{const r=await idbPut("roms",rec.id,rec);if(r===null){avisoIdb("o romaneio");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio; ele pode não aparecer após recarregar");return false}return true}))}
 /* As ações de romaneio registram também o estado dos itens, inclusive os ainda não lançados.
    O histórico é da sessão, como o restante de Desfazer. As gravações do mesmo romaneio são enfileiradas. */
 function romHistAntes(){
@@ -3575,15 +3648,22 @@ function romHistAplicar(snap){
   }
   const anterior=romGravP;
   romGravP=Promise.resolve(anterior).catch(()=>false).then(async()=>{
-    if(rec.rows.length){const ok=await idbPut("roms",id,rec);if(ok===null){avisoIdb("o romaneio desfeito");return false}romIndex(rec)}
-    else{const ok=await idbDel("roms",id);if(ok===null){avisoIdb("a exclusão do romaneio");return false}
-      ROMS=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
+    if(rec.rows.length){const ok=await exSalvarComLock(async()=>{const salvo=await idbPut("roms",id,rec);if(salvo===null){avisoIdb("o romaneio desfeito");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio desfeito");return false}return true});if(!ok)return false}
+    else if(!await romExcluirConfirmado(id))return false
     return true;
   });
 }
 let avisoIdbT=0;
 function avisoIdb(oque){setStatus("NÃO salvo — memória do navegador cheia ("+oque+"). Baixe o backup.",true);if(Date.now()-avisoIdbT>10000){avisoIdbT=Date.now();toast("NÃO consegui guardar "+oque+" — a memória do navegador pode estar cheia. Baixe o backup completo.")}}
-function romExcluirSalvo(id){idbDel("roms",id);ROMS=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
+async function romExcluirConfirmado(id){
+  return exComLock(async()=>{const prep=await exPreparar("roms",id);if(!prep){avisoIdb("a proteção e exclusão do romaneio; ele continua na lista");return false}
+  const anteriorLista=ROMS,jaApagado=ROMDEL.has(id),nova=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);
+  if(!gravarIdx("cadpecas-roms",nova,ROMDEL)){if(!jaApagado)ROMDEL.delete(id);ROMS=anteriorLista;
+    const voltou=await exReverter(prep.key);
+    toast(voltou?"Não consegui atualizar a lista; o romaneio foi mantido.":"ATENÇÃO: não consegui atualizar a lista nem restaurar o romaneio excluído. Confira seu backup.");return false}
+  if(prep.key&&await idbDel("pontos",prep.key)===null){if(!jaApagado)ROMDEL.delete(id);ROMS=anteriorLista;const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; o romaneio foi mantido.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar o romaneio e confira seu backup.");return false}
+  ROMS=nova;try{romAtualizarListaAberta()}catch(e){}return true})}
+function romExcluirSalvo(id){const anterior=romGravP;romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>romExcluirConfirmado(id));return romGravP}
 /* mexeu numa peça já lançada: ela passa a ser substituída ao criar (mesma posição e mesma referência; categoria nova = próxima referência da nova sequência). Se ela está numa tabela salva, não dá para substituir aqui. */
 function romArma(r){if(r&&r.feito&&r.skip&&!r.arq){r.skip=false;r.refaz=true;r.aviso="";return true}return false}
 function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){const voltar=ROM.removidos.filter(x=>[...(x.row.lancIds||[]),...(x.row.revogados||[])].some(id=>S.lanc.some(l=>l.id===id)));voltar.sort((a,b)=>a.pos-b.pos).forEach(x=>ROM.rows.splice(Math.min(x.pos,ROM.rows.length),0,x.row));ROM.removidos=ROM.removidos.filter(x=>!voltar.includes(x))}ROM.rows.forEach(r=>{if(!(r.lancIds||[]).length&&(r.revogados||[]).some(i=>S.lanc.some(l=>l.id===i))){r.lancIds=r.revogados.filter(i=>S.lanc.some(l=>l.id===i));r.revogados=[];r.feito=true;r.refaz=false;r.skip=true}const vivos=(r.lancIds||[]).filter(i=>S.lanc.some(l=>l.id===i)),arq=(r.lancIds||[]).filter(i=>!vivos.includes(i)&&ARQ[i]),v=vivos.concat(arq);const sumidos=(r.lancIds||[]).filter(i=>!v.includes(i));if(sumidos.length)r.revogados=[...new Set([...(r.revogados||[]),...sumidos])];r.lancIds=v;r.arq=!vivos.length&&arq.length?ARQ[arq[0]]:"";
@@ -3591,7 +3671,7 @@ function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){cons
 async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await idbGet("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
   rec.rows.forEach((r,i)=>{const o=ROM.rows[i];if(o&&r.foto&&!o.foto&&(o.cod||"")===(r.cod||"")){o.foto=r.foto;o.fotoMini=o.fotoMini||r.fotoMini;n++}});if(n)renderRom()}
 async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição antes.");return}if(ROM&&romConflito){toast("Resolva o conflito do romaneio antes de abrir outro.");return}
-  if(ROM&&ROM.rows.length){const lsOk=romSalvar();const idbOk=await Promise.resolve(romGravP);if(!lsOk&&!idbOk){toast("Não consegui guardar o romaneio atual; ele continua aberto. Baixe o backup antes de trocar.");return}}
+  if(ROM&&ROM.rows.length){const lsOk=romSalvar();const idbOk=await Promise.resolve(romGravP);if(!idbOk){toast("Não consegui guardar o romaneio atual e seu índice; ele continua aberto. Baixe o backup antes de trocar.");return}}
   else if(romGravP)await Promise.resolve(romGravP);
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
   const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,ins:rec.ins||null,rows:rec.rows,pdf:null};
@@ -3609,16 +3689,34 @@ function romListaAbrir(){document.querySelectorAll(".rep").forEach(x=>x.remove()
   ${romListaTabela()}</div>`;
   document.body.appendChild(ov)}
 function romBadge(r){const rf=(G&&G.linhas?G.linhas:[]).filter(x=>(r.lancIds||[]).includes(x.lancId)).map(x=>x.v.E);return `<span class="rfeito" title="Mude qualquer campo (ou marque a caixa) para corrigir esta peça: ao criar, ela é substituída na mesma posição e com a mesma referência">✓ já lançada${rf.length?" · "+esc(rf.join(", ")):(r.refs?" · "+esc(r.refs):"")}${r.arq?" · na tabela salva “"+esc(r.arq)+"”":""}${r.refaz?" · será substituída":""}</span>`}
+/* Lê todas as lojas do backup na mesma transação, impedindo misturar versões do IndexedDB. */
+function bkLerBanco(idsAtuais){return new Promise(resolve=>{let encerrado=false;const fim=v=>{if(!encerrado){encerrado=true;resolve(v)}};try{
+  const rq=indexedDB.open("cadpecas-big",3);rq.onerror=()=>fim(null);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};
+  rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(["roms","tabs","fotos","pontos"],"readonly"),roms={},tabs={},fotos={},result={roms,tabs,fotos,exclusoesPendentes:false};let pend=6;
+    const vals={};const req=(store,method,key)=>{const r=key===undefined?store[method]():store[method](key);r.onsuccess=()=>{vals[store.name+method]=r.result;if(--pend===0)carregarFotos()}};
+    const rs=tx.objectStore("roms"),ts=tx.objectStore("tabs"),fs=tx.objectStore("fotos");
+    const carregarFotos=()=>{result.exclusoesPendentes=(vals.pontosgetAllKeys||[]).some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO));(vals.romsgetAllKeys||[]).forEach((k,i)=>roms[k]=vals.romsgetAll[i]);(vals.tabsgetAllKeys||[]).forEach((k,i)=>tabs[k]=vals.tabsgetAll[i]);
+      const vivos=new Set(idsAtuais);Object.values(tabs).forEach(t=>{if(t){(t.ids||[]).forEach(i=>vivos.add(i));(t.lanc||[]).forEach(l=>{if(l&&l.id)vivos.add(l.id)})}});
+      Object.values(roms).forEach(r=>{if(r){(r.lancIds||[]).forEach(i=>vivos.add(i));(r.rows||[]).forEach(x=>(x.lancIds||[]).forEach(i=>vivos.add(i)))}});
+      (vals.fotosgetAllKeys||[]).forEach(k=>{if(vivos.has(String(k).replace(/^[mr]:/,""))){const x=fs.get(k);x.onsuccess=()=>{fotos[k]=x.result}}})};
+    req(rs,"getAllKeys");req(rs,"getAll");req(ts,"getAllKeys");req(ts,"getAll");req(fs,"getAllKeys");req(tx.objectStore("pontos"),"getAllKeys");
+    tx.oncomplete=()=>{d.close();fim(result)};tx.onerror=tx.onabort=()=>{d.close();fim(null)}
+  }catch(e){d.close();fim(null)}}
+}catch(e){fim(null)}})}
+function bkEstado(){let rel=null;try{rel=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){}return {config:S.config,lanc:S.lanc,form:S.form,rascunho:romRascunho(),romAtual:ROM?{...ROM,pdf:null}:null,rel,tabs:TABS,autor:AUTOR}}
 async function bkMontar(){
-  const falhas=[],chaves=async n=>{const k=await idbOp(n,"readonly",st=>st.getAllKeys());if(k===null){falhas.push(n);return []}return k},valor=async(n,k)=>{const v=await idbGet(n,k);if(v===null)falhas.push(n+":"+k);return v};
-  const rk=await chaves("roms"),roms={};for(const k of rk)roms[k]=await valor("roms",k);
-  const tk=await chaves("tabs"),tabs={};for(const k of tk)tabs[k]=await valor("tabs",k);
-  const fk=await chaves("fotos"),fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));
-  Object.values(tabs).forEach(t=>{if(!t)return;(t.ids||[]).forEach(i=>vivos.add(i));(t.lanc||[]).forEach(l=>{if(l&&l.id)vivos.add(l.id)})});   /* tabela que está no banco mas não no índice também leva as fotos */
-  Object.values(roms).forEach(r=>{if(!r)return;(r.lancIds||[]).forEach(i=>vivos.add(i));(r.rows||[]).forEach(x=>(x.lancIds||[]).forEach(i=>vivos.add(i)))});for(const k of fk)if(vivos.has(String(k).replace(/^[mr]:/,"")))fotos[k]=await valor("fotos",k);   /* inclui as miniaturas (m:) e as de romaneio (r:), não só a original */
-  let rel=null;try{rel=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){}
+  const falhas=[];if(romST){clearTimeout(romST);romST=null;romSalvar()}if(romGravP&&await Promise.resolve(romGravP).catch(()=>false)===false)falhas.push("romaneio pendente");
+  const conferirAbas=async()=>{if(typeof navigator==="undefined")return;if(!navigator.locks||!navigator.locks.query){falhas.push("concorrência entre abas não verificável");return}try{const q=await navigator.locks.query();if((q.held||[]).filter(x=>x.name==="cadpecas-uso"&&x.mode==="shared").length>1)falhas.push("outra aba aberta")}catch(e){falhas.push("concorrência entre abas não verificável")}};
+  await conferirAbas();
+  const chaves=["cadpecas4","cadpecas-rom","cadpecas-rom-info","cadpecas-roms","cadpecas-tabs"],lerChaves=()=>JSON.stringify(chaves.map(k=>localStorage.getItem(k)));let localAntes=null;try{localAntes=lerChaves()}catch(e){falhas.push("armazenamento local")}
+  if((typeof conflito!=="undefined"&&conflito)||(typeof romConflito!=="undefined"&&romConflito))falhas.push("conflito entre abas");
+  const gravacaoRom=romGravP,assinatura=JSON.stringify(bkEstado()),estado=JSON.parse(assinatura),ids=estado.lanc.map(l=>l.id).concat([].concat(...estado.tabs.map(t=>t.ids||[])));
+  const dados=typeof navigator!=="undefined"&&navigator.locks?await navigator.locks.request("cadpecas-exclusoes",()=>bkLerBanco(ids)):await bkLerBanco(ids);if(!dados)falhas.push("armazenamento");else if(dados.exclusoesPendentes)falhas.push("exclusão interrompida pendente de recuperação");if(romST||romGravP!==gravacaoRom||JSON.stringify(bkEstado())!==assinatura)falhas.push("dados alterados durante a cópia");
+  try{if(localAntes!==lerChaves())falhas.push("dados locais alterados durante a cópia")}catch(e){falhas.push("armazenamento local")}
+  await conferirAbas();
+  if((typeof conflito!=="undefined"&&conflito)||(typeof romConflito!=="undefined"&&romConflito))falhas.push("conflito entre abas");
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
+  const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:estado.config,lanc:estado.lanc,form:estado.form,roms:dados?dados.roms:{},fotos:dados?dados.fotos:{},rascunho:estado.rascunho,rel:estado.rel,tabs:dados?dados.tabs:{},autor:estado.autor};if(falhas.length)o.incompleto=falhas.slice(0,50);
   return {o,falhas,hoje}}
 async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");let o,falhas,hoje,bl;try{({o,falhas,hoje}=await bkMontar());bl=new Blob([JSON.stringify(o)],{type:"application/json"})}catch(e){toast("Não consegui montar o backup completo (muitas fotos ou arquivo grande demais). Use Baixar cópia dos cadastros.");return}
   let leve=false;if(bl.size>MAX_BACKUP_BYTES&&confirm(`Esse backup tem ${Math.round(bl.size/1048576)} MB e o aplicativo só restaura até ${Math.round(MAX_BACKUP_BYTES/1048576)} MB.
@@ -3751,9 +3849,10 @@ async function aplicarBackupTotal(n,quieto){
     const overlay=document.createElement("div");overlay.setAttribute("role","status");overlay.style.cssText="position:fixed;inset:0;z-index:100001;background:#fff;display:grid;place-content:center;padding:24px;font:16px system-ui;text-align:center";overlay.textContent="Restaurando backup… mantenha esta aba aberta.";document.documentElement.appendChild(overlay);document.body.inert=true;
     try{
       if(romST){clearTimeout(romST);romST=null;romSalvar()}if(romGravP&&await romGravP===false){toast("Backup NÃO restaurado — não consegui guardar o romaneio atual.");return false}
+      if(!await exRecuperar()){toast("Backup NÃO restaurado — não consegui recuperar uma exclusão interrompida.");return false}
       if(sT){clearTimeout(sT);sT=null}await chain;if((dirty.c||dirty.l)&&await (chain=chain.then(flush))!==true){toast("Backup NÃO restaurado — não consegui salvar os dados atuais.");return false}
       if(conflito||romConflito){toast("Backup NÃO restaurado — resolva o conflito com a outra aba.");return false}
-      return await aplicarBackupTotalComLock(n,quieto)
+      return await exSalvarComLock(()=>aplicarBackupTotalComLock(n,quieto))
     }finally{document.body.inert=false;overlay.remove()}})})}finally{await bkUsoIniciar()}
 }
 async function aplicarBackupTotalComLock(n,quieto){
@@ -3848,21 +3947,22 @@ function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r
 /* ===== revisão final ===== */
 /* Um cartão de lote representa uma unidade; distribuir mais ou menos gera conferência enganosa. */
 function romLoteDistribuicaoInvalida(r){return !!(r&&r.loteDe&&!r.skip&&romSomaDe(r,romColsR(r))!==r.qtd)}
-function romRevisar(){const pv=romPreview(),it=[];
+let romRevSeq=0;
+async function romRevisar(){const seq=++romRevSeq,antes=romInsAssinatura(),insPend=await romInsConferirArquivos();if(seq!==romRevSeq||!insPend)return;if(antes!==romInsAssinatura()){toast("Os dados mudaram durante a conferência. Abra a revisão novamente.");return}const pv=romPreview(),it=[];
   ROM.rows.forEach((r,i)=>{if(r.skip)return;const p=pv[i],q=romForm(r).q,cols=romColsR(r),al=[],cria=q.length>0;
     if(romLoteDistribuicaoInvalida(r))al.push(`item de lote: distribua ${r.qtd} unidade(s) entre os banhos ou desmarque “criar”; adicione outro item para outra peça`);else if(!cria)al.push("sem quantidade — não será criada");else if(romSomaDe(r,cols)!==r.qtd)al.push(`divisão ${romSomaDe(r,cols)} de ${r.qtd}`);
-    if(r.catq)al.push("categoria não confirmada");if(Array.isArray(r.conjComp)&&r.conjOriginal){const o0=num(r.conjOriginal.custo),a0=r.conjComp.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0);if(o0!=null&&Math.abs(o0-a0)>=0.005)al.push("soma dos componentes (R$ "+brl(a0)+") difere do valor do romaneio (R$ "+brl(o0)+")")}if(cria&&p&&romTipo(r)==="bruta"&&num(r.peso)>0&&p.rows.some(x=>x.q>0&&x.cb==null))al.push("banho sem valor na galvânica (custo do banho em branco)");if(r.cat&&!catBy(r.cat))al.push("categoria “"+r.cat+"” não existe mais — escolha outra");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
+    if(r.catq)al.push("categoria não confirmada");if(Array.isArray(r.conjComp)&&r.conjComp.some(c=>c.banho&&c.banho!=="-"&&!(romBh(r).banhos||[]).some(b=>b.id===c.banho)))al.push("banho de componente indisponível — escolha outro antes de criar");if(Array.isArray(r.conjComp)&&r.conjOriginal){const o0=num(r.conjOriginal.custo),a0=r.conjComp.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0);if(o0!=null&&Math.abs(o0-a0)>=0.005)al.push("soma dos componentes (R$ "+brl(a0)+") difere do valor do romaneio (R$ "+brl(o0)+")")}if(cria&&p&&romTipo(r)==="bruta"&&num(r.peso)>0&&p.rows.some(x=>x.q>0&&x.cb==null))al.push("banho sem valor na galvânica (custo do banho em branco)");if(r.cat&&!catBy(r.cat))al.push("categoria “"+r.cat+"” não existe mais — escolha outra");if(num(r.peso)==null)al.push("sem peso");if(vazio(r.custo))al.push("sem custo");
     if(p&&p.rows.some(x=>x.dup))al.push("referência repetida");if(ROM.pdf&&!r.foto)al.push("sem foto");
     it.push({r,i,p,cria,al})});
-  const bloqueiaLote=it.some(x=>romLoteDistribuicaoInvalida(x.r)),cr=it.filter(x=>x.cria),nal=it.filter(x=>x.al.length).length,zeros=[...new Set(cr.map(x=>prefDe(x.r.cat,x.r.sub)))].filter(pf=>!(ultimo(pf)>0));let un=0,cus=0,vr=0,nl=0;
+  const difIns=romInsDiferenca(),bloqueiaIns=Math.abs(difIns)>=0.005,bloqueiaBase=romInsSemBase(),bloqueiaFora=romInsProibidos().length>0,bloqueiaFormula=romInsBasesInvalidas().length>0,bloqueiaLote=it.some(x=>romLoteDistribuicaoInvalida(x.r)),cr=it.filter(x=>x.cria),nal=it.filter(x=>x.al.length).length,zeros=[...new Set(cr.map(x=>prefDe(x.r.cat,x.r.sub)))].filter(pf=>!(ultimo(pf)>0));let un=0,cus=0,vr=0,nl=0;
   cr.forEach(x=>x.p.rows.forEach(y=>{nl++;un+=y.q;cus+=y.custo*y.q;vr+=(!y.sugerido&&y.v||0)*y.q}));
   let insRat=0;{const c0=romInsCtx();cr.forEach(x=>{const u=x.p.rows.reduce((t,y)=>t+y.q,0);insRat+=romInsRateio(x.r,c0)*u})}
   /* conferência numa linha: o que o fornecedor cobrou na lista × a compra que vai ser criada (+ insumos do romaneio) */
-  let listaTot=0,compraTot=0;{ROM.rows.forEach(r=>{if(r.loteDe||(r.skip&&!r.lote&&!r.feito))return;if(r.lote){if(romLoteKids(r).some(k=>!k.skip))listaTot+=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);return}if(r.skip)return;const pu=r.precod!=null?r.precod:r.preco;listaTot+=r.total!=null?r.total:(pu!=null?pu*(Number(r.qtd)||0):0)});cr.forEach(x=>{const u=x.p.rows.reduce((t,y)=>t+y.q,0);compraTot+=(num(x.r.custo)||0)*u})}
-  const confOk=listaTot>0&&Math.abs(listaTot-compraTot)<=Math.max(1,listaTot*0.005);
+  let listaTot=0,compraTot=0;{ROM.rows.forEach(r=>{if(r.loteDe||(r.skip&&!r.lote&&!r.feito))return;if(r.lote){if(romLoteKids(r).some(k=>!k.skip))listaTot+=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0);return}if(r.skip)return;const pu=r.precod!=null?r.precod:r.preco;listaTot+=r.total!=null?r.total:(pu!=null?pu*(Number(r.qtd)||0):0)});cr.forEach(x=>{const u=x.p.rows.reduce((t,y)=>t+y.q,0);compraTot+=x.p.rows.reduce((t,y)=>t+(y.compra||0)*y.q,0)})}
+  const confOk=listaTot>0&&Math.round(listaTot*100)===Math.round(compraTot*100);
   const ov=document.createElement("div");ov.className="rev";
-  ov.innerHTML=`<div class="rev-c"><div class="rev-h"><b>Revisão final</b><span class="hint">confira antes de criar — nada foi gravado ainda. ${romInsTotal()>0?`Insumos do romaneio: R$ ${brl(romInsTotal())} rateados nas peças (soma aplicada: R$ ${brl(r2c(insRat))}; a diferença é arredondamento).`:"Frete e separação só entram no custo se você os lançar em “Insumos deste romaneio”."}</span><button type="button" class="btn ghost sm" data-act="rev-fechar" style="margin-left:auto">Voltar e corrigir ✕</button></div>
-    <div class="rev-s"><span class="tt"><b>${cr.length}</b> peças</span><span class="tt"><b>${nl}</b> linhas</span><span class="tt"><b>${un}</b> unidades</span><span class="tt">Custo <b>${fm(cus)}</b></span><span class="tt tot-v">Varejo definido <b>${fm(vr)}</b></span><span class="tt ${listaTot>0?(confOk?"ok":"bad"):""}" title="Valor da lista do fornecedor × compra que será criada (mais os insumos do romaneio, se houver)">${listaTot>0?`${confOk?"✓":"⚠"} Lista ${fm(listaTot)} → compra ${fm(compraTot)}${romInsTotal()>0?` + insumos ${fm(romInsTotal())}`:""} = ${fm(compraTot+(romInsTotal()>0?romInsTotal():0))}`:"Sem valor de lista para conferir"}</span><span class="tt ${nal?"bad":"ok"}">${nal?`⚠ ${nal} com alerta`:"✓ sem alertas"}</span>${zeros.length?`<span class="tt bad">⚠ Confira a numeração: a última peça ${zeros.map(esc).join(", ")} está em 0 (é a primeira?)</span>`:""}
+  ov.innerHTML=`<div class="rev-c"><div class="rev-h"><b>Revisão final</b><span class="hint">confira antes de criar — nada foi gravado ainda. ${romInsTotal()>0?`Insumos do romaneio: R$ ${brl(romInsTotal())} rateados nas peças (soma aplicada: R$ ${brl(r2c(insRat))}; a diferença é arredondamento).`:"Frete e separação ficam fora do custo das peças."}</span><button type="button" class="btn ghost sm" data-act="rev-fechar" style="margin-left:auto">Voltar e corrigir ✕</button></div>
+    <div class="rev-s"><span class="tt"><b>${cr.length}</b> peças</span><span class="tt"><b>${nl}</b> linhas</span><span class="tt"><b>${un}</b> unidades</span><span class="tt">Custo <b>${fm(cus)}</b></span><span class="tt tot-v">Varejo definido <b>${fm(vr)}</b></span><span class="tt ${listaTot>0?(confOk?"ok":"bad"):""}" title="Valor da lista do fornecedor × compra que será criada (mais os insumos do romaneio, se houver)">${listaTot>0?`${confOk?"✓":"⚠"} Lista ${fm(listaTot)} → compra ${fm(compraTot)}${romInsTotal()>0?` + insumos aplicados ${fm(r2c(insRat))}`:""} = ${fm(compraTot+r2c(insRat))}`:"Sem valor de lista para conferir"}</span><span class="tt ${nal?"bad":"ok"}">${nal?`⚠ ${nal} com alerta`:"✓ sem alertas"}</span>${zeros.length?`<span class="tt bad">⚠ Confira a numeração: a última peça ${zeros.map(esc).join(", ")} está em 0 (é a primeira?)</span>`:""}
       <label class="vchk"><input type="checkbox" data-act="rev-filtro"> mostrar só com alerta</label></div>
     <div class="rev-t"><table class="cfg"><thead><tr><th></th><th>Vai receber</th><th>Descrição</th><th>Categoria</th><th>Un.</th><th>Custo</th><th>Varejo</th><th>Alertas</th></tr></thead><tbody>
     ${it.map(x=>`<tr class="${x.al.length?"al":""}${x.cria?"":" nc"}" data-i="${x.i}"><td>${x.r.foto?`<img class="rc-ft sm" src="${fs(x.r.foto)}" alt="">`:""}</td>
@@ -3870,7 +3970,7 @@ function romRevisar(){const pv=romPreview(),it=[];
       <td>${esc(x.r.cat)}${x.r.sub?" › "+esc(x.r.sub):""}</td><td class="n">${x.p?x.p.rows.reduce((t,y)=>t+y.q,0):0}</td>
       <td class="n">${esc(x.r.custo||"—")}</td><td class="n">${x.p?x.p.rows.map(y=>y.sugerido?(y.v==null?"A definir":"Sugestão "+brl(y.v)):y.v==null?"A definir":brl(y.v)).join(" / "):"—"}</td><td class="al-t">${x.al.map(esc).join(" · ")}</td></tr>`).join("")}
     </tbody></table></div>
-    <div class="rev-f">${bloqueiaLote?`<span class="hint">⚠ Há item de lote com divisão diferente de 1 unidade: será criado com as quantidades distribuídas (alerta, não bloqueio).</span>`:""}<button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length?"":"disabled"}>${nal||bloqueiaLote?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
+    <div class="rev-f">${bloqueiaFormula?`<span class="hint">⚠ O custo de insumos contém uma fórmula ou valor inválido. Para ratear, informe um valor numérico; a fórmula não foi alterada.</span>`:""}${bloqueiaFora?`<span class="hint">⚠ Frete e separação ficam fora do custo das peças. Retire esses itens dos insumos antes de criar.</span>`:""}${bloqueiaBase?`<span class="hint">⚠ Informe valores válidos para a base do rateio de insumos antes de criar.</span>`:""}${bloqueiaIns&&!bloqueiaBase?`<span class="hint">O rateio foi arredondado por unidade: o valor aplicado é R$ ${brl(Math.abs(difIns))} ${difIns>0?"menor":"maior"} que o total informado. Você pode criar assim.</span>`:""}${bloqueiaLote?`<span class="hint">⚠ Corrija a quantidade dos itens de lote ou desmarque-os antes de criar.</span>`:""}${insPend.length?`<span class="hint">⚠ Não foi possível confirmar o rateio de ${insPend.length} item(ns) já lançado(s), ou o valor mudou. Restaure a tabela salva e confira; se necessário, refaça os itens.</span>`:""}<button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length&&!bloqueiaLote&&!bloqueiaBase&&!bloqueiaFora&&!bloqueiaFormula&&!insPend.length?"":"disabled"}>${nal||bloqueiaLote?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
   document.body.appendChild(ov)}
 const romFq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
 function romCardHTML(r,i){if(r.lote)return romLoteHTML(r,i);const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
@@ -4156,8 +4256,11 @@ function romFotoRemover(i){
 
 /* ---------- insumos próprios do romaneio ---------- */
 const romInsItens=()=>ROM&&ROM.ins&&Array.isArray(ROM.ins.itens)?ROM.ins.itens:[];
+/* Mantém dados antigos intactos, mas impede lançar frete/separação como insumo. */
+const romInsFora=x=>/^(?:(?:valor|custo|taxa|despesa|servico|preco)\s+(?:(?:de|da|do|com)\s+)?)?(?:fretes?|separacao|separacoes)(?:\b|$)/.test(String(x&&x.nome||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase());
+const romInsProibidos=()=>romInsItens().filter(romInsFora);
 const romInsBase=()=>ROM&&ROM.ins&&["un","custo","peso"].includes(ROM.ins.base)?ROM.ins.base:"un";
-const romInsTotal=()=>r2c(romInsItens().reduce((t,x)=>t+(num(x.valor)||0),0));
+const romInsTotal=()=>r2c(romInsItens().filter(x=>!romInsFora(x)).reduce((t,x)=>t+(num(x.valor)||0),0));
 /* peças que dividem o total: as que serão criadas (ou já foram) e têm quantidade */
 function romInsCtx(){
   const o={un:0,custo:0,peso:0};
@@ -4170,8 +4273,47 @@ function romInsRateio(r,ctx){
   if(b==="un")return c.un>0?r2c(T/c.un):0;
   if(b==="custo")return c.custo>0&&num(r.custo)!=null?r2c(T*(num(r.custo)||0)/c.custo):0;
   return c.peso>0&&num(r.peso)!=null?r2c(T*(num(r.peso)||0)/c.peso):0}
+/* Sem base não há rateio: não confundir ausência de dados com arredondamento. */
+function romInsSemBase(){if(!(romInsTotal()>0))return false;const c=romInsCtx(),b=romInsBase();return b==="custo"?!(c.custo>0):b==="peso"?!(c.peso>0):!(c.un>0)}
+/* Somar um rateio a uma fórmula exigiria preservá-la na linha e na edição.
+   Enquanto isso não for possível, não substitua silenciosamente por zero. */
+function romInsBasesInvalidas(){
+  if(!ROM||!S.form)return [];
+  const ctx=romInsCtx(),f=S.form;
+  return ROM.rows.filter(r=>{
+    if(r.skip||r.lote||!(romSomaDe(r,romColsR(r))>0)||!(romInsRateio(r,ctx)>0))return false;
+    const q=r.ex&&!vazio(r.ex.Q)?r.ex.Q:!vazio(f.v.Q)?f.v.Q:padraoDe(r.cat||f.v.I,"Q");
+    return !vazio(q)&&num(q)==null
+  })
+}
+/* Não aplique um rateio que altera o valor total por arredondamento unitário. */
+function romInsDiferenca(){
+  const total=romInsTotal(),ctx=romInsCtx();if(!(total>0)||!(ctx.un>0))return 0;
+  const aplicado=ROM.rows.reduce((a,r)=>{if(r.lote||(r.skip&&!r.feito))return a;const q=romSomaDe(r,romColsR(r));return a+(q>0?q*romInsRateio(r,ctx):0)},0);
+  return r2c(total-r2c(aplicado))}
+/* Antes de criar parte do romaneio, as peças já lançadas devem conservar a mesma parcela calculada.
+   Se o rateio mudou, peça confirmação pela edição de todas elas, sem sobrescrever edições silenciosamente. */
+function romInsDesatualizados(arquivadas){
+  if(!ROM)return [];const ctx=romInsCtx(),pend=[];
+  ROM.rows.forEach(r=>{if(r.lote||!r.feito||!r.skip||r.refaz)return;
+    const ids=r.lancIds||[],esperado=romInsRateio(r,ctx),pecas=ids.flatMap(id=>{const atual=S.lanc.find(l=>l.id===id);return atual?[atual]:(arquivadas&&arquivadas.get(id))||[null]});
+    if(!ids.length||pecas.some(l=>!l)){pend.push(r);return}
+    if(pecas.some(l=>Math.round((num(l.insRom&&l.insRom.ins)||0)*100)!==Math.round(esperado*100)))pend.push(r);
+  });return pend}
+/* Lê os lançamentos de tabelas salvas antes da revisão e novamente antes de criar.
+   Leitura ausente ou falha é desconhecida, nunca tratada como custo zero. */
+async function romInsConferirArquivos(){
+  const rom=ROM,ids=new Set((rom&&rom.rows||[]).filter(r=>!r.lote&&r.feito&&r.skip&&!r.refaz).flatMap(r=>(r.lancIds||[]).filter(id=>!S.lanc.some(l=>l.id===id))));
+  const achadas=new Map();if(ids.size){const tabs=TABS.filter(t=>(t.ids||[]).some(id=>ids.has(id)));
+    const recs=await Promise.all(tabs.map(t=>idbGet("tabs",t.id).catch(()=>null)));
+    recs.forEach((rec,i)=>{const add=(id,l)=>{if(!achadas.has(id))achadas.set(id,[]);achadas.get(id).push(l)};
+      if(!rec||!Array.isArray(rec.lanc)){(tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>add(id,null));return}
+      (tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>{const l=rec.lanc.find(x=>x&&x.id===id);add(id,l||null)})})}
+  return ROM===rom?romInsDesatualizados(achadas):null}
+const romInsAssinatura=()=>JSON.stringify([ROM,S.lanc,S.form,cfg(),TABS]);
 function romInsResumoTxt(){
   const it=romInsItens(),T=romInsTotal(),c=romInsCtx(),b=romInsBase();
+  if(romInsProibidos().length)return "Frete e separação ficam fora do custo das peças. Retire esses itens dos insumos antes de criar; os dados antigos não foram apagados.";
   if(!it.length)return "Nenhum insumo próprio neste romaneio. Os insumos de cada categoria (Cadastros) continuam valendo normalmente.";
   if(!(T>0))return "Informe o valor de cada insumo.";
   if(!(c.un>0))return `Total R$ ${brl(T)}. Ainda não há peças com quantidade para receber o rateio.`;
@@ -4179,16 +4321,16 @@ function romInsResumoTxt(){
   return `Total R$ ${brl(T)} dividido entre ${fmt(c.un)} unidade(s) — ${base}. Entra no custo de Insumos de cada peça, somado ao padrão da categoria; os centavos são arredondados por peça.`}
 function romInsHTML(){
   const it=romInsItens(),b=romInsBase();
-  return `<details class="gdet rom-ins" data-open="rins" ${abertos.rins||it.length||romInsSugestoes().length?"open":""}><summary><b>Insumos deste romaneio</b><span>${it.length?`${it.length} item(ns) · R$ ${brl(romInsTotal())} rateados nas peças`:(romInsSugestoes().length?"⚠ o romaneio traz frete/separação que ainda não entra no custo":"embalagem, etiquetas, frete próprio… divididos entre as peças criadas")}</span></summary><div class="gb">
+  return `<details class="gdet rom-ins" data-open="rins" ${abertos.rins||it.length||romInsSugestoes().length?"open":""}><summary><b>Insumos deste romaneio</b><span>${it.length?`${it.length} item(ns) · R$ ${brl(romInsTotal())} rateados nas peças`:(romInsSugestoes().length?"⚠ o romaneio traz frete/separação fora do custo":"embalagem e etiquetas divididas entre as peças criadas")}</span></summary><div class="gb">
     <p class="hint">Use para gastos que valem para este romaneio inteiro. O total é dividido entre as peças que serão criadas e entra no custo de Insumos de cada uma (somado ao padrão da categoria). Dá para conferir a conta na célula de Insumos da tabela.</p>
     ${it.length?`<div class="tw"><table class="cfg"><thead><tr><th>Insumo</th><th class="n">Valor total (R$)</th><th></th></tr></thead><tbody>${it.map((x,i)=>`<tr><td><input data-rp="rins" data-k="nome" data-i="${i}" value="${esc(x.nome||"")}" maxlength="80" placeholder="ex.: caixas, etiquetas" aria-label="Nome do insumo ${i+1}"></td><td style="width:150px"><input class="n" data-rp="rins" data-k="valor" data-i="${i}" value="${esc(x.valor||"")}" inputmode="decimal" aria-label="Valor total do insumo ${i+1}"></td><td style="width:36px"><button type="button" class="x" data-act="rins-del" data-i="${i}" aria-label="Excluir o insumo ${i+1}">×</button></td></tr>`).join("")}</tbody></table></div>`:""}
-    ${romInsSugestoes().map((x,i)=>`<div class="rins-sug" role="note"><span>O romaneio traz <b>${esc(x.nome)}: R$ ${esc(x.valor)}</b> — hoje isso não entra no custo das peças.</span><button type="button" class="btn sm pri" data-act="rins-sug" data-k="${esc(x.nome)}">Ratear nas peças</button></div>`).join("")}
+    ${romInsSugestoes().map(x=>`<div class="rins-sug" role="note">O romaneio traz <b>${esc(x.nome)}: R$ ${esc(x.valor)}</b> — esse valor fica fora do custo das peças.</div>`).join("")}
     <div class="row"><button type="button" class="btn sm" data-act="rins-add">＋ Insumo do romaneio</button>${it.length?`<label class="fq"><span>Como dividir</span><select data-rp="rins" data-k="base" aria-label="Como dividir os insumos do romaneio"><option value="un" ${b==="un"?"selected":""}>Igual por unidade</option><option value="custo" ${b==="custo"?"selected":""}>Proporcional à compra</option><option value="peso" ${b==="peso"?"selected":""}>Proporcional ao peso</option></select></label>`:""}</div>
     <div class="rins-res" id="rinsRes" role="status">${esc(romInsResumoTxt())}</div></div></details>`}
-/* frete e custo de separação que aparecem no texto do romaneio viram sugestão de insumo (um clique para aceitar) */
+/* Frete e separação do documento são informativos, sem rateio. */
 function romInsSugestoes(){
   if(!ROM||!ROM.texto)return [];const tx=String(ROM.texto),out=[],ja=romInsItens().map(x=>String(x.nome||"").toLowerCase());
-  [["Custo de separação",/custo\s+separa[cç][aã]o\s*:?\s*R\$\s*([\d.]+,\d{2})/i],["Frete",/frete\s*:?\s*R\$\s*([\d.]+,\d{2})/i]].forEach(([nome,re])=>{
+  [["Custo de separação",/custo\s+separa[cç][aã]o\s*:?\s*R\$\s*([\d.]+,\d{2})/i],["Frete",/\bfrete\s*:?\s*R\$\s*([\d.]+,\d{2})/i]].forEach(([nome,re])=>{
     const m=re.exec(tx);if(!m)return;const v=num(m[1]);if(!(v>0)||ja.includes(nome.toLowerCase()))return;out.push({nome,valor:m[1]})});
   return out}
 function romInsCampo(t,fin){
@@ -4276,17 +4418,17 @@ function romPassosEstado(){
   const rs=ROM.rows.filter(r=>!r.lote),at=ROM.rows.filter(r=>!r.skip&&!r.lote);
   const sp=at.filter(r=>num(r.peso)==null).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=0,
     tam=at.filter(r=>{const g=gradeDaCat(r.cat,r.sub);return g&&!r.semG&&!(r.gsel||[]).length&&!Array.isArray(r.conjComp)}).length,
-    lotes=ROM.rows.filter(r=>r.lote&&!r.semPeso).length,pend=sp+dv+tam;
+    lotes=ROM.rows.filter(r=>r.lote&&romLoteResumo(r).cls!=="ok").length,pend=sp+dv+tam+lotes;
   return {n:rs.length,pend,sp,dv,tam,lotes,conf:ROM.conf||"",pronto:rs.length>0&&pend===0}}
 function romPassosHTML(){
   if(!ROM||!ROM.rows.length)return "";
-  const e=romPassosEstado(),ok=!/⚠/.test(e.conf);
+  const e=romPassosEstado(),ok=/✓/.test(e.conf)&&!/⚠/.test(e.conf);
   const p=(n,txt,estado,tit)=>`<li class="${estado}"><button type="button" data-act="rom-passo" data-p="${n}" title="${esc(tit)}"><b>${estado==="ok"?"✓":n}</b> ${txt}</button></li>`;
-  return `<ol class="rom-passos" id="romPassos" aria-label="Passos do romaneio">${p(1,`Importar <small>${e.n} peça(s)</small>`,"ok","Voltar ao topo para importar de novo")}${p(2,`Pesos e divisão <small>${e.pend?e.pend+" pendente(s)":"tudo certo"}</small>`,e.pend?"pend":"ok","Ir para a próxima pendência")}${p(3,`Conferir <small>${ok?"lista confere":"há diferença"}</small>`,ok?"ok":"pend","Ver a conferência com a lista do fornecedor")}${p(4,"Criar peças",e.pronto?"ok":"off","Ir para o botão Criar")}</ol>`}
+  return `<ol class="rom-passos" id="romPassos" aria-label="Passos do romaneio">${p(1,`Importar <small>${e.n} peça(s)</small>`,"ok","Voltar ao topo para importar de novo")}${p(2,`Pesos e divisão <small>${e.pend?e.pend+" pendente(s)":"tudo certo"}</small>`,e.pend?"pend":"ok","Ir para a próxima pendência")}${p(3,`Conferir <small>${ok?"lista confere":e.conf?"há diferença":"ainda não conferida"}</small>`,ok?"ok":"pend","Ver a conferência com a lista do fornecedor")}${p(4,"Criar peças",e.pronto?"":"off","Ir para o botão Criar")}</ol>`}
 function romPassosAtual(){const el=document.getElementById("romPassos");if(!el||!ROM)return;const t=document.createElement("div");t.innerHTML=romPassosHTML();const n=t.firstElementChild;if(n)el.replaceWith(n)}
 function romPassoIr(p){
   if(p===1){const b=document.getElementById("impBar");if(b)b.scrollIntoView({block:"start",behavior:"smooth"});return}
-  if(p===2){const bt=document.querySelector('#romWrap [data-act="rom-pend"]');if(bt)bt.click();return}
+  if(p===2){const lote=ROM.rows.findIndex(r=>r.lote&&romLoteResumo(r).cls!=="ok");if(lote>=0){const el=document.querySelector(`#romWrap .rc[data-i="${lote}"]`);if(el){el.scrollIntoView({block:"center",behavior:"smooth"});const b=el.querySelector('[data-act="lote-add"]');if(b)b.focus({preventScroll:true});return}}const bt=document.querySelector('#romWrap [data-act="rom-pend"]');if(bt)bt.click();return}
   if(p===3){const c=document.getElementById("romChk");if(c)c.scrollIntoView({block:"center",behavior:"smooth"});return}
   const b=document.getElementById("romCriar");if(b){b.scrollIntoView({block:"center",behavior:"smooth"});b.focus({preventScroll:true})}}
 /* ===== diagnóstico dos dados guardados no navegador (peças, romaneios salvos, fotos) ===== */
@@ -4349,16 +4491,17 @@ function simuladorFator(){
   repModal(`<div class="rep-h"><div><b class="rep-t">Simular fator</b><div class="hint">Varejo = custo × fator. Escolha “Usar” para aplicar o fator na peça que está sendo lançada.</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div><div class="rep-b">${custos.map(tab).join("")}</div>`)}
 
 /* ===== aviso de impacto: quando um cadastro muda e as peças já criadas passam a custar outro valor ===== */
-let CUSTO_BASE=null,impT=null;
-function custoPorLanc(){const g=gerar(),m={};g.linhas.forEach(r=>{const q=num(r.v.W)||1;m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*q});return m}
-function impactoAgendar(){if(typeof restaurando!=="undefined"&&restaurando)return;clearTimeout(impT);impT=setTimeout(impactoConferir,1500)}
-function impactoConferir(){
-  let novo;try{novo=custoPorLanc()}catch(e){return}
-  if(!CUSTO_BASE){CUSTO_BASE=novo;return}
-  let n=0,a=0,b=0;Object.keys(novo).forEach(id=>{if(!(id in CUSTO_BASE))return;const x=CUSTO_BASE[id],y=novo[id];if(Math.abs(x-y)>=0.005){n++;a+=x;b+=y}});
-  CUSTO_BASE=novo;
+let impConfigAntes=null,impT=null;
+/* Compara a MESMA lista de peças com os cadastros anterior e atual. Uma edição de
+   peça ocorrida antes do cadastro não pode ser atribuída à alteração do cadastro. */
+function custoPorLanc(config,pecas){const anterior=S.config;try{S.config=config;const g=gerar(clone(pecas)),m={};g.linhas.forEach(r=>{const q=num(r.v.W);m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*(q==null?1:q)});return m}finally{S.config=anterior}}
+function impactoAgendar(){if(typeof restaurando!=="undefined"&&restaurando)return;
+  if(!impT){try{impConfigAntes=snapC?JSON.parse(snapC):null}catch(e){impConfigAntes=null}}
+  clearTimeout(impT);impT=setTimeout(impactoConferir,1500)}
+function impactoConferir(){const anterior=impConfigAntes;impConfigAntes=null;impT=null;if(!anterior)return;
+  let antes,depois;try{const pecas=clone(S.lanc);antes=custoPorLanc(anterior,pecas);depois=custoPorLanc(S.config,pecas)}catch(e){return}
+  let n=0,a=0,b=0;Object.keys(depois).forEach(id=>{if(!(id in antes))return;const x=antes[id],y=depois[id];if(Math.abs(x-y)>=0.005){n++;a+=x;b+=y}});
   if(n)toast(`Esta mudança alterou o custo de ${n} peça(s) já criadas: de R$ ${brl(r2c(a))} para R$ ${brl(r2c(b))} (${b>=a?"+":"−"}R$ ${brl(r2c(Math.abs(b-a)))}).`)}
-setTimeout(()=>{try{CUSTO_BASE=custoPorLanc()}catch(e){}},3000);
 
 /* ===== primeiros passos (instalação nova) ===== */
 function primeirosHtml(){
@@ -4535,8 +4678,15 @@ async function enviarFotos(soIds){if(fotosEnv)return;
   renderTopo();
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
-function romCriar(){const f=S.form;if(!romConjVerificar())return;if(editId){toast("Termine ou cancele a edição antes.");return}
+async function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a edição antes.");return}
   if(romConflito){toast("Outra aba alterou este romaneio. Use “Recarregar” ou “Manter esta aba” no aviso amarelo antes de criar as peças.");return}
+  if(ROM.rows.some(romLoteDistribuicaoInvalida)){toast("Corrija a quantidade dos itens de lote ou desmarque-os antes de criar.");return}
+  const antesConf=romInsAssinatura(),insPend=await romInsConferirArquivos();if(!insPend)return;if(antesConf!==romInsAssinatura()){toast("Os dados mudaram durante a conferência. Revise o romaneio novamente.");return}if(insPend.length){toast("O rateio mudou ou não foi possível conferir itens já lançados. Restaure a tabela salva e confira esses itens antes de criar.");return}
+  if(romConflito||editId){toast("O estado mudou durante a conferência. Revise o romaneio novamente.");return}
+  if(romInsProibidos().length){toast("Frete e separação ficam fora do custo das peças. Retire esses itens dos insumos antes de criar.");return}
+  if(romInsSemBase()){toast("Informe valores válidos para a base do rateio de insumos antes de criar.");return}
+  if(romInsBasesInvalidas().length){toast("O custo de insumos contém fórmula ou valor inválido. Informe um valor numérico antes de ratear; a fórmula não foi alterada.");return}
+  if(!romConjVerificar())return;
   {const NL=String.fromCharCode(10),dif=[];ROM.rows.forEach(r=>{if(r.skip||!r.refaz||!(r.lancIds||[]).length)return;const o=S.lanc.find(l=>l.id===r.lancIds[0]);if(!o||!o.v)return;const ch=[],ne=(x,y)=>{const a=num(x),b=num(y);return a!=null&&b!=null?Math.abs(a-b)>1e-9:String(x==null?"":x).trim()!==String(y==null?"":y).trim()};
       if(ne(o.v.N,r.peso))ch.push("peso "+(o.v.N||"—")+" → "+(r.peso||"—"));if(ne(o.v.P,r.custo))ch.push("compra "+(o.v.P||"—")+" → "+(r.custo||"—"));if(ne(o.v.F,r.desc))ch.push("descrição");
       if(ch.length)dif.push((o.v.E||r.desc)+": "+ch.join(", "))});
@@ -4654,7 +4804,7 @@ function nfIniciar(nota){const forma={};nota.itens.forEach(i=>{if(i.cod){const s
     return {i,inc:true,cod:it.cod,desc:it.desc,cat:ct.cat,sub:ct.sub,qtd:it.qtd,vUn:it.vUn,vProd:it.vProd,vDesc:it.vDesc,ncm:it.ncm,cfop:it.cfop,un:it.un,gen,gmode:gen.length?"lote":"",gN:2,custoMan:""}});
   const ach=nfAcharForn(nota.emit);
   NF={nota,rows,liq:true,dup:null,dupOk:false,forn:ach.f?ach.f.nome:"__novo",fornPor:ach.por||"",novoNome:nfTitulo(nota.emit.nome)}}
-const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return r2c(((r.vProd||r.vUn*q)-r.vDesc)/q);return r.vUn};
+const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return ((r.vProd||r.vUn*q)-r.vDesc)/q;return r.vUn};
 /* quantidade positiva nunca some: 0,4 kg vira 1 unidade com o custo do total da nota */
 const nfQtdInt=q=>q>0?Math.max(1,Math.round(q)):0;
 async function nfBuscaDup(ch){if(!ch)return null;const ix=nfIdx()[ch];if(ix)return {em:ix.em,n:ix.n,numero:ix.numero};
@@ -4680,11 +4830,11 @@ async function nfRotear0(f){if(/xml/i.test(f.type+f.name))return nfAbrir(f);
   try{const its=await nfPdfItens(f);if(nfPareceDanfe(its))return nfAbrir(f,its)}catch(e){if(e&&e.lim){nfErro(e.message+". Divida o arquivo ou use o XML da nota.");return}}
   romPdf(f)}
 function nfLinhas(){const out=[],N=NF.nota;
-  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=nfQtdInt(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?r2c(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:String(r4(ci)).replace(".",","),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
+  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=nfQtdInt(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?r4(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:String(r4(ci)).replace(".",","),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
     if(!r.cat){base.catq=true;base.aviso="· categoria não reconhecida: confira"}
     if(r.gmode==="dividir"){const n=Math.max(2,Math.min(Math.round(Number(r.gN)||2),Math.max(2,nfQtdInt(q))));let resto=nfQtdInt(q)%n;const b=Math.floor(nfQtdInt(q)/n);
       for(let k=0;k<n;k++){const qq=b+(resto-->0?1:0);if(qq>0)out.push({...base,desc:`${r.desc} (${k+1}/${n})`,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||"· lote dividido: confira cada peça"})}}
-    else{const qq=nfQtdInt(q);if(qq>0)out.push({...base,desc:r.desc,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||(r.gmode==="lote"?"· lote misto lançado como 1 peça":(qq!==q?"· quantidade quebrada: arredondei e ajustei o custo de cada para manter o total da nota":""))})}});
+    else{const qq=nfQtdInt(q);if(qq>0)out.push({...base,desc:r.desc,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||(r.gmode==="lote"?"· lote misto lançado como 1 peça":(qq!==q?"· quantidade quebrada: ajustada e custo calculado com até quatro casas; confira o total antes de criar":""))})}});
   return out}
 function nfCalc(){const N=NF.nota,t=N.totais,sP=nfR2(N.itens.reduce((a,i)=>a+i.vProd,0)),sD=nfR2(N.itens.reduce((a,i)=>a+i.vDesc,0)),lin=nfLinhas(),un=lin.reduce((a,l)=>a+l.qtd,0),custo=nfR2(lin.reduce((a,l)=>a+(num(l.custo)||0)*l.qtd,0));
   const esperado=nfR2(t.prod-t.desc+t.extra);return {sP,sD,lin,un,custo,esperado,okProd:t.prod>0&&Math.abs(sP-t.prod)<0.05,okDesc:Math.abs(sD-t.desc)<0.05,okNota:t.nota>0&&Math.abs(esperado-t.nota)<0.05}}
@@ -4696,7 +4846,7 @@ function nfResumo(){const el=document.getElementById("nfSum");if(!el||!NF)return
   const b=document.getElementById("nfGo");if(b){b.textContent=c.lin.length?`Importar ${c.lin.length} peça${c.lin.length===1?"":"s"} para o romaneio`:"Nada para importar";b.disabled=!c.lin.length||!!(NF.dup&&!NF.dupOk);const ni=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r))).length;let av=document.getElementById("nfAvCusto");if(ni){if(!av&&b&&b.parentElement){av=document.createElement("div");av.id="nfAvCusto";av.setAttribute("role","alert");av.style.cssText="color:#7a1c12;background:#fdecea;border:1px solid #c0392b;border-radius:8px;padding:6px 10px;margin-right:auto;font-size:13px";b.parentElement.insertBefore(av,b.parentElement.firstChild)}if(av)av.textContent=ni+" item(ns) marcado(s) com custo ausente ou inválido: pode estar defeito da nota. Corrija o custo ou, ao importar, escolha seguir com os dados como foram lidos."}else if(av)av.remove()}}
 function nfRowHTML(r){const C=cfg(),cc=catBy(r.cat),ci=nfCusto(r),dec=r.vUn&&r.vDesc?Math.round(r.vDesc/(r.vProd||1)*100):0,av=[];
   if(!r.cat)av.push("categoria não reconhecida: escolha uma");
-  if(Number(r.qtd)%1)av.push("quantidade quebrada: vai ser arredondada para "+nfQtdInt(Number(r.qtd))+" e o custo de cada será ajustado para o total da nota não mudar");
+  if(Number(r.qtd)%1)av.push("quantidade quebrada: vai ser arredondada para "+nfQtdInt(Number(r.qtd))+"; o custo será ajustado com até quatro casas e o total precisa ser conferido");
   if(!(Number(r.qtd)>0))av.push("sem quantidade");
   const gen=r.gen.length?`<div class="nf-gen"><span class="nf-av">⚠ Atenção neste item: ${esc(r.gen.join("; "))}</span><label>O que fazer <select data-nf="gmode"><option value="lote"${r.gmode==="lote"?" selected":""}>Lançar como 1 peça (lote)</option><option value="dividir"${r.gmode==="dividir"?" selected":""}>Dividir em várias peças</option><option value="ignorar"${r.gmode==="ignorar"?" selected":""}>Ignorar este item</option></select></label>${r.gmode==="dividir"?`<label>Quantas peças <input class="n" data-nf="gN" value="${esc(r.gN)}" inputmode="numeric" style="width:60px"></label>`:""}</div>`:"";
   return `<div class="nf-r${r.inc&&r.gmode!=="ignorar"?"":" off"}" data-i="${r.i}">
@@ -4735,6 +4885,9 @@ function nfConfirmar(){if(!NF)return;const N=NF.nota;
   if(NF.dup&&!NF.dupOk){toast("Esta nota já foi importada. Marque “Importar de novo mesmo assim” se quiser repetir.");return}
   {const ni=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r))).length;if(ni&&!confirm(ni+" item(ns) da nota estão com custo ausente ou inválido (a nota pode estar com defeito).\n\nOK = importar com os dados como foram lidos (esses itens ficam com custo R$ 0,00 para você corrigir depois)\nCancelar = voltar e corrigir o custo ou desmarcar o item"))return}
   const lin=nfLinhas();if(!lin.length){toast("Nenhum item marcado para importar.");return}
+  {const original=nfR2(NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar").reduce((t,r)=>t+(nfCusto(r)||0)*(Number(r.qtd)||0),0)),calculado=nfR2(lin.reduce((t,r)=>t+(num(r.custo)||0)*r.qtd,0));if(original!==calculado&&!confirm(`A conversão de quantidade e custo altera o total dos itens de R$ ${brl(original)} para R$ ${brl(calculado)} (diferença de R$ ${brl(Math.abs(original-calculado))}). Confira e ajuste os itens.
+
+OK = importar com essa diferença; Cancelar = voltar e corrigir.`))return}
   if(((ROM&&ROM.rows&&ROM.rows.some(r=>!r.skip))||romTem)&&!confirm("Já existe um romaneio aberto ou guardado. Importar a nota vai trocar a lista dele. Continuar?"))return;
   const C=cfg();let nome=NF.forn;
   if(nome==="__novo"){nome=(NF.novoNome||"").trim()||("Fornecedor da nota "+N.numero);if(!fornBy(nome))C.fornecedores.push({nome,desconto:"0",tipo:"pronta",banhista:"",codigo:"",cnpj:N.emit.cnpj});else{const f0=fornBy(nome);if(!f0.cnpj&&N.emit.cnpj)f0.cnpj=N.emit.cnpj}salvar(true,false)}
@@ -4746,9 +4899,9 @@ function nfConfirmar(){if(!NF)return;const N=NF.nota;
   ROM.msg=`${lin.length} peça${lin.length===1?"":"s"} importada${lin.length===1?"":"s"} da nota ${N.numero}. Falta informar o peso (e os banhos).`;
   nfFechar();romSalvarSoon();renderRom();const w=document.getElementById("romWrap");if(w)rolarPane(w);toast(ROM.msg)}
 /* a chave da nota fica guardada junto das peças criadas (e num índice), para avisar se a mesma nota for importada outra vez */
-{const romCriarBase=romCriar;romCriar=function(){const r0=ROM&&ROM.rows.find(r=>r.nfChave&&!r.skip),m=r0&&{chave:r0.nfChave,numero:r0.nfNum,forn:r0.nfForn},antes=new Set(S.lanc.map(l=>l.id));
-  romCriarBase.apply(this,arguments);
-  if(m){const nv=S.lanc.filter(l=>!antes.has(l.id));if(nv.length){nv.forEach(l=>{l.nfChave=m.chave;l.nfNum=m.numero});nfIdxSet(m.chave,{em:Date.now(),n:nv.length,numero:m.numero,forn:m.forn});salvar(false)}}}}
+{const romCriarBase=romCriar;let ocupado=false;romCriar=async function(){if(ocupado){toast("Aguarde a conferência e criação em andamento.");return}ocupado=true;try{const r0=ROM&&ROM.rows.find(r=>r.nfChave&&!r.skip),m=r0&&{chave:r0.nfChave,numero:r0.nfNum,forn:r0.nfForn},antes=new Set(S.lanc.map(l=>l.id));
+  await romCriarBase.apply(this,arguments);
+  if(m){const nv=S.lanc.filter(l=>!antes.has(l.id));if(nv.length){nv.forEach(l=>{l.nfChave=m.chave;l.nfNum=m.numero});nfIdxSet(m.chave,{em:Date.now(),n:nv.length,numero:m.numero,forn:m.forn});salvar(false)}}}catch(e){console.error(e);toast("Não foi possível concluir a criação. Confira a tabela antes de tentar novamente.")}finally{ocupado=false}}}
 document.addEventListener("change",e=>{const t=e.target;if(!t)return;
   if(t.id==="nfFile"){const f=t.files&&t.files[0];t.value="";if(f)nfAbrir(f);return}
   if(!NF||!t.closest||!t.closest("#nfRev")||!t.dataset.nf)return;const k=t.dataset.nf,row=t.closest("[data-i]"),r=row?NF.rows[+row.dataset.i]:null;
@@ -4793,7 +4946,7 @@ window.__nf={parsePdf:nfPdfParse,lerXml:nfLerXml,pdfItens:nfPdfItens,cat:nfCatDe
 let REL=null,relTem=false;
 function relGerar(feitas,ign,meta,romId){
   const itens=feitas.map(({r,id})=>{let custo=0,vr=0,un=0;
-    const linhas=G.linhas.map((x,ri)=>({x,ri})).filter(o=>o.x.lancId===id).map(({x,ri})=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:null},q=num(x.v.W)||0,cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0);
+    const linhas=G.linhas.map((x,ri)=>({x,ri})).filter(o=>o.x.lancId===id).map(({x,ri})=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:null},q=num(x.v.W)||0,cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0);
       custo+=cu*q;vr+=(n("V")||0)*q;un+=q;return {ref:x.v.E,q,cor:x.v.L||"",cu,v:n("V")}});
     return {cod:r.cod,desc:r.desc,cat:r.cat,sub:r.sub||"",peso:r.peso,compra:r.custo,linhas,un,custo,vr,foto:r.foto||null}});
   REL={em:Date.now(),meta,itens,ign,romId:romId||"",lids:feitas.map(x=>x.id)};try{backupLembrarPosCriar()}catch(e){}
@@ -4826,7 +4979,7 @@ function relAbrir(){const R=relLer();if(!R){toast("Ainda não há relatório (ou
   document.querySelectorAll(".rep").forEach(x=>x.remove());
   const ov=document.createElement("div");ov.className="rep";
   ov.innerHTML=`<div class="rep-c"><div class="rep-h"><div><b class="rep-t">Relatório do romaneio lançado</b><div class="hint">${esc(m.forn||"—")}${m.banhista?" · galvânica "+esc(m.banhista):""}${m.obs?" · "+esc(m.obs):""} · ${esc(new Date(R.em).toLocaleString("pt-BR"))}</div></div>
-    <div class="rep-ac noprint">${(R.lids||[]).length?`<button type="button" class="btn sm" data-act="rel-xlsx" title="Baixa um .xlsx só com as peças criadas agora">Baixar .xlsx desta criação</button>`:""}${R.romId?`<button type="button" class="btn sm" data-act="rom-salvo-abrir" data-id="${esc(R.romId)}">Abrir este romaneio</button>`:""}<button type="button" class="btn sm" data-act="rom-lista">Romaneios salvos</button><button type="button" class="btn sm" data-act="rel-print">🖨 Imprimir / PDF</button><button type="button" class="btn sm" data-act="rel-copy">Copiar resumo</button><button type="button" class="btn sm" data-act="rel-csv">Baixar .csv</button>${undo&&undo.tipo==="dup"&&R===REL?`<button type="button" class="btn sm danger" data-act="rel-undo">Desfazer criação</button>`:""}<button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div>
+    <div class="rep-ac noprint"><span class="hint" role="status">Guarde um backup completo após conferir este romaneio.</span><button type="button" class="btn sm" data-act="backup-total">Baixar backup completo</button>${(R.lids||[]).length?`<button type="button" class="btn sm" data-act="rel-xlsx" title="Baixa um .xlsx só com as peças criadas agora">Baixar .xlsx desta criação</button>`:""}${R.romId?`<button type="button" class="btn sm" data-act="rom-salvo-abrir" data-id="${esc(R.romId)}">Abrir este romaneio</button>`:""}<button type="button" class="btn sm" data-act="rom-lista">Romaneios salvos</button><button type="button" class="btn sm" data-act="rel-print">🖨 Imprimir / PDF</button><button type="button" class="btn sm" data-act="rel-copy">Copiar resumo</button><button type="button" class="btn sm" data-act="rel-csv">Baixar .csv</button>${undo&&undo.tipo==="dup"&&R===REL?`<button type="button" class="btn sm danger" data-act="rel-undo">Desfazer criação</button>`:""}<button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div>
     <div class="rep-k"><div class="kpi"><b>${R.itens.length}</b><span>peças</span></div><div class="kpi"><b>${tot.l}</b><span>linhas</span></div><div class="kpi ${ok?"ok":"bad"}"><b>${tot.un}<small> / ${Number(m.naLista)||0}</small></b><span>unidades lançadas / lista</span></div><div class="kpi"><b>${fm(tot.cu)}</b><span>custo total</span></div><div class="kpi"><b>${fm(tot.vr)}</b><span>varejo total</span></div>${tot.vr&&R.itens.every(i=>i.vr>0)?`<div class="kpi"><b>${fmt(Math.round((tot.vr-tot.cu)/tot.vr*1000)/10)}%</b><span>lucro</span></div>`:""}</div>
     <div class="rep-cf ${(/⚠/.test(m.conf)||!ok||R.ign.length)?"bad":"ok"}">${ok?(R.ign.length?"✓ Todas as unidades das peças marcadas foram lançadas · ⚠ "+R.ign.length+" peça"+(R.ign.length===1?"":"s")+" da lista ficaram de fora (veja “Não lançadas”)":"✓ Todas as unidades da lista foram lançadas"):"⚠ Faltaram "+((Number(m.naLista)||0)-tot.un)+" unidades da lista"}${m.conf?" · Conferência da lista: "+esc(m.conf):""}</div>
     <div class="rep-rf"><span class="hint">Referências criadas</span>${relFaixas(R).map(x=>`<span class="rch"><b>${esc(x)}</b></span>`).join("")||"—"}<span class="hint noprint">Ao baixar a planilha, o sistema pergunta se grava a última peça de cada tipo.</span></div>
@@ -5072,7 +5225,7 @@ function adicionar(limpar,quiet){
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
   {const gr=gradeBy(f.grade);if(gr&&!f.semGrade&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
   if(!vazio(f.v.E))f.v.E=String(f.v.E).replace(/\s+/g,"").toUpperCase();Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object"&&!vazio(o.E))o.E=String(o.E).replace(/\s+/g,"").toUpperCase()});
-  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=r2c(n).toFixed(2).replace(".",",")});const p=o.N;if(!vazio(p)&&String(p).trim()[0]!=="="){const n=num(p);if(n!=null)o.N=String(Math.round(n*1000)/1000).replace(".",",")}};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
+  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=(L==="P"&&f.compra4?String(Math.round(n*10000)/10000):r2c(n).toFixed(2)).replace(".",",")});const p=o.N;if(!vazio(p)&&String(p).trim()[0]!=="="){const n=num(p);if(n!=null)o.N=String(Math.round(n*1000)/1000).replace(".",",")}};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
   const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);if(ant&&ant.rf&&prefDe(val(novo,"I")||"",val(novo,"J"))!==prefDe(val(ant,"I")||"",val(ant,"J"))){delete novo.v.E;delete novo.rf}novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
   if(!novo.conj){delete novo.comp;delete novo.fConj}
@@ -5089,7 +5242,11 @@ function adicionar(limpar,quiet){
     /* criar em lote: N peças separadas, cada uma numerada i/N (1 = desligado) */
     {const N=!quiet?Math.max(1,Math.min(200,Math.trunc(num(f.loteN)||1))):1;if(N>1){const lid=uid();novo.lote={id:lid,i:1,n:N};for(let k=2;k<=N;k++){const c=clone(novo);c.id=uid();c.lote={id:lid,i:k,n:N};if(c.v)delete c.v.E;S.lanc.push(c)}f.loteN=""}else if(!quiet)delete novo.lote}
     undo={tipo:"add",id:novo.id,form:clone(f)};
-    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
+    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();else if(!quiet){/* Evita reutilizar medidas e compra em nova peça, salvo preferência explícita em Colunas. */
+      ["N","P","W"].forEach(L=>{if(!(cfg().colcfg[L]||{}).manter){delete f.v[L];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o[L]})}});
+      if(!(cfg().colcfg.P||{}).manter)delete f._pAuto;
+      if(f.conj&&!(cfg().colcfg.N||{}).manter&&!(cfg().colcfg.P||{}).manter){f.comp=[novaComp(),novaComp()];conjSync(f)}
+    }if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
   salvar(false);if(quiet)return true;renderForm();try{primeirosAtualizar()}catch(x){}
   mostrarNoFim(novo.id);
   focarPrimeiro();return true;
@@ -5101,7 +5258,7 @@ function mostrarNoFim(id){if(JAN&&G){let li=-1;G.linhas.forEach((r,i)=>{if(r.lan
   if(a.bottom>b.bottom-folga)sh.scrollTop+=a.bottom-(b.bottom-folga);else if(a.top<b.top+34)sh.scrollTop-=(b.top+34)-a.top;
   trs.forEach(t=>{t.classList.add("flash");setTimeout(()=>t.classList.remove("flash"),1600)})}
 /* desfazer/refazer em vários níveis (até 30): restaura peças e cadastros guardados em histNota() */
-function desfazer(refazer){try{desfazer0(refazer)}finally{undoBtns()}}
+function desfazer(refazer){try{return desfazer0(refazer)}finally{undoBtns()}}
 function desfazer0(refazer){
   const pilha=refazer===true?REDO:HIST,outra=refazer===true?HIST:REDO;
   if(!pilha.length){toast(refazer===true?"Nada para refazer.":"Nada para desfazer.");return}
@@ -5124,7 +5281,7 @@ function desfazer0(refazer){
   }finally{restaurando=false}
   salvar(true);render();
   if(eidAntes&&editId===eidAntes&&S.lanc.some(l=>l.id===eidAntes)){const rs=rascunho;editId=null;if(rs){S.form=rs;rascunho=null}editar(eidAntes)}
-  toast(refazer===true?"Refeito.":"Desfeito.",refazer===true?null:(REDO.length?{t:"Refazer",fn:()=>desfazer(true)}:null));
+  toast(refazer===true?"Refeito.":"Desfeito.",refazer===true?null:(REDO.length?{t:"Refazer",fn:()=>desfazer(true)}:null));return true;
 }
 /* valores digitados direto na tabela (ov) voltam para os campos do formulário, para poder editá-los ali */
 function dobrarOv(f,id){const ov=f.ov||{};
@@ -5223,7 +5380,7 @@ function mostrarConferencia(p,podeSeguir){expUlt={p,podeSeguir};const LIM=300,mo
   ${p.ger.length?`<div class="rep-rf"><b>Pendências da tabela (${p.ger.length})</b> <button type="button" class="btn ghost sm" data-act="exp-agrupar">${expAgrupa?"Ver peça por peça":"Agrupar por tipo"}</button></div><div class="rep-tb"><table><tbody>${expAgrupa?pendGrupos(p.ger):p.ger.slice(0,LIM).map(s=>{const m=s.match(/^Linha \d+ \(([^)]+)\)/);return `<tr><td>${esc(s)} ${m?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(m[1])}">Ir à peça</button>`:""}</td></tr>`}).join("")}</tbody></table></div>`:""}
   ${p.mod.length?`<div class="rep-rf"><b>Regras do modelo (${p.mod.length})</b></div><div class="rep-tb"><table><thead><tr><th class="n">Linha</th><th>Referência</th><th>Coluna</th><th>Problema</th></tr></thead><tbody>${p.mod.slice(0,LIM).map(x=>`<tr><td class="n">${x.l}</td><td class="mono">${esc(x.ref)} ${x.ref&&x.ref!=="—"?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(x.ref)}" data-colnome="${esc(x.col)}">Ir à peça</button>`:""}</td><td>${esc(x.col)}</td><td class="al-t">${esc(x.msg)}</td></tr>`).join("")}</tbody></table></div>`:""}`)}
 /* arquivo CSV do modelo: separador, decimal e codificação escolhidos no modelo */
-function txtSaida(r,c,dec){if(!r)return "";const v=r.v;if(v==null)return r.f?"="+r.f:"";if(typeof v==="number")return (c.tipo==="dinheiro"?v.toFixed(2):String(v)).replace(".",dec);return String(v)}
+function txtSaida(r,c,dec){if(!r)return "";const v=r.v;if(v==null)return r.f?"="+r.f:"";if(typeof v==="number")return (c.tipo==="dinheiro"?(c.k==="P"?(Math.abs(v*100-Math.round(v*100))<1e-7?v.toFixed(2):v.toFixed(4).replace(/0+$/,"")):v.toFixed(2)):String(v)).replace(".",dec);return String(v)}
 const protegeTxt=s=>{s=String(s==null?"":s);return /^[=+@\t\r]/.test(s)||(s[0]==="-"&&!/^-\d+([.,]\d+)?$/.test(s))?"'"+s:s};
 function montarCsv(g,cols,mo,slx){
   const sep=mo.sep==="tab"?String.fromCharCode(9):mo.sep===","?",":";",dec=mo.dec==="."?".":",",Q=String.fromCharCode(34),NL=String.fromCharCode(13,10);
@@ -5231,7 +5388,7 @@ function montarCsv(g,cols,mo,slx){
   const lin=[cols.map(c=>q(protegeTxt(c.h))).join(sep)];
   const sl=slx||saidaLinhas(g,mo);
   sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{let r=valorCol(c,celCol(c,cs,e));
-    if(r&&r.v==null&&r.f){const gv=(L,d)=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.f&&d<5?avalF(x.f,K=>gv(K,d+1)):null},n0=typeof r.calc==="number"?r.calc:avalF(r.f,L=>gv(L,0)),n=n0;if(n!=null)r={...r,v:c.tipo==="dinheiro"?Math.round(n*100)/100:parseFloat(n.toPrecision(12))}}   /* CSV não tem fórmula: sai o valor calculado */
+    if(r&&r.v==null&&r.f){const gv=(L,d)=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.f&&d<5?avalF(x.f,K=>gv(K,d+1)):null},n0=typeof r.calc==="number"?r.calc:avalF(r.f,L=>gv(L,0)),n=n0;if(n!=null)r={...r,v:c.tipo==="dinheiro"?Math.round(n*(c.k==="P"?10000:100))/(c.k==="P"?10000:100):parseFloat(n.toPrecision(12))}}   /* CSV não tem fórmula: sai o valor calculado */
     let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
   return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
 /* com filtro ativo, baixar e copiar levam as PEÇAS que o filtro mostra, sempre com todas as variações (pai e filhos não se separam) */
@@ -5260,7 +5417,7 @@ function dividirLotes(sl,lote){if(!(lote>0)||sl.length<=lote)return [sl];
   const grupos=[];sl.forEach(e=>{if(e.t==="filho"&&grupos.length)grupos[grupos.length-1].push(e);else grupos.push([e])});
   const out=[];let cur=[];grupos.forEach(gp=>{if(cur.length&&cur.length+gp.length>lote){out.push(cur);cur=[]}cur.push(...gp)});if(cur.length)out.push(cur);return out}
 function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.h)]);
-  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);cols.forEach((c,j)=>{const r=valorCol(c,celCol(c,cs,e));if(!r)return;const cel=celulaXlsx(r,cols);if(r.z&&cel.t==="n")cel.z=r.z;else if(cel.t==="n"&&c.k==="N"&&!c.fator&&!c.tipo)cel.z="0.000";else if(cel.t==="n"&&DUAS.has(c.k)&&!c.fator&&!c.tipo)cel.z="0.00";ws[letraN(j)+(i+2)]=cel})});
+  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);cols.forEach((c,j)=>{const r=valorCol(c,celCol(c,cs,e));if(!r)return;const cel=celulaXlsx(r,cols);if(r.z&&cel.t==="n")cel.z=r.z;else if(cel.t==="n"&&c.k==="N"&&!c.fator&&!c.tipo)cel.z="0.000";else if(cel.t==="n"&&DUAS.has(c.k)&&!c.fator&&!c.tipo)cel.z=c.k==="P"?"0.00##":"0.00";ws[letraN(j)+(i+2)]=cel})});
   ws["!ref"]="A1:"+letraN(Math.max(cols.length,1)-1)+(sl.length+1);ws["!cols"]=cols.map(c=>({wch:COLW[LET.indexOf(c.k)]||14}));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,abaNome(mo));
   return new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})])}
@@ -5359,6 +5516,64 @@ function abrirExemploVisual(){repModal(`<div class="rep-h"><div><b class="rep-t"
 /* ===== eventos ===== */
 const refocar=s=>{const el=document.querySelector(s);if(el)el.focus()};
 const guardarAbertos=()=>{try{localStorage.setItem("cadpecas-abertos",JSON.stringify(abertos))}catch(x){}};
+/* Um banho pode ser usado em componentes guardados fora da tabela aberta. */
+let bnReserva=null,bnReservando=false,bnEmExclusao=false;
+/* A reserva fica até salvar ou descartar os cadastros: conferir apenas no clique
+   deixaria outra aba criar um conjunto antes da confirmação. */
+async function bnReservarUso(){
+  if(bnEmExclusao)return false;
+  if(bnReserva)return true;
+  if(bnReservando||!navigator.locks||conflito||corrompido)return false;
+  bnReservando=true;
+  try{
+    await bkUsoParar();
+    let anunciar;const pronto=new Promise(r=>{anunciar=r});
+    const pedido=navigator.locks.request("cadpecas-uso",{mode:"exclusive",ifAvailable:true},lock=>{
+      if(!lock){anunciar(false);return}
+      return new Promise(liberar=>{bnReserva={liberar};anunciar(true)})
+    });
+    pedido.catch(()=>anunciar(false));
+    const ok=await pronto;
+    if(ok)bnReserva.pedido=pedido;else{await pedido.catch(()=>{});await bkUsoIniciar()}
+    return ok
+  }finally{bnReservando=false}
+}
+async function bnLiberarUso(){if(!bnReserva)return;const r=bnReserva;bnReserva=null;r.liberar();await r.pedido;await bkUsoIniciar()}
+async function bnExcluirSeguro(bh0,bn0){
+  const jaReservado=!!bnReserva;
+  if(!await bnReservarUso()){alert("Não foi possível reservar o uso exclusivo. Feche as outras abas do aplicativo e tente novamente; neste navegador a exclusão exige suporte a bloqueios.");return}
+  bnEmExclusao=true;
+  let excluiu=false;
+  try{
+    if(conflito||corrompido){toast("Resolva o conflito ou os dados danificados antes de excluir o banho.");return}
+    const antes=cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);
+    await bnExcluirConferido(bh0,bn0);
+    excluiu=!!antes&&!cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);
+    if(excluiu&&!CADAUTO){cadConferir();if(!CAD.pend)throw new Error("A exclusão não ficou pendente")}
+    if(excluiu&&CADAUTO){clearTimeout(sT);sT=null;chain=chain.then(flush);if(!await chain)toast("A exclusão não foi gravada. Confira o aviso de armazenamento.")}
+  }finally{bnEmExclusao=false;if(!jaReservado&&(!excluiu||CADAUTO))await bnLiberarUso()}
+}
+async function bnExcluirConferido(bh0,bn0){
+  const assinatura=()=>JSON.stringify([S.lanc,S.form,ROM,TABS,ROMS,cfg().banhistas]);
+  const antes=assinatura(),b=bh0.id,id=bn0.id,usas=[];
+  const comp=(cs,banhista)=>banhista===b&&Array.isArray(cs)&&cs.some(c=>c&&c.banho===id);
+  const lanc=(l,origem)=>{if(l&&comp(l.comp,l.banhista))usas.push(origem)};
+  S.lanc.forEach(l=>lanc(l,"tabela atual"));if(S.form&&comp(S.form.comp,S.form.banhista))usas.push("formulário");
+  if(typeof rascunho!=="undefined"&&rascunho&&comp(rascunho.comp,rascunho.banhista))usas.push("formulário em edição");
+  const rom=(r,origem,padrao)=>{if(r&&comp(r.conjComp,r.bh||padrao))usas.push(origem)};
+  if(ROM)(ROM.rows||[]).forEach(r=>rom(r,"romaneio aberto",S.form.banhista));
+  const [tabs,roms]=await Promise.all([idbOp("tabs","readonly",st=>st.getAll()),idbOp("roms","readonly",st=>st.getAll())]);
+  if(!Array.isArray(tabs)||!Array.isArray(roms)){alert("Não consegui conferir tabelas e romaneios salvos. O banho não foi excluído; verifique o armazenamento e tente novamente.");return}
+  if(antes!==assinatura()){toast("Os dados mudaram durante a conferência. Tente excluir o banho novamente.");return}
+  tabs.forEach(t=>(t.lanc||[]).forEach(l=>lanc(l,"tabela salva")));
+  roms.forEach(t=>(t.rows||[]).forEach(r=>rom(r,"romaneio salvo",t.form&&t.form.banhista)));
+  if(usas.length){alert(`O banho “${bn0.nome}” é usado em componentes (${[...new Set(usas)].join(", ")}). Edite os conjuntos e escolha outro banho antes de excluir.`);return}
+  const n=S.lanc.filter(l=>l.banhista===b&&((l.on&&l.on[id])||(l.onP&&l.onP[id]))).length;
+  if(n&&!confirm(`${n} peça(s) já lançadas usam o banho “${bn0.nome}”. Remover mesmo assim? (Ctrl+Z desfaz)`))return;
+  const bh=cfg().banhistas.find(x=>x.id===b),i=bh&&bh.banhos.findIndex(x=>x.id===id);if(!bh||i<0)return;
+  if(!CADAUTO&&!CAD.snap)cadTirarFoto();
+  const anterior=clone(S.config);bh.banhos.splice(i,1);salvar(true);if(!CADAUTO)cadConferir();render();toast("Banho excluído.",{t:"Desfazer",fn:()=>{S.config=anterior;salvar(true);if(!CADAUTO)cadConferir();render()}});
+}
 document.addEventListener("submit",e=>{e.preventDefault();adicionar()});
 /* digitação rápida: ao entrar num campo numérico do lançamento, o conteúdo fica selecionado e o que for digitado substitui */
 document.addEventListener("focusin",e=>{const t=e.target;if(t.tagName==="INPUT"&&t.classList.contains("n")&&t.closest("#form")&&!t.disabled)try{t.select()}catch(x){}});
@@ -5562,9 +5777,9 @@ document.addEventListener("click",e=>{
     case "banco-adicionar":{const f=S.form,c=catBy(f.v.I),el=document.querySelector('[data-banco-nova]');if(!c||!el)break;const palavras=el.value.split(";").map(x=>x.trim().replace(/\s+/g," ")).filter(x=>x&&x.length<=60);if(!palavras.length){toast("Digite uma palavra ou expressão.");break}const chave=f.v.J||"",lista=bancoLista(c.nome,chave).slice();palavras.forEach(w=>{if(!lista.some(x=>semAc(x)===semAc(w)))lista.push(w)});c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[chave]=lista.slice(0,100);salvar(true,false);renderForm();bancoEditarAbrir();toast("Palavras salvas para "+(chave||c.nome)+".");break}
     case "banco-remover":{const f=S.form,c=catBy(f.v.I);if(!c)break;const chave=f.v.J||"";c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[chave]=bancoLista(c.nome,chave).filter(x=>semAc(x)!==semAc(t.dataset.w));salvar(true,false);renderForm();bancoEditarAbrir();break}
     case "banco-restaurar":{const f=S.form,c=catBy(f.v.I);if(!c)break;const chave=f.v.J||"";if(c.bancoPalavras)delete c.bancoPalavras[chave];salvar(true,false);renderForm();bancoEditarAbrir();toast("Sugestões iniciais restauradas.");break}
-    case "desc-palavra":{const f=S.form,w=t.dataset.w,cur=String(f.v.F||"");f.v.F=cur.replace(/\s+$/,"")+(cur.trim()?" ":"")+w+" ";f._descAuto="";salvar(false);renderForm();setTimeout(()=>{const d=document.getElementById("f-F");if(d){d.focus();d.setSelectionRange(d.value.length,d.value.length)}},0);break}
+    case "desc-palavra":{const f=S.form,w=t.dataset.w,cur=String(f.v.F||"");if(!bancoComplementos(f).some(x=>semAc(x)===semAc(w))){renderForm();toast("Essa palavra já está na descrição ou nos campos da peça.");break}f.v.F=cur.replace(/\s+$/,"")+(cur.trim()?" ":"")+w+" ";f._descAuto="";salvar(false);renderForm();setTimeout(()=>{const d=document.getElementById("f-F");if(d){d.focus();d.setSelectionRange(d.value.length,d.value.length)}},0);break}
     case "historico":historicoAbrir();break
-    case "hist-voltar":{const n=+t.dataset.n;document.querySelectorAll(".rep").forEach(x=>x.remove());for(let k=0;k<n&&HIST.length;k++)desfazer();toast(`Voltou ${n} alteração(ões).`);break}
+    case "hist-voltar":{const n=+t.dataset.n;document.querySelectorAll(".rep").forEach(x=>x.remove());let feitas=0;while(feitas<n&&HIST.length){if(desfazer()!==true)break;feitas++}if(feitas===n)toast(`Voltou ${feitas} alteração(ões).`);else toast(`Voltou ${feitas} de ${n} alteração(ões). A operação parou para preservar os dados; confira conflitos ou alterações posteriores no romaneio.`);break}
     case "origem-ok":{try{localStorage.setItem("cadpecas-origem-ok","1")}catch(e){}document.querySelectorAll(".origem-aviso").forEach(x=>x.remove());break}
     case "simular-fator":simuladorFator();break
     case "sim-usar":{const f=S.form;f.mk=f.mk||{};f.mk[t.dataset.bid]=String(t.dataset.fator).replace(".",",");document.querySelectorAll(".rep").forEach(x=>x.remove());salvar(false);renderForm();toast(`Fator ${t.dataset.fator.replace(".",",")} aplicado.`);break}
@@ -5572,7 +5787,7 @@ document.addEventListener("click",e=>{
     case "prim-fechar":{abertos.primeiros=false;guardarAbertos();primeirosAtualizar();break}
     case "exp-agrupar":{expAgrupa=!expAgrupa;if(expUlt)mostrarConferencia(expUlt.p,expUlt.podeSeguir);break}
     case "rom-xlsx":{const ids=new Set(ROM.rows.flatMap(r=>r.lancIds||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("Nenhuma peça deste romaneio está na tabela atual.");break}baixar(false,ids);break}
-    case "rel-xlsx":{const ids=new Set((REL&&REL.lids||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("As peças desta criação não estão mais na tabela.");break}baixar(false,ids);break}
+    case "rel-xlsx":{const rel=relLer(),ids=new Set((rel&&rel.lids||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("As peças desta criação não estão mais na tabela.");break}baixar(false,ids);break}
     case "rom-bulk-div":{const rs=romSelRows().filter(r=>!r.skip&&!r.feito&&!r.lote&&(!gradeDaCat(r.cat,r.sub)||r.semG)&&!(r.csel||[]).length);rs.forEach(r=>romDividir(r,romColsR(r)));renderRom();toast(`${rs.length} peça(s) divididas entre os banhos.`);break}
     case "rom-bulk-lote":{const idx=ROM.rows.map((r,i)=>[r,i]).filter(([r])=>romSelRows().includes(r)&&!r.lote&&!r.loteDe&&!r.feito&&!Array.isArray(r.conjComp)).map(x=>x[1]).reverse();idx.forEach(i=>romLotear(i,true));if(idx.length)toast(`${idx.length} item(ns) viraram lote.`);else toast("Nenhuma peça elegível (já é lote, já lançada ou conjunto).");break}
     case "rom-bulk-criar":{const v=t.dataset.v==="1",rs=romSelRows().filter(r=>!r.feito&&!r.lote);rs.forEach(r=>{r.skip=!v});renderRom();toast(`${rs.length} peça(s) ${v?"marcadas para criar":"marcadas para não criar"}.`);break}
@@ -5585,7 +5800,6 @@ document.addEventListener("click",e=>{
     case "rom-foto-add":{romFotoEscolher(+t.dataset.i);break}
     case "rom-foto-del":{romFotoRemover(+t.dataset.i);break}
     case "rins-add":{if(!ROM)break;ROM.ins=ROM.ins||{itens:[],base:"un"};if(ROM.ins.itens.length>=30){toast("Limite de 30 insumos por romaneio.");break}ROM.ins.itens.push({nome:"",valor:""});abertos.rins=true;guardarAbertos();romSalvarSoon();renderRom();break}
-    case "rins-sug":{if(!ROM)break;const sg=romInsSugestoes().find(x=>x.nome===t.dataset.k);if(!sg)break;ROM.ins=ROM.ins||{itens:[],base:"un"};ROM.ins.itens.push({nome:sg.nome,valor:sg.valor});abertos.rins=true;guardarAbertos();romSalvarSoon();renderRom();toast(`${sg.nome} de R$ ${sg.valor} será rateado nas peças deste romaneio.`);break}
     case "rins-del":{if(!ROM||!ROM.ins)break;ROM.ins.itens.splice(+t.dataset.i,1);romSalvarSoon();renderRom();break}
     case "lib-grade-add":{C.grades=C.grades||[];C.grades.push({id:uid(),nome:"Nova variação",rotulo:" ",col:"",modoRef:"letra",subs:[],itens:[]});abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();break}
     case "lib-grade-pmg":{C.grades=C.grades||[];const g={id:uid(),nome:"P M G",rotulo:" tamanho ",col:"K",modoRef:"letra",subs:[],itens:[]};addTamanhos(g,"P M G");C.grades.push(g);abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();break}
@@ -5601,7 +5815,7 @@ document.addEventListener("click",e=>{
     case "bh-dup":{const b=clone(C.banhistas[bi]);b.id=uid();b.nome+=" (cópia)";C.banhistas.splice(bi+1,0,b);salvar(true,false);render();break}
     case "bh-del":{const id=C.banhistas[bi].id;{const n=S.lanc.filter(l=>l.banhista===id).length;if(n&&!confirm(`${n} peça(s) já lançadas usam esta galvânica. Remover mesmo assim? (Ctrl+Z desfaz)`))break}C.banhistas.splice(bi,1);C.fornecedores.forEach(f=>{if(f.banhista===id)f.banhista=""});salvar(true);render();break}
     case "bn-add":{const b=C.banhistas[bi],usadas=b.banhos.map(x=>x.letra);let L="A";while(usadas.some(u=>String(u).toUpperCase()===L)&&L<"Z")L=String.fromCharCode(L.charCodeAt(0)+1);if(usadas.some(u=>String(u).toUpperCase()===L)){toast("Já existem banhos de A a Z neste galvânica — não cabe mais um.");break}b.banhos.push({id:uid(),nome:"Ródio",letra:L,cor:"Ródio",mil:"",modo:"peso",mult:"",coluna:"S",sufixo:" banho ródio",marcado:false,vz:true});salvar(true,false);render();break}
-    case "bn-del":{{const bh0=C.banhistas[bi],bn0=bh0.banhos[+t.closest("[data-bn]").dataset.bn],n=S.lanc.filter(l=>l.banhista===bh0.id&&((l.on&&l.on[bn0.id])||(l.onP&&l.onP[bn0.id]))).length;if(n&&!confirm(`${n} peça(s) já lançadas usam o banho “${bn0.nome}”. Remover mesmo assim? (Ctrl+Z desfaz)`))break}C.banhistas[bi].banhos.splice(+t.closest("[data-bn]").dataset.bn,1);salvar(true);render();break}
+    case "bn-del":{const bh0=C.banhistas[bi],bn0=bh0&&bh0.banhos[+t.closest("[data-bn]").dataset.bn];if(bn0)bnExcluirSeguro(bh0,bn0).catch(e=>{console.error("Falha ao excluir banho",e);alert("Não consegui conferir ou salvar a exclusão do banho. Confira os cadastros antes de continuar.")});break}
     case "cc-reset":C.colcfg=colcfgPadrao();salvar(true,false);render();break;
     case "cor-add":case "obs-add":{const inp=t.closest(".add")&&t.closest(".add").querySelector("input");if(inp){if(!inp.value.trim())inp.focus();else inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true}))}break}
     case "cor-del":C.cores.splice(+t.dataset.j,1);salvar(true,false);render();break;
@@ -5625,7 +5839,11 @@ document.addEventListener("click",e=>{
     case "rom-fechar":{const lsOk=romSalvar(),pr=romGravP;ROM=null;renderRom();renderForm();
       Promise.resolve(pr).then(idbOk=>toast(lsOk?"Romaneio guardado — use “Retomar romaneio” quando quiser continuar.":idbOk?"O rascunho rápido não gravou, mas o romaneio ficou em “Romaneios salvos” (Cadastros): abra por lá para continuar.":"ATENÇÃO: não consegui guardar o romaneio (memória do navegador cheia, bloqueada ou outra aba alterou). Baixe o backup antes de sair."));break}
     case "rom-descartar":{if(romConflito){const b=document.getElementById("outraAbaRom");if(b)b.remove();romConflito=false;ROM=null;renderRom();renderForm();toast("Fechei este romaneio sem apagar nada: outra aba alterou o rascunho e a versão dela foi mantida.");break}
-      romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito);romLimparRascunho();if(sid0&&!jaFeito)romExcluirSalvo(sid0);ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{localStorage.setItem(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null);break}
+      if(t.disabled)break;t.disabled=true;const atual=ROM;romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito),antes=ROM?JSON.stringify({...ROM,pdf:null}):null;
+      (async()=>{try{if(sid0&&!jaFeito&&!(await romExcluirSalvo(sid0))){toast("Não consegui descartar o romaneio salvo. Ele continua aberto; confira o armazenamento.");return}
+        if(ROM!==atual)return;if(ROM&&JSON.stringify({...ROM,pdf:null})!==antes){romSalvar();toast("O romaneio mudou durante a exclusão e foi mantido aberto.");return}
+        romLimparRascunho();ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{localStorage.setItem(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null)
+      }catch(err){console.error("cadastro-pecas: não foi possível descartar o romaneio",err);toast("Não consegui descartar o romaneio. Ele continua aberto.")}finally{t.disabled=false}})();break}
     case "rom-lote":romLote();break;
     case "rom-excluir-selecionadas":romExcluirSelecionadas();break;
     case "rom-revogar-todas":if(ROM)romRevogar(ROM.rows.filter(r=>r.feito));break;
@@ -5653,7 +5871,7 @@ document.addEventListener("click",e=>{
     case "tab-salvar-abrir":tabSalvarAbrir();break;
     case "tab-salvar-ok":tabSalvarOk();break;
     case "tab-ver":tabVer(t.dataset.id);break;
-    case "tab-del":{if(tabArm!==t.dataset.id){tabArm=t.dataset.id;tabListaAbrir()}else{const tx=TABS.find(x=>x.id===tabArm);idbDel("tabs",tabArm);TABS=TABS.filter(x=>x.id!==tabArm);TABDEL.add(tabArm);gravarIdx("cadpecas-tabs",TABS,TABDEL);arqRef();if(tx)(tx.ids||[]).forEach(i=>candFoto.add(i));varrerFotos();tabArm=null;tabListaAbrir()}break}
+    case "tab-del":{if(tabArm!==t.dataset.id){tabArm=t.dataset.id;tabListaAbrir()}else{const id=tabArm;tabArm=null;tabExcluirSalvo(id).then(ok=>{if(ok)toast("Tabela excluída.");const rep=document.querySelector(".rep");if(rep&&rep.querySelector('[data-act="tab-salvar-abrir"]'))tabListaAbrir()}).catch(()=>toast("Não consegui excluir a tabela; confira o armazenamento."))}break}
     case "tab-restaurar":tabRestaurar(t.dataset.id);break;
     case "tab-csv":idbGet("tabs",t.dataset.id).then(rc=>{if(rc)arqSalvar("tabela-"+String(rc.nome).replace(/[^A-Za-z0-9 _-]/g,"-")+".csv",tabCsv(rc))});break;
     case "rom-ver":romVer(t.dataset.id,t.dataset.de);break;
@@ -5811,7 +6029,7 @@ function onField(t,isChange){
   if(t.id==="selAll"){G.linhas.forEach((r,ri)=>{if(vis(ri)){if(t.checked)sel.add(r.lancId);else sel.delete(r.lancId)}});renderTopo();return}
   if(t.hasAttribute&&t.hasAttribute("data-sel")){const id=t.closest("tr").dataset.l;if(t.checked)sel.add(id);else sel.delete(id);renderTopo();return}
   if(t.dataset.col){
-    const L=t.dataset.col;f.v[L]=t.value;erro="";if(L==="N")compraGramaAuto(f);if(VALIDA_NUM.has(L))campoMsg(t,vazio(t.value)?"":(checaCel(L,t.value).erro||""));
+    const L=t.dataset.col;f.v[L]=t.value;erro="";if(L==="F"||L==="L")bancoAtualizar();if(L==="N")compraGramaAuto(f);if(VALIDA_NUM.has(L))campoMsg(t,vazio(t.value)?"":(checaCel(L,t.value).erro||""));
     if(L==="H"&&isChange){const fo=fornBy(t.value);if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;if(!editId&&!f.conj&&fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}if(!editId){banhistaDoFornecedor(f);const d=aplicarMemForn(f,fo);if(d)toast(`Lembrado de ${fo.nome}: ${d}`)}}renderForm();refocar("#f-H");renderTopo();salvar(false);return}
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){const rs=resolverCatSub(t.value,t.dataset.prev||"");if(rs){const dig=t.value.trim();f.v.I=rs.cat;t.value=rs.cat;if(rs.sub)f.v.J=rs.sub;else delete f.v.J;toast(`“${dig}” entendido como ${rs.cat}${rs.sub?" › "+rs.sub:""} · referência ${prefDe(rs.cat,rs.sub)}`)}}
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
@@ -6054,14 +6272,14 @@ function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!l
 /* Aguarda eventual recuperação de backup antes de expor os dados para edição. */
 {const tela=document.createElement("div");tela.setAttribute("role","alert");tela.style.cssText="position:fixed;inset:0;z-index:100001;background:#fff;display:grid;place-content:center;padding:24px;font:16px system-ui;text-align:center";tela.textContent="Verificando a recuperação dos dados…";document.documentElement.appendChild(tela);document.body.inert=true;
   let etapa="verificar a recuperação";
-  const abrir=()=>{document.body.inert=false;tela.remove();try{if(sessionStorage.getItem("cadpecas-recuperou-backup")){sessionStorage.removeItem("cadpecas-recuperou-backup");toast("Uma restauração interrompida foi revertida para os dados anteriores.")}}catch(e){}lembreteBackup();return varrerTudo()};
+  const abrir=(semVarredura=false)=>{document.body.inert=false;tela.remove();try{if(sessionStorage.getItem("cadpecas-recuperou-backup")){sessionStorage.removeItem("cadpecas-recuperou-backup");toast("Uma restauração interrompida foi revertida para os dados anteriores.")}}catch(e){}lembreteBackup();if(semVarredura){exSemVarredura=true;const aviso=document.createElement("div");aviso.setAttribute("role","status");aviso.style.cssText="padding:10px;background:#fff3cd;color:#664d03;font:14px system-ui";aviso.textContent="Aberto sem verificar o armazenamento de arquivos. Romaneios, tabelas e fotos podem estar incompletos; a limpeza automática de fotos foi desativada. Recarregue quando o armazenamento voltar a funcionar.";document.body.prepend(aviso);return}return varrerTudo()};
   const falhou=(e,podeForcar)=>{try{console.error("Falha ao abrir os dados (etapa: "+etapa+")",e)}catch(x){}
     tela.textContent="Não foi possível verificar ou recuperar uma restauração interrompida. Seus dados não foram abertos para edição. Libere espaço, feche outras abas e recarregue. Se o problema continuar, guarde uma cópia do backup e procure suporte.";
     const det=document.createElement("p");det.style.cssText="font:12px system-ui;color:#555;max-width:640px;margin:10px auto";det.textContent="Detalhe técnico — etapa: "+etapa+" · "+String((e&&e.message)||e||"o armazenamento do navegador (IndexedDB) não respondeu").slice(0,200);tela.appendChild(det);
     const b=document.createElement("button");b.textContent="Tentar novamente";b.onclick=()=>location.reload();tela.appendChild(b);
     if(podeForcar){const f=document.createElement("button");f.textContent="Abrir mesmo assim";f.style.marginLeft="10px";f.title="Abre os dados que estão no navegador sem checar a recuperação de restauração. Se uma restauração de backup foi interrompida, os dados podem estar incompletos: depois de abrir, baixe um backup.";
-      f.onclick=()=>{etapa="abrir sem a checagem";tela.textContent="Abrindo os dados…";Promise.resolve().then(()=>bkUsoIniciar()).catch(()=>{}).then(()=>carregar()).then(()=>tabsMigrar()).then(abrir).catch(e2=>falhou(e2,false))};tela.appendChild(f)}};
-  bkRecuperarPendente().then(ok=>{if(!ok)throw new Error("o armazenamento do navegador não respondeu ou há uma restauração pendente");etapa="reservar o uso";return bkUsoIniciar()}).then(()=>{etapa="carregar os dados";return carregar()}).then(()=>{etapa="migrar tabelas salvas";return tabsMigrar()}).then(()=>{etapa="varrer as peças";return abrir()}).catch(e=>falhou(e,etapa==="verificar a recuperação"||etapa==="reservar o uso"))}
+      f.onclick=()=>{etapa="abrir sem a checagem";tela.textContent="Abrindo os dados…";Promise.resolve().then(()=>bkUsoIniciar()).catch(()=>{}).then(()=>carregar()).then(()=>exAbrirIndices()).then(ok=>abrir(!ok)).catch(()=>abrir(true))};tela.appendChild(f)}};
+  bkRecuperarPendente().then(ok=>{if(!ok)throw new Error("o armazenamento do navegador não respondeu ou há uma restauração pendente");etapa="reservar o uso";return bkUsoIniciar()}).then(()=>{etapa="carregar os dados";return carregar()}).then(()=>{etapa="recuperar exclusões e índices";return exAbrirIndices()}).then(ok=>{if(!ok)throw new Error("não foi possível recuperar exclusões ou conferir os índices salvos");etapa="varrer as peças";return abrir()}).catch(e=>falhou(e,etapa==="verificar a recuperação"||etapa==="reservar o uso"))}
 /* duas abas abertas: se a outra gravou, esta avisa (e para de gravar) em vez de sobrescrever */
 window.addEventListener("storage",e=>{
   if(e.key!=="cadpecas4"||e.newValue==null||e.storageArea!==localStorage)return;
@@ -6320,14 +6538,20 @@ function cadConferir(){
   if(CAD.snap){const mudou=JSON.stringify(S.config)!==CAD.snap.c||cadLancSig()!==CAD.snap.l;
     if(mudou&&!CAD.pend){CAD.pend=true;setStatus("Cadastros: alterações NÃO salvas",true)}
     if(!mudou&&CAD.pend){CAD.pend=false;setStatus("Salvo neste navegador")}
-    if(!mudou)CAD.snap=null}
+    if(!mudou){CAD.snap=null;if(bnReserva&&!bnEmExclusao)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."))}}
   cadBarra()}
 function cadRomAtualizar(){   /* romaneio aberto acompanha o cadastro (valores da galvânica, banhos, fornecedores…) */
   if(!ROM||!ROM.rows||!ROM.rows.length)return;
   const s=JSON.stringify(S.config);if(s===CAD.sig)return;CAD.sig=s;
   clearTimeout(CAD.rt);CAD.rt=setTimeout(()=>{CAD.rt=null;if(!ROM||!ROM.rows||!ROM.rows.length)return;const w=document.getElementById("romWrap"),pos=[];for(let e=w;e;e=e.parentElement)if(e.scrollHeight>e.clientHeight)pos.push([e,e.scrollTop]);
     try{renderRom()}finally{pos.forEach(([e,t])=>{e.scrollTop=t})}},350)}
-function cadSalvar(){if(!CAD.pend)return;CAD.pend=false;CAD.snap=null;cadBarra();
+async function cadSalvar(){if(!CAD.pend||CAD.salvando)return;
+  if(bnReserva){CAD.salvando=true;document.body.inert=true;CAD.pend=false;
+    try{dirty.c=true;dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);sT=null;setStatus("Salvando…");chain=chain.then(flush);if(!await chain){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
+      CAD.snap=null;cadBarra();render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.");await bnLiberarUso();return
+    }catch(e){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
+    finally{CAD.salvando=false;document.body.inert=false}}
+  CAD.pend=false;CAD.snap=null;cadBarra();
   dirty.c=true;dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);sT=null;setStatus("Salvando…");chain=chain.then(flush);
   render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.")}
 function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
@@ -6338,6 +6562,7 @@ function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
   if(s.rasc&&rascunho){const o=JSON.parse(s.rasc);Object.keys(rascunho).forEach(k=>{if(k!=="ft"&&!(k in o))delete rascunho[k]});Object.assign(rascunho,o)}
   HIST.length=Math.min(HIST.length,CAD.hL);REDO.length=0;CAD.hR.forEach(x=>REDO.push(x));
   CAD.pend=false;CAD.snap=null;CAD.sig=JSON.stringify(S.config);cadBarra();
+  if(bnReserva)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."));
   try{sincGrade(S.form)}catch(e){}
   try{histIni()}catch(e){}
   render();if(ROM&&ROM.rows&&ROM.rows.length){renderRom();romSalvarSoon()}setStatus(db?"Salvo na sua conta":"Salvo neste navegador");toast("Alterações dos Cadastros descartadas.")}
