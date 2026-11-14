@@ -1,9 +1,9 @@
 /* ===== núcleo: dominio — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { FORMULA, JUERI_CATS, LET, NOME, celulas, clone, kDesc, letraN, milDe, multItem, proxLetra, r2c, semAc } from "./colunas.js";
+import { FORMULA, JUERI_CATS, LET, NOME, clone, kDesc, letraN, milDe, multItem, proxLetra, r2c } from "./colunas.js";
 import { banhistaBy$, bhDe$, bonP$, catBy$, cfg$, comSufixoCat$, descBanho$, fnum$, fornBy$, insumosContaHTML$, insumosItensResumo$, itensGrade$, padraoDe$, prefDe$, temGrade$, todasGrades$, ultimo$, val$ } from "./configuracao.js";
-import { numRaw, pesoLinha, qtdPos } from "./formulas.js";
-import { banhoSemCalc, brl, descAuto, descVar, esc, fmt, num, opts, refParte, rotG, vazio, vzOn, vzPad } from "./utilidades.js";
+import { celulas, numRaw, pesoLinha, qtdPos } from "./formulas.js";
+import { banhoSemCalc, brl, descAuto, descVar, esc, fmt, num, opts, refParte, rotG, semAc, vazio, vzOn, vzPad } from "./utilidades.js";
 // @fim-imports
 export const MISTO=new Set(["H","I","J","L","M","AD","AE"]);
 export const PMG={pequeno:"P",pequena:"P",medio:"M","médio":"M",media:"M","média":"M",grande:"G"};

@@ -1,6 +1,6 @@
-core/formulas.js
-core/colunas.js
 core/utilidades.js
+core/colunas.js
+core/formulas.js
 core/configuracao.js
 core/dominio.js
 core/acoes.js

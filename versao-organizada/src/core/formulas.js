@@ -1,7 +1,7 @@
 /* ===== núcleo: formulas — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { DUAS, LET, NOME, NUM, kDesc, r2c } from "./colunas.js";
-import { num } from "./utilidades.js";
+import { DUAS, FORMULA, LET, NOME, NUM, kDesc, r2c } from "./colunas.js";
+import { num, vazio } from "./utilidades.js";
 // @fim-imports
 export const VALIDA_NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","AB","AC"]);
 export const FORM_SEGURA=/^=(?:[0-9+\-*\/().,\s]|\b[A-Za-z]{1,2}[0-9]+\b)*$/;
@@ -48,4 +48,27 @@ export function calcBanho(row,L,r){
   if(L===row.banho.coluna){if(row.banho.mult==null)return null;if(row.banho.modo==="fixo")return {v:r2c(row.banho.mult)};if(peso==null)return null;return {v:r2c(peso*row.banho.mult),f:`ROUND(N${r}*${row.banho.mult},2)`}}
   if(L==="U"&&row.verniz!=null&&peso!=null)return {v:r2c(peso*row.verniz),f:`ROUND(N${r}*${row.verniz},2)`};
   return null;
+}
+export function celulas(row,r,sugestao){
+  const c=celulasBase(row,r);
+  if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v;else if(x&&x.f){const n=typeof x.calc==="number"?x.calc:numRaw(row.v[L],row.v);if(n!=null)soma+=n}});
+    c[iv]={v:r2c(soma*row.mk),f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
+  return c;
+}
+export const fLinha=(f,r)=>String(f).replace(/\b([A-Za-z]{1,2})[0-9]+\b/g,"$1"+r);
+export function celulasBase(row,r){
+  const c=LET.map(L=>{const x=celulaBase(row,r,L);if(x&&x.v==null&&x.f&&x.txt)x.f=fLinha(x.f,r);return x});
+  /* resultado das fórmulas digitadas: usa o valor EFETIVO das células referenciadas (compra já com desconto, banho calculado…), o mesmo do arquivo */
+  const val=(L,d)=>{const x=c[LET.indexOf(L)];if(!x)return null;if(typeof x.v==="number")return x.v;if(x.v==null&&x.f&&x.txt&&d<6)return avalF(x.f,K=>val(K,d+1));return null};
+  {const ip=LET.indexOf("P"),x=c[ip];if(x&&x.v==null&&x.f&&x.desc){const n=avalF(x.f,K=>val(K,0));if(n!=null){const In=x.f,k=x.desc;c[ip]={v:r2c(n-n*k),f:`ROUND((${In})-((${In})*${k}),2)`}}}}
+  c.forEach(x=>{if(x&&x.v==null&&x.f&&x.txt){const n=avalF(x.f,K=>val(K,0));if(n!=null)x.calc=n}});
+  return c}
+export function celulaBase(row,r,L){
+    const v=row.v[L];
+    if(row.banho&&FORMULA.has(L)){if(!vazio(v))return lerValor(v,L,row.v);return calcBanho(row,L,r)}
+    if(vazio(v))return null;
+    if(L==="P"){const c=num(v);if(c==null){const s=String(v).trim();   /* custo em fórmula também recebe o desconto do fornecedor */
+      if(row.desconto>0&&s[0]==="="&&FORM_SEGURA.test(s)){const o=lerValor(v,L,row.v);if(o.f)o.desc=kDesc(row.desconto);return o}   /* o desconto é aplicado em celulasBase, com os valores efetivos das células referenciadas */
+      return lerValor(v,L,row.v)}if(row.desconto>0){const k=kDesc(row.desconto);return {v:r2c(c-c*k),f:`ROUND(${c}-(${c}*${k}),2)`}}return {v:c}}
+    return lerValor(v,L,row.v);
 }

@@ -1,8 +1,8 @@
 /* ===== núcleo: backup — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { BANHISTA0, DEFAULT_CONFIG, FORM0, LET, ROMS0, ROM_PESO, clone, ftOk, modeloJueri, semAc } from "./colunas.js";
+import { BANHISTA0, DEFAULT_CONFIG, FORM0, LET, ROMS0, ROM_PESO, clone, ftOk, modeloJueri } from "./colunas.js";
 import { relNormalizar } from "./romaneio.js";
-import { idLimpo, num, vazio } from "./utilidades.js";
+import { ehObj, idLimpo, num, semAc, vazio } from "./utilidades.js";
 // @fim-imports
 export const ftRSalvas=new Set();
 export const PONTOS_MAX=15,PONTO_INTERVALO=30*60*1000;
@@ -53,7 +53,6 @@ export function romHistComparar(rec){
   return JSON.stringify({rows,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",conf:rec.conf||""});
 }
 export function romArma(r){if(r&&r.feito&&r.skip&&!r.arq){r.skip=false;r.refaz=true;r.aviso="";return true}return false}
-export const ehObj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
 export const ehTxt=x=>typeof x==="string",ehLista=(a,f)=>Array.isArray(a)&&a.every(f);
 export const ehNumLike=x=>typeof x==="number"?isFinite(x):(typeof x==="string"&&x.trim()!==""&&isFinite(Number(x)));
 export const campoOk=x=>x==null||ehTxt(x)||typeof x==="boolean"||(typeof x==="number"&&isFinite(x));

@@ -1,7 +1,6 @@
 /* ===== núcleo: colunas — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { FORM_SEGURA, avalF, calcBanho, lerValor, numRaw } from "./formulas.js";
-import { esc, num, vazio } from "./utilidades.js";
+import { esc, num, semAc } from "./utilidades.js";
 // @fim-imports
 export const MB=1048576,
   MAX_PLANILHA_BYTES=15*MB,      /* planilha / CSV importada */
@@ -53,8 +52,6 @@ export const BANHISTA0={id:"scarlat",nome:"Galvânica 1",verniz:"0.42",vernizOn:
   {id:"ouro",nome:"Ouro",letra:"A",cor:"Ouro",mil:"1",modo:"peso",mult:"1.5",coluna:"R",sufixo:"",marcado:true,vz:true},
   {id:"prata",nome:"Prata",letra:"B",cor:"Prata",mil:"50",modo:"peso",mult:"1.54",coluna:"T",sufixo:" banho prata",marcado:true,vz:true}]};
 export const mkGrade=(subs,id)=>({id:id,nome:"Tamanhos de anel",rotulo:" aro ",col:"K",subs:subs||[],itens:Array.from({length:15},(_,i)=>String(11+i)).map((n,i)=>({id:"a"+n,letra:String.fromCharCode(65+i),nome:n}))});
-export const SEM_AC_MARCAS=/[\u0300-\u036f]/g;
-export const semAc=s=>String(s==null?"":s).normalize("NFD").replace(SEM_AC_MARCAS,"").trim().toLowerCase();
 export function letraN(i){let s="",n=i+1;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s}
 export function proxLetra(us){for(let i=0;i<702;i++){const s=letraN(i);if(!us.includes(s))return s}return "Z"}
 export const PRATA_SUBS=["Brincos","Colares","Anéis","Pulseiras","Pingentes","Conjuntos"];
@@ -105,28 +102,5 @@ export const SIN={A:["id"],B:["foto","imagem","url da foto","link da foto","url 
 export function traduzF(f,cols){const mapa={},fat={};cols.forEach((c,i)=>{if(c.k&&!(c.k in mapa)){mapa[c.k]=letraN(i);const z=(c.tipo==="numero"||c.tipo==="inteiro"||c.tipo==="dinheiro")?num(c.fator):null;if(z!=null&&z>0&&z!==1)fat[c.k]=z}});let falta=false;
   /* a fórmula foi escrita com os valores internos (ex.: peso em gramas); se a coluna sai convertida pelo fator (kg = g × 0,001), a referência volta à unidade interna */
   const out=String(f).replace(/([A-Za-z]{1,2})([0-9]+)/g,(m,a,n)=>{a=a.toUpperCase();if(!(a in mapa)){falta=true;return m}return fat[a]?"("+mapa[a]+n+"/"+fat[a]+")":mapa[a]+n});return falta?null:out}
-export function celulas(row,r,sugestao){
-  const c=celulasBase(row,r);
-  if(sugestao&&row.mk&&vazio(row.v.V)){   /* só o formulário pede a sugestão; tabela e arquivo saem sem preço se ele não foi digitado */const iv=LET.indexOf("V");let soma=0;["P","Q","R","S","T","U"].forEach(L=>{const x=c[LET.indexOf(L)];if(x&&typeof x.v==="number")soma+=x.v;else if(x&&x.f){const n=typeof x.calc==="number"?x.calc:numRaw(row.v[L],row.v);if(n!=null)soma+=n}});
-    c[iv]={v:r2c(soma*row.mk),f:`ROUND((P${r}+Q${r}+R${r}+S${r}+T${r}+U${r})*${row.mk},2)`}}
-  return c;
-}
 export const r2c=x=>Math.round(+(x*100).toPrecision(12))/100;
 export const kDesc=d=>Math.round(d*1e6)/1e8;
-export const fLinha=(f,r)=>String(f).replace(/\b([A-Za-z]{1,2})[0-9]+\b/g,"$1"+r);
-export function celulasBase(row,r){
-  const c=LET.map(L=>{const x=celulaBase(row,r,L);if(x&&x.v==null&&x.f&&x.txt)x.f=fLinha(x.f,r);return x});
-  /* resultado das fórmulas digitadas: usa o valor EFETIVO das células referenciadas (compra já com desconto, banho calculado…), o mesmo do arquivo */
-  const val=(L,d)=>{const x=c[LET.indexOf(L)];if(!x)return null;if(typeof x.v==="number")return x.v;if(x.v==null&&x.f&&x.txt&&d<6)return avalF(x.f,K=>val(K,d+1));return null};
-  {const ip=LET.indexOf("P"),x=c[ip];if(x&&x.v==null&&x.f&&x.desc){const n=avalF(x.f,K=>val(K,0));if(n!=null){const In=x.f,k=x.desc;c[ip]={v:r2c(n-n*k),f:`ROUND((${In})-((${In})*${k}),2)`}}}}
-  c.forEach(x=>{if(x&&x.v==null&&x.f&&x.txt){const n=avalF(x.f,K=>val(K,0));if(n!=null)x.calc=n}});
-  return c}
-export function celulaBase(row,r,L){
-    const v=row.v[L];
-    if(row.banho&&FORMULA.has(L)){if(!vazio(v))return lerValor(v,L,row.v);return calcBanho(row,L,r)}
-    if(vazio(v))return null;
-    if(L==="P"){const c=num(v);if(c==null){const s=String(v).trim();   /* custo em fórmula também recebe o desconto do fornecedor */
-      if(row.desconto>0&&s[0]==="="&&FORM_SEGURA.test(s)){const o=lerValor(v,L,row.v);if(o.f)o.desc=kDesc(row.desconto);return o}   /* o desconto é aplicado em celulasBase, com os valores efetivos das células referenciadas */
-      return lerValor(v,L,row.v)}if(row.desconto>0){const k=kDesc(row.desconto);return {v:r2c(c-c*k),f:`ROUND(${c}-(${c}*${k}),2)`}}return {v:c}}
-    return lerValor(v,L,row.v);
-}

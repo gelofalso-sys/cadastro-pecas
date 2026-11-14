@@ -1,9 +1,9 @@
 /* ===== núcleo: notafiscal — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { MAX_XML_BYTES, checaTam, semAc } from "./colunas.js";
+import { MAX_XML_BYTES, checaTam } from "./colunas.js";
 import { catBy$, cfg$ } from "./configuracao.js";
 import { mapaCat$ } from "./romaneio.js";
-import { brl, num } from "./utilidades.js";
+import { brl, num, semAc } from "./utilidades.js";
 // @fim-imports
 export const nfU=s=>semAc(s).toUpperCase(),nfR2=n=>Math.round((Number(n)||0)*100)/100,NFKEY="cadpecas-nf";
 export const nfCnpj=d=>{d=String(d||"").replace(/\D/g,"");return d.length===14?d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5"):d};

@@ -1,10 +1,9 @@
 /* ===== núcleo: romaneio — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { ehObj } from "./backup.js";
-import { MAX_PLANILHA_LINHAS, MAX_TEXTO_COLADO, clone, csvq, ftOk, milDe, r2c, semAc } from "./colunas.js";
+import { MAX_PLANILHA_LINHAS, MAX_TEXTO_COLADO, clone, csvq, ftOk, milDe, r2c } from "./colunas.js";
 import { banhistaBy$, catBy$, cfg$, coresDaCat$, coresPadrao$, gradeDaCat$, prefDe$, val$ } from "./configuracao.js";
 import { novaComp } from "./dominio.js";
-import { brl, esc, num, selFaixa, vazio } from "./utilidades.js";
+import { brl, ehObj, esc, num, selFaixa, semAc, vazio } from "./utilidades.js";
 // @fim-imports
 export const MON="(\\d[\\d.]*,\\d{2})";
 export const numQtd=s=>{s=String(s);return /^\d{1,3}(\.\d{3})+$/.test(s)?num(s.replace(/\./g,"")):num(s)};

@@ -1,7 +1,4 @@
 /* ===== núcleo: utilidades — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
-// @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { semAc } from "./colunas.js";
-// @fim-imports
 export const DENY_ID=/["'<>`=\s&\\]/g;
 export const idLimpo=x=>String(x==null?"":x).replace(DENY_ID,"");
 export const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -56,3 +53,6 @@ export function contFinal(g){const o={...g.cont};Object.entries(g.manual||{}).fo
 export const catPad={Y:"ncm",AA:"cfop",AB:"fcp",Q:"insumos"};
 export const banhoSemCalc=b=>!!b&&(b.modo==="nenhum"||!b.coluna);
 export function opts(list,sel,blank){return (blank!=null?`<option value="">${esc(blank)}</option>`:"")+list.map(v=>{const [vv,tt]=Array.isArray(v)?v:[v,v];return `<option value="${esc(vv)}"${vv===sel?" selected":""}>${esc(tt)}</option>`}).join("")+(sel&&!list.some(v=>(Array.isArray(v)?v[0]:v)===sel)?`<option selected>${esc(sel)}</option>`:"")}
+export const SEM_AC_MARCAS=/[\u0300-\u036f]/g;
+export const semAc=s=>String(s==null?"":s).normalize("NFD").replace(SEM_AC_MARCAS,"").trim().toLowerCase();
+export const ehObj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);

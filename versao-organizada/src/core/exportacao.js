@@ -1,10 +1,10 @@
 /* ===== núcleo: exportacao — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { HEAD, LET, NOME, SIN, attrVar, celCol, celulas, listaCol, maxCol, normH, semAc, traduzF } from "./colunas.js";
+import { HEAD, LET, NOME, SIN, attrVar, celCol, listaCol, maxCol, normH, traduzF } from "./colunas.js";
 import { bhDe$, catBy$, cfg$, comSufixoCat$, fnum$, modeloAtual$, prefDe$, ultimo$, val$ } from "./configuracao.js";
 import { conjErro$, refBase } from "./dominio.js";
-import { VALIDA_NUM, avalF, pesoLinha, qtdPos } from "./formulas.js";
-import { contFinal, esc, num, vazio } from "./utilidades.js";
+import { VALIDA_NUM, avalF, celulas, pesoLinha, qtdPos } from "./formulas.js";
+import { contFinal, esc, num, semAc, vazio } from "./utilidades.js";
 // @fim-imports
 export function faixaFiltro(g){const bs=[...new Set(g.linhas.map(r=>refBase(r.v.E)).filter(Boolean))].sort();return bs.length<=4?bs.join(", "):bs[0]+"–"+bs[bs.length-1]}
 export function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){const c={t:"n",f:tf};if(typeof x.v==="number")c.v=x.v;else if(typeof x.calc==="number")c.v=x.calc;return c}return typeof x.v==="number"?{t:"n",v:x.v}:typeof x.calc==="number"?{t:"n",v:x.calc}:{t:"s",v:"="+x.f}}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:String(x.v).replace(/[\r\n]+/g," ")}}

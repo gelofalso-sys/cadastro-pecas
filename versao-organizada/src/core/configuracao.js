@@ -1,7 +1,7 @@
 /* ===== núcleo: configuracao — funções que recebem o estado S como primeiro argumento (nome$) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { NOME, semAc } from "./colunas.js";
-import { BANCO_PALAVRAS, apelidosDe, brl, catPad, catSing, corKey, efetivo, esc, fmt, num, palavraDeNome, selFaixa, vazio, vzPad } from "./utilidades.js";
+import { NOME } from "./colunas.js";
+import { BANCO_PALAVRAS, apelidosDe, brl, catPad, catSing, corKey, efetivo, esc, fmt, num, palavraDeNome, selFaixa, semAc, vazio, vzPad } from "./utilidades.js";
 // @fim-imports
 export const cfg$=(S)=>S.config;
 export const catBy$=(S,n)=>cfg$(S).categorias.find(c=>c.nome===n);
