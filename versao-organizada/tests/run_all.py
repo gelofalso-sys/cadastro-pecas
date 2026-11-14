@@ -17,6 +17,24 @@ if "--listar" in sys.argv:
     for n in testes_python()+testes_node(): print(n)
     sys.exit(0)
 permitir_pulos="--permitir-pulos" in sys.argv
+# ---- verificações estáticas (rápidas; rodam sempre, inclusive com --so) na raiz real, que tem o node_modules ----
+# Rodam só no processo principal; o resultado segue para a reexecução na cópia temporária via CP_FALHAS_PRE.
+def verificacoes_estaticas():
+    node=shutil.which("node")
+    if not node:
+        print("FALHA: node não encontrado; verificações estáticas não executadas");return 1
+    n=0
+    unit=sorted("tests/unit/"+f for f in os.listdir(os.path.join(RAIZ,"tests","unit")) if f.endswith(".test.mjs"))
+    for rotulo,cmd in (("fatias --validar",["tools/fatias.mjs","--validar"]),("checar_fronteiras",["tools/checar_fronteiras.mjs"]),("mapa --conferir",["tools/mapa.mjs","--conferir"]),("unit",["--test"]+unit)):
+        r=subprocess.run([node]+cmd,cwd=RAIZ,capture_output=True,text=True,encoding="utf-8",errors="replace",timeout=300)
+        print(f"{rotulo}: {'FALHOU' if r.returncode else 'OK'}",flush=True)
+        if r.returncode:
+            n+=1;print(((r.stdout or "")+(r.stderr or ""))[-1500:])
+    return n
+if os.environ.get("CP_SUITE_ISOLADA")!="1":
+    _pre=verificacoes_estaticas()
+else:
+    _pre=int(os.environ.get("CP_FALHAS_PRE","0"))
 # A suíte usa nomes históricos de HTML. Monta-os numa cópia temporária do projeto,
 # sem sobrescrever as versões preservadas ou o aplicativo unificado.
 if os.environ.get("CP_SUITE_ISOLADA")!="1":
@@ -26,7 +44,7 @@ if os.environ.get("CP_SUITE_ISOLADA")!="1":
         html=os.path.join(td,"cadastro-pecas.html")
         subprocess.run([sys.executable,os.path.join(td,"tools","montar.py"),html],check=True)
         shutil.copy2(html,os.path.join(td,"Cadastro de Pecas - abrir no Chrome.html"))
-        env={**os.environ,"CP_SUITE_ISOLADA":"1"}
+        env={**os.environ,"CP_SUITE_ISOLADA":"1","CP_FALHAS_PRE":str(_pre)}
         sys.exit(subprocess.call([sys.executable,"-u",os.path.join(td,"tests","run_all.py")]+sys.argv[1:],cwd=td,env=env))
 try:
     import openpyxl
@@ -41,7 +59,7 @@ except Exception as e:
 COM_GALVANICA=set("""t1.py t10.py t15.py t2.py t20.py t21.py t22.py t23.py t24.py t25.py t26.py t27.py t3.py t30.py t31.py t32.py t33.py t34.py t35.py t36.py t38.py t39.py t40.py t41.py t44.py t45.py t46.py t48.py t49.py t50.py t51.py t54.py t56_conjunto_romaneio.py t58.py t6.py t64_acessibilidade.py t65_categoria_conjunto.py t65_div_categoria.py t66_clique_celula.py t67_referencias_cores.py t68_referencias_tamanhos.py t69_banho_categoria_quantidade.py t69_banho_divisoes_exportacao.py t69_banho_fixo_categoria_quantidade.py t69_contas_banho.py t69_insumos.py t69_lote_por_grama_categorias.py t7.py t70_conta_tabela.py t71_romaneios_reais.py t72_romaneio_peso_e_trios.py t73_lancamento_tipos_e_variacoes.py t74_romaneio_extras.py t75_romaneio_frete_e_pendencias.py t76_subcategoria_tamanhos.py t77_lote_sem_bloqueio.py t78_baixar_selecionadas.py t79_sem_banho_por_grama.py t80_abrir_sem_idb.py t81_banho_sem_coluna_abre.py t82_lote_peso_real.py t85_lote_numerado.py t96_fluxos.py t96_auditoria_calculos.py t97_xml_criacao.py t98_banho_componente.py t99_rateio_exato.py t100_xml_precisao.py t101_rom_descartar.py t9.py""".split())
 COM_GALVANICA.add("t103_insumos_frete.py")
 COM_GALVANICA.update(("t47.py","t56.py","t56_rom_acoes.py","t60_varejo.py","t67_rom_acesso.py","t120_edicao_romaneio_menu_numeracao.py"))
-falhas=0;pulos=0
+falhas=_pre;pulos=0
 import re as _re
 from concurrent.futures import ThreadPoolExecutor
 def _opt(nome,padrao=None):
@@ -96,15 +114,6 @@ if not NODE:
     falhas+=1
 else:
     for f,pu in varios(rodar_js,js):falhas+=f
-# ---- testes de unidade do núcleo (src/core), em Node puro, sem navegador ----
-_un=os.path.join(AQUI,"unit")
-if NODE and os.path.isdir(_un) and not FILTRO:
-    _arqs=sorted(os.path.join(_un,f) for f in os.listdir(_un) if f.endswith(".test.mjs"))
-    if _arqs:
-        r=subprocess.run([NODE,"--test"]+_arqs,capture_output=True,text=True,encoding="utf-8",errors="replace",timeout=300)
-        print(f"unit ({len(_arqs)} arquivo(s)): {'FALHOU' if r.returncode else 'OK'}")
-        if r.returncode:
-            print((r.stdout or "")[-1500:]);falhas+=1
 print("\nFalhas:",falhas,"· Testes pulados:",pulos)
 if pulos: print("Execução incompleta: há testes pulados"+(" (permitidos explicitamente)" if permitir_pulos else "; use --permitir-pulos apenas para uma verificação parcial"))
 sys.exit(1 if falhas else 2 if pulos and not permitir_pulos else 0)
