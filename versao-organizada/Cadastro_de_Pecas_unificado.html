@@ -4189,9 +4189,11 @@ function secModelo(C){
     <div class="tw"><table class="cfg ${av?"":"noadv"}"><thead><tr><th>Col.</th><th>Usar</th><th>Nome da coluna no arquivo</th><th>Vai receber</th><th class="adv" title="Como o valor sai no arquivo">Tipo</th><th class="adv" title="Multiplica o número (ex.: gramas × 0,001 = quilos)">× Fator</th><th class="adv" title="Avisa antes de exportar se estiver vazia">Obrig.</th><th class="adv" title="Entra quando a célula está vazia (ou sempre, se a coluna é “em branco”)">Valor padrão</th><th class="adv" title="Número máximo de caracteres (0 = sem limite)">Máx.</th><th class="adv" title="Valores permitidos, separados por ; (vazio = qualquer)">Lista válida</th><th></th></tr></thead><tbody>${linhas}</tbody></table></div>
     <div class="row"><button class="btn sm" type="button" data-act="mc-add">＋ Coluna</button><span class="hint">“Vai receber” = de onde o app tira o dado. “(em branco)” deixa a coluna vazia, para campos que só o outro sistema tem. Colunas desmarcadas em “Usar” não saem no arquivo.</span></div>`);
 }
+/* Estado da fatia exportacao (antes globais soltas): pend = acao esperando a conferencia (28), agrupa/ult = tela de conferencia (28),
+   novo = assistente "Outro sistema" (19b), imp = planilha lida em Importar (29). */
+const estadoExportacao={pend:null,agrupa:false,ult:null,novo:null,imp:null};
 /* ===== assistente "Outro sistema": escolhe a planilha modelo do sistema de destino e confere as colunas ===== */
-let NOVO=null;
-function abrirNovoSistema(){NOVO=null;
+function abrirNovoSistema(){estadoExportacao.novo=null;
   repModal(`<div class="rep-h"><div><b class="rep-t">Exportar para outro sistema</b><div class="hint">Baixe no outro sistema a <b>planilha modelo de importação de produtos</b> (costuma se chamar “planilha modelo” ou “tabela modelo”) e escolha o arquivo aqui. O app lê só a primeira linha, com os nomes das colunas, e não guarda o resto.</div></div><div class="rep-ac"><button type="button" class="btn sm" data-act="rel-fechar">Cancelar</button></div></div>
   <div class="rep-rf" data-novo style="padding:22px 18px;border:2px dashed var(--line);margin:14px 18px;border-radius:12px;justify-content:center"><label class="btn pri big" style="cursor:pointer">Escolher a planilha modelo<input type="file" id="fileNovo" accept=".xlsx,.xls,.csv" class="vh"></label><span class="hint">ou solte o arquivo aqui · .xlsx, .xls ou .csv</span></div>`)}
 async function lerNovo(file){
@@ -4207,9 +4209,9 @@ async function lerNovo(file){
     if(!hdr.some(Boolean)||hdr.length>200)throw new Error("não achei os nomes das colunas na primeira linha");
     const usados=new Set(),cols=hdr.map(h=>{let k=h?(chaveDoCabecalho(h)||""):"";if(k&&usados.has(k))k="";if(k)usados.add(k);
       const c={k,h:h.slice(0,80),auto:!!k};if(k&&TIPO_PAD[k])c.tipo=TIPO_PAD[k];if(k==="N"&&/\bkg\b/i.test(h))c.fator="0.001";return c});
-    NOVO={nome:file.name.replace(/[.][^.]+$/,"").slice(0,60),formato,sep,dec:sep===","?".":",",cols};{const tt=document.getElementById("toast");if(tt)tt.hidden=true}mostrarNovo()}
+    estadoExportacao.novo={nome:file.name.replace(/[.][^.]+$/,"").slice(0,60),formato,sep,dec:sep===","?".":",",cols};{const tt=document.getElementById("toast");if(tt)tt.hidden=true}mostrarNovo()}
   catch(e){toast("Não consegui ler essa planilha: "+(e&&e.message?e.message:"arquivo inválido")+".")}}
-function mostrarNovo(){const N=NOVO,reco=N.cols.filter(c=>c.k).length,chaves=[["","(deixar em branco)"],...LET.map(L=>[L,NOME[L]])];
+function mostrarNovo(){const N=estadoExportacao.novo,reco=N.cols.filter(c=>c.k).length,chaves=[["","(deixar em branco)"],...LET.map(L=>[L,NOME[L]])];
   repModal(`<div class="rep-h"><div><b class="rep-t">Conferir as colunas</b><div class="hint">${reco} de ${N.cols.length} colunas reconhecidas. Ajuste o que estiver errado; o resto sai em branco. Arquivo: ${N.formato==="csv"?"texto (.csv)":"planilha (.xlsx)"}.</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="novo-ok">Usar este modelo</button><button type="button" class="btn sm" data-act="rel-fechar">Cancelar</button></div></div>
   <div class="rep-rf"><label class="fl" style="width:280px"><span>Nome do sistema</span><input data-nv="nome" value="${esc(N.nome)}"></label></div>
   <div class="rep-tb"><table class="cfg"><thead><tr><th>Coluna do outro sistema</th><th>Vai receber</th><th></th></tr></thead><tbody>${N.cols.map((c,i)=>`<tr class="${c.k?"":"nv-nao"}"><td>${esc(c.h||"(sem nome)")}</td><td><select data-nv="k" data-i="${i}" style="width:250px">${opts(chaves,c.k||"")}</select></td><td class="hint">${c.k?"✓ reconhecida":"em branco"}</td></tr>`).join("")}</tbody></table></div>`)}
@@ -5980,13 +5982,11 @@ const DLNAV={save:async({filename,data})=>{const b=data instanceof Blob?data:new
 async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}return dl||DLNAV}
 /* pendências antes de exportar: obrigatório vazio, peso faltando (banho sem custo) e banho sem multiplicador */
 /* conferência antes de exportar: pendências da tabela + regras do modelo escolhido */
-let expPend=null;
-function abrirConferencia(g,cols,acao){const p=conferirExport(g,cols);if(!p.n)return false;expPend=acao||null;mostrarConferencia(p,!!acao);return true}
-let expAgrupa=false,expUlt=null;
+function abrirConferencia(g,cols,acao){const p=conferirExport(g,cols);if(!p.n)return false;estadoExportacao.pend=acao||null;mostrarConferencia(p,!!acao);return true}
 /* pendências agrupadas por tipo: "Peso (sem ele…): 12 peças", com botões para ir às primeiras */
-function mostrarConferencia(p,podeSeguir){expUlt={p,podeSeguir};const LIM=300,mo=modeloAtual();
+function mostrarConferencia(p,podeSeguir){estadoExportacao.ult={p,podeSeguir};const LIM=300,mo=modeloAtual();
   repModal(`<div class="rep-h"><div><b class="rep-t">Conferência antes de exportar</b><div class="hint">Modelo <b>${esc(mo.nome)}</b> · ${p.n} ponto(s) para olhar${p.n>LIM*2?" (mostrando os primeiros)":""}</div></div><div class="rep-ac">${podeSeguir?`<button type="button" class="btn pri sm" data-act="exp-assim">Exportar mesmo assim</button>`:""}<button type="button" class="btn sm" data-act="rel-fechar">${podeSeguir?"Voltar e corrigir":"Fechar"}</button></div></div>
-  ${p.ger.length?`<div class="rep-rf"><b>Pendências da tabela (${p.ger.length})</b> <button type="button" class="btn ghost sm" data-act="exp-agrupar">${expAgrupa?"Ver peça por peça":"Agrupar por tipo"}</button></div><div class="rep-tb"><table><tbody>${expAgrupa?pendGrupos(p.ger):p.ger.slice(0,LIM).map(s=>{const m=s.match(/^Linha \d+ \(([^)]+)\)/);return `<tr><td>${esc(s)} ${m?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(m[1])}">Ir à peça</button>`:""}</td></tr>`}).join("")}</tbody></table></div>`:""}
+  ${p.ger.length?`<div class="rep-rf"><b>Pendências da tabela (${p.ger.length})</b> <button type="button" class="btn ghost sm" data-act="exp-agrupar">${estadoExportacao.agrupa?"Ver peça por peça":"Agrupar por tipo"}</button></div><div class="rep-tb"><table><tbody>${estadoExportacao.agrupa?pendGrupos(p.ger):p.ger.slice(0,LIM).map(s=>{const m=s.match(/^Linha \d+ \(([^)]+)\)/);return `<tr><td>${esc(s)} ${m?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(m[1])}">Ir à peça</button>`:""}</td></tr>`}).join("")}</tbody></table></div>`:""}
   ${p.mod.length?`<div class="rep-rf"><b>Regras do modelo (${p.mod.length})</b></div><div class="rep-tb"><table><thead><tr><th class="n">Linha</th><th>Referência</th><th>Coluna</th><th>Problema</th></tr></thead><tbody>${p.mod.slice(0,LIM).map(x=>`<tr><td class="n">${x.l}</td><td class="mono">${esc(x.ref)} ${x.ref&&x.ref!=="—"?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(x.ref)}" data-colnome="${esc(x.col)}">Ir à peça</button>`:""}</td><td>${esc(x.col)}</td><td class="al-t">${esc(x.msg)}</td></tr>`).join("")}</tbody></table></div>`:""}`)}
 /* arquivo CSV do modelo: separador, decimal e codificação escolhidos no modelo */
 /* com filtro ativo, baixar e copiar levam as PEÇAS que o filtro mostra, sempre com todas as variações (pai e filhos não se separam) */
@@ -6047,7 +6047,6 @@ function gravarExport(limpar){
 }
 
 /* ===== importar / cópia ===== */
-let impPend=null;
 function importar(file){
   try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha")}catch(e){document.getElementById("impRes").innerHTML=`<p class="status bad">${esc(e.message)}. Nada foi lido.</p>`;return}
   const fr=new FileReader();fr.onload=()=>{try{
@@ -6058,17 +6057,17 @@ function importar(file){
     aoa.slice(1).forEach(r=>{const m=String(r[iR]||"").trim().toUpperCase().match(/^([A-Z]+)(\d+)[A-Z]*$/);if(m&&!(max[m[1]]>=+m[2]))max[m[1]]=+m[2];if(m&&m[2].length>1&&m[2][0]==="0")pad[m[1]]=Math.max(pad[m[1]]||0,m[2].length);
       if(iF>=0&&r[iF])forn.add(String(r[iF]).trim());if(iC>=0&&r[iC]){const c=String(r[iC]).trim();cats[c]=cats[c]||{subs:new Set(),pref:null};if(!cats[c].pref&&m)cats[c].pref=m[1];if(iS>=0&&r[iS])cats[c].subs.add(String(r[iS]).trim())}
       if(iCor>=0&&r[iCor])cores.add(String(r[iCor]).trim());if(iO>=0&&r[iO])obs.add(String(r[iO]).trim())});
-    impPend={max,pad,forn,cats,cores,obs};
+    estadoExportacao.imp={max,pad,forn,cats,cores,obs};
     document.getElementById("impRes").innerHTML=`<div class="banner"><p>Última peça encontrada: ${Object.entries(max).map(([p,n])=>`<b class="mono">${esc(p)}${esc(n)}</b>`).join(", ")||"nenhuma"} · ${forn.size} fornecedor(es) · ${Object.keys(cats).length} categoria(s) · ${cores.size} cor(es).</p><button class="btn pri sm" type="button" data-act="imp-ok">Aplicar</button></div>`;
   }catch(e){document.getElementById("impRes").innerHTML=e&&e.lim?`<p class="status bad">${esc(e.message)}. Nada foi lido.</p>`:`<p class="status bad">Não consegui ler. A primeira linha precisa ter o cabeçalho “Referência”.</p>`}};fr.readAsArrayBuffer(file);
 }
 function aplicarImp(){
-  if(!impPend)return;const C=cfg(),lo=s=>s.toLowerCase(),{max,pad,forn,cats,cores,obs}=impPend;
+  if(!estadoExportacao.imp)return;const C=cfg(),lo=s=>s.toLowerCase(),{max,pad,forn,cats,cores,obs}=estadoExportacao.imp;
   Object.entries(max).forEach(([p,n])=>{if(!(ultimo(p)>=n))C.seqs[p]=String(n).padStart((pad&&pad[p])||0,"0")});
   forn.forEach(f=>{if(!C.fornecedores.some(x=>lo(x.nome)===lo(f)))C.fornecedores.push({nome:f,desconto:"0",tipo:"bruta",codigo:""})});
   Object.entries(cats).forEach(([c,v])=>{let k=C.categorias.find(x=>lo(x.nome)===lo(c));if(!k){k={nome:c,prefixo:v.pref||"BR",subs:[]};C.categorias.push(k)}v.subs.forEach(s=>{if(!k.subs.some(x=>lo(x)===lo(s)))k.subs.push(s)})});
   cores.forEach(c=>{if(!C.cores.some(x=>lo(x)===lo(c)))C.cores.push(c)});obs.forEach(o=>{if(!C.observacoes.includes(o))C.observacoes.push(o)});
-  impPend=null;salvar(true,false);render();toast("Importado.");
+  estadoExportacao.imp=null;salvar(true,false);render();toast("Importado.");
 }
 async function backup(){const dl=await obterDL();
   try{await dl.save({filename:"cadastro-pecas-cadastros.json",data:JSON.stringify({config:S.config},null,2)})}catch(e){if(e&&e.code!=="declined")toast("Não consegui salvar a cópia.")}}
@@ -6183,7 +6182,7 @@ document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.clo
 function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=(cfg().banhistas[0]||{}).id||"";conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del","cv-del","cv-todas","cv-num"];
 /* Registro de ações de clique (data-act). Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
-const ACOES={};
+const ACOES=Object.create(null);
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo==="conjunto"){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];
@@ -6247,15 +6246,6 @@ document.addEventListener("click",e=>{
     case "zoom":{const k=t.dataset.z,d=+t.dataset.d;ZM[k]=d===0?1:Math.min(1.6,Math.max(0.7,Math.round((ZM[k]+d*0.1)*10)/10));zoomAplicar(true);break}
     case "mod-av":abertos.modAv=!abertos.modAv;guardarAbertos();renderCfg();break;
     case "mod-brancas":abertos.modTodas=!abertos.modTodas;guardarAbertos();renderCfg();break;
-    case "mod-novo":abrirNovoSistema();break;
-    case "novo-ok":{const N=NOVO;if(!N)break;const mo={id:uid(),nome:(String(N.nome||"").trim()||"Novo sistema"),formato:N.formato,sep:N.sep,dec:N.dec,enc:"utf8bom",
-      cols:N.cols.map(c=>{const x={k:c.k||"",h:c.h||"",on:true};if(c.tipo)x.tipo=c.tipo;if(c.fator)x.fator=c.fator;return x})};
-      C.modelos.push(mo);C.modelo=mo.id;NOVO=null;const o=document.querySelector(".rep");if(o)o.remove();salvar(true,false);render();
-      toast(`“${mo.nome}” pronto: é só escolher “${mo.nome}” em Exportar para e baixar. Faça um teste pequeno no outro sistema antes de importar tudo.`);break}
-    case "mod-conferir":{const g=gerar();if(!g.linhas.length){toast("A tabela está vazia: lance ou cole peças antes de conferir.");break}if(!abrirConferencia(g,colunasExport(),null))toast("Tudo certo: a tabela atende às regras do modelo.");break}
-    case "mod-salvar":modeloParaJson(modeloAtual());break;
-    case "exp-ir":{const ref=t.dataset.ref,ri=G&&G.linhas.findIndex(r=>String(r.v.E||"")===ref);if(ri==null||ri<0){toast("A peça não está na tabela atual.");break}if(FV&&!FV.has(ri)){toast("Esta peça está fora do filtro atual. Feche esta janela e limpe o filtro para encontrá-la.");break}const o=t.closest(".rep");if(o)o.remove();expPend=null;visPara(celular()?"planilha":"tudo");const col=LET.findIndex(L=>NOME[L]===t.dataset.colnome);selecionar(ri,col>=0?col:LET.indexOf("F"));rolarAte();setTimeout(()=>{const e=document.querySelector("#sheet td.sa");if(e)e.focus()},100);break}
-    case "exp-assim":{const o=document.querySelector(".rep");if(o)o.remove();const a=expPend;expPend=null;if(a&&a.tipo==="copiar")copiar(a.ids,true);else baixar(true,a&&a.ids);break}
     case "mod-bling":{const mo=modeloBling();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast("Modelo Bling criado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele (depois de cadastrá-los, ligue-os em “Recebe o dado de”). Use o botão Validar do Bling antes de Importar.");break}
     case "mod-jueri":{const mo=modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();break}
     case "ordem":C.ordem=t.dataset.v;salvar(true,false);renderTopo();break;
@@ -6287,9 +6277,6 @@ document.addEventListener("click",e=>{
     case "ir":if(celular())formAbrir(false);irPara(t.dataset.sec);break;
     case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);break;
     case "exemplo":abrirExemploVisual();break;
-    case "xlsx":baixar();break;
-    case "copiar":copiar();break;
-    case "exp-limpar":gravarExport(true);break;case "exp-so":gravarExport(false);break;case "exp-nao":lastExport=null;renderTopo();break;
     case "cat-add":{const inp=document.getElementById("novaCat"),v=inp.value.replace(/\s+/g," ").trim();
       const er=nomeCatErro(C,v,null);if(er){toast(er);inp.focus();break}
       const pf=prefixoNovo(C,v),p=pf.p;
@@ -6361,7 +6348,6 @@ document.addEventListener("click",e=>{
     case "sim-usar":{const f=S.form;f.mk=f.mk||{};f.mk[t.dataset.bid]=String(t.dataset.fator).replace(".",",");document.querySelectorAll(".rep").forEach(x=>x.remove());salvar(false);renderForm();toast(`Fator ${t.dataset.fator.replace(".",",")} aplicado.`);break}
     case "prim-ir":{primeirosIr(t.dataset.p);primeirosAtualizar();break}
     case "prim-fechar":{abertos.primeiros=false;guardarAbertos();primeirosAtualizar();break}
-    case "exp-agrupar":{expAgrupa=!expAgrupa;if(expUlt)mostrarConferencia(expUlt.p,expUlt.podeSeguir);break}
     case "rom-xlsx":{const ids=new Set(ROM.rows.flatMap(r=>r.lancIds||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("Nenhuma peça deste romaneio está na tabela atual.");break}baixar(false,ids);break}
     case "rel-xlsx":{const rel=relLer(),ids=new Set((rel&&rel.lids||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("As peças desta criação não estão mais na tabela.");break}baixar(false,ids);break}
     case "rom-bulk-div":{const rs=romSelRows().filter(r=>!r.skip&&!r.feito&&!r.lote&&(!gradeDaCat(r.cat,r.sub)||r.semG)&&!(r.csel||[]).length);rs.forEach(r=>romDividir(r,romColsR(r)));renderRom();toast(`${rs.length} peça(s) divididas entre os banhos.`);break}
@@ -6496,11 +6482,30 @@ document.addEventListener("click",e=>{
     case "rom-map-del":{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);a.splice(+t.closest(".rmr").dataset.rmj,1);T.mapa=mapaStr(a);salvar(true,false);renderCfg();break}
     case "rom-testar":{const card=t.closest("[data-rom]"),T=C.romaneios[+card.dataset.rom],R=lerRomaneioAuto(card.querySelector("[data-rtest]").value,T),o=card.querySelector(".rtres");
       o.textContent=R.erro||`${R.rows.length} peças lidas${R.conf?" · "+R.conf:""} · 1ª: ${R.rows[0].desc} (${R.rows[0].cod||"sem código"}) ${R.rows[0].qtd} un.`;break}
-    case "imp-ok":aplicarImp();break;
     case "abrir-arq":{const i=document.getElementById(t.dataset.alvo);if(i)i.click();break}
-    case "backup":backup();break;
   }
   if(snapCfg&&JSON.stringify(S.config)!==JSON.stringify(snapCfg))toast("Cadastro alterado.",{t:"Desfazer",fn:()=>{S.config=snapCfg;salvar(true);render()}});
+});
+/* Ações de clique (data-act) da fatia exportacao. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+   Convenção: o que era `break` no switch virou `return`. O estado de exportar/importar fica em estadoExportacao (19b-assistente-outro-sistema.js). */
+registrarAcoes(ACOES,"exportacao",{
+  "mod-novo":()=>{abrirNovoSistema()},
+  "novo-ok":({C})=>{const N=estadoExportacao.novo;if(!N)return;const mo={id:uid(),nome:(String(N.nome||"").trim()||"Novo sistema"),formato:N.formato,sep:N.sep,dec:N.dec,enc:"utf8bom",
+      cols:N.cols.map(c=>{const x={k:c.k||"",h:c.h||"",on:true};if(c.tipo)x.tipo=c.tipo;if(c.fator)x.fator=c.fator;return x})};
+      C.modelos.push(mo);C.modelo=mo.id;estadoExportacao.novo=null;const o=document.querySelector(".rep");if(o)o.remove();salvar(true,false);render();
+      toast(`“${mo.nome}” pronto: é só escolher “${mo.nome}” em Exportar para e baixar. Faça um teste pequeno no outro sistema antes de importar tudo.`);return},
+  "mod-conferir":()=>{const g=gerar();if(!g.linhas.length){toast("A tabela está vazia: lance ou cole peças antes de conferir.");return}if(!abrirConferencia(g,colunasExport(),null))toast("Tudo certo: a tabela atende às regras do modelo.");return},
+  "mod-salvar":()=>{modeloParaJson(modeloAtual())},
+  "exp-ir":({t})=>{const ref=t.dataset.ref,ri=G&&G.linhas.findIndex(r=>String(r.v.E||"")===ref);if(ri==null||ri<0){toast("A peça não está na tabela atual.");return}if(FV&&!FV.has(ri)){toast("Esta peça está fora do filtro atual. Feche esta janela e limpe o filtro para encontrá-la.");return}const o=t.closest(".rep");if(o)o.remove();estadoExportacao.pend=null;visPara(celular()?"planilha":"tudo");const col=LET.findIndex(L=>NOME[L]===t.dataset.colnome);selecionar(ri,col>=0?col:LET.indexOf("F"));rolarAte();setTimeout(()=>{const e=document.querySelector("#sheet td.sa");if(e)e.focus()},100);return},
+  "exp-assim":()=>{const o=document.querySelector(".rep");if(o)o.remove();const a=estadoExportacao.pend;estadoExportacao.pend=null;if(a&&a.tipo==="copiar")copiar(a.ids,true);else baixar(true,a&&a.ids);return},
+  "xlsx":()=>{baixar()},
+  "copiar":()=>{copiar()},
+  "exp-limpar":()=>{gravarExport(true)},
+  "exp-so":()=>{gravarExport(false)},
+  "exp-nao":()=>{lastExport=null;renderTopo()},
+  "exp-agrupar":()=>{estadoExportacao.agrupa=!estadoExportacao.agrupa;if(estadoExportacao.ult)mostrarConferencia(estadoExportacao.ult.p,estadoExportacao.ult.podeSeguir);return},
+  "imp-ok":()=>{aplicarImp()},
+  "backup":()=>{backup()}
 });
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.cont)return;const c=continuoCfg();cfg().continuo={...c,[t.dataset.cont]:!!t.checked};salvar(true,false)});
 document.addEventListener("change",e=>{const t=e.target;if(!t||!t.dataset)return;const palavras=v=>[...new Map(String(v).split(/[;\n]/).map(x=>x.trim().replace(/\s+/g," ")).filter(x=>x&&x.length<=60).map(x=>[semAc(x),x])).values()];if(t.hasAttribute("data-cbank")){const el=t.closest("[data-cat]"),c=el&&cfg().categorias[+el.dataset.cat];if(!c)return;c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[t.dataset.cbank]=palavras(t.value).slice(0,100);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral")){cfg().bancoGeral=palavras(t.value).slice(0,500);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral-on")){cfg().bancoGeralAtivo=t.checked;salvar(true,false);renderForm()}});
@@ -6561,9 +6566,9 @@ function onField(t,isChange){
   if(t.dataset&&t.dataset.fauto!==undefined){if(t.checked&&!confirm("Ativar envio automático? As fotos anexadas serão enviadas ao imgbb, um serviço de terceiros, e qualquer pessoa com o link poderá acessá-las.")){t.checked=false;return}try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0");localStorage.setItem("cadpecas-imgbb-consent-v1",t.checked?"1":"0")}catch(e){t.checked=false;toast("Não consegui salvar a preferência de envio automático.")}return}
   if(t.dataset&&t.dataset.fkey!==undefined){try{localStorage.setItem("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange&&!faixaBusy){faixaBusy=true;try{aplicaFaixa(t.value)}finally{faixaBusy=false}}return}
-  if(t.dataset&&t.dataset.nv!==undefined){if(!NOVO)return;
-    if(t.dataset.nv==="nome"){NOVO.nome=String(t.value).slice(0,60);return}
-    if(t.dataset.nv==="k"&&isChange){const c=NOVO.cols[+t.dataset.i];if(c){c.k=t.value;c.auto=false;if(c.k&&TIPO_PAD[c.k]&&!c.tipo)c.tipo=TIPO_PAD[c.k];const tr=t.closest("tr");if(tr){tr.className=c.k?"":"nv-nao";const h=tr.querySelector(".hint");if(h)h.textContent=c.k?"escolhida por você":"em branco"}}}
+  if(t.dataset&&t.dataset.nv!==undefined){if(!estadoExportacao.novo)return;
+    if(t.dataset.nv==="nome"){estadoExportacao.novo.nome=String(t.value).slice(0,60);return}
+    if(t.dataset.nv==="k"&&isChange){const c=estadoExportacao.novo.cols[+t.dataset.i];if(c){c.k=t.value;c.auto=false;if(c.k&&TIPO_PAD[c.k]&&!c.tipo)c.tipo=TIPO_PAD[c.k];const tr=t.closest("tr");if(tr){tr.className=c.k?"":"nv-nao";const h=tr.querySelector(".hint");if(h)h.textContent=c.k?"escolhida por você":"em branco"}}}
     return}
   if(t.id==="modSel"){const v=t.value;
     if(v==="@bling"||v==="@jueri"){const mo=v==="@bling"?modeloBling():modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast(v==="@bling"?"Bling adicionado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele.":"Jueri adicionado.")}
