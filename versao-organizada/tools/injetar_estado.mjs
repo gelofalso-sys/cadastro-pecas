@@ -7,7 +7,7 @@ import * as escope from "eslint-scope";
 import fs from "node:fs";
 import path from "node:path";
 import { analisar } from "./grafo_puro.mjs";
-import { dirCore, dirJs } from "./_nucleo.mjs";
+import { dirSrc, dirCore, dirJs, lerOrdem } from "./_nucleo.mjs";
 
 const simular = process.argv.includes("--simular");
 const { decls, impuro } = analisar();
@@ -26,7 +26,7 @@ const DEST = { "10-limites-e-colunas.js": "configuracao", "11-utilidades.js": "c
 const arquivos = [...new Set([...Q].map(n => decls.get(n).arq))];
 const porModulo = {}, adaptadores = [], relatorio = [];
 for (const arq of arquivos) {
-  const f = path.join(dirJs, arq); let src = fs.readFileSync(f, "utf8");
+  const f = path.join(dirSrc, arq); let src = fs.readFileSync(f, "utf8");
   const comments = [];
   const ast = espree.parse(src, { ecmaVersion: 2023, sourceType: "script", range: true, loc: true, comment: true, onComment: comments });
   const sc = escope.analyze(ast, { ecmaVersion: 2023 });
@@ -92,7 +92,7 @@ if (simular) process.exit(0);
 for (const [mod, partes] of Object.entries(porModulo)) {
   const alvo = path.join(dirCore, mod + ".js");
   fs.appendFileSync(alvo, (fs.existsSync(alvo) ? "" : `/* ===== núcleo: ${mod} — funções que recebem o estado S como primeiro argumento (nome$) ===== */\n`) + partes.join(""));
-  const ord = path.join(dirCore, "_ordem.txt"), l = fs.readFileSync(ord, "utf8").split(/\r?\n/).filter(Boolean); if (!l.includes(mod + ".js")) { l.push(mod + ".js"); fs.writeFileSync(ord, l.join("\n") + "\n") }
+  const l = lerOrdem(); if (!l.includes("core/" + mod + ".js")) { const k = l.filter(x => x.startsWith("core/")).length; l.splice(k, 0, "core/" + mod + ".js"); fs.writeFileSync(path.join(dirSrc, "_ordem.txt"), l.join("\n") + "\n") }
 }
 fs.writeFileSync(path.join(dirJs, "00-adaptadores-nucleo.js"), "/* ===== adaptadores: o app chama f(...); o núcleo recebe o estado: f$(S, ...). Gerado por tools/injetar_estado.mjs ===== */\n" + adaptadores.join("\n") + "\n");
-const oa = path.join(dirJs, "_ordem-a.txt"), la = fs.readFileSync(oa, "utf8").split(/\r?\n/).filter(Boolean); if (!la.includes("00-adaptadores-nucleo.js")) fs.writeFileSync(oa, ["00-adaptadores-nucleo.js", ...la].join("\n") + "\n");
+const la = lerOrdem(); if (!la.includes("js/00-adaptadores-nucleo.js")) { const k = la.filter(x => x.startsWith("core/")).length; la.splice(k, 0, "js/00-adaptadores-nucleo.js"); fs.writeFileSync(path.join(dirSrc, "_ordem.txt"), la.join("\n") + "\n") }

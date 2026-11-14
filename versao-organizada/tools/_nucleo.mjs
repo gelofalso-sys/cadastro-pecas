@@ -3,12 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 export const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const dirCore = path.join(raiz, "src", "core"), dirJs = path.join(raiz, "src", "js");
-const lista = (dir, ...manifestos) => manifestos.flatMap(m => fs.existsSync(path.join(dir, m)) ? fs.readFileSync(path.join(dir, m), "utf8").split(/\r?\n/).filter(l => l.trim()) : []);
+export const dirSrc = path.join(raiz, "src"), dirCore = path.join(dirSrc, "core"), dirJs = path.join(dirSrc, "js");
 // Mesmo tratamento que tools/montar.py: o núcleo é escrito como módulo ES (import/export) e o bloco do navegador o recebe sem eles.
 export const tirarModulo = t => t.replace(/^import\s[^;]*?from\s+["'][^"']+["'];?[ \t]*$/gm, "").replace(/^export\s+(?=(?:async\s+function|function|const|let|var|class)\b)/gm, "");
+// Manifesto unico: src/_ordem.txt, um caminho relativo a src/ por linha, na ordem de montagem.
+export function lerOrdem(r = raiz) { return fs.readFileSync(path.join(r, "src", "_ordem.txt"), "utf8").split(/\r?\n/).filter(l => l.trim()); }
 export function arquivosDoBloco() {
-  return [...lista(dirCore, "_ordem.txt").map(n => ({ n: "core/" + n, f: path.join(dirCore, n), modulo: true })),
-    ...lista(dirJs, "_ordem-a.txt", "_ordem-b.txt").map(n => ({ n, f: path.join(dirJs, n), modulo: false }))];
+  return lerOrdem().map(n => ({ n, f: path.join(dirSrc, n), modulo: n.startsWith("core/") }));
 }
 export const lerBloco = a => { const t = fs.readFileSync(a.f, "utf8"); return a.modulo ? tirarModulo(t) : t };

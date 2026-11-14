@@ -7,13 +7,13 @@ SRC=RAIZ/"src"
 def ler(*partes): return SRC.joinpath(*partes).read_text(encoding="utf-8")
 def lista(pasta,manifesto): return [x for x in ler(pasta,manifesto).splitlines() if x.strip()]
 css="".join(ler("css",n) for n in lista("css","_ordem.txt"))
-nomes=lista("js","_ordem-a.txt")+lista("js","_ordem-b.txt")
+# Manifesto unico: src/_ordem.txt (um caminho relativo a src/ por linha). Arquivos de core/ entram sem import/export.
+arquivos=lista(".","_ordem.txt")
 def tirar_modulo(t):
     """O núcleo (src/core) é escrito como módulo ES; no bloco único do navegador entra sem import/export."""
     t=re.sub(r'^import\s[^;\n]*?from\s+["\'][^"\']+["\'];?[ \t]*$','',t,flags=re.M)
     return re.sub(r'^export\s+(?=(?:async\s+function|function|const|let|var|class)\b)','',t,flags=re.M)
-core="".join(tirar_modulo(ler("core",n)) for n in lista("core","_ordem.txt")) if (SRC/"core"/"_ordem.txt").exists() else ""
-js=core+"".join(ler("js",n) for n in nomes)
+js="".join(tirar_modulo(ler(n)) if n.startswith("core/") else ler(n) for n in arquivos)
 def vendor(*partes): return RAIZ.joinpath("vendor",*partes).read_text(encoding="utf-8")
 # pdf.js fica em vendor/ e é embutido aqui, para o HTML final continuar de arquivo único e offline.
 corpo=(ler("html","02a-corpo.html")+"<script>"+vendor("pdfjs","pdf.min.js")+"</script>"+chr(10)

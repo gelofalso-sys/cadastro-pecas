@@ -8,14 +8,17 @@ import * as escope from "eslint-scope";
 import fs from "node:fs";
 import path from "node:path";
 import { analisar } from "./grafo_puro.mjs";
-import { dirCore, dirJs, tirarModulo } from "./_nucleo.mjs";
+import { dirSrc, dirCore, dirJs, tirarModulo, lerOrdem } from "./_nucleo.mjs";
 
 const args = process.argv.slice(2);
 const opt = n => (args.find(a => a.startsWith("--" + n + "=")) || "").split("=")[1];
 const simular = args.includes("--simular");
 
 const analisaModulo = f => { const t = tirarModulo(fs.readFileSync(f, "utf8")); const ast = espree.parse(t, { ecmaVersion: 2023, sourceType: "script", range: true, loc: true }); return { t, ast, sc: escope.analyze(ast, { ecmaVersion: 2023 }) } };
-const ordemCore = () => fs.existsSync(path.join(dirCore, "_ordem.txt")) ? fs.readFileSync(path.join(dirCore, "_ordem.txt"), "utf8").split(/\r?\n/).filter(Boolean) : [];
+const arqOrdem = path.join(dirSrc, "_ordem.txt");
+const ordemCore = () => lerOrdem().filter(n => n.startsWith("core/")).map(n => n.slice(5));
+// Regrava o manifesto unico trocando so a parte do nucleo (core/ vem sempre primeiro).
+const gravarOrdemCore = mods => fs.writeFileSync(arqOrdem, [...mods.map(m => "core/" + m), ...lerOrdem().filter(n => !n.startsWith("core/"))].join("\n") + "\n");
 
 if (args.includes("--imports")) { reescreverImports(); process.exit(0); }
 
@@ -73,7 +76,7 @@ fs.mkdirSync(dirCore, { recursive: true });
 const alvo = path.join(dirCore, modulo + ".js");
 const cab = fs.existsSync(alvo) ? "" : `/* ===== núcleo: ${modulo} — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */\n`;
 fs.appendFileSync(alvo, cab + corpo);
-const ord = ordemCore(); if (!ord.includes(modulo + ".js")) { ord.push(modulo + ".js"); fs.writeFileSync(path.join(dirCore, "_ordem.txt"), ord.join("\n") + "\n") }
+const ord = ordemCore(); if (!ord.includes(modulo + ".js")) { ord.push(modulo + ".js"); gravarOrdemCore(ord) }
 console.log("movidas", movidas.length, "para", path.relative(process.cwd(), alvo));
 
 // ---------- imports e ordem ----------
@@ -102,6 +105,6 @@ function reescreverImports() {
   const ordem = [], vis = new Map();
   const visita = m => { if (vis.get(m) === 2) return; if (vis.get(m) === 1) { console.error("  ! ciclo entre módulos envolvendo", m); return } vis.set(m, 1); (info.find(i => i.m === m).deps || []).forEach(visita); vis.set(m, 2); ordem.push(m) };
   mods.forEach(visita);
-  fs.writeFileSync(path.join(dirCore, "_ordem.txt"), ordem.join("\n") + "\n");
+  gravarOrdemCore(ordem);
   console.log("ordem:", ordem.join(" "));
 }
