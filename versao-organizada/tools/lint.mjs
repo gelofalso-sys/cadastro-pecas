@@ -6,6 +6,8 @@ import { raiz, arquivosDoBloco, lerBloco } from "./_nucleo.mjs";
 let bloco = "", inicios = [];
 const linhas = t => t.split(String.fromCharCode(10)).length;
 for (const a of arquivosDoBloco()) { inicios.push({ n: a.n, ate: 0, de: linhas(bloco) }); bloco += lerBloco(a); inicios.at(-1).ate = linhas(bloco); }
+// Converte a linha do bloco montado em arquivo:linha (usa `inicios`).
+const onde = ln => { const i = [...inicios].reverse().find(x => x.de <= ln) || inicios[0]; return i.n + ":" + (ln - i.de + 1) };
 const eslint = new ESLint({ cwd: raiz });
 const [r] = await eslint.lintText(bloco, { filePath: path.join(raiz, "bloco-montado.js") });
 const msgs = r.messages;

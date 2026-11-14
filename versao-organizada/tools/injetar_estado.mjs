@@ -80,7 +80,7 @@ for (const arq of arquivos) {
   });
   function findCall(ast, idn) { let achou = null; (function v(n) { if (achou || !n || typeof n.type !== "string") return; if (n.range && (idn.range[0] < n.range[0] || idn.range[1] > n.range[1])) return; if (n.type === "CallExpression" && n.callee === idn) { achou = n; return } for (const k of Object.keys(n)) { const c = n[k]; if (Array.isArray(c)) c.forEach(v); else if (c && typeof c.type === "string") v(c) } })(ast); return achou }
   if (!cortes.length) continue;
-  const mod = DEST[arq] || "dominio";
+  const mod = DEST[path.basename(arq)] || "dominio";
   for (const c of cortes) { (porModulo[mod] = porModulo[mod] || []).push(c.antes + "export " + c.txt + (c.txt.endsWith("\n") ? "" : "\n")); c.nomes.forEach(n => adaptadores.push(`function ${n}(...a){return ${n}$(S,...a)}`)) }
   let novo = src; for (const c of [...cortes].reverse()) novo = novo.slice(0, c.ini) + novo.slice(c.fim);
   if (!simular) fs.writeFileSync(f, novo);
