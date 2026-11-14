@@ -4,7 +4,7 @@ D=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import glob
 def _fontes(arq):
     """texto do arquivo de src/js seguido do núcleo (src/core, sem export): o código puro mudou de arquivo, não de comportamento"""
-    t=[open(os.path.join(D,"src","js",arq),encoding="utf-8").read()]
+    t=[open(os.path.join(D,"src",*arq.split("/")) if "/" in arq else os.path.join(D,"src","js",arq),encoding="utf-8").read()]
     for f in sorted(glob.glob(os.path.join(D,"src","core","*.js"))):
         t.append(re.sub(r'(?m)^export\s+(?=(?:async\s+function|function|const|let|var|class)\b)','',open(f,encoding="utf-8").read()))
     return chr(10).join(t)
@@ -44,6 +44,6 @@ ok(o["peso"]==10,"peso =P2*2 com compra 10 e desconto 50% = 10 g")
 ok(o["banho"]==15,"banho 1,50/g sobre 10 g = 15 (igual ao Excel)")
 ok(o["qtd"] is False and o["qtd_sem"] is True,"quantidade =P2 com compra 3 e desconto 50% = 1,5: reprovada")
 ok(o["xl"]["f"]=="ROUND(N2*1.005,2)" and o["xl"]["v"]==1.01,"banho automatico em coluna de dinheiro: formula com ROUND, valor 1,01")
-ok("n(\"W\")" in rd("19d-tabelas-salvas.js") and "c.calc" in rd("19d-tabelas-salvas.js"),"resumo da tabela salva usa o resultado das formulas")
+ok("n(\"W\")" in rd("fatias/tabelas/19d2-tabelas-salvar-e-ver.js") and "c.calc" in rd("fatias/tabelas/19d2-tabelas-salvar-e-ver.js"),"resumo da tabela salva usa o resultado das formulas")
 ok("x.q.p!==undefined" in rd("21-edicao-em-lote-e-revisao.js"),"trocar fornecedor/tipo/banho avisa quando a quantidade ajustada difere da lista")
 raise SystemExit(0 if all(res) else 1)
