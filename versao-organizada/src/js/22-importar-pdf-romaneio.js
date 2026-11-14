@@ -1,10 +1,7 @@
 /* ===== importar o PDF do romaneio: texto + fotos em alta resolução ===== */
-const PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-let pdfLib=null;
-async function carregarPdfJs(){if(pdfLib)return pdfLib;
-  if(!window.pdfjsLib)await new Promise((ok,no)=>{const sc=document.createElement("script");sc.src=PDFJS+"pdf.min.js";sc.onload=ok;sc.onerror=()=>no(new Error("Não consegui carregar o leitor de PDF (sem internet?)"));document.head.appendChild(sc)});
-  const L=window.pdfjsLib;
-  try{const b=await (await fetch(PDFJS+"pdf.worker.min.js")).blob();L.GlobalWorkerOptions.workerSrc=URL.createObjectURL(b)}catch(e){L.GlobalWorkerOptions.workerSrc=PDFJS+"pdf.worker.min.js"}
+let pdfLib=null; async function carregarPdfJs(){if(pdfLib)return pdfLib;const L=window.pdfjsLib;if(!L)throw new Error("O leitor de PDF não está neste arquivo. Use o arquivo completo.");const el=document.getElementById("pdfjsWorkerSrc");if(!el)throw new Error("O leitor de PDF está incompleto neste arquivo.");const wurl=URL.createObjectURL(new Blob([el.textContent],{type:"text/javascript"}));L.GlobalWorkerOptions.workerSrc=wurl;
+  /* aberto direto do disco (file://), o pdf.js não aceita o worker por URL e cai num modo que a CSP bloqueia: criar o Worker aqui evita isso */
+  try{L.GlobalWorkerOptions.workerPort=new Worker(wurl)}catch(e){}
   pdfLib=L;return L}
 const mulM=(m,n)=>[m[0]*n[0]+m[2]*n[1],m[1]*n[0]+m[3]*n[1],m[0]*n[2]+m[2]*n[3],m[1]*n[2]+m[3]*n[3],m[0]*n[4]+m[2]*n[5]+m[4],m[1]*n[4]+m[3]*n[5]+m[5]];
 /* miniatura leve (~160 px) que fica guardada na peça só para a coluna Foto da tabela */
@@ -46,7 +43,7 @@ async function romPdf(file){
   ROM.doc=file.name;ROM.hash=IMPH.get(file)||"";ROM.msg="Lendo o PDF…";renderRom();rolarPane(document.getElementById("romWrap"));
   try{const P=await lerPdf(file);ROM.pdf=P;ROM.texto=P.texto;romLer();
     if(ROM.rows.length){const n=ROM.rows.filter(r=>r.foto).length;ROM.msg=`${ROM.rows.length} peças lidas do PDF · ${n} foto${n===1?"":"s"} encontrada${n===1?"":"s"}`;const h=document.querySelector("#romWrap .rom-b .hint");if(h)h.textContent=ROM.msg;impStatusFim(true)}else impStatusFim(false,"não encontrei peças nesse PDF (confira o modelo de leitura ou cole o texto)")}
-  catch(e){let m=String(e&&e.message?e.message:"erro").replace(/[.\s]+$/,"");if(/invalid pdf|missing pdf|unexpected server|xref|not a pdf/i.test(m)||(e&&/Invalid|Missing/i.test(e.name||"")))m="o arquivo não é um PDF válido ou está corrompido";
+  catch(e){let m=String(e&&e.message?e.message:"erro").replace(/[.\s]+$/,"");const senha=!!(e&&(e.name==="PasswordException"||/password/i.test(m)));if(senha)m="o PDF tem senha. Abra-o com a senha, salve uma cópia sem senha e envie de novo";else if(/invalid pdf|missing pdf|unexpected server|xref|not a pdf/i.test(m)||(e&&/Invalid|Missing/i.test(e.name||"")))m="o arquivo não é um PDF válido ou está corrompido";
     ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg="Não consegui ler esse PDF: "+m+". Copie o texto e cole na caixa.";romSalvarSoon();renderRom();impStatusFim(false,m)}}
 /* foto ampliada com zoom (botões, roda do mouse, duplo clique) e arrastar para mover */
 function melhorarFoto(im,cb){const n=im.naturalWidth,h=im.naturalHeight,sc=Math.max(1,Math.min(3,Math.round(1800/Math.max(n,h,1))));if(sc<2||n*sc*h*sc>9e6){cb(null);return}

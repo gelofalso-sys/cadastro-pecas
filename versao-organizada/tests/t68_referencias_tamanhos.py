@@ -3,7 +3,7 @@ import os
 from playwright.sync_api import sync_playwright
 url=(Path(__file__).resolve().parent.parent / ('publicar-netlify/index.html' if os.environ.get('CP_TESTAR_PACOTE')=='1' else 'Cadastro de Pecas - abrir no Chrome.html')).as_uri()
 with sync_playwright() as p:
- b=p.chromium.launch(channel='msedge');q=b.new_page(viewport={'width':1400,'height':900});errs=[];dialogs=[];q.on('pageerror',lambda e:errs.append(str(e)));q.on('dialog',lambda d:(dialogs.append(d.message),d.dismiss()));q.goto(url)
+ b=p.chromium.launch(channel='msedge');q=b.new_page(viewport={'width':1400,'height':900});errs=[];dialogs=[];q.on('pageerror',lambda e:errs.append(str(e)));q.on('dialog',lambda d:d.accept() if 'salta mais de 50' in d.message else (dialogs.append(d.message),d.dismiss()));q.goto(url)
  q.fill('#f-F','Teste tamanho');q.fill('#f-N','2');q.fill('#f-P','10')
  for x in q.locator('[id^="f-"][id$="-W"]').all():
   if x.is_visible():x.fill('1')

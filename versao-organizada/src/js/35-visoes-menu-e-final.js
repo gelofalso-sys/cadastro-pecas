@@ -15,7 +15,7 @@ function visPara(v,soSeEscondido){
 document.getElementById("vis").addEventListener("click",e=>{if(e.target.closest("#vpal")){palAbrir();return}const b=e.target.closest("button[data-vis]");if(!b)return;visPara(b.dataset.vis);if(b.dataset.vis==="lancar"&&!celular())refocar("#f-F")});
 document.addEventListener("keydown",e=>{
   const t=e.target,campo=/INPUT|TEXTAREA|SELECT/.test(t.tagName)||t.isContentEditable;
-  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^[1-3]$/.test(e.key)){e.preventDefault();visPara(["tudo","planilha","cad"][+e.key-1]);return}
+  if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-3]$/.test(e.code)){e.preventDefault();visPara(["tudo","planilha","cad"][+e.code.slice(-1)-1]);return}
   if(e.key==="/"&&!campo&&!e.ctrlKey&&!e.metaKey&&!e.altKey){const fb=document.getElementById("fBusca");if(fb&&!fb.closest("[hidden]")){e.preventDefault();if(visAtual()==="lancar"||visAtual()==="cad")visPara(celular()?"planilha":"tudo");fb.focus();fb.select()}}
 });
 visPara(abertos.vis&&["tudo","planilha","lancar","cad"].includes(abertos.vis)?(abertos.vis==="lancar"&&celular()?"planilha":abertos.vis):(celular()?"planilha":"tudo"));
@@ -47,7 +47,7 @@ document.getElementById("side").addEventListener("click",e=>{
   /* ações: aciona o botão que já existe no app (o menu não tem cópia deles) */
   const alvo=document.querySelector('[data-act="'+id+'"]');if(alvo)alvo.click()});
 document.addEventListener("click",()=>setTimeout(sideMarcar,0));
-document.addEventListener("keydown",e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&e.key.toLowerCase()==="b"){e.preventDefault();document.getElementById("vside").click()}});
+document.addEventListener("keydown",e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&e.code==="KeyB"){e.preventDefault();document.getElementById("vside").click()}});
 if(!celular())sideAplicar(abertos.side);
 /* celular: a barra de baixo some o "Lançar peça" quando o formulário já está na tela */
 try{const io=new IntersectionObserver(es=>{document.body.classList.toggle("formvis",!celular()&&es.some(x=>x.isIntersecting))},{threshold:0.1});io.observe(document.getElementById("formWrap"))}catch(e){}

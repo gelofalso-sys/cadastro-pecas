@@ -7,7 +7,8 @@ const MB=1048576,
   MAX_XML_BYTES=8*MB,            /* XML da nota fiscal */
   MAX_FOTO_BYTES=32*MB,          /* foto */
   MAX_BACKUP_BYTES=150*MB,       /* backup JSON ao restaurar */
-  MAX_TEXTO_COLADO=400000;       /* caracteres de uma lista colada */
+  LIM_EXPORT=MAX_PLANILHA_LINHAS-10,   /* linhas de dados por arquivo exportado (sobra o cabeçalho e a linha final) */
+  MAX_TEXTO_COLADO=200000;       /* caracteres de uma lista colada ou lida do PDF (medido: ~130 mil caracteres levam uns 5 s para ler; acima de 200 mil a aba ficaria travada por mais de 8 s) */
 const limErr=m=>{const e=new Error(m);e.lim=1;return e};
 const fmtMB=n=>(n/MB).toFixed(n<10*MB?1:0).replace(".",",");
 /* confere o tamanho do arquivo antes de ler; lanca erro com mensagem clara se passar */
@@ -83,8 +84,10 @@ const ROMS0=()=>[{id:"carlinha",nome:"Clube de Compras da Carlinha",
   padrao:"{desc} [#{cod}] R$ {preco} R$ {precod} {qtd} R$ {total}",ini:"Valor Total",fim:"Valor Produtos",lixo:"P.gina \\d+/\\d+",
   obsRe:"Romaneio do (.+?) Pedido",mapa:"Colar=Colares; Corrente=Colares>Correntes; Choker=Colares>Chokers; Brinco=Brincos; Argola=Brincos>Argolas; Pingente=Pingentes; Anel=Anel; Pulseira=Pulseiras; Conjunto=Conjuntos",
   custo:"precod",qtdRe:"Quantidade Total de Produtos:\\s*(\\d+)",valorRe:"Valor Produtos(?: \\(sem desconto\\))?:\\s*R\\$\\s*(\\d[\\d.]*,\\d{2})"},ROM_PESO()];
+/* Modelo genérico sem fornecedor ou dados pessoais, para listas com código e valores. */
+const ROM_GENERICO=()=>({...ROMS0()[0],id:"generico-cod",nome:"Romaneio com códigos e valores",forn:"",auto:true});
 const DEFAULT_CONFIG={
-  modelos:[modeloJueri()],modelo:"jueri",v9:true,v10:true,v12:true,seqs:{BR:"1669",CO:"0",AN:"0",PU:"0",TZ:"0",CJ:"0",PG:"0",AC:"0",IN:"0",MA:"0",PE:"0",RL:"0"},ordem:"int",v11:true,colcfg:colcfgPadrao(),banhistas:[],grades:[],romaneios:ROMS0(),
+  modelos:[modeloJueri()],modelo:"jueri",v9:true,v10:true,v12:true,seqs:{BR:"0",CO:"0",AN:"0",PU:"0",TZ:"0",CJ:"0",PG:"0",AC:"0",IN:"0",MA:"0",PE:"0",RL:"0"},ordem:"int",v11:true,colcfg:colcfgPadrao(),banhistas:[],grades:[],romaneios:[ROM_GENERICO(),ROM_PESO()],
   categorias:JUERI_CATS.map(j=>({nome:j.nome,prefixo:j.prefixo,...(j.sufixo?{sufixo:j.sufixo}:{}),subs:[...j.subs],...(j.subPref?{subPref:{...j.subPref}}:{}),...(j.subSoRef?{subSoRef:{...j.subSoRef}}:{}),...(j.gr?{grade:mkGrade(j.gr.subs,j.gr.id)}:{})})),
   fornecedores:[],   /* instalação nova começa sem fornecedores, galvânica de exemplo nem observações: o usuário cadastra os dele */
   cores:["Ouro","Prata","Ródio","Prata 925","Ródio negro","Rosé","Azul","Cristal","Branco","Preto","Verde","Vermelho","Rosa","Lilás","Roxo","Amarelo","Laranja","Marrom","Grafite","Champagne","Nude","Turquesa","Pérola","Bege","Cinza","Multicolorido"],

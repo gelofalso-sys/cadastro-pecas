@@ -1,5 +1,5 @@
 /* ===== modelo configurável: regras de cada coluna do arquivo (tipo, obrigatória, padrão, tamanho, lista) ===== */
-const TIPOS_COL=[["","Como vem"],["texto","Texto"],["numero","Número"],["inteiro","Inteiro"],["dinheiro","Dinheiro (2 casas)"]];
+const TIPOS_COL=[["","Como vem"],["texto","Texto"],["numero","Número"],["inteiro","Inteiro"],["dinheiro","Dinheiro (2 casas; compra até 4)"]];
 const listaCol=c=>String(c&&c.lista||"").split(";").map(s=>s.trim()).filter(Boolean);
 const maxCol=c=>{const n=Math.trunc(num(c&&c.max)||0);return n>0?n:0};
 const abaNome=mo=>{let s=String(mo&&mo.aba||"").replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31).replace(/^'+|'+$/g,"").trim();if(/^history$/i.test(s))s+="_";return s||"Worksheet"};   /* o Excel recusa apóstrofo nas pontas e o nome History */
@@ -13,15 +13,15 @@ function valorCol(c,x){
   if(t==="texto")return {v:o.v==null?(o.txt||(o.f?"="+o.f:"")):String(o.v)};
   if(o.v==null&&o.f){const fz0=(t==="numero"||t==="inteiro"||t==="dinheiro")?num(c.fator):null;   /* fórmula também recebe o fator da coluna */
     const fat=fz0!=null&&fz0>0&&fz0!==1;let f=fat?"("+o.f+")*"+String(fz0):o.f,calc=o.calc!=null?(fat?o.calc*fz0:o.calc):undefined;
-    if(t==="dinheiro")return {...o,f:"ROUND("+f+",2)",calc:calc!=null?r2c(calc):undefined,z:"0.00"};
+    if(t==="dinheiro"){const d=c.k==="P"?4:2,m=10**d;return {...o,f:"ROUND("+f+","+d+")",calc:calc!=null?Math.round(calc*m)/m:undefined,z:c.k==="P"?"0.00##":"0.00"}};
     return fat?{...o,f,calc}:o}
   if(t==="numero"||t==="inteiro"||t==="dinheiro"){
     const n=typeof o.v==="number"?o.v:num(o.v);
     if(n==null)return {v:o.v,erro:1};
     const fz=num(c.fator);   /* fator: multiplica o número (ex.: peso em gramas × 0,001 = quilos); sem fórmula, o valor já sai convertido */
     const lim=x=>parseFloat(x.toPrecision(12));   /* tira o ruído de ponto flutuante (0,1×3 = 0,30000000000000004) */
-    if(fz!=null&&fz>0&&fz!==1){const r=Math.round(lim(n*fz*1e6))/1e6;return {v:t==="dinheiro"?Math.round(lim(r*100))/100:lim(r)}}
-    if(t==="dinheiro")return {v:Math.round(lim(n*100))/100,f:o.f?"ROUND("+o.f+",2)":o.f,z:"0.00"};   /* a fórmula também arredonda: o Excel recalcula o mesmo centavo do CSV */
+    if(fz!=null&&fz>0&&fz!==1){const r=Math.round(lim(n*fz*1e6))/1e6;return {v:t==="dinheiro"?Math.round(lim(r*(c.k==="P"?10000:100)))/(c.k==="P"?10000:100):lim(r)}}
+    if(t==="dinheiro"){const d=c.k==="P"?4:2,m=10**d;return {v:Math.round(lim(n*m))/m,f:o.f?"ROUND("+o.f+","+d+")":o.f,z:c.k==="P"?"0.00##":"0.00"}};   /* a fórmula também arredonda: o Excel recalcula o mesmo centavo do CSV */
     return {v:n,f:o.f}}
   return o}
 /* ===== variações no arquivo: produto pai + variações (modelo com "Agrupar em produto pai + variações") =====
@@ -37,7 +37,7 @@ function saidaLinhas(g,mo){
     const f=grp[0],l=S.lanc.find(x=>x.id===f.lancId),part0=String(f.part||""),E0=String(f.v.E||""),
       base=(b=>{while(codsE.has(b))b+="P";codsE.add(b);return b})(part0&&E0.endsWith(part0)?E0.slice(0,E0.length-part0.length):E0+"P"),
       c0=celulas(f,2)[LET.indexOf("V")],pv=c0&&typeof c0.v==="number"?String(c0.v):c0&&typeof c0.calc==="number"?String(c0.calc):"",
-      desc=l?comSufixoCat(val(l,"F"),val(l,"I")):"";
+      desc=l?comSufixoCat(val(l,"F"),val(l,"I"),l.semSufixoCat):"";
     out.push({row:{...f,banho:null,mk:null,ovs:[],bid:null,gi:null,key:"pai",part:"",verniz:null,v:{...f.v,E:base,F:desc||f.v.F,L:"",K:"",O:"",W:"",P:"",R:"",S:"",T:"",U:"",V:pv}},t:"pai"});
     const i0=out.length;const chave=ch=>String(ch.v.K||"")+"|"+semAc(ch.v.L||""),cont={};grp.forEach(ch=>{const k=chave(ch);cont[k]=(cont[k]||0)+1});
     const nomeBanho=ch=>{const bb=l?bhDe(l).banhos.find(x=>x.id===ch.bid):null;return bb?String(bb.nome||""):""};
@@ -50,7 +50,7 @@ function celCol(c,cs,e){const k=c.k||"";
     const v=k==="@pv"?(e.t==="filho"?"Variação":"Produto"):k==="@pai"?(e.t==="filho"?e.pai:""):"";return v===""?null:{v}}
   return k?cs[LET.indexOf(k)]||null:null}
 /* confere cada linha com as regras do modelo; devolve a lista de problemas */
-function validarModelo(g,cols){const out=[],sl=saidaLinhas(g,modeloAtual()),vz={};
+function validarModelo(g,cols){const out=[],sl=saidaLinhas(g,modeloAtual()),vz={},cod={};
   sl.forEach((e,i)=>{const row=e.row,cs=celulas(row,i+2);
     cols.forEach(c=>{const r=valorCol(c,celCol(c,cs,e)),v=r?r.v:null,vaz=!r||(v==null&&!r.f)||String(v==null?"x":v).trim()==="",h=String(c.h||(c.k?NOME[c.k]:"(coluna)"));
       const add=m=>out.push({l:i+2,ref:row.v.E||"",col:h,msg:m});
@@ -58,12 +58,15 @@ function validarModelo(g,cols){const out=[],sl=saidaLinhas(g,modeloAtual()),vz={
       const vv=v==null&&r&&typeof r.calc==="number"?r.calc:v;   /* fórmula: vale o resultado dela */
       if(vv==null)return;
       const s=String(vv);
+      if(c.k==="E")(cod[s.trim().toUpperCase()]=cod[s.trim().toUpperCase()]||[]).push(i+2);
       if(r.erro)add("não é um número: “"+s.slice(0,30)+"”");
       else if(c.tipo==="inteiro"&&!Number.isInteger(vv))add("precisa ser um número inteiro");
       if(maxCol(c)&&s.length>maxCol(c))add("passa de "+maxCol(c)+" caracteres");
       const L=listaCol(c);if(L.length&&!L.some(z=>semAc(z)===semAc(s)))add("fora da lista permitida ("+L.slice(0,4).join(", ")+(L.length>4?"…":"")+")")})});
   /* coluna obrigatória vazia em quase todas as linhas: um aviso só */
   const n=sl.length;Object.keys(vz).forEach(h=>{const a=vz[h];if(n>=4&&a.length>=Math.ceil(n*0.8))out.unshift({l:"todas",ref:"—",col:h,msg:`obrigatória e vazia em ${a.length} de ${n} linhas`});else a.forEach(f=>f("obrigatória e vazia"))});
+  /* Bling: o Código é a chave do produto e precisa ser único; repetido, ele recusa ou sobrescreve a linha anterior. A conferência deixa seguir mesmo assim. */
+  {const mo0=modeloAtual();if(/bling/i.test(String(mo0.nome||""))||cols.some(c=>c.k==="@pai")){const rep=Object.entries(cod).filter(([k,a])=>k&&a.length>1);rep.slice(0,200).forEach(([k,a])=>out.unshift({l:a[1],ref:(sl[a[1]-2]&&sl[a[1]-2].row.v.E)||k,col:"Código",msg:`repetido nas linhas ${a.slice(0,5).join(", ")}${a.length>5?"…":""}: no Bling o Código precisa ser único. Corrija a referência ou exporte mesmo assim se tiver certeza.`}))}}
   return out}
 const normH=h=>semAc(h).replace(/[^a-z0-9]+/g," ").trim();
 const SIN={A:["id"],B:["foto","imagem","url da foto","link da foto","url imagens externas","url da imagem","link da imagem","imagens"],C:["codigo de barras","cod barras","codigo barras","barcode"],D:["codigo pai","pai"],E:["referencia","ref","sku","codigo","cod"],F:["descricao","nome","produto","nome do produto","titulo","descricao do produto"],G:["codigo do fornecedor","cod fornecedor","codigo fornecedor","ref fornecedor","cod no fornecedor"],H:["fornecedor"],I:["categoria","categoria do produto"],J:["subcategoria","sub categoria"],K:["tamanho","medida","numero"],L:["cor"],M:["observacao","observacoes","obs"],N:["peso","gramas","peso g","peso kg","peso (kg)","peso bruto","peso bruto kg","peso liquido kg","peso liquido","peso liquido g"],O:["milesimos de banho","milesimos","milesimos banho"],P:["custo de compra","custo compra","custo","preco de custo","valor de custo"],Q:["custo de insumos","insumos"],R:["custo do banho de ouro","banho de ouro"],S:["custo do banho de rodio","banho de rodio"],T:["custo do banho de prata","banho de prata"],U:["custo do banho de verniz","verniz","custo verniz"],V:["preco de varejo","preco","preco de venda","valor","varejo","preco venda","valor de venda"],W:["quantidade","qtd","estoque","qtde","estoque inicial","estoque atual","estoque, atual"],X:["localizacao","local"],Y:["numero ncm","ncm"],Z:["numero ean","ean","gtin","gtin ean"],AA:["cfop"],AB:["fcp"],AC:["imposto","icms"],AD:["exibir no catalogo","catalogo"],AE:["status","situacao"]};

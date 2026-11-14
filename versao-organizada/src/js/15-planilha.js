@@ -127,7 +127,7 @@ function renderTopo(){try{romResync()}catch(e){}
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}
       if(!x){h+=`<td class="${miss}${ov}" data-c="${L}"></td>`;return}
-      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(L==="N"?(Math.round(x.v*1000)/1000).toFixed(3).replace(/0$/,"").replace(".",","):DUAS.has(L)?brl(x.v):fmt(x.v)):x.v;
+      const isN=typeof x.v==="number",txt=x.v==null?x.txt||("="+x.f):isN?(L==="N"?(Math.round(x.v*1000)/1000).toFixed(3).replace(/0$/,"").replace(".",","):DUAS.has(L)?(L==="P"&&Math.abs(x.v*100-Math.round(x.v*100))>1e-7?virg(x.v):brl(x.v)):fmt(x.v)):x.v;
       h+=`<td class="${isN?"n":""}${x.f?" fx":""}${ov}" data-c="${L}" title="${x.f?"="+esc(x.f):esc(x.v)}">${esc(txt)}</td>`});
     h+=`</tr>`;return h};
   const nb=Math.max(4,10-g.linhas.length);   /* poucas linhas em branco: a tabela vazia não precisa ocupar a tela */
@@ -209,6 +209,7 @@ function efeitoCel(antes,lid,L,orig,novo,chave){
 function fecharCel(commit,mover){
   if(!celEd)return;let antesPeca=null;const {ri,L,orig,nova}=celEd,i=document.getElementById("celIn"),lid=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].lancId:null,chaveCel=!celEd.nova&&G&&G.linhas[ri]?G.linhas[ri].key:undefined;celEd=null;
   let v=i?i.value:orig;if(L==="E"&&commit)v=v.replace(/\s+/g,"").toUpperCase();
+  if(commit&&L==="E"&&v!==orig){const m=String(v).match(/^([A-Z]+)(\d+)/);if(m){const atual=Math.max(inicioDe(m[1]),(G&&G.cont&&G.cont[m[1]])||0);if(+m[2]>atual+50&&!confirm("A referência "+v+" salta mais de 50 números em relação à numeração atual. Isso pode alterar as próximas referências automáticas. Continuar?"))commit=false}}
   const rej=commit&&v!==orig?(checaCel(L,v).erro||(L==="I"&&!vazio(v)&&!catBy(v)?"Essa categoria não está cadastrada (cadastre em Cadastros › Categorias)":null)):null;
   if(commit&&v!==orig&&!rej){
     if(nova){if(!vazio(v)){const l=novaLivre({[L]:v});S.lanc.push(l);undo={tipo:"cola",antes:{},ids:[l.id]};salvar(false)}}
@@ -235,6 +236,8 @@ function colarCel(texto,inicio){
   /* cabeçalho colado junto: as colunas são reconhecidas pelo nome (qualquer sistema); sem cabeçalho vale a posição na tabela */
   let keys=null;{const mp=(linhas[0]||[]).map(c=>chaveDoCabecalho(c));if(mp.filter(Boolean).length>=2){keys=mp;linhas=linhas.slice(1)}}
   const keyAt=j=>keys?keys[j]:LET[c0+j];
+  const saltos=[];linhas.forEach(cels=>cels.forEach((v,j)=>{if(keyAt(j)!=="E")return;const m=String(v||"").trim().toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m||checaCel("E",v).erro)return;const atual=Math.max(inicioDe(m[1]),(G&&G.cont&&G.cont[m[1]])||0);if(+m[2]>atual+50)saltos.push(String(v).trim())}));
+  if(saltos.length&&!confirm("A colagem contém "+saltos.length+" referência(s) que saltam mais de 50 números, como "+saltos.slice(0,3).join(", ")+". Isso pode alterar as próximas referências automáticas. Colar mesmo assim?")){toast("Colagem cancelada; nenhuma célula foi alterada.");return}
   const antes={},ids=[],alvo=[],recus=[];let n=0;{let r=ri;linhas.forEach(()=>{while(!vis(r))r++;alvo.push(r);r++})}
   const aceita=(LL,x,ri2)=>{const ck=checaCel(LL,x);if(ck.erro){recus.push({msg:ck.erro,ri:ri2,L:LL});return false}return true};
   linhas.forEach((cels,i)=>{

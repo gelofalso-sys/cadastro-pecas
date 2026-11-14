@@ -11,7 +11,7 @@ function importar(file){
       if(iF>=0&&r[iF])forn.add(String(r[iF]).trim());if(iC>=0&&r[iC]){const c=String(r[iC]).trim();cats[c]=cats[c]||{subs:new Set(),pref:null};if(!cats[c].pref&&m)cats[c].pref=m[1];if(iS>=0&&r[iS])cats[c].subs.add(String(r[iS]).trim())}
       if(iCor>=0&&r[iCor])cores.add(String(r[iCor]).trim());if(iO>=0&&r[iO])obs.add(String(r[iO]).trim())});
     impPend={max,pad,forn,cats,cores,obs};
-    document.getElementById("impRes").innerHTML=`<div class="banner"><p>Última peça encontrada: ${Object.entries(max).map(([p,n])=>`<b class="mono">${p}${n}</b>`).join(", ")||"nenhuma"} · ${forn.size} fornecedor(es) · ${Object.keys(cats).length} categoria(s) · ${cores.size} cor(es).</p><button class="btn pri sm" type="button" data-act="imp-ok">Aplicar</button></div>`;
+    document.getElementById("impRes").innerHTML=`<div class="banner"><p>Última peça encontrada: ${Object.entries(max).map(([p,n])=>`<b class="mono">${esc(p)}${esc(n)}</b>`).join(", ")||"nenhuma"} · ${forn.size} fornecedor(es) · ${Object.keys(cats).length} categoria(s) · ${cores.size} cor(es).</p><button class="btn pri sm" type="button" data-act="imp-ok">Aplicar</button></div>`;
   }catch(e){document.getElementById("impRes").innerHTML=e&&e.lim?`<p class="status bad">${esc(e.message)}. Nada foi lido.</p>`:`<p class="status bad">Não consegui ler. A primeira linha precisa ter o cabeçalho “Referência”.</p>`}};fr.readAsArrayBuffer(file);
 }
 function aplicarImp(){

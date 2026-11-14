@@ -31,9 +31,7 @@ function detalheCelulaSelecionada(row,L,ri){
   const x=celulas(row,ri+2)[LET.indexOf(L)],valor=x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null;
   const l=S.lanc.find(p=>p.id===row.lancId),q=numRaw(row.v.W,row.v,0,row.desconto);
   if(L==="P"){
-    if(valor==null)return "";const cg=l&&catBy(l.v.I)&&num(catBy(l.v.I).compraGrama),pe=pesoLinha(row);
-    if(cg>0&&pe!=null&&Math.abs(r2c(pe*cg)-valor)<0.011)return `Compra: ${fmt(pe)} g × R$ ${brl(cg)}/g (compra por grama da categoria) = R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}.`;
-    return `Compra: R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}${l&&l.lote?` · item ${l.lote.i}/${l.lote.n} de um lote`:""}.`}
+    if(valor==null)return "";return `Compra: R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}${l&&l.lote?` · item ${l.lote.i}/${l.lote.n} de um lote`:""}.`}
   if(L==="V"){
     const cs=celulas(row,ri+2),nv=k=>{const c=cs[LET.indexOf(k)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:0},custo=r2c(["P","Q","R","S","T","U"].reduce((t,k)=>t+nv(k),0));
     if(valor!=null)return `Preço de varejo digitado: R$ ${brl(valor)}${custo>0?` · custo R$ ${brl(custo)} (compra + insumos + banho + verniz) → fator ${fmt(Math.round(valor/custo*100)/100)} · lucro R$ ${brl(r2c(valor-custo))} (${fmt(Math.round((valor-custo)/valor*1000)/10)}%)`:""}.`;

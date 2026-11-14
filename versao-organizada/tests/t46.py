@@ -43,7 +43,8 @@ with sync_playwright() as p:
         if pg.locator('[data-act="exp-assim"]').count():pg.evaluate("()=>document.querySelector('[data-act=\"exp-assim\"]').click()")
     nome=os.path.join(tempfile.gettempdir(),"t46.xlsx");d.value.save_as(nome)
     ws=openpyxl.load_workbook(nome).active;h=[c.value for c in ws[1]]
-    ok(ws.cell(2,h.index("Custo de Compra")+1).number_format=="0.00","Custo de Compra com 2 casas: %s"%ws.cell(2,h.index("Custo de Compra")+1).number_format)
+    compra=ws.cell(2,h.index("Custo de Compra")+1)
+    ok(compra.number_format=="0.00##" and abs(compra.value-12.90)<1e-9,"Custo de Compra preserva valor e exibe de 2 a 4 casas: %s / %s"%(compra.value,compra.number_format))
     ok(ws.cell(2,h.index("Custo do Banho de Ouro")+1).number_format=="0.00","banho com 2 casas")
     ok(ws.cell(2,h.index("Peso")+1).number_format=="0.000","peso com 3 casas")
     # peso conserva milésimos e compra é arredondada a centavos; zero é aceito

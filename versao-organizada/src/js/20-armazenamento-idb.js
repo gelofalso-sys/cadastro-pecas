@@ -3,11 +3,51 @@ let ROMS=[],romArm=null,TABS=[],ARQ={},AUTOR="",tabArm=null;
 function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.open("cadpecas-big",3);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};rq.onerror=()=>res(null);
   rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(store,mode),st=tx.objectStore(store);let out=null;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>{d.close();res(out)};tx.onerror=tx.onabort=()=>{d.close();res(null)}}catch(e){d.close();res(null)}}}catch(e){res(null)}})}
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
+/* Diário de exclusões: registro e diário mudam na mesma transação. Se a aba
+   fechar antes de concluir o índice, a próxima abertura recupera o registro. */
+const EX_PREFIXO="exclusao-pendente-v1:";
+function exPreparar(loja,id){return new Promise(resolve=>{let fim=false;const done=x=>{if(!fim){fim=true;resolve(x)}};try{
+  const rq=indexedDB.open("cadpecas-big",3);rq.onerror=()=>done(null);rq.onsuccess=()=>{const db0=rq.result;try{
+    const tx=db0.transaction([loja,"pontos"],"readwrite"),st=tx.objectStore(loja),pt=tx.objectStore("pontos"),key=EX_PREFIXO+loja+":"+encodeURIComponent(id);let resultado=null;
+    const get=st.get(id);get.onsuccess=()=>{try{const rec=get.result;if(rec===undefined){resultado={key:null};return}resultado={key};pt.put({loja,id,rec},key);st.delete(id)}catch(e){try{tx.abort()}catch(x){db0.close();done(null)}}};
+    tx.oncomplete=()=>{db0.close();done(resultado)};tx.onabort=tx.onerror=()=>{db0.close();done(null)}
+  }catch(e){db0.close();done(null)}}
+}catch(e){done(null)}})}
+/* Não substitui um registro que outra aba tenha criado depois da exclusão. */
+function exRestaurar(j){return new Promise(resolve=>{let fim=false;const done=x=>{if(!fim){fim=true;resolve(x)}};try{
+  const rq=indexedDB.open("cadpecas-big",3);rq.onerror=()=>done(null);rq.onsuccess=()=>{const db0=rq.result;try{
+    const tx=db0.transaction(j.loja,"readwrite"),st=tx.objectStore(j.loja);let rec=null;const get=st.get(j.id);
+    get.onsuccess=()=>{try{rec=get.result===undefined?j.rec:get.result;if(get.result===undefined)st.put(rec,j.id)}catch(e){try{tx.abort()}catch(x){db0.close();done(null)}}};
+    tx.oncomplete=()=>{db0.close();done(rec)};tx.onabort=tx.onerror=()=>{db0.close();done(null)}
+  }catch(e){db0.close();done(null)}}
+}catch(e){done(null)}})}
+async function exComLock(fn){if(!navigator.locks){toast("A exclusão segura exige um navegador com bloqueios entre abas. A tabela ou romaneio foi mantido.");return false}return navigator.locks.request("cadpecas-exclusoes",fn)}
+function exSalvarComLock(fn){return navigator.locks?navigator.locks.request("cadpecas-exclusoes",fn):fn()}
+async function exReverter(key){if(!key)return true;const j=await idbGet("pontos",key);if(!j||!(["tabs","roms"].includes(j.loja))||typeof j.id!=="string"||!ehObj(j.rec))return false;
+  try{if(key!==EX_PREFIXO+j.loja+":"+encodeURIComponent(j.id))return false}catch(e){return false}
+  const rec=await exRestaurar(j);if(!rec)return false;
+  if(!ehObj(rec)||(rec.id&&rec.id!==j.id))return false;if(!rec.id)rec.id=j.id;
+  /* O índice pode já ter sido retirado quando a aba fechou. */
+  try{if(!(j.loja==="tabs"?tabIndex(rec):romIndex(rec)))return false}catch(e){return false}
+  return (await idbDel("pontos",key))!==null
+}
+async function exRecuperarSemLock(){const atuais=await idbOp("pontos","readonly",st=>st.getAllKeys());if(!Array.isArray(atuais))return false;let n=0;
+    for(const k of atuais){if(typeof k!=="string"||!k.startsWith(EX_PREFIXO))continue;if(!await exReverter(k))return false;n++}
+    if(n)toast(`Recuperei ${n} exclusão(ões) interrompida(s); confira as tabelas e os romaneios salvos.`);return true
+}
+async function exRecuperar(){if(navigator.locks)return navigator.locks.request("cadpecas-exclusoes",exRecuperarSemLock);const ks=await idbOp("pontos","readonly",st=>st.getAllKeys());return Array.isArray(ks)&&!ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO))}
+async function exMigrarIndicesSemLock(){if(!await tabsMigrar())return false;const ks=await idbOp("roms","readonly",st=>st.getAllKeys());if(!Array.isArray(ks))return false;let n=0;
+  for(const k of ks){if(typeof k!=="string"||ROMS.some(x=>x.id===k)||ROMDEL.has(k))continue;const rec=await idbGet("roms",k);if(rec===null)return false;if(!ehObj(rec)||!Array.isArray(rec.rows)||!rec.rows.every(ehObj))continue;
+    if(!rec.id)rec.id=k;if(!ehNumLike(rec.em))rec.em=Date.now();if(!romIndex(rec))return false;n++}
+  if(n)toast(`Encontrei ${n} romaneio(s) salvo(s) que não apareciam na lista.`);return true}
+async function exAbrirIndices(){const abrir=async()=>{try{const r=JSON.parse(localStorage.getItem("cadpecas-roms")||"[]"),t=JSON.parse(localStorage.getItem("cadpecas-tabs")||"[]");if(!Array.isArray(r)||!Array.isArray(t))return false;ROMS=r;TABS=t;arqRef()}catch(e){return false}
+  if(navigator.locks){if(!await exRecuperarSemLock())return false}else{const ks=await idbOp("pontos","readonly",st=>st.getAllKeys());if(!Array.isArray(ks)||ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO)))return false}
+  return exMigrarIndicesSemLock()};const ok=await exSalvarComLock(abrir);if(ok)histSugAgendar();return ok}
 function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,ins:ROM.ins||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
 function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",hash:rec.hash||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);const ok=gravarIdx("cadpecas-roms",ROMS,ROMDEL);try{romAtualizarListaAberta()}catch(e){console.error("cadastro-pecas: não atualizei a lista de romaneios",e)}return ok}
 let romGravP=null;const romHistUltimo=new Map();
-function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>idbPut("roms",rec.id,rec)).then(r=>{if(r===null){avisoIdb("o romaneio");return false}romIndex(rec);return true})}
+function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>exSalvarComLock(async()=>{const r=await idbPut("roms",rec.id,rec);if(r===null){avisoIdb("o romaneio");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio; ele pode não aparecer após recarregar");return false}return true}))}
 /* As ações de romaneio registram também o estado dos itens, inclusive os ainda não lançados.
    O histórico é da sessão, como o restante de Desfazer. As gravações do mesmo romaneio são enfileiradas. */
 function romHistAntes(){
@@ -46,15 +86,22 @@ function romHistAplicar(snap){
   }
   const anterior=romGravP;
   romGravP=Promise.resolve(anterior).catch(()=>false).then(async()=>{
-    if(rec.rows.length){const ok=await idbPut("roms",id,rec);if(ok===null){avisoIdb("o romaneio desfeito");return false}romIndex(rec)}
-    else{const ok=await idbDel("roms",id);if(ok===null){avisoIdb("a exclusão do romaneio");return false}
-      ROMS=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
+    if(rec.rows.length){const ok=await exSalvarComLock(async()=>{const salvo=await idbPut("roms",id,rec);if(salvo===null){avisoIdb("o romaneio desfeito");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio desfeito");return false}return true});if(!ok)return false}
+    else if(!await romExcluirConfirmado(id))return false
     return true;
   });
 }
 let avisoIdbT=0;
 function avisoIdb(oque){setStatus("NÃO salvo — memória do navegador cheia ("+oque+"). Baixe o backup.",true);if(Date.now()-avisoIdbT>10000){avisoIdbT=Date.now();toast("NÃO consegui guardar "+oque+" — a memória do navegador pode estar cheia. Baixe o backup completo.")}}
-function romExcluirSalvo(id){idbDel("roms",id);ROMS=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);gravarIdx("cadpecas-roms",ROMS,ROMDEL)}
+async function romExcluirConfirmado(id){
+  return exComLock(async()=>{const prep=await exPreparar("roms",id);if(!prep){avisoIdb("a proteção e exclusão do romaneio; ele continua na lista");return false}
+  const anteriorLista=ROMS,jaApagado=ROMDEL.has(id),nova=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);
+  if(!gravarIdx("cadpecas-roms",nova,ROMDEL)){if(!jaApagado)ROMDEL.delete(id);ROMS=anteriorLista;
+    const voltou=await exReverter(prep.key);
+    toast(voltou?"Não consegui atualizar a lista; o romaneio foi mantido.":"ATENÇÃO: não consegui atualizar a lista nem restaurar o romaneio excluído. Confira seu backup.");return false}
+  if(prep.key&&await idbDel("pontos",prep.key)===null){if(!jaApagado)ROMDEL.delete(id);ROMS=anteriorLista;const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; o romaneio foi mantido.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar o romaneio e confira seu backup.");return false}
+  ROMS=nova;try{romAtualizarListaAberta()}catch(e){}return true})}
+function romExcluirSalvo(id){const anterior=romGravP;romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>romExcluirConfirmado(id));return romGravP}
 /* mexeu numa peça já lançada: ela passa a ser substituída ao criar (mesma posição e mesma referência; categoria nova = próxima referência da nova sequência). Se ela está numa tabela salva, não dá para substituir aqui. */
 function romArma(r){if(r&&r.feito&&r.skip&&!r.arq){r.skip=false;r.refaz=true;r.aviso="";return true}return false}
 function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){const voltar=ROM.removidos.filter(x=>[...(x.row.lancIds||[]),...(x.row.revogados||[])].some(id=>S.lanc.some(l=>l.id===id)));voltar.sort((a,b)=>a.pos-b.pos).forEach(x=>ROM.rows.splice(Math.min(x.pos,ROM.rows.length),0,x.row));ROM.removidos=ROM.removidos.filter(x=>!voltar.includes(x))}ROM.rows.forEach(r=>{if(!(r.lancIds||[]).length&&(r.revogados||[]).some(i=>S.lanc.some(l=>l.id===i))){r.lancIds=r.revogados.filter(i=>S.lanc.some(l=>l.id===i));r.revogados=[];r.feito=true;r.refaz=false;r.skip=true}const vivos=(r.lancIds||[]).filter(i=>S.lanc.some(l=>l.id===i)),arq=(r.lancIds||[]).filter(i=>!vivos.includes(i)&&ARQ[i]),v=vivos.concat(arq);const sumidos=(r.lancIds||[]).filter(i=>!v.includes(i));if(sumidos.length)r.revogados=[...new Set([...(r.revogados||[]),...sumidos])];r.lancIds=v;r.arq=!vivos.length&&arq.length?ARQ[arq[0]]:"";
@@ -62,10 +109,10 @@ function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){cons
 async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await idbGet("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
   rec.rows.forEach((r,i)=>{const o=ROM.rows[i];if(o&&r.foto&&!o.foto&&(o.cod||"")===(r.cod||"")){o.foto=r.foto;o.fotoMini=o.fotoMini||r.fotoMini;n++}});if(n)renderRom()}
 async function romAbrirSalvo(id){if(editId){toast("Termine ou cancele a edição antes.");return}if(ROM&&romConflito){toast("Resolva o conflito do romaneio antes de abrir outro.");return}
-  if(ROM&&ROM.rows.length){const lsOk=romSalvar();const idbOk=await Promise.resolve(romGravP);if(!lsOk&&!idbOk){toast("Não consegui guardar o romaneio atual; ele continua aberto. Baixe o backup antes de trocar.");return}}
+  if(ROM&&ROM.rows.length){const lsOk=romSalvar();const idbOk=await Promise.resolve(romGravP);if(!idbOk){toast("Não consegui guardar o romaneio atual e seu índice; ele continua aberto. Baixe o backup antes de trocar.");return}}
   else if(romGravP)await Promise.resolve(romGravP);
   const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
-  const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,ins:rec.ins||null,rows:rec.rows,pdf:null};
+  const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",_obsOriginal:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,ins:rec.ins||null,rows:rec.rows,pdf:null};
   {const A=cfg().catAlias||{};ROM.rows.forEach(r=>{let n=0;while(r.cat&&!catBy(r.cat)&&A[r.cat]&&n++<10)r.cat=A[r.cat]})}   /* categoria renomeada depois de guardar o romaneio */
   if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.vz=rec.form.vz||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
   romMarcar();const nf=ROM.rows.filter(r=>r.feito).length,np=ROM.rows.filter(r=>!r.skip).length;
@@ -80,16 +127,34 @@ function romListaAbrir(){document.querySelectorAll(".rep").forEach(x=>x.remove()
   ${romListaTabela()}</div>`;
   document.body.appendChild(ov)}
 function romBadge(r){const rf=(G&&G.linhas?G.linhas:[]).filter(x=>(r.lancIds||[]).includes(x.lancId)).map(x=>x.v.E);return `<span class="rfeito" title="Mude qualquer campo (ou marque a caixa) para corrigir esta peça: ao criar, ela é substituída na mesma posição e com a mesma referência">✓ já lançada${rf.length?" · "+esc(rf.join(", ")):(r.refs?" · "+esc(r.refs):"")}${r.arq?" · na tabela salva “"+esc(r.arq)+"”":""}${r.refaz?" · será substituída":""}</span>`}
+/* Lê todas as lojas do backup na mesma transação, impedindo misturar versões do IndexedDB. */
+function bkLerBanco(idsAtuais){return new Promise(resolve=>{let encerrado=false;const fim=v=>{if(!encerrado){encerrado=true;resolve(v)}};try{
+  const rq=indexedDB.open("cadpecas-big",3);rq.onerror=()=>fim(null);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};
+  rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(["roms","tabs","fotos","pontos"],"readonly"),roms={},tabs={},fotos={},result={roms,tabs,fotos,exclusoesPendentes:false};let pend=6;
+    const vals={};const req=(store,method,key)=>{const r=key===undefined?store[method]():store[method](key);r.onsuccess=()=>{vals[store.name+method]=r.result;if(--pend===0)carregarFotos()}};
+    const rs=tx.objectStore("roms"),ts=tx.objectStore("tabs"),fs=tx.objectStore("fotos");
+    const carregarFotos=()=>{result.exclusoesPendentes=(vals.pontosgetAllKeys||[]).some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO));(vals.romsgetAllKeys||[]).forEach((k,i)=>roms[k]=vals.romsgetAll[i]);(vals.tabsgetAllKeys||[]).forEach((k,i)=>tabs[k]=vals.tabsgetAll[i]);
+      const vivos=new Set(idsAtuais);Object.values(tabs).forEach(t=>{if(t){(t.ids||[]).forEach(i=>vivos.add(i));(t.lanc||[]).forEach(l=>{if(l&&l.id)vivos.add(l.id)})}});
+      Object.values(roms).forEach(r=>{if(r){(r.lancIds||[]).forEach(i=>vivos.add(i));(r.rows||[]).forEach(x=>(x.lancIds||[]).forEach(i=>vivos.add(i)))}});
+      (vals.fotosgetAllKeys||[]).forEach(k=>{if(vivos.has(String(k).replace(/^[mr]:/,""))){const x=fs.get(k);x.onsuccess=()=>{fotos[k]=x.result}}})};
+    req(rs,"getAllKeys");req(rs,"getAll");req(ts,"getAllKeys");req(ts,"getAll");req(fs,"getAllKeys");req(tx.objectStore("pontos"),"getAllKeys");
+    tx.oncomplete=()=>{d.close();fim(result)};tx.onerror=tx.onabort=()=>{d.close();fim(null)}
+  }catch(e){d.close();fim(null)}}
+}catch(e){fim(null)}})}
+function bkEstado(){let rel=null;try{rel=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){}return {config:S.config,lanc:S.lanc,form:S.form,rascunho:romRascunho(),romAtual:ROM?{...ROM,pdf:null}:null,rel,tabs:TABS,autor:AUTOR}}
 async function bkMontar(){
-  const falhas=[],chaves=async n=>{const k=await idbOp(n,"readonly",st=>st.getAllKeys());if(k===null){falhas.push(n);return []}return k},valor=async(n,k)=>{const v=await idbGet(n,k);if(v===null)falhas.push(n+":"+k);return v};
-  const rk=await chaves("roms"),roms={};for(const k of rk)roms[k]=await valor("roms",k);
-  const tk=await chaves("tabs"),tabs={};for(const k of tk)tabs[k]=await valor("tabs",k);
-  const fk=await chaves("fotos"),fotos={},vivos=new Set(S.lanc.map(l=>l.id).concat([].concat(...TABS.map(t=>t.ids||[]))));
-  Object.values(tabs).forEach(t=>{if(!t)return;(t.ids||[]).forEach(i=>vivos.add(i));(t.lanc||[]).forEach(l=>{if(l&&l.id)vivos.add(l.id)})});   /* tabela que está no banco mas não no índice também leva as fotos */
-  Object.values(roms).forEach(r=>{if(!r)return;(r.lancIds||[]).forEach(i=>vivos.add(i));(r.rows||[]).forEach(x=>(x.lancIds||[]).forEach(i=>vivos.add(i)))});for(const k of fk)if(vivos.has(String(k).replace(/^[mr]:/,"")))fotos[k]=await valor("fotos",k);   /* inclui as miniaturas (m:) e as de romaneio (r:), não só a original */
-  let rel=null;try{rel=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){}
+  const falhas=[];if(romST){clearTimeout(romST);romST=null;romSalvar()}if(romGravP&&await Promise.resolve(romGravP).catch(()=>false)===false)falhas.push("romaneio pendente");
+  const conferirAbas=async()=>{if(typeof navigator==="undefined")return;if(!navigator.locks||!navigator.locks.query){falhas.push("concorrência entre abas não verificável");return}try{const q=await navigator.locks.query();if((q.held||[]).filter(x=>x.name==="cadpecas-uso"&&x.mode==="shared").length>1)falhas.push("outra aba aberta")}catch(e){falhas.push("concorrência entre abas não verificável")}};
+  await conferirAbas();
+  const chaves=["cadpecas4","cadpecas-rom","cadpecas-rom-info","cadpecas-roms","cadpecas-tabs"],lerChaves=()=>JSON.stringify(chaves.map(k=>localStorage.getItem(k)));let localAntes=null;try{localAntes=lerChaves()}catch(e){falhas.push("armazenamento local")}
+  if((typeof conflito!=="undefined"&&conflito)||(typeof romConflito!=="undefined"&&romConflito))falhas.push("conflito entre abas");
+  const gravacaoRom=romGravP,assinatura=JSON.stringify(bkEstado()),estado=JSON.parse(assinatura),ids=estado.lanc.map(l=>l.id).concat([].concat(...estado.tabs.map(t=>t.ids||[])));
+  const dados=typeof navigator!=="undefined"&&navigator.locks?await navigator.locks.request("cadpecas-exclusoes",()=>bkLerBanco(ids)):await bkLerBanco(ids);if(!dados)falhas.push("armazenamento");else if(dados.exclusoesPendentes)falhas.push("exclusão interrompida pendente de recuperação");if(romST||romGravP!==gravacaoRom||JSON.stringify(bkEstado())!==assinatura)falhas.push("dados alterados durante a cópia");
+  try{if(localAntes!==lerChaves())falhas.push("dados locais alterados durante a cópia")}catch(e){falhas.push("armazenamento local")}
+  await conferirAbas();
+  if((typeof conflito!=="undefined"&&conflito)||(typeof romConflito!=="undefined"&&romConflito))falhas.push("conflito entre abas");
   const d=new Date(),hoje=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:S.config,lanc:S.lanc,form:S.form,roms,fotos,rascunho:romRascunho(),rel,tabs,autor:AUTOR};if(falhas.length)o.incompleto=falhas.slice(0,50);
+  const o={app:"cadastro-pecas",tipo:"total",v:1,em:Date.now(),config:estado.config,lanc:estado.lanc,form:estado.form,roms:dados?dados.roms:{},fotos:dados?dados.fotos:{},rascunho:estado.rascunho,rel:estado.rel,tabs:dados?dados.tabs:{},autor:estado.autor};if(falhas.length)o.incompleto=falhas.slice(0,50);
   return {o,falhas,hoje}}
 async function backupTotal(){const dl=await obterDL();toast("Preparando o backup completo…");let o,falhas,hoje,bl;try{({o,falhas,hoje}=await bkMontar());bl=new Blob([JSON.stringify(o)],{type:"application/json"})}catch(e){toast("Não consegui montar o backup completo (muitas fotos ou arquivo grande demais). Use Baixar cópia dos cadastros.");return}
   let leve=false;if(bl.size>MAX_BACKUP_BYTES&&confirm(`Esse backup tem ${Math.round(bl.size/1048576)} MB e o aplicativo só restaura até ${Math.round(MAX_BACKUP_BYTES/1048576)} MB.
@@ -222,9 +287,10 @@ async function aplicarBackupTotal(n,quieto){
     const overlay=document.createElement("div");overlay.setAttribute("role","status");overlay.style.cssText="position:fixed;inset:0;z-index:100001;background:#fff;display:grid;place-content:center;padding:24px;font:16px system-ui;text-align:center";overlay.textContent="Restaurando backup… mantenha esta aba aberta.";document.documentElement.appendChild(overlay);document.body.inert=true;
     try{
       if(romST){clearTimeout(romST);romST=null;romSalvar()}if(romGravP&&await romGravP===false){toast("Backup NÃO restaurado — não consegui guardar o romaneio atual.");return false}
+      if(!await exRecuperar()){toast("Backup NÃO restaurado — não consegui recuperar uma exclusão interrompida.");return false}
       if(sT){clearTimeout(sT);sT=null}await chain;if((dirty.c||dirty.l)&&await (chain=chain.then(flush))!==true){toast("Backup NÃO restaurado — não consegui salvar os dados atuais.");return false}
       if(conflito||romConflito){toast("Backup NÃO restaurado — resolva o conflito com a outra aba.");return false}
-      return await aplicarBackupTotalComLock(n,quieto)
+      return await exSalvarComLock(()=>aplicarBackupTotalComLock(n,quieto))
     }finally{document.body.inert=false;overlay.remove()}})})}finally{await bkUsoIniciar()}
 }
 async function aplicarBackupTotalComLock(n,quieto){
@@ -255,7 +321,7 @@ async function aplicarBackupTotalComLock(n,quieto){
   let indicesOk=true;try{for(const r of Object.values(n.roms))if(!romIndex(r))indicesOk=false;for(const r of Object.values(n.tabs))if(!tabIndex(r))indicesOk=false}catch(e){indicesOk=false}
   if(!indicesOk){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;ROMS=ant.roms;TABS=ant.tabs;ROMDEL.clear();ant.romdel.forEach(x=>ROMDEL.add(x));TABDEL.clear();ant.tabdel.forEach(x=>TABDEL.add(x));arqRef();const voltou=await reverter();histIni();render();toast("Backup NÃO restaurado — não consegui atualizar as listas de romaneios e tabelas. "+avisoReversao(voltou));if(!voltou)falhaReversao();return false}arqRef();
   if(await idbDel("pontos",BK_JOURNAL)===null){falhaReversao();return}
-  if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
+  histSugAgendar();if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
   render();
   if(!quieto)toast(`Backup restaurado: ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""} Peças e cadastros podem ser desfeitos; romaneios, tabelas e fotos não.`,{t:"Desfazer peças",fn:desfazer});return true}
 const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";

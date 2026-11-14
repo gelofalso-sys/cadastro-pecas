@@ -34,8 +34,11 @@ function romFotoRemover(i){
 
 /* ---------- insumos próprios do romaneio ---------- */
 const romInsItens=()=>ROM&&ROM.ins&&Array.isArray(ROM.ins.itens)?ROM.ins.itens:[];
+/* Mantém dados antigos intactos, mas impede lançar frete/separação como insumo. */
+const romInsFora=x=>/^(?:(?:valor|custo|taxa|despesa|servico|preco)\s+(?:(?:de|da|do|com)\s+)?)?(?:fretes?|separacao|separacoes)(?:\b|$)/.test(String(x&&x.nome||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase());
+const romInsProibidos=()=>romInsItens().filter(romInsFora);
 const romInsBase=()=>ROM&&ROM.ins&&["un","custo","peso"].includes(ROM.ins.base)?ROM.ins.base:"un";
-const romInsTotal=()=>r2c(romInsItens().reduce((t,x)=>t+(num(x.valor)||0),0));
+const romInsTotal=()=>r2c(romInsItens().filter(x=>!romInsFora(x)).reduce((t,x)=>t+(num(x.valor)||0),0));
 /* peças que dividem o total: as que serão criadas (ou já foram) e têm quantidade */
 function romInsCtx(){
   const o={un:0,custo:0,peso:0};
@@ -48,8 +51,47 @@ function romInsRateio(r,ctx){
   if(b==="un")return c.un>0?r2c(T/c.un):0;
   if(b==="custo")return c.custo>0&&num(r.custo)!=null?r2c(T*(num(r.custo)||0)/c.custo):0;
   return c.peso>0&&num(r.peso)!=null?r2c(T*(num(r.peso)||0)/c.peso):0}
+/* Sem base não há rateio: não confundir ausência de dados com arredondamento. */
+function romInsSemBase(){if(!(romInsTotal()>0))return false;const c=romInsCtx(),b=romInsBase();return b==="custo"?!(c.custo>0):b==="peso"?!(c.peso>0):!(c.un>0)}
+/* Somar um rateio a uma fórmula exigiria preservá-la na linha e na edição.
+   Enquanto isso não for possível, não substitua silenciosamente por zero. */
+function romInsBasesInvalidas(){
+  if(!ROM||!S.form)return [];
+  const ctx=romInsCtx(),f=S.form;
+  return ROM.rows.filter(r=>{
+    if(r.skip||r.lote||!(romSomaDe(r,romColsR(r))>0)||!(romInsRateio(r,ctx)>0))return false;
+    const q=r.ex&&!vazio(r.ex.Q)?r.ex.Q:!vazio(f.v.Q)?f.v.Q:padraoDe(r.cat||f.v.I,"Q");
+    return !vazio(q)&&num(q)==null
+  })
+}
+/* Não aplique um rateio que altera o valor total por arredondamento unitário. */
+function romInsDiferenca(){
+  const total=romInsTotal(),ctx=romInsCtx();if(!(total>0)||!(ctx.un>0))return 0;
+  const aplicado=ROM.rows.reduce((a,r)=>{if(r.lote||(r.skip&&!r.feito))return a;const q=romSomaDe(r,romColsR(r));return a+(q>0?q*romInsRateio(r,ctx):0)},0);
+  return r2c(total-r2c(aplicado))}
+/* Antes de criar parte do romaneio, as peças já lançadas devem conservar a mesma parcela calculada.
+   Se o rateio mudou, peça confirmação pela edição de todas elas, sem sobrescrever edições silenciosamente. */
+function romInsDesatualizados(arquivadas){
+  if(!ROM)return [];const ctx=romInsCtx(),pend=[];
+  ROM.rows.forEach(r=>{if(r.lote||!r.feito||!r.skip||r.refaz)return;
+    const ids=r.lancIds||[],esperado=romInsRateio(r,ctx),pecas=ids.flatMap(id=>{const atual=S.lanc.find(l=>l.id===id);return atual?[atual]:(arquivadas&&arquivadas.get(id))||[null]});
+    if(!ids.length||pecas.some(l=>!l)){pend.push(r);return}
+    if(pecas.some(l=>Math.round((num(l.insRom&&l.insRom.ins)||0)*100)!==Math.round(esperado*100)))pend.push(r);
+  });return pend}
+/* Lê os lançamentos de tabelas salvas antes da revisão e novamente antes de criar.
+   Leitura ausente ou falha é desconhecida, nunca tratada como custo zero. */
+async function romInsConferirArquivos(){
+  const rom=ROM,ids=new Set((rom&&rom.rows||[]).filter(r=>!r.lote&&r.feito&&r.skip&&!r.refaz).flatMap(r=>(r.lancIds||[]).filter(id=>!S.lanc.some(l=>l.id===id))));
+  const achadas=new Map();if(ids.size){const tabs=TABS.filter(t=>(t.ids||[]).some(id=>ids.has(id)));
+    const recs=await Promise.all(tabs.map(t=>idbGet("tabs",t.id).catch(()=>null)));
+    recs.forEach((rec,i)=>{const add=(id,l)=>{if(!achadas.has(id))achadas.set(id,[]);achadas.get(id).push(l)};
+      if(!rec||!Array.isArray(rec.lanc)){(tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>add(id,null));return}
+      (tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>{const l=rec.lanc.find(x=>x&&x.id===id);add(id,l||null)})})}
+  return ROM===rom?romInsDesatualizados(achadas):null}
+const romInsAssinatura=()=>JSON.stringify([ROM,S.lanc,S.form,cfg(),TABS]);
 function romInsResumoTxt(){
   const it=romInsItens(),T=romInsTotal(),c=romInsCtx(),b=romInsBase();
+  if(romInsProibidos().length)return "Frete e separação ficam fora do custo das peças. Retire esses itens dos insumos antes de criar; os dados antigos não foram apagados.";
   if(!it.length)return "Nenhum insumo próprio neste romaneio. Os insumos de cada categoria (Cadastros) continuam valendo normalmente.";
   if(!(T>0))return "Informe o valor de cada insumo.";
   if(!(c.un>0))return `Total R$ ${brl(T)}. Ainda não há peças com quantidade para receber o rateio.`;
@@ -57,16 +99,16 @@ function romInsResumoTxt(){
   return `Total R$ ${brl(T)} dividido entre ${fmt(c.un)} unidade(s) — ${base}. Entra no custo de Insumos de cada peça, somado ao padrão da categoria; os centavos são arredondados por peça.`}
 function romInsHTML(){
   const it=romInsItens(),b=romInsBase();
-  return `<details class="gdet rom-ins" data-open="rins" ${abertos.rins||it.length||romInsSugestoes().length?"open":""}><summary><b>Insumos deste romaneio</b><span>${it.length?`${it.length} item(ns) · R$ ${brl(romInsTotal())} rateados nas peças`:(romInsSugestoes().length?"⚠ o romaneio traz frete/separação que ainda não entra no custo":"embalagem, etiquetas, frete próprio… divididos entre as peças criadas")}</span></summary><div class="gb">
+  return `<details class="gdet rom-ins" data-open="rins" ${abertos.rins||it.length||romInsSugestoes().length?"open":""}><summary><b>Insumos deste romaneio</b><span>${it.length?`${it.length} item(ns) · R$ ${brl(romInsTotal())} rateados nas peças`:(romInsSugestoes().length?"⚠ o romaneio traz frete/separação fora do custo":"embalagem e etiquetas divididas entre as peças criadas")}</span></summary><div class="gb">
     <p class="hint">Use para gastos que valem para este romaneio inteiro. O total é dividido entre as peças que serão criadas e entra no custo de Insumos de cada uma (somado ao padrão da categoria). Dá para conferir a conta na célula de Insumos da tabela.</p>
     ${it.length?`<div class="tw"><table class="cfg"><thead><tr><th>Insumo</th><th class="n">Valor total (R$)</th><th></th></tr></thead><tbody>${it.map((x,i)=>`<tr><td><input data-rp="rins" data-k="nome" data-i="${i}" value="${esc(x.nome||"")}" maxlength="80" placeholder="ex.: caixas, etiquetas" aria-label="Nome do insumo ${i+1}"></td><td style="width:150px"><input class="n" data-rp="rins" data-k="valor" data-i="${i}" value="${esc(x.valor||"")}" inputmode="decimal" aria-label="Valor total do insumo ${i+1}"></td><td style="width:36px"><button type="button" class="x" data-act="rins-del" data-i="${i}" aria-label="Excluir o insumo ${i+1}">×</button></td></tr>`).join("")}</tbody></table></div>`:""}
-    ${romInsSugestoes().map((x,i)=>`<div class="rins-sug" role="note"><span>O romaneio traz <b>${esc(x.nome)}: R$ ${esc(x.valor)}</b> — hoje isso não entra no custo das peças.</span><button type="button" class="btn sm pri" data-act="rins-sug" data-k="${esc(x.nome)}">Ratear nas peças</button></div>`).join("")}
+    ${romInsSugestoes().map(x=>`<div class="rins-sug" role="note">O romaneio traz <b>${esc(x.nome)}: R$ ${esc(x.valor)}</b> — esse valor fica fora do custo das peças.</div>`).join("")}
     <div class="row"><button type="button" class="btn sm" data-act="rins-add">＋ Insumo do romaneio</button>${it.length?`<label class="fq"><span>Como dividir</span><select data-rp="rins" data-k="base" aria-label="Como dividir os insumos do romaneio"><option value="un" ${b==="un"?"selected":""}>Igual por unidade</option><option value="custo" ${b==="custo"?"selected":""}>Proporcional à compra</option><option value="peso" ${b==="peso"?"selected":""}>Proporcional ao peso</option></select></label>`:""}</div>
     <div class="rins-res" id="rinsRes" role="status">${esc(romInsResumoTxt())}</div></div></details>`}
-/* frete e custo de separação que aparecem no texto do romaneio viram sugestão de insumo (um clique para aceitar) */
+/* Frete e separação do documento são informativos, sem rateio. */
 function romInsSugestoes(){
   if(!ROM||!ROM.texto)return [];const tx=String(ROM.texto),out=[],ja=romInsItens().map(x=>String(x.nome||"").toLowerCase());
-  [["Custo de separação",/custo\s+separa[cç][aã]o\s*:?\s*R\$\s*([\d.]+,\d{2})/i],["Frete",/frete\s*:?\s*R\$\s*([\d.]+,\d{2})/i]].forEach(([nome,re])=>{
+  [["Custo de separação",/custo\s+separa[cç][aã]o\s*:?\s*R\$\s*([\d.]+,\d{2})/i],["Frete",/\bfrete\s*:?\s*R\$\s*([\d.]+,\d{2})/i]].forEach(([nome,re])=>{
     const m=re.exec(tx);if(!m)return;const v=num(m[1]);if(!(v>0)||ja.includes(nome.toLowerCase()))return;out.push({nome,valor:m[1]})});
   return out}
 function romInsCampo(t,fin){
@@ -154,16 +196,16 @@ function romPassosEstado(){
   const rs=ROM.rows.filter(r=>!r.lote),at=ROM.rows.filter(r=>!r.skip&&!r.lote);
   const sp=at.filter(r=>num(r.peso)==null).length,dv=at.filter(r=>romSomaDe(r,romColsR(r))!==r.qtd).length,dp=0,
     tam=at.filter(r=>{const g=gradeDaCat(r.cat,r.sub);return g&&!r.semG&&!(r.gsel||[]).length&&!Array.isArray(r.conjComp)}).length,
-    lotes=ROM.rows.filter(r=>r.lote&&!r.semPeso).length,pend=sp+dv+tam;
+    lotes=ROM.rows.filter(r=>r.lote&&romLoteResumo(r).cls!=="ok").length,pend=sp+dv+tam+lotes;
   return {n:rs.length,pend,sp,dv,tam,lotes,conf:ROM.conf||"",pronto:rs.length>0&&pend===0}}
 function romPassosHTML(){
   if(!ROM||!ROM.rows.length)return "";
-  const e=romPassosEstado(),ok=!/⚠/.test(e.conf);
+  const e=romPassosEstado(),ok=/✓/.test(e.conf)&&!/⚠/.test(e.conf);
   const p=(n,txt,estado,tit)=>`<li class="${estado}"><button type="button" data-act="rom-passo" data-p="${n}" title="${esc(tit)}"><b>${estado==="ok"?"✓":n}</b> ${txt}</button></li>`;
-  return `<ol class="rom-passos" id="romPassos" aria-label="Passos do romaneio">${p(1,`Importar <small>${e.n} peça(s)</small>`,"ok","Voltar ao topo para importar de novo")}${p(2,`Pesos e divisão <small>${e.pend?e.pend+" pendente(s)":"tudo certo"}</small>`,e.pend?"pend":"ok","Ir para a próxima pendência")}${p(3,`Conferir <small>${ok?"lista confere":"há diferença"}</small>`,ok?"ok":"pend","Ver a conferência com a lista do fornecedor")}${p(4,"Criar peças",e.pronto?"ok":"off","Ir para o botão Criar")}</ol>`}
+  return `<ol class="rom-passos" id="romPassos" aria-label="Passos do romaneio">${p(1,`Importar <small>${e.n} peça(s)</small>`,"ok","Voltar ao topo para importar de novo")}${p(2,`Pesos e divisão <small>${e.pend?e.pend+" pendente(s)":"tudo certo"}</small>`,e.pend?"pend":"ok","Ir para a próxima pendência")}${p(3,`Conferir <small>${ok?"lista confere":e.conf?"há diferença":"ainda não conferida"}</small>`,ok?"ok":"pend","Ver a conferência com a lista do fornecedor")}${p(4,"Criar peças",e.pronto?"":"off","Ir para o botão Criar")}</ol>`}
 function romPassosAtual(){const el=document.getElementById("romPassos");if(!el||!ROM)return;const t=document.createElement("div");t.innerHTML=romPassosHTML();const n=t.firstElementChild;if(n)el.replaceWith(n)}
 function romPassoIr(p){
   if(p===1){const b=document.getElementById("impBar");if(b)b.scrollIntoView({block:"start",behavior:"smooth"});return}
-  if(p===2){const bt=document.querySelector('#romWrap [data-act="rom-pend"]');if(bt)bt.click();return}
+  if(p===2){const lote=ROM.rows.findIndex(r=>r.lote&&romLoteResumo(r).cls!=="ok");if(lote>=0){const el=document.querySelector(`#romWrap .rc[data-i="${lote}"]`);if(el){el.scrollIntoView({block:"center",behavior:"smooth"});const b=el.querySelector('[data-act="lote-add"]');if(b)b.focus({preventScroll:true});return}}const bt=document.querySelector('#romWrap [data-act="rom-pend"]');if(bt)bt.click();return}
   if(p===3){const c=document.getElementById("romChk");if(c)c.scrollIntoView({block:"center",behavior:"smooth"});return}
   const b=document.getElementById("romCriar");if(b){b.scrollIntoView({block:"center",behavior:"smooth"});b.focus({preventScroll:true})}}

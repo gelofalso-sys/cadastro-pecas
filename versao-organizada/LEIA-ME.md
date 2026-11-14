@@ -1,29 +1,11 @@
-# Cadastro de Peças — versão organizada
+# Cadastro de Peças — versão unificada
 
-O app continua sendo UM arquivo (`cadastro-pecas.html`, abre direto no navegador). A diferença: o código-fonte
-fica dividido em `src/` e o arquivo é MONTADO a partir dele.
+O arquivo principal é `Cadastro_de_Pecas_unificado.html`. Abra-o no Chrome e mantenha a pasta `lib` ao lado. A fonte única está em `src/`; para reconstruir o HTML execute `python tools/montar.py`. O comando não substitui os HTMLs anteriores.
 
-- `src/css/` — estilos em 12 arquivos (ordem em `_ordem.txt`; a ordem importa por causa da cascata)
-- `src/js/` — JavaScript em 31 arquivos por responsabilidade (ordem em `_ordem-a.txt` e `_ordem-b.txt`):
-  10–19 limites, colunas, motor, persistência, planilha, lançamento, cadastros, romaneio;
-  20–35 armazenamento, revisão, PDF, fotos/NF, relatório, exportar, importar, eventos, janelas, visões.
-- `src/html/` — topo, corpo da página e fim
-- `tools/montar.py` — junta tudo e gera `cadastro-pecas.html`
-- `tests/run_all.py` — suíte (Playwright + Edge); `tools/demo.py` gera a demo para o Netlify
+Para gerar um pacote local de publicação execute `python tools/publicar.py`. O resultado fica em `publicar-netlify-unificado/`; para conferir seus arquivos execute `python tools/verificar_pacote.py`. Gerar o pacote não publica o site. O JavaScript está dividido por responsabilidade em `src/js`; o CSS está em `src/css/01-estilos.css` e o PDF embutido fica no corpo em `src/html/02-corpo-e-bibliotecas.html`.
 
-## Fluxo de trabalho
-1. Edite os arquivos em `src/`.
-2. `python tools/montar.py`  → gera `cadastro-pecas.html`
-3. `python tests/run_all.py` → deve terminar com "Falhas: 0"
+A versão anterior do código-fonte e dos montadores foi copiada para `auditoria-ui-temporario/antes-unificacao/`. Os arquivos HTML anteriores e os pacotes antigos permanecem no projeto; use o HTML unificado para novos testes. A pasta `revisao-organizada` é um retrato histórico da revisão e não é atualizada automaticamente.
 
-Todo o JS fica dentro do mesmo bloco (IIFE): os arquivos são só concatenados, não são módulos. Por isso uma função
-de um arquivo enxerga as de todos os outros, e a ORDEM dos arquivos importa. Ao criar um arquivo novo, inclua-o no manifesto.
+As sugestões ordenadas por uso consideram a tabela atual e as tabelas salvas, contando cada peça uma vez. O histórico é carregado em segundo plano e recalculado ao salvar, excluir ou restaurar tabelas. Para usar atalhos numéricos, foque na categoria, descrição, opção de cor ou banho e pressione Alt+Shift+1 a 9. A categoria inferida pela descrição é apenas sugerida quando já existe uma categoria selecionada.
 
-Verificação da divisão: o arquivo montado é idêntico, byte a byte, ao `cadastro-pecas.html` da pasta principal
-no commit d82b061, e a suíte completa passou com 0 falhas.
-
-## Cadastros: salvar explícito
-`src/js/36-cadastros-salvar.js`: alterações feitas na área Cadastros ficam *pendentes* (barra "Salvar alterações / Descartar") e não são gravadas até salvar;
-enquanto isso formulário, tabela, romaneio e Desfazer ficam travados. Descartar devolve cadastros, peças e romaneio ao estado anterior.
-Em teste automatizado (`navigator.webdriver`) vale o modo antigo (grava na hora) para os testes existentes; `localStorage cadpecas-cad-estrito=1` liga o modo novo (ver `tests/t49.py`).
-Limite: janelas (`.rep`) abertas a partir dos Cadastros (ex.: colar catálogo) continuam gravando na hora.
+Antes de trocar a versão de uso diário, baixe e confira um backup completo, valide a restauração com seus dados, e confira as exportações no Jueri e no Bling. Dados em outro navegador, perfil ou site podem não ser compartilhados. Para executar a suíte em uma cópia temporária, use `python tests/run_all.py`; opcionalmente defina `CP_BACKUP` para os testes que exigem backup real.

@@ -8,11 +8,11 @@ marcas-dagua.csv, fora da pasta publicada e fora do Git."""
 import os, re, shutil, subprocess, sys, time, random, csv, hashlib, json
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-out = (sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else os.path.join(RAIZ, "publicar-netlify"))
+out = (sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else os.path.join(RAIZ, "publicar-netlify-unificado"))
 rotulo = sys.argv[2] if len(sys.argv) > 2 else ""
 
 subprocess.run([sys.executable, os.path.join(RAIZ, "tools", "montar.py")], check=True, capture_output=True)
-s = open(os.path.join(RAIZ, "cadastro-pecas.html"), encoding="utf-8").read()
+s = open(os.path.join(RAIZ, "Cadastro_de_Pecas_unificado.html"), encoding="utf-8").read()
 a = '(function(){\n"use strict";'
 assert s.count(a) == 1
 
@@ -54,10 +54,7 @@ except Exception as e:
 # aviso de direitos autorais: comentário HTML, não aparece na tela, só em "ver código-fonte"
 aviso = ('<!-- © Cadastro de Peças — sistema desenvolvido sob encomenda; uso e cópia não autorizados. '
          'Cópia nº %s, %s. -->\n') % (wm, time.strftime("%Y-%m-%d"))
-html = ('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-        '<meta name="robots" content="noindex,nofollow"><meta name="generator" content="' + wm + '">'
-        '<title>Cadastro de Peças</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23264a7a%27/%3E%3C/svg%3E"><style>html,body{margin:0}</style></head><body>\n'
-        + aviso + s + '\n</body></html>\n')
+html = s.replace("<head>", "<head>\n<meta name=\"robots\" content=\"noindex,nofollow\">\n<meta name=\"generator\" content=\""+wm+"\">\n"+aviso, 1)
 open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(html)
 os.makedirs(os.path.join(out, "lib"), exist_ok=True)
 shutil.copy(os.path.join(RAIZ, "lib", "xlsx.full.min.js"), os.path.join(out, "lib", "xlsx.full.min.js"))
@@ -81,7 +78,7 @@ Como funciona: cada pessoa tem os proprios dados, guardados no navegador dela (n
 ''')
 def sha256(path):
     with open(path,"rb") as f:return hashlib.sha256(f.read()).hexdigest()
-manifest={"fonte_sha256":sha256(os.path.join(RAIZ,"cadastro-pecas.html")),"artefatos":{n:sha256(os.path.join(out,n)) for n in ("index.html","_headers","lib/xlsx.full.min.js")},"gerado_em":time.strftime("%Y-%m-%d %H:%M:%S")}
+manifest={"fonte_sha256":sha256(os.path.join(RAIZ,"Cadastro_de_Pecas_unificado.html")),"artefatos":{n:sha256(os.path.join(out,n)) for n in ("index.html","_headers","lib/xlsx.full.min.js")},"gerado_em":time.strftime("%Y-%m-%d %H:%M:%S")}
 with open(os.path.join(out,"manifesto-build.json"),"w",encoding="utf-8") as f:json.dump(manifest,f,ensure_ascii=False,indent=2)
 print("ok", out, os.path.getsize(os.path.join(out, "index.html")), "marca-dagua", wm)
 print("Confira os hashes e execute os testes no pacote antes de publicar.")

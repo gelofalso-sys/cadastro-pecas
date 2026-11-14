@@ -75,7 +75,7 @@ with sync_playwright() as p:
     TRIOS = {'96': [('Brinco 3mm', 'Brincos', '1', '0.3', '6.5'), ('Brinco 4mm', 'Brincos', '1', '0.4', '6.5'), ('Brinco 5mm', 'Brincos', '1', '0.5', '6.55')],
              '95': [('Colar', 'Colares', '1', '2', '8'), ('Pingente', 'Pingentes', '1', '1', '6'), ('Brinco', 'Brincos', '2', '0.6', '2.825')]}
     for c, comps in TRIOS.items():
-        sel_cat(c, 'Conjuntos'); r = cards().nth(idx(c)); r.locator('.rom-conjunto summary').click(); r.locator('[data-rcj="ativar"]').click(); r = cards().nth(idx(c))
+        sel_cat(c, 'Conjuntos'); r = cards().nth(idx(c)); r.locator('[data-rcj="ativar"]').count() and (r.locator('.rom-conjunto summary').click(), r.locator('[data-rcj="ativar"]').click()); r = cards().nth(idx(c))
         while r.locator('[data-rcji]').count() < len(comps): r.locator('[data-rcj="adicionar"]').click()
         for k, (d, ct, qq, ps, cu) in enumerate(comps):
             it = r.locator('[data-rcji]').nth(k); it.locator('[data-rcjf="desc"]').fill(d); it.locator('[data-rcjf="cat"]').select_option(label=ct)
@@ -84,10 +84,11 @@ with sync_playwright() as p:
         print('conjunto', c, 'peso', cards().nth(idx(c)).locator('[data-rp="peso"]').input_value(), 'custo', cards().nth(idx(c)).locator('[data-rp="custo"]').input_value())
     pg.wait_for_timeout(500)
     print('avisos:', pg.locator('#romWrap').inner_text().split('Antes de criar:')[1][:200].replace('\n', ' '))
-    pg.locator('#romCriar').click(); pg.wait_for_timeout(700)
-    if pg.locator('[data-act="rev-ok"]').count(): pg.locator('[data-act="rev-ok"]').click(); pg.wait_for_timeout(900)
-    if pg.locator('.rep [data-act="rel-fechar"]').count(): pg.locator('.rep [data-act="rel-fechar"]').click()
-    pg.wait_for_timeout(500)
+    pg.locator('#romCriar').click()
+    pg.locator('.rev [data-act="rev-ok"]').wait_for(state="visible")
+    pg.locator('.rev [data-act="rev-ok"]').click()
+    pg.locator('.rep [data-act="rel-fechar"]').wait_for(state="visible")
+    pg.locator('.rep [data-act="rel-fechar"]').click()
     cols = 'E F G I K L N P Q R S T U W'.split()
     rows = pg.locator('tr[data-l]').evaluate_all("(es,cols)=>es.map(e=>Object.fromEntries(cols.map(k=>[k,(e.querySelector('[data-c='+k+']')||{innerText:''}).innerText.trim()])))", cols)
     print('linhas criadas', len(rows), '| unidades', sum(int(r['W'] or 0) for r in rows))
@@ -106,5 +107,6 @@ with sync_playwright() as p:
         if abs(esp - banho) > 0.011: falhas.append(('banho', r['E'], esp, banho))
         if abs(espv - n(r['U'])) > 0.011: falhas.append(('verniz', r['E'], espv, n(r['U'])))
     print('FALHAS', falhas); print('diálogos', dl); print('erros JS', err)
+    assert len(rows)==25 and sum(int(r['W'] or 0) for r in rows)==46, "linhas ou unidades faltando"
     assert not err and not falhas and rows
     b.close(); print('OK romaneio por peso: lotes pesados, peças avulsas e trios em conjuntos conferem')

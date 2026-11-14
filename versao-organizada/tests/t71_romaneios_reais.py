@@ -60,7 +60,7 @@ with sync_playwright() as p:
             x = cards().nth(i).locator(f'[data-rp="q"][data-b="{k}"]'); x.fill(str(v)); x.press('Tab')
 
     # 0: conjunto com 3 componentes de categorias diferentes
-    r = cards().nth(0); r.locator('.rom-conjunto summary').click(); r.locator('[data-rcj="ativar"]').click(); r = cards().nth(0)
+    r = cards().nth(0); r.locator('[data-rcj="ativar"]').count() and (r.locator('.rom-conjunto summary').click(), r.locator('[data-rcj="ativar"]').click()); r = cards().nth(0)
     while r.locator('[data-rcji]').count() < 3: r.locator('[data-rcj="adicionar"]').click()
     for k, (d, c, qq, ps, cu) in enumerate([('Colar', 'Colares', '1', '2', '5'), ('Brinco', 'Brincos', '2', '0.8', '2.5'), ('Anel', 'Anel', '1', '1.5', '3.5')]):
         it = r.locator('[data-rcji]').nth(k)
@@ -109,6 +109,8 @@ with sync_playwright() as p:
     cols = 'E F I K L N P Q R S T U V W'.split()
     rows = pg.locator('tr[data-l]').evaluate_all("(es,cols)=>es.map(e=>Object.fromEntries(cols.map(k=>[k,(e.querySelector('[data-c='+k+']')||{innerText:''}).innerText.trim()])))", cols)
     print('linhas criadas', len(rows), '| unidades', sum(int(r['W'] or 0) for r in rows))
+    # Expectativa do cenário preenchido acima: divisão de banhos, três cores e partes.
+    assert len(rows)==38 and sum(int(r['W'] or 0) for r in rows)==142, 'linhas ou unidades do cenário divergentes'
     falhas = []; est = 0.0
     for r in rows:
         bn = 'prata' if (r['T'] or 'Prata' in r['L']) else 'ouro'
@@ -123,6 +125,7 @@ with sync_playwright() as p:
         if r['V']: falhas.append(('varejo preenchido sem ser digitado', r['E'], r['V']))
     m = re.search(r'Varejo estimado R\$ ([\d.,]+)', preview)
     print('varejo estimado na tela', m.group(1) if m else None, '| calculado pelas linhas criadas', f'{est:.2f}')
+    assert m, 'prévia de varejo estimado ausente'
     if m and abs(n(m.group(1)) - est) > 0.5: falhas.append(('varejo estimado', n(m.group(1)), est))
     for r in rows:
         print(r['E'], r['I'], r['K'], r['L'], 'peso', r['N'], 'P', r['P'], 'Q', r['Q'], 'R', r['R'], 'T', r['T'], 'U', r['U'], 'V', r['V'], 'qtd', r['W'])
@@ -134,6 +137,15 @@ with sync_playwright() as p:
     wb = load_workbook(BytesIO(Path(d.value.path()).read_bytes()), data_only=False); ws = wb.active
     data = list(ws.iter_rows(values_only=True)); head = list(data[0])
     print('XLSX linhas', len(data) - 1, '| iguais às da tabela:', len(data) - 1 == len(rows))
+    for x, original in zip(data[1:], rows):
+        for col, nome in [('E','Referência'), ('I','Categoria'), ('N','Peso'), ('P','Custo de Compra'), ('Q','Custo de Insumos'), ('W','Quantidade')]:
+            valor=x[head.index(nome)]
+            if isinstance(valor,str) and valor.startswith('='):
+                assert valor != '=', (nome, original['E'])
+            elif col in ('N','P','Q','W'):
+                assert abs(float(valor or 0)-n(original[col])) < .001, (nome, original['E'], valor, original[col])
+            else:
+                assert (original[col].startswith(str(valor)) if col=='E' and valor else str(valor or '') == original[col]), (nome, original['E'], valor, original[col])
     for nome in ('Custo do Banho de Ouro', 'Custo do Banho de Prata', 'Custo do Banho de Verniz', 'Preço de Varejo'):
         print(nome, [str(x[head.index(nome)]) for x in data[1:4]])
     print('diálogos', dl); print('erros JS', err)

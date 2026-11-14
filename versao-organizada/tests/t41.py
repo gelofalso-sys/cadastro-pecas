@@ -36,7 +36,7 @@ with sync_playwright() as p:
     set_(pg,'[data-cf="sufixo"]'," sufixo teste",ix)
     set_(pg,'[data-cf="prefixo"]',"ZZ",ix)
     volta(pg)
-    ok(col(pg,"F")!=F0 and all("sufixo teste" in x for x in col(pg,"F")[:4]),"descrição das peças lançadas acompanha o texto da categoria: %s"%col(pg,"F")[0])
+    ok(col(pg,"F")==F0 and not any("sufixo teste" in x for x in col(pg,"F")),"peças lançadas (semSufixoCat) conservam a descrição: o texto da categoria não é mais acrescentado: %s"%col(pg,"F")[0])
     ok(col(pg,"E")!=E0 and col(pg,"E")[0].startswith("ZZ"),"referência acompanha o prefixo da categoria: %s → %s"%(E0[0],col(pg,"E")[0]))
     ok(col(pg,"V")==V0,"preço de venda digitado NÃO muda (%s)"%col(pg,"V")[:4])
     # galvânica e fornecedor/padrões: custos acompanham, preço fica

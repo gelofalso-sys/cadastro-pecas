@@ -10,7 +10,7 @@ for w,h in [(1200,850),(390,844)]:
    page.locator('#mobileMenu summary').click();page.locator('[data-mobile="act:rom-abrir"]').click()
   else:page.locator('#impBar [data-act="rom-abrir"]').click()
   page.locator('#romWrap [data-act="rom-tipo"][data-v="pronta"]').click()
-  page.locator('#romWrap textarea').fill('Romaneio do Link TESTE\nColar 45+5, [#900001] R$ 10,90 R$ 9,27 2 R$ 18,54\nValor Produtos R$ 18,54');page.locator('#romWrap [data-act="rom-ler"]').click();page.locator('#romWrap [data-act="rom-criar"]').click();page.locator('[data-act="rev-ok"]').click()
+  page.locator('#romWrap textarea').fill('Romaneio do Link TESTE\nColar 45+5, [#900001] R$ 10,90 R$ 9,27 2 R$ 18,54\nValor Produtos R$ 18,54');page.locator('#romWrap [data-act="rom-ler"]').click();page.locator('#romWrap .rc').first.locator('[data-rp="bon"][data-b="ouro"]').set_checked(True);page.locator('#romWrap .rc').first.locator('[data-rp="q"][data-b="ouro"]').fill('2');page.locator('#romWrap [data-act="rom-criar"]').click();page.locator('[data-act="rev-ok"]').click()
   report=page.locator('.rep');assert report.locator('[data-act="rom-salvo-abrir"]').is_visible();report.locator('[data-act="rom-salvo-abrir"]').click();page.locator('#romWrap .rc').first.wait_for(state='visible');assert page.locator('#romWrap .rc').count()==1
   page.locator('#romWrap [data-act="rom-fechar"]').click()
   if w<900:page.locator('#mbar [data-act="ir-lista"]').click()

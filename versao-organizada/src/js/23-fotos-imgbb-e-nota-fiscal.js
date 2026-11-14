@@ -47,8 +47,15 @@ async function enviarFotos(soIds){if(fotosEnv)return;
   renderTopo();
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
-function romCriar(){const f=S.form;if(!romConjVerificar())return;if(editId){toast("Termine ou cancele a edição antes.");return}
+async function romCriar(){const f=S.form;if(editId){toast("Termine ou cancele a edição antes.");return}
   if(romConflito){toast("Outra aba alterou este romaneio. Use “Recarregar” ou “Manter esta aba” no aviso amarelo antes de criar as peças.");return}
+  if(ROM.rows.some(romLoteDistribuicaoInvalida)){toast("Corrija a quantidade dos itens de lote ou desmarque-os antes de criar.");return}
+  const antesConf=romInsAssinatura(),insPend=await romInsConferirArquivos();if(!insPend)return;if(antesConf!==romInsAssinatura()){toast("Os dados mudaram durante a conferência. Revise o romaneio novamente.");return}if(insPend.length){toast("O rateio mudou ou não foi possível conferir itens já lançados. Restaure a tabela salva e confira esses itens antes de criar.");return}
+  if(romConflito||editId){toast("O estado mudou durante a conferência. Revise o romaneio novamente.");return}
+  if(romInsProibidos().length){toast("Frete e separação ficam fora do custo das peças. Retire esses itens dos insumos antes de criar.");return}
+  if(romInsSemBase()){toast("Informe valores válidos para a base do rateio de insumos antes de criar.");return}
+  if(romInsBasesInvalidas().length){toast("O custo de insumos contém fórmula ou valor inválido. Informe um valor numérico antes de ratear; a fórmula não foi alterada.");return}
+  if(!romConjVerificar())return;
   {const NL=String.fromCharCode(10),dif=[];ROM.rows.forEach(r=>{if(r.skip||!r.refaz||!(r.lancIds||[]).length)return;const o=S.lanc.find(l=>l.id===r.lancIds[0]);if(!o||!o.v)return;const ch=[],ne=(x,y)=>{const a=num(x),b=num(y);return a!=null&&b!=null?Math.abs(a-b)>1e-9:String(x==null?"":x).trim()!==String(y==null?"":y).trim()};
       if(ne(o.v.N,r.peso))ch.push("peso "+(o.v.N||"—")+" → "+(r.peso||"—"));if(ne(o.v.P,r.custo))ch.push("compra "+(o.v.P||"—")+" → "+(r.custo||"—"));if(ne(o.v.F,r.desc))ch.push("descrição");
       if(ch.length)dif.push((o.v.E||r.desc)+": "+ch.join(", "))});
@@ -58,13 +65,13 @@ function romCriar(){const f=S.form;if(!romConjVerificar())return;if(editId){toas
   ROM.rows.forEach(r=>{if(r.skip){if(!(r.feito&&!r.refaz)&&!(r.lote&&romLoteKids(r).length))ign.push({desc:r.desc,cod:r.cod,motivo:r.aviso?String(r.aviso).replace("· ",""):"desmarcada"});return}
     S.form=clone(snap);const {f:f2,q}=romForm(r);if(!q.length){sem++;ign.push({desc:r.desc,cod:r.cod,motivo:"sem quantidade"});return}
     S.form=f2;let pos=-1,velhos=null;if(r.refaz&&r.lancIds&&r.lancIds.length){pos=S.lanc.findIndex(l=>l.id===r.lancIds[0]);if(pos>=0&&romPrefDe(S.lanc[pos])!==prefDe(f2.v.I||"",f2.v.J))romFixaRefs(S.lanc,pos,romPrefDe(S.lanc[pos]),r.lancIds,false);velhos=S.lanc.filter(l=>r.lancIds.includes(l.id));S.lanc=S.lanc.filter(l=>!r.lancIds.includes(l.id))}
-    if(adicionar(false,true)){const nl=S.lanc[S.lanc.length-1];if(pos>=0&&velhos&&velhos[0]&&romPrefDe(velhos[0])===romPrefDe(nl)){if(velhos[0].v&&!vazio(velhos[0].v.E)){nl.v.E=velhos[0].v.E;if(velhos[0].rf)nl.rf=1}S.lanc.pop();S.lanc.splice(Math.min(pos,S.lanc.length),0,nl)}feitas.push({r,id:nl.id});un+=q.reduce((t,x)=>t+x[1],0)}else{if(velhos)S.lanc.splice(Math.max(0,pos),0,...velhos);err++;ultErro=erro||ultErro;ign.push({desc:r.desc,cod:r.cod,motivo:"erro ao criar"+(erro?": "+erro:"")})}});
+    if(adicionar(false,true)){const nl=S.lanc[S.lanc.length-1];if(velhos&&velhos.length===1){const anterior=velhos[0];nl.id=anterior.id;if(anterior.ft&&!nl.ft)nl.ft=anterior.ft;if(anterior.ftIdb)nl.ftIdb=anterior.ftIdb}if(pos>=0&&velhos&&velhos[0]&&romPrefDe(velhos[0])===romPrefDe(nl)){if(velhos[0].v&&!vazio(velhos[0].v.E)){nl.v.E=velhos[0].v.E;if(velhos[0].rf)nl.rf=1}S.lanc.pop();S.lanc.splice(Math.min(pos,S.lanc.length),0,nl)}feitas.push({r,id:nl.id});un+=q.reduce((t,x)=>t+x[1],0)}else{if(velhos)S.lanc.splice(Math.max(0,pos),0,...velhos);err++;ultErro=erro||ultErro;ign.push({desc:r.desc,cod:r.cod,motivo:"erro ao criar"+(erro?": "+erro:"")})}});
   S.form=snap;erro="";
   if(!feitas.length){renderRom();renderForm();toast("Nenhuma peça foi criada"+(ultErro?": "+ultErro:sem?" (nenhuma tem quantidade)":"")+". O romaneio continua aberto para você corrigir.");return}
   const ids=feitas.map(x=>x.id);
   const meta={forn:snap.v.H||"",banhista:snap.tipo==="bruta"?banhistaBy(snap.banhista).nome:"",tipo:snap.tipo,obs:ROM.obs||"",modelo:(romT()||{}).nome||"",conf:ROM.conf||"",naLista,un};
   {const g2=gerar(),corr=feitas.filter(({r})=>r.refaz).length;
-  feitas.forEach(({r,id})=>{const ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=!!r.refaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto)idbPut("fotos",id,r.foto)});
+  feitas.forEach(({r,id})=>{const eraRefaz=!!r.refaz,ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=eraRefaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto&&!eraRefaz)idbPut("fotos",id,r.foto)});
   if(feitas.length)ROM.log=(ROM.log||[]).concat([{em:Date.now(),por:AUTOR,acao:`Lançou ${feitas.length-corr} peça(s) nova(s)${corr?` e corrigiu ${corr}`:""} · ${un} unidades`}])}
   /* O rascunho com os vínculos fica disponível até o IndexedDB confirmar a gravação. */
   const lsOk=romSalvar(),gravacao=romGravP,romId=ROM.sid;let rascGravado=null;try{rascGravado=localStorage.getItem(ROMKEY)}catch(e){}
@@ -166,7 +173,7 @@ function nfIniciar(nota){const forma={};nota.itens.forEach(i=>{if(i.cod){const s
     return {i,inc:true,cod:it.cod,desc:it.desc,cat:ct.cat,sub:ct.sub,qtd:it.qtd,vUn:it.vUn,vProd:it.vProd,vDesc:it.vDesc,ncm:it.ncm,cfop:it.cfop,un:it.un,gen,gmode:gen.length?"lote":"",gN:2,custoMan:""}});
   const ach=nfAcharForn(nota.emit);
   NF={nota,rows,liq:true,dup:null,dupOk:false,forn:ach.f?ach.f.nome:"__novo",fornPor:ach.por||"",novoNome:nfTitulo(nota.emit.nome)}}
-const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return r2c(((r.vProd||r.vUn*q)-r.vDesc)/q);return r.vUn};
+const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd)||0;if(NF.liq&&q>0)return ((r.vProd||r.vUn*q)-r.vDesc)/q;return r.vUn};
 /* quantidade positiva nunca some: 0,4 kg vira 1 unidade com o custo do total da nota */
 const nfQtdInt=q=>q>0?Math.max(1,Math.round(q)):0;
 async function nfBuscaDup(ch){if(!ch)return null;const ix=nfIdx()[ch];if(ix)return {em:ix.em,n:ix.n,numero:ix.numero};
@@ -192,24 +199,28 @@ async function nfRotear0(f){if(/xml/i.test(f.type+f.name))return nfAbrir(f);
   try{const its=await nfPdfItens(f);if(nfPareceDanfe(its))return nfAbrir(f,its)}catch(e){if(e&&e.lim){nfErro(e.message+". Divida o arquivo ou use o XML da nota.");return}}
   romPdf(f)}
 function nfLinhas(){const out=[],N=NF.nota;
-  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=nfQtdInt(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?r2c(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:String(r4(ci)).replace(".",","),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
+  NF.rows.forEach(r=>{if(!r.inc||r.gmode==="ignorar")return;const q=Number(r.qtd)||0,ci0=nfCusto(r),qr0=nfQtdInt(q),ci=(qr0>0&&qr0!==q&&ci0!=null)?r4(ci0*q/qr0):ci0,base={cod:r.cod,preco:r.vUn,precod:null,peso:"",q:{},skip:false,aviso:"",cat:r.cat,sub:r.sub,custo:String(r4(ci)).replace(".",","),nfChave:N.chave,nfNum:N.numero,nfForn:N.emit.nome,nfNcm:r.ncm,nfCfop:r.cfop,nfSemDesc:NF.liq};
     if(!r.cat){base.catq=true;base.aviso="· categoria não reconhecida: confira"}
     if(r.gmode==="dividir"){const n=Math.max(2,Math.min(Math.round(Number(r.gN)||2),Math.max(2,nfQtdInt(q))));let resto=nfQtdInt(q)%n;const b=Math.floor(nfQtdInt(q)/n);
       for(let k=0;k<n;k++){const qq=b+(resto-->0?1:0);if(qq>0)out.push({...base,desc:`${r.desc} (${k+1}/${n})`,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||"· lote dividido: confira cada peça"})}}
-    else{const qq=nfQtdInt(q);if(qq>0)out.push({...base,desc:r.desc,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||(r.gmode==="lote"?"· lote misto lançado como 1 peça":(qq!==q?"· quantidade quebrada: arredondei e ajustei o custo de cada para manter o total da nota":""))})}});
+    else{const qq=nfQtdInt(q);if(qq>0)out.push({...base,desc:r.desc,qtd:qq,total:nfR2(ci*qq),aviso:base.aviso||(r.gmode==="lote"?"· lote misto lançado como 1 peça":(qq!==q?"· quantidade quebrada: ajustada e custo calculado com até quatro casas; confira o total antes de criar":""))})}});
   return out}
 function nfCalc(){const N=NF.nota,t=N.totais,sP=nfR2(N.itens.reduce((a,i)=>a+i.vProd,0)),sD=nfR2(N.itens.reduce((a,i)=>a+i.vDesc,0)),lin=nfLinhas(),un=lin.reduce((a,l)=>a+l.qtd,0),custo=nfR2(lin.reduce((a,l)=>a+(num(l.custo)||0)*l.qtd,0));
   const esperado=nfR2(t.prod-t.desc+t.extra);return {sP,sD,lin,un,custo,esperado,okProd:t.prod>0&&Math.abs(sP-t.prod)<0.05,okDesc:Math.abs(sD-t.desc)<0.05,okNota:t.nota>0&&Math.abs(esperado-t.nota)<0.05}}
-function nfResumo(){const el=document.getElementById("nfSum");if(!el||!NF)return;const t=NF.nota.totais,c=nfCalc(),ok=(b,m)=>`<span class="${b?"nf-ok":"nf-no"}">${b?"✓":"⚠"} ${m}</span>`;
+/* itens marcados para entrar, mas que ficam de fora por não terem quantidade positiva */
+const nfDescartados=()=>NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&!(nfQtdInt(Number(r.qtd)||0)>0));
+function nfResumo(){const el=document.getElementById("nfSum");if(!el||!NF)return;const t=NF.nota.totais,c=nfCalc(),dsc=nfDescartados(),sdesc=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&!String(r.desc||"").trim()).length,ok=(b,m)=>`<span class="${b?"nf-ok":"nf-no"}">${b?"✓":"⚠"} ${m}</span>`;
   el.innerHTML=`<div class="nf-conf">${ok(c.okProd,t.prod>0?`Soma dos itens ${nfM(c.sP)} ${c.okProd?"= total dos produtos da nota":"≠ total dos produtos da nota ("+nfM(t.prod)+")"}`:`Não achei o total dos produtos na nota (soma dos itens: ${nfM(c.sP)})`)}
     ${ok(c.okDesc,`Desconto dos itens ${nfM(c.sD)} ${c.okDesc?"= desconto da nota":"≠ desconto da nota ("+nfM(t.desc)+")"}`)}
     ${ok(c.okNota,t.nota>0?`Total da nota ${nfM(t.nota)} ${c.okNota?"= produtos − desconto"+(t.extra?" + frete/outros":""):"≠ produtos − desconto ("+nfM(c.esperado)+"): pode haver frete, seguro ou impostos na nota"}`:"Não achei o total da nota")}</div>
+    ${dsc.length?`<div class="nf-conf"><span class="nf-no">⚠ ${dsc.length} item(ns) da nota NÃO entram (quantidade zero, negativa ou vazia): ${esc(dsc.slice(0,5).map(r=>(r.cod||"sem código")+" "+String(r.desc||"").slice(0,25)).join("; "))}${dsc.length>5?"…":""}</span></div>`:""}${sdesc?`<div class="nf-conf"><span class="nf-no">⚠ ${sdesc} item(ns) sem descrição na nota: preencha antes de importar.</span></div>`:""}
     <div class="nf-vai"><b>${c.lin.length}</b> peça${c.lin.length===1?"":"s"} · <b>${c.un}</b> unidade${c.un===1?"":"s"} · custo total <b>${nfM(c.custo)}</b>${NF.liq?` (nota com desconto: ${nfM(nfR2(t.prod-t.desc))})`:""}</div>`;
   const b=document.getElementById("nfGo");if(b){b.textContent=c.lin.length?`Importar ${c.lin.length} peça${c.lin.length===1?"":"s"} para o romaneio`:"Nada para importar";b.disabled=!c.lin.length||!!(NF.dup&&!NF.dupOk);const ni=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r))).length;let av=document.getElementById("nfAvCusto");if(ni){if(!av&&b&&b.parentElement){av=document.createElement("div");av.id="nfAvCusto";av.setAttribute("role","alert");av.style.cssText="color:#7a1c12;background:#fdecea;border:1px solid #c0392b;border-radius:8px;padding:6px 10px;margin-right:auto;font-size:13px";b.parentElement.insertBefore(av,b.parentElement.firstChild)}if(av)av.textContent=ni+" item(ns) marcado(s) com custo ausente ou inválido: pode estar defeito da nota. Corrija o custo ou, ao importar, escolha seguir com os dados como foram lidos."}else if(av)av.remove()}}
 function nfRowHTML(r){const C=cfg(),cc=catBy(r.cat),ci=nfCusto(r),dec=r.vUn&&r.vDesc?Math.round(r.vDesc/(r.vProd||1)*100):0,av=[];
+  if(!String(r.desc||"").trim())av.push("sem descrição: preencha antes de importar");
   if(!r.cat)av.push("categoria não reconhecida: escolha uma");
-  if(Number(r.qtd)%1)av.push("quantidade quebrada: vai ser arredondada para "+nfQtdInt(Number(r.qtd))+" e o custo de cada será ajustado para o total da nota não mudar");
-  if(!(Number(r.qtd)>0))av.push("sem quantidade");
+  if(Number(r.qtd)%1)av.push("quantidade quebrada: vai ser arredondada para "+nfQtdInt(Number(r.qtd))+"; o custo será ajustado com até quatro casas e o total precisa ser conferido");
+  if(!(Number(r.qtd)>0))av.push("sem quantidade: este item NÃO será importado");
   const gen=r.gen.length?`<div class="nf-gen"><span class="nf-av">⚠ Atenção neste item: ${esc(r.gen.join("; "))}</span><label>O que fazer <select data-nf="gmode"><option value="lote"${r.gmode==="lote"?" selected":""}>Lançar como 1 peça (lote)</option><option value="dividir"${r.gmode==="dividir"?" selected":""}>Dividir em várias peças</option><option value="ignorar"${r.gmode==="ignorar"?" selected":""}>Ignorar este item</option></select></label>${r.gmode==="dividir"?`<label>Quantas peças <input class="n" data-nf="gN" value="${esc(r.gN)}" inputmode="numeric" style="width:60px"></label>`:""}</div>`:"";
   return `<div class="nf-r${r.inc&&r.gmode!=="ignorar"?"":" off"}" data-i="${r.i}">
     <label class="nf-inc" title="Marque para importar este item"><input type="checkbox" data-nf="inc"${r.inc?" checked":""} aria-label="Importar este item"></label>
@@ -247,6 +258,9 @@ function nfConfirmar(){if(!NF)return;const N=NF.nota;
   if(NF.dup&&!NF.dupOk){toast("Esta nota já foi importada. Marque “Importar de novo mesmo assim” se quiser repetir.");return}
   {const ni=NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar"&&(x=>x==null||x<0)(nfCusto(r))).length;if(ni&&!confirm(ni+" item(ns) da nota estão com custo ausente ou inválido (a nota pode estar com defeito).\n\nOK = importar com os dados como foram lidos (esses itens ficam com custo R$ 0,00 para você corrigir depois)\nCancelar = voltar e corrigir o custo ou desmarcar o item"))return}
   const lin=nfLinhas();if(!lin.length){toast("Nenhum item marcado para importar.");return}
+  {const original=nfR2(NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar").reduce((t,r)=>t+(nfCusto(r)||0)*(Number(r.qtd)||0),0)),calculado=nfR2(lin.reduce((t,r)=>t+(num(r.custo)||0)*r.qtd,0));if(original!==calculado&&!confirm(`A conversão de quantidade e custo altera o total dos itens de R$ ${brl(original)} para R$ ${brl(calculado)} (diferença de R$ ${brl(Math.abs(original-calculado))}). Confira e ajuste os itens.
+
+OK = importar com essa diferença; Cancelar = voltar e corrigir.`))return}
   if(((ROM&&ROM.rows&&ROM.rows.some(r=>!r.skip))||romTem)&&!confirm("Já existe um romaneio aberto ou guardado. Importar a nota vai trocar a lista dele. Continuar?"))return;
   const C=cfg();let nome=NF.forn;
   if(nome==="__novo"){nome=(NF.novoNome||"").trim()||("Fornecedor da nota "+N.numero);if(!fornBy(nome))C.fornecedores.push({nome,desconto:"0",tipo:"pronta",banhista:"",codigo:"",cnpj:N.emit.cnpj});else{const f0=fornBy(nome);if(!f0.cnpj&&N.emit.cnpj)f0.cnpj=N.emit.cnpj}salvar(true,false)}
@@ -258,9 +272,9 @@ function nfConfirmar(){if(!NF)return;const N=NF.nota;
   ROM.msg=`${lin.length} peça${lin.length===1?"":"s"} importada${lin.length===1?"":"s"} da nota ${N.numero}. Falta informar o peso (e os banhos).`;
   nfFechar();romSalvarSoon();renderRom();const w=document.getElementById("romWrap");if(w)rolarPane(w);toast(ROM.msg)}
 /* a chave da nota fica guardada junto das peças criadas (e num índice), para avisar se a mesma nota for importada outra vez */
-{const romCriarBase=romCriar;romCriar=function(){const r0=ROM&&ROM.rows.find(r=>r.nfChave&&!r.skip),m=r0&&{chave:r0.nfChave,numero:r0.nfNum,forn:r0.nfForn},antes=new Set(S.lanc.map(l=>l.id));
-  romCriarBase.apply(this,arguments);
-  if(m){const nv=S.lanc.filter(l=>!antes.has(l.id));if(nv.length){nv.forEach(l=>{l.nfChave=m.chave;l.nfNum=m.numero});nfIdxSet(m.chave,{em:Date.now(),n:nv.length,numero:m.numero,forn:m.forn});salvar(false)}}}}
+{const romCriarBase=romCriar;let ocupado=false;romCriar=async function(){if(ocupado){toast("Aguarde a conferência e criação em andamento.");return}ocupado=true;try{const r0=ROM&&ROM.rows.find(r=>r.nfChave&&!r.skip),m=r0&&{chave:r0.nfChave,numero:r0.nfNum,forn:r0.nfForn},antes=new Set(S.lanc.map(l=>l.id));
+  await romCriarBase.apply(this,arguments);
+  if(m){const nv=S.lanc.filter(l=>!antes.has(l.id));if(nv.length){nv.forEach(l=>{l.nfChave=m.chave;l.nfNum=m.numero});nfIdxSet(m.chave,{em:Date.now(),n:nv.length,numero:m.numero,forn:m.forn});salvar(false)}}}catch(e){console.error(e);toast("Não foi possível concluir a criação. Confira a tabela antes de tentar novamente.")}finally{ocupado=false}}}
 document.addEventListener("change",e=>{const t=e.target;if(!t)return;
   if(t.id==="nfFile"){const f=t.files&&t.files[0];t.value="";if(f)nfAbrir(f);return}
   if(!NF||!t.closest||!t.closest("#nfRev")||!t.dataset.nf)return;const k=t.dataset.nf,row=t.closest("[data-i]"),r=row?NF.rows[+row.dataset.i]:null;

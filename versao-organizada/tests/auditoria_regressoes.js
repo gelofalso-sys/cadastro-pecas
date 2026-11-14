@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('src/js/21-edicao-em-lote-e-revisao.js', 'utf8');
-const resumo = source.slice(source.indexOf('function romLoteResumo'), source.indexOf('function romLoteHTML'));
+const resumo = source.slice(source.indexOf('const romLoteReal='), source.indexOf('function romLoteHTML'));
 const partir = source.slice(source.indexOf('function romPartir'), source.indexOf('function romJuntar'));
 const ctx = {
   ROM: {rows: []}, uid: () => 'grupo', clone: x => structuredClone(x),
@@ -15,7 +15,7 @@ const ctx = {
 };
 vm.createContext(ctx);
 vm.runInContext('const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);\n' + resumo + '\n' + partir, ctx);
-const lote = {lote:true, lid:'l', loteG:10, precoG:2, total:20};
+const lote = {lote:true, lid:'l', loteG:10, pesoReal:'10', precoG:2, total:20};
 const filho = {loteDe:'l', precoG:2, peso:'9,980', custo:'19,96', cod:'1-1', desc:'teste', qtd:1, q:{ouro:'1'}, feito:true, skip:true, lancIds:['id']};
 ctx.ROM.rows = [lote, filho];
 assert.notEqual(ctx.romLoteResumo(lote).cls, 'ok', 'diferença de 0,020 g não deve fechar');
@@ -54,10 +54,11 @@ const validar=cjSource.slice(cjSource.indexOf('function romConjVerificar()'));
 const conjSource=fs.readFileSync('src/js/18-conjunto.js','utf8');
 const conjErro=conjSource.slice(conjSource.indexOf('function conjQtd('),conjSource.indexOf('function conjResumoHTML'));
 let avisos=0,confirmacoes=0;
-const cctx={ROM:{rows:[]},num:ctx.num,vazio:x=>x==null||String(x).trim()==='',semAc:x=>String(x||'').toLowerCase(),brl:ctx.brl,romBh:()=>({banhos:[{id:'ouro'}]}),toast:()=>avisos++,confirm:()=>{confirmacoes++;return false}};
+const cctx={ROM:{rows:[]},num:ctx.num,vazio:x=>x==null||String(x).trim()==='',semAc:x=>String(x||'').toLowerCase(),brl:ctx.brl,romBh:()=>({banhos:[{id:'ouro'}]}),toast:()=>avisos++,alert:()=>avisos++,confirm:()=>{confirmacoes++;return false}};
 vm.createContext(cctx);vm.runInContext(conjErro+'\n'+validar,cctx);
 cctx.ROM.rows=[{desc:'Conjunto',conjOriginal:{custo:'10'},conjComp:[{desc:'Colar',peso:'1',custo:'5'},{desc:'',peso:'',custo:''}]}];
-assert.equal(cctx.romConjVerificar(),false,'componente vazio deve impedir criação');
+assert.equal(cctx.romConjVerificar(),false,'aviso de componente vazio pode ser cancelado');
+confirmacoes=0;
 cctx.ROM.rows[0].conjComp[1]={desc:'Brinco',peso:'1',custo:'4'};
 assert.equal(cctx.romConjVerificar(),false,'custo divergente precisa de confirmação');assert.equal(confirmacoes,1);
 cctx.ROM.rows[0].conjComp[1].custo='5';assert.equal(cctx.romConjVerificar(),true);
@@ -77,6 +78,7 @@ for(const n of [2,3,7,12]) {
  assert.ok(ctx.ROM.rows.every(x=>x.qtd===5&&x.q.p==='5'));
 }
 cctx.ROM.rows=[{desc:'Conjunto',conjComp:[{desc:'Colar',peso:'1',custo:'1',banho:'antigo'}]}];
-assert.equal(cctx.romConjVerificar(),false,'banho que não pertence à galvânica deve bloquear lançamento');
+assert.equal(cctx.romConjVerificar(),false,'usuário pode cancelar aviso de banho ausente');
+assert.equal(cctx.ROM.rows[0].conjComp[0].banho,'antigo','cancelar não altera banho');
 cctx.ROM.rows[0].conjComp[0].banho='ouro';assert.equal(cctx.romConjVerificar(),true);
 console.log('Divisão de conjuntos protegida e banhos validados: OK');

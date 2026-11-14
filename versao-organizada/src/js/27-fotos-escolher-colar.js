@@ -62,7 +62,7 @@ function registrarLivres(l){const C=cfg(),h=String(val(l,"H")||"").replace(/\s+/
 function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";
-  if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro(true);return}
+  if(vazio(f.v.F)){erro="Falta a Descrição.";atualizarGera();focarPrimeiro(true);return} if(!quiet){const sus=["N","P","V"].filter(L=>/^\d{1,3}(\.\d{3})+$/.test(String(f.v[L]==null?"":f.v[L]).trim()));if(sus.length){const L=sus[0],t=String(f.v[L]).trim(),lido=String(num(t)).replace(".",",");if(!confirm(NOME[L]+" \""+t+"\" será lido como "+lido+" (o ponto é decimal). Se o valor é "+t.replace(/\./g,"")+", cancele e digite sem o ponto.\n\nLançar assim mesmo?"))return}}
   if(!quiet){const meu=editId||"__p",rd=previsao().linhas.filter(r=>r.lancId===meu&&r.dup);if(rd.length){erro="Referência repetida ("+[...new Set(rd.map(r=>r.v.E))].slice(0,3).join(", ")+"): duas linhas ficaram iguais. Dê uma letra (ou outro nome) para cada cor/tamanho em Cadastros › Categorias.";atualizarGera();return}}
   {let ck=null,onde=null;
     for(const L of VALIDA_NUM){const r=checaCel(L,f.v[L]);if(r.erro){ck=r.erro;onde=L;break}}
@@ -79,7 +79,10 @@ function adicionar(limpar,quiet){
   if(f.tipo==="bruta"&&!banhistaBy(f.banhista).banhos.some(b=>f.on[b.id])){erro="Marque pelo menos um banho.";atualizarGera();return}
   {const gr=gradeBy(f.grade);if(gr&&!f.semGrade&&!(f.gsel||[]).some(id=>gr.itens.some(x=>x.id===id))){erro=`Escolha pelo menos uma opção de ${gr.nome}.`;atualizarGera();return}}
   if(!vazio(f.v.E))f.v.E=String(f.v.E).replace(/\s+/g,"").toUpperCase();Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object"&&!vazio(o.E))o.E=String(o.E).replace(/\s+/g,"").toUpperCase()});
-  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=r2c(n).toFixed(2).replace(".",",")});const p=o.N;if(!vazio(p)&&String(p).trim()[0]!=="="){const n=num(p);if(n!=null)o.N=String(Math.round(n*1000)/1000).replace(".",",")}};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
+  if(!quiet&&!f.compra4){const custos=[f.v.P,...Object.values(f.ov||{}).map(o=>o&&o.P)].filter(x=>!vazio(x));if(custos.some(x=>{const n=num(x);return n!=null&&Math.abs(n*100-Math.round(n*100))>1e-7})&&!confirm("O custo tem mais de duas casas decimais e será arredondado para centavos. Continuar?"))return}
+  {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=(L==="P"&&f.compra4?String(Math.round(n*10000)/10000):r2c(n).toFixed(2)).replace(".",",")});const p=o.N;if(!vazio(p)&&String(p).trim()[0]!=="="){const n=num(p);if(n!=null)o.N=String(Math.round(n*1000)/1000).replace(".",",")}};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
+  if(!quiet){const refs=[f.v.E,...Object.values(f.ov||{}).map(o=>o&&o.E)].filter(x=>!vazio(x));for(const ref of refs){const m=String(ref).trim().toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)continue;const atual=Math.max(inicioDe(m[1]),(G&&G.cont&&G.cont[m[1]])||0);if(+m[2]>atual+50&&!confirm("A referência "+ref+" salta mais de 50 números em relação à numeração atual. Isso pode alterar as próximas referências automáticas. Continuar?"))return}}
+  if(!quiet&&!editId){const chave=x=>String(x||"").trim().replace(/\s+/g," ").toLocaleLowerCase("pt-BR");const igual=S.lanc.find(l=>chave(val(l,"F"))===chave(f.v.F)&&chave(val(l,"H"))===chave(f.v.H));if(igual&&!confirm("Já existe uma peça com a mesma descrição e fornecedor. Lançar mesmo assim?"))return}
   const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);if(ant&&ant.rf&&prefDe(val(novo,"I")||"",val(novo,"J"))!==prefDe(val(ant,"I")||"",val(ant,"J"))){delete novo.v.E;delete novo.rf}novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
   if(!novo.conj){delete novo.comp;delete novo.fConj}
@@ -96,7 +99,11 @@ function adicionar(limpar,quiet){
     /* criar em lote: N peças separadas, cada uma numerada i/N (1 = desligado) */
     {const N=!quiet?Math.max(1,Math.min(200,Math.trunc(num(f.loteN)||1))):1;if(N>1){const lid=uid();novo.lote={id:lid,i:1,n:N};for(let k=2;k<=N;k++){const c=clone(novo);c.id=uid();c.lote={id:lid,i:k,n:N};if(c.v)delete c.v.E;S.lanc.push(c)}f.loteN=""}else if(!quiet)delete novo.lote}
     undo={tipo:"add",id:novo.id,form:clone(f)};
-    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
+    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();else if(!quiet){/* Evita reutilizar medidas e compra em nova peça, salvo preferência explícita em Colunas. */
+      ["N","P","W"].forEach(L=>{if(!(cfg().colcfg[L]||{}).manter){delete f.v[L];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o[L]})}});
+      if(!(cfg().colcfg.P||{}).manter)delete f._pAuto;
+      if(f.conj&&!(cfg().colcfg.N||{}).manter&&!(cfg().colcfg.P||{}).manter){f.comp=[novaComp(),novaComp()];conjSync(f)}
+    }if(!quiet){renderTopo();toast(`Adicionado ${(G.refs[novo.id]||[]).join(" + ")}${G.semQ&&G.semQ[novo.id]?` — ${G.semQ[novo.id]} combinação(ões) sem quantidade ficaram de fora`:""}`,{t:"Desfazer",fn:desfazer})}}
   salvar(false);if(quiet)return true;renderForm();try{primeirosAtualizar()}catch(x){}
   mostrarNoFim(novo.id);
   focarPrimeiro();return true;
@@ -108,7 +115,7 @@ function mostrarNoFim(id){if(JAN&&G){let li=-1;G.linhas.forEach((r,i)=>{if(r.lan
   if(a.bottom>b.bottom-folga)sh.scrollTop+=a.bottom-(b.bottom-folga);else if(a.top<b.top+34)sh.scrollTop-=(b.top+34)-a.top;
   trs.forEach(t=>{t.classList.add("flash");setTimeout(()=>t.classList.remove("flash"),1600)})}
 /* desfazer/refazer em vários níveis (até 30): restaura peças e cadastros guardados em histNota() */
-function desfazer(refazer){try{desfazer0(refazer)}finally{undoBtns()}}
+function desfazer(refazer){try{return desfazer0(refazer)}finally{undoBtns()}}
 function desfazer0(refazer){
   const pilha=refazer===true?REDO:HIST,outra=refazer===true?HIST:REDO;
   if(!pilha.length){toast(refazer===true?"Nada para refazer.":"Nada para desfazer.");return}
@@ -131,7 +138,7 @@ function desfazer0(refazer){
   }finally{restaurando=false}
   salvar(true);render();
   if(eidAntes&&editId===eidAntes&&S.lanc.some(l=>l.id===eidAntes)){const rs=rascunho;editId=null;if(rs){S.form=rs;rascunho=null}editar(eidAntes)}
-  toast(refazer===true?"Refeito.":"Desfeito.",refazer===true?null:(REDO.length?{t:"Refazer",fn:()=>desfazer(true)}:null));
+  toast(refazer===true?"Refeito.":"Desfeito.",refazer===true?null:(REDO.length?{t:"Refazer",fn:()=>desfazer(true)}:null));return true;
 }
 /* valores digitados direto na tabela (ov) voltam para os campos do formulário, para poder editá-los ali */
 function dobrarOv(f,id){const ov=f.ov||{};

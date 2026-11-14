@@ -70,12 +70,16 @@ setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)"
 const BK_DIAS=7,BK_INTERVALO=30*60*1000;
 async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
 async function bkPerm(h,pedir){try{let p=await h.queryPermission({mode:"readwrite"});if(p==="prompt"&&pedir)p=await h.requestPermission({mode:"readwrite"});return p==="granted"}catch(e){return false}}
-async function bkEscrever(h){const {o,falhas,hoje}=await bkMontar(),nome=`cadastro-pecas-auto-${hoje}${falhas.length?"-INCOMPLETO":""}.json`,fh=await h.getFileHandle(nome,{create:true}),w=await fh.createWritable();await w.write(JSON.stringify(o));await w.close();
-  try{const ns=[];for await(const [n] of h.entries())if(/^cadastro-pecas-auto-\d{4}-\d{2}-\d{2}/.test(n))ns.push(n);ns.sort();for(const n of ns.slice(0,Math.max(0,ns.length-BK_DIAS)))await h.removeEntry(n)}catch(e){}
+async function bkEscrever(h){const {o,falhas,hoje}=await bkMontar();
+  /* Uma cópia incompleta ou que o próprio aplicativo não consegue restaurar não substitui as últimas cópias boas. */
+  if(falhas.length)return "incompleto";
+  const json=JSON.stringify(o);if(new Blob([json],{type:"application/json"}).size>MAX_BACKUP_BYTES)return "grande-demais";
+  const nome=`cadastro-pecas-auto-${hoje}.json`,fh=await h.getFileHandle(nome,{create:true}),w=await fh.createWritable();await w.write(json);await w.close();
+  try{const ns=[];for await(const [n] of h.entries())if(/^cadastro-pecas-auto-\d{4}-\d{2}-\d{2}\.json$/.test(n))ns.push(n);ns.sort();for(const n of ns.slice(0,Math.max(0,ns.length-BK_DIAS)))await h.removeEntry(n)}catch(e){}
   try{localStorage.setItem("cadpecas-bk-ult",String(Date.now()))}catch(e){}return nome}
 async function bkAuto(pedir,forcar){const h=await bkPasta();if(!h)return null;
   if(!forcar){let u=0;try{u=+localStorage.getItem("cadpecas-bk-ult")||0}catch(e){}if(Date.now()-u<BK_INTERVALO)return "recente"}
-  if(!(await bkPerm(h,pedir)))return "perm";try{return await bkEscrever(h)}catch(e){console.error("cadastro-pecas: backup em pasta falhou",e);return "erro"}}
+  if(!(await bkPerm(h,pedir)))return "perm";try{const r=await bkEscrever(h);if(r==="incompleto")toast("Backup automático NÃO concluído: não foi possível conferir todos os dados. As cópias anteriores foram mantidas.");if(r==="grande-demais")toast("Backup automático NÃO concluído: o arquivo ultrapassa o limite de restauração. Use o backup manual e confira a opção leve.");return r}catch(e){console.error("cadastro-pecas: backup em pasta falhou",e);return "erro"}}
 setInterval(()=>{if(S.lanc.length)bkAuto(false)},10*60*1000);
 async function bkStatus(){const el=document.getElementById("bkStatus");if(!el)return;
   if(typeof showDirectoryPicker!=="function"&&!(await bkPasta())){el.innerHTML=`<span class="warn">Este navegador não deixa escolher pasta. Use o Chrome ou o Edge, ou a cópia manual abaixo.</span>`;return}
@@ -88,7 +92,7 @@ async function pontoRestaurar(k){const v=await idbGet("pontos",k);if(!v||typeof 
   const q=new Date(v.t).toLocaleString("pt-BR");if(!confirm(`Voltar para ${q} (${v.n} peça(s))?\n\nO que está agora fica guardado como outro ponto, e dá para voltar a ele.\n\nAs fotos não voltam no tempo: ficam as que estão guardadas agora.`))return;
   if(!(await pontoSalvar("antes de voltar no tempo"))&&!confirm("NÃO consegui guardar o que está agora como ponto (memória do navegador cheia ou bloqueada).\n\nSe continuar, o estado atual será perdido. Voltar mesmo assim?"))return;
   try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();editId=null;rascunho=null;sel.clear();selR=null;ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
-async function carregarMinis(){setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
+async function pedirPersistencia(){try{if(!navigator.storage||!navigator.storage.persist)return;let ja=false;try{ja=await navigator.storage.persisted()}catch(e){}if(ja)return;const ok=await navigator.storage.persist();if(ok)return;let pasta=null;try{pasta=await bkPasta()}catch(e){}if(pasta)return;let av=null;try{av=localStorage.getItem("cadpecas-persist-aviso")}catch(e){}if(av==="1")return;try{localStorage.setItem("cadpecas-persist-aviso","1")}catch(e){}toast("O navegador não garante guardar estes dados para sempre. Ligue o backup em pasta (Importar e backup) para não perder nada.")}catch(e){}} async function carregarMinis(){setTimeout(pedirPersistencia,3000);setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
   for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await idbGet("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
   if(await migrarFotos())n++;
   if(n){try{renderTopo()}catch(e){}}}
@@ -104,7 +108,7 @@ async function migrarFotos(){let mexeu=0;
   return mexeu}
 function lerConfig(c){
   const o=clone(DEFAULT_CONFIG);if(!c)return o;
-  ["seqs","categorias","cores","coresMeta","catAlias","observacoes","ordem","grades","modelos","modelo","romaneios","vLib","vPeso","insumosItens","insumosModo","descAuto","continuo","presetsLancamento"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
+  ["seqs","categorias","cores","coresMeta","catAlias","observacoes","ordem","grades","modelos","modelo","romaneios","vLib","vPeso","insumosItens","insumosModo","descAuto","bancoGeral","bancoGeralAtivo","continuo","presetsLancamento"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
   if(!Array.isArray(o.insumosItens))o.insumosItens=[];else o.insumosItens=o.insumosItens.filter(x=>x&&typeof x==="object"&&typeof x.nome==="string"&&(x.cat==null||typeof x.cat==="string")&&num(x.qtd)>0&&num(x.qtd)<=1000000&&num(x.valor)!=null&&num(x.valor)>=0&&num(x.valor)<=1000000).slice(0,100);
   if(!["off","somar","substituir"].includes(o.insumosModo))o.insumosModo="off";
   o.categorias.forEach(x=>{if(x&&!Array.isArray(x.subs))x.subs=[]});   /* cópia/backup com categoria sem lista de subcategorias não pode quebrar a tela */

@@ -1,0 +1,9 @@
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+url=(Path(__file__).resolve().parent.parent/'Cadastro de Pecas - abrir no Chrome.html').as_uri()
+with sync_playwright() as p:
+ b=p.chromium.launch(channel='msedge');q=b.new_page(viewport={'width':1400,'height':900});errors=[];q.on('pageerror',lambda e:errors.append(str(e)));q.on('dialog',lambda d:d.accept());q.goto(url)
+ q.locator('#impBar [data-act="rom-abrir"]').click();q.locator('#romWrap textarea').fill('Romaneio TESTE\nBrinco A [#900001] R$ 1,00 R$ 1,00 1000 R$ 1.000,00\nValor Produtos R$ 1.000,00');q.locator('#romWrap [data-act="rom-ler"]').click();q.locator('#romWrap .rc:not(.lote) [data-act="rom-div"]').click();q.locator('details.rom-ins summary').click();q.locator('[data-act="rins-add"]').click();v=q.locator('[data-rp="rins"][data-k="valor"]');v.fill('5,00');v.press('Tab');q.locator('#romCriar').click();q.locator('.rev').wait_for();assert 'R$ 5,00 maior que o total informado' in q.locator('.rev').inner_text();assert q.locator('[data-act="rev-ok"]').is_enabled();q.locator('[data-act="rev-fechar"]').first.click();v=q.locator('[data-rp="rins"][data-k="valor"]');v.fill('4,90');v.press('Tab');q.locator('#romCriar').click()
+ rev=q.locator('.rev');rev.wait_for();assert 'R$ 4,90 menor que o total informado' in rev.inner_text(),rev.inner_text();assert q.locator('[data-act="rev-ok"]').is_enabled();q.locator('[data-act="rev-ok"]').click();q.locator('.rep').wait_for();q.wait_for_function("()=>{try{return (JSON.parse(localStorage.getItem('cadpecas4')||'{}').lanc||[]).length===1}catch(e){return false}}")
+ estado=q.evaluate("JSON.parse(localStorage.getItem('cadpecas4'))");lanc=estado['lanc'][0];base=lanc['v'].get('Q') or estado['config']['colcfg']['Q']['padrao'];assert float(str(base).replace(',','.'))==0.5,lanc;assert not errors,errors
+ print('OK rateio arredondado permite criação e preserva o custo base');b.close()

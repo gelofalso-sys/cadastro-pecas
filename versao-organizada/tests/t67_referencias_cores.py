@@ -8,7 +8,7 @@ with TemporaryDirectory() as tmp, sync_playwright() as p:
  q.fill('#f-F','Brinco com pedra');q.fill('#f-N','2');q.fill('#f-P','10')
  for x in q.locator('[id^="f-"][id$="-W"]').all():
   if x.is_visible():x.fill('1')
- q.locator('button.btn.pri.big[type="submit"]').click();q.wait_for_timeout(900)
+ q.locator('button.btn.pri.big[type="submit"]').click();q.wait_for_function("()=>{try{return (JSON.parse(localStorage.getItem('cadpecas4')||'{}').lanc||[]).length>0}catch(e){return false}}")
  data=q.evaluate("JSON.parse(localStorage.getItem('cadpecas4'))");l=data['lanc'][0];l['tipo']='pronta';l['on']={};l['onP']={};l['grade']='';l['gsel']=[];l['csel']=['L:azul'];l['corOn']=True;l['ov']={'p~c_L:azul':{'W':'3','V':'25'}};q.evaluate("v=>localStorage.setItem('cadpecas4',JSON.stringify(v))",data);q.reload();q.wait_for_timeout(800)
  def linha(pg):
   return pg.locator('tr[data-l]').evaluate_all("es=>es.map(e=>Object.fromEntries(['E','F','W','V'].map(k=>[k,e.querySelector('[data-c='+k+']')?.innerText.trim()])))")

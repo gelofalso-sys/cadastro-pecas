@@ -77,9 +77,16 @@ with sync_playwright() as p:
     assert pg.locator('#romWrap .rc .rch.extra').count() == 1, 'peça nova persiste'
     assert pg.locator('#romWrap .rc img.rc-ft').count() == 2, 'fotos dos itens persistem'
     assert 'Total R$ 20,00' in pg.locator('#rinsRes').inner_text()
-    # 4) criar tudo
-    pg.locator('#romCriar').click(); pg.wait_for_timeout(700)
-    if pg.locator('[data-act="rev-ok"]').count(): pg.locator('[data-act="rev-ok"]').click(); pg.wait_for_timeout(1200)
+    # 4) R$ 20 / 42 arredonda para R$ 20,16: informa a diferença sem bloquear.
+    pg.locator('#romCriar').click(); pg.locator('.rev').wait_for()
+    assert pg.locator('[data-act="rev-ok"]').is_enabled()
+    assert 'maior que o total informado' in pg.locator('.rev').inner_text().lower()
+    pg.locator('[data-act="rev-fechar"]').first.click()
+    x=pg.locator('#romWrap [data-rp="rins"][data-k="valor"][data-i="1"]');x.fill('9');x.press('Tab')
+    esperado=r2(21/un)
+    pg.locator('#romCriar').click(); pg.locator('.rev').wait_for()
+    assert pg.locator('[data-act="rev-ok"]').is_enabled()
+    pg.locator('[data-act="rev-ok"]').click(); pg.wait_for_timeout(1200)
     pg.wait_for_timeout(500)
     ABRIR = pg.locator('.rep [data-act="rom-salvo-abrir"]').count()
     print('botão Abrir este romaneio no relatório:', ABRIR)

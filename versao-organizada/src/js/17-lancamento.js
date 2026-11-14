@@ -6,7 +6,7 @@ function campoHTML(L,f,opt){
   opt=opt||{};const C=cfg(),cc=C.colcfg[L],bid=opt.banho;
   const v=bid?((f.ov[bid]||{})[L]??""):(f.v[L]??"");
   const attr=bid?`data-bo="${bid}" data-k="${L}"`:`data-col="${L}"`,id=bid?`f-${bid}-${L}`:`f-${L}`;
-  const lista=listaDe(L,f.v.I),ph=opt.ph!=null?opt.ph:(padraoDe(f.v.I,L)||(!bid&&MISTO.has(L)?"escolha…":""));
+  const lista=listaDe(L,f.v.I),ph=opt.ph!=null?opt.ph:(L==="J"&&!bid&&Object.prototype.hasOwnProperty.call(f.v,"J")&&vazio(f.v.J)?"escolha… (opcional)":(padraoDe(f.v.I,L)||(!bid&&MISTO.has(L)?"escolha…":"")));
   const calc=FORMULA.has(L)?" calc":"";
   let inp;
   inp=`<input id="${id}" ${attr} value="${esc(v)}" class="${NUM.has(L)?"n":""}${calc}${!bid&&MISTO.has(L)?" misto":""}" ${NUM.has(L)?'inputmode="decimal"':""} ${lista.length?`list="dl-${L}"`:""} placeholder="${esc(ph)}" data-ph="${bid?bid+"-":""}${L}" autocomplete="off" ${opt.dis?"disabled":""}>`;
@@ -38,6 +38,7 @@ function painelRapido(){
 }
 function renderForm(){
   const C=cfg(),f=S.form,bruta=f.tipo==="bruta",cc=C.colcfg,bh=banhistaBy(f.banhista),p=prefDe(f.v.I,f.v.J);
+  if(!editId)f.semSufixoCat=true;
   if(!editId)sincGrade(f);
   const c=(L,o)=>cc[L].form?campoHTML(L,f,o):"";f.mk=f.mk||{};f.vz=f.vz||{};
   const fo=fornBy(f.v.H),auto=bruta&&fo&&fo.banhista===bh.id?` <em class="auto" title="Galvânica definida no cadastro do fornecedor ${esc(fo.nome)}">auto</em>`:"";
@@ -58,7 +59,7 @@ function renderForm(){
   const onF=onDe(f),bpOn=!bruta&&bh.banhos.some(b=>onF[b.id]);
   const cards=bh.banhos.map(b=>{const on=!!onF[b.id],o=f.ov[b.id]||{},vz=vzOn(f,bh,b);return `<div class="bcard${on?"":" off"}">
       <div class="bh2"><label class="ck"><input type="checkbox" data-on="${b.id}" ${on?"checked":""}><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</label>
-        ${bruta&&!banhoSemCalc(b)?`<label class="ck vz" title="Marcado: esta variação de banho leva verniz (Custo do Banho de Verniz = Peso × R$/g da galvânica)"><input type="checkbox" id="vz-${b.id}" data-vz="${b.id}" ${vz?"checked":""} ${on?"":"disabled"}>Verniz</label><small data-cb="${b.id}"></small>`:""}</div>
+        ${bruta&&!banhoSemCalc(b)?`<label class="ck vz" title="Marcado: esta variação de banho leva verniz (Custo do Banho de Verniz = Peso × R$/g da galvânica)"><input type="checkbox" id="vz-${b.id}" data-vz="${b.id}" ${vz?"checked":""} ${on?"":"disabled"}>Verniz</label><small data-cb="${b.id}"></small><small data-cvern="${b.id}"></small>`:""}</div>
       ${gIts.length?`<div class="bf gv">${qtdVar(b.id,!on)}</div>`:""}
       <div class="bf">${gIts.length?"":`<label class="fq" title="Quantidade"><span>Quantidade</span><input class="n" id="f-${b.id}-W" data-bo="${b.id}" data-k="W" value="${esc(o.W??"")}" inputmode="numeric" placeholder="0" ${on?"":"disabled"}></label>`}
         ${bruta&&!banhoSemCalc(b)?`<label class="fq" title="Valor do banho só desta peça (R$ por grama; ou valor fixo se o banho for assim). Vazio = o valor da categoria ${esc(f.v.I||"")} na galvânica"><span>${b.modo==="fixo"?"R$ banho":"R$/g"}</span><input class="n" data-bo="${b.id}" data-k="_m" value="${esc(o._m??"")}" placeholder="${esc(String(multDe(b,f.v.I)||"").replace(".",","))}" inputmode="decimal" ${on?"":"disabled"} aria-label="Valor do banho ${esc(b.nome)} só desta peça"></label>`:""}
@@ -67,15 +68,15 @@ function renderForm(){
   const vincL=gIts.length?"":`<label class="vchk" title="Mesma peça em outra cor ou pedra: mesmo número, próxima letra"><input type="checkbox" data-f="vinc" ${f.vinc?"checked":""}> Variação da anterior</label>`;
   const simples=!bruta&&!bpOn;
   const ftSlot=(()=>{const ft=S.form.ft&&ftOk(S.form.ft)?S.form.ft:"";
-    return ft?`<div class="ftslot has" title="Foto da peça (clique para ampliar)"><img src="${fs(ft)}" alt="Foto da peça" data-act="tab-foto" ${editId?`data-lid="${editId}"`:""}><button type="button" class="ftt" data-act="foto-form" title="Trocar a foto: escolha um arquivo, arraste para cá ou cole com Ctrl+V">trocar</button><button type="button" class="ftx" data-act="foto-rem" title="Tirar a foto desta peça" aria-label="Tirar a foto">×</button></div>`
+    return ft?`<div class="ftslot has" title="Foto da peça"><button type="button" class="foto-abrir" data-act="tab-foto" aria-label="Ampliar foto da peça" ${editId?`data-lid="${editId}"`:""}><img src="${fs(ft)}" alt=""></button><button type="button" class="ftt" data-act="foto-form" title="Trocar a foto: escolha um arquivo, arraste para cá ou cole com Ctrl+V">trocar</button><button type="button" class="ftx" data-act="foto-rem" title="Tirar a foto desta peça" aria-label="Tirar a foto">×</button></div>`
       :`<button type="button" class="ftslot" data-act="foto-form" title="Foto da peça: clique para escolher, arraste uma foto para cá ou cole com Ctrl+V"><span class="ftic">📷</span><small>foto</small></button>`})();
-  const ftRomHtml=(()=>{const r=S.form.ftR&&ftOk(S.form.ftR)?S.form.ftR:"";if(!r||r===S.form.ft)return "";return `<div class="ftslot has ftr" title="Foto que veio do romaneio (fica guardada; a outra é a que gera o link)"><img src="${fs(r)}" alt="Foto do romaneio" data-act="tab-foto"><small>romaneio</small><button type="button" class="ftx" data-act="foto-rem-rom" title="Tirar a foto do romaneio desta peça" aria-label="Tirar a foto do romaneio">×</button></div>`})();
+  const ftRomHtml=(()=>{const r=S.form.ftR&&ftOk(S.form.ftR)?S.form.ftR:"";if(!r||r===S.form.ft)return "";return `<div class="ftslot has ftr" title="Foto que veio do romaneio (fica guardada; a outra é a que gera o link)"><button type="button" class="foto-abrir" data-act="tab-foto" aria-label="Ampliar foto do romaneio"><img src="${fs(r)}" alt=""></button><small>romaneio</small><button type="button" class="ftx" data-act="foto-rem-rom" title="Tirar a foto do romaneio desta peça" aria-label="Tirar a foto do romaneio">×</button></div>`})();
   const rowMain=bruta?`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n"})}${c("P",{w:"c"})}${bhCampo}`
     :`${ftSlot}${ftRomHtml}${c("F",{w:"l"})}${c("N",{w:"n",dis:!!f.conj,nome:f.conj?"Peso (soma)":undefined})}${c("P",{w:"c",dis:!!f.conj,nome:f.conj?"Compra (soma)":undefined})}${bhCampo}${simples?`${gIts.length?`<div class="bf gv">${qtdVar("p",false)}</div>`:c("W",{w:"n"})}${c("L",{w:"s",q:"cor"})}<label class="fq w-n" title="Fator do preço: o Preço de Varejo = (Custo de Compra + Insumos + Banhos + Verniz) × este número"><span>Fator ×</span><div class="ip">${mkIn("p")}</div></label>${c("V",{w:"c"})}<small class="bfx" data-bf="p" aria-live="polite"></small>${vincL}`:""}`;
   const dica=f.conj?`<span class="hint" style="align-self:center">Conjunto: marque os banhos (Ouro, Prata…) e sai uma linha de conjunto em cada um; todas as peças levam esse banho, menos as que você fixar um banho só delas.</span>`:!bruta&&!bpOn?`<span class="hint" style="align-self:center">Peça pronta com banhos: marque um ou mais para gerar uma linha por cor (A ouro, B prata…); sem marcar, use Cor, Quantidade e Preço acima.</span>`:"";
-  const rowBanhos=`<div class="z-row z-banhos">${cards}${!C.banhistas.length?'<div class="estado-galvanica"><b>Nenhuma galvânica cadastrada</b><span>Cadastre uma galvânica e adicione os banhos que você usa para lançar peças brutas.</span><button type="button" class="btn pri sm" data-act="q" data-q="bh">Cadastrar galvânica</button></div>':!bh.banhos.length?'<div class="estado-galvanica"><span>Esta galvânica ainda não tem banhos.</span><button type="button" class="btn sm" data-act="q" data-q="bn">Adicionar banho</button></div>':`<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn">＋ Banho de ${esc(bh.nome)}</button>`}${dica}<span class="z-end">${addBtn}</span></div>`;
-const rowOrig=`<div class="z-row z-orig">${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}</div>`;
-  const rowOrigExtra=`<div class="z-row z-orig z-orig-extra">${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
+  const rowBanhos=`<div class="z-row z-banhos"><div class="flow-label"><b>Banhos e valores</b><span>Marque os banhos e informe quantidade e fator.</span></div>${cards}${!C.banhistas.length?'<div class="estado-galvanica"><b>Nenhuma galvânica cadastrada</b><span>Cadastre uma galvânica e adicione os banhos que você usa para lançar peças brutas.</span><button type="button" class="btn pri sm" data-act="q" data-q="bh">Cadastrar galvânica</button></div>':!bh.banhos.length?'<div class="estado-galvanica"><span>Esta galvânica ainda não tem banhos.</span><button type="button" class="btn sm" data-act="q" data-q="bn">Adicionar banho</button></div>':`<button type="button" class="btn ghost sm addl" data-act="q" data-q="bn">＋ Banho de ${esc(bh.nome)}</button>`}${dica}<span class="z-end">${addBtn}</span></div>`;
+const rowOrig=`<div class="z-row z-orig"><div class="flow-label"><b>Classificação</b><span>Escolha a categoria e, se necessário, a subcategoria.</span></div>${c("I",{w:"m",q:"cat",qn:"categoria"})}${c("J",{w:"m",q:"sub",qn:"subcategoria"})}</div>`;
+  const rowOrigExtra=`<div class="z-row z-orig z-orig-extra"><div class="flow-label"><b>Fornecedor e observações</b><span>Informações complementares da peça.</span></div>${c("H",{w:"m",q:"forn",qn:"fornecedor"})}${c("G",{w:"s"})}<label class="fq w-n"><span>Desc. %</span><div class="ip"><input class="n" data-f="desconto" value="${esc(f.desconto)}" inputmode="decimal"></div></label><i class="vsep"></i>${c("M",{w:"l",q:"obs",qn:"observação"})}</div>`;
   const detBanhos=bh.banhos.filter(b=>onF[b.id]).map(b=>{const vz=vzOn(f,bh,b);return `<div class="lb"><b><span class="dot d-${b.coluna}"></span>${esc(b.letra)} · ${esc(b.nome)}</b>
       ${bruta&&!banhoSemCalc(b)?campoHTML(b.coluna,f,{banho:b.id,ph:"",w:"c",nome:"Custo do banho"})+campoHTML("U",f,{banho:b.id,ph:"",w:"c",dis:!vz,nome:"Custo do verniz"}):""}${banhoSemCalc(b)?"":campoHTML("O",f,{banho:b.id,ph:milDe(b,f.v.I),w:"c",nome:"Milésimos"})}${campoHTML("L",f,{banho:b.id,ph:b.cor,w:"s",q:"cor",qb:b.id,qn:"cor do banho "+b.letra})}${campoHTML("F",f,{banho:b.id,ph:"",w:"l",nome:"Descrição da linha"})}</div>`}).join("");
 const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
@@ -100,7 +101,7 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   ${trabalhoHtml()}
   ${painelRapido()}${painelMulti()}
   ${bancoHtml(f)}
-  <div class="z-row z-main">${rowMain}</div><div class="desc-prev" id="descPrev" aria-live="polite"></div>
+  <div class="z-row z-main"><div class="flow-label"><b>Dados da peça</b><span>Descrição, peso e custos para o cálculo.</span></div>${rowMain}</div><div class="desc-prev" id="descPrev" aria-live="polite"></div>
   ${rowOrigExtra}
   ${f.conj?conjPainel(f):""}
   ${chips}${chipsCor}${rowBanhos}

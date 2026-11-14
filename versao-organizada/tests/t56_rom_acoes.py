@@ -23,6 +23,9 @@ with sync_playwright() as p:
     page.locator('#romWrap textarea').fill('Romaneio do Link TESTE\nColar 45+5, [#900001] R$ 10,90 R$ 9,27 2 R$ 18,54\nBrinco [#900002] R$ 10,90 R$ 9,27 2 R$ 18,54\nValor Produtos R$ 37,08')
     page.locator('#romWrap [data-act="rom-ler"]').click()
     assert page.locator('#romWrap .rc').count() == 2
+    for i in range(2):  # a quantidade da lista não é distribuída sozinha: informa-se a quantidade de cada banho
+        page.locator('#romWrap .rc').nth(i).locator('[data-rp="bon"][data-b="ouro"]').set_checked(True)
+        page.locator('#romWrap .rc').nth(i).locator('[data-rp="q"][data-b="ouro"]').fill('2')
     page.locator('#romWrap [data-act="rom-criar"]').click()
     page.locator('[data-act="rev-ok"]').click()
     page.locator('[data-act="rel-fechar"]').click()

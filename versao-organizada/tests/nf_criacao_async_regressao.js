@@ -1,0 +1,4 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const s=fs.readFileSync('src/js/23-fotos-imgbb-e-nota-fiscal.js','utf8');const a=s.indexOf('{const romCriarBase=romCriar;'),b=s.indexOf('\ndocument.addEventListener("change"',a);assert(a>=0&&b>a);
+let liberar,execs=0,idx=null,saves=0;const C={ROM:{rows:[{nfChave:'chave',nfNum:'123',nfForn:'forn',skip:false}]},S:{lanc:[]},romCriar:async()=>{execs++;await new Promise(r=>liberar=r);C.S.lanc.push({id:'novo'})},nfIdxSet:(k,v)=>idx={k,v},salvar:()=>saves++,toast:()=>{},console};vm.createContext(C);vm.runInContext(s.slice(a,b),C);
+(async()=>{const primeiro=C.romCriar();await C.romCriar();assert.equal(execs,1,'bloqueia criação concorrente');liberar();await primeiro;assert.equal(C.S.lanc[0].nfChave,'chave');assert.equal(idx.k,'chave');assert.equal(saves,1);console.log('OK criação assíncrona de NF preserva chave e evita reentrada')})().catch(e=>{console.error(e);process.exitCode=1});

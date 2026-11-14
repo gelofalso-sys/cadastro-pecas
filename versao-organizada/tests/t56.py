@@ -22,7 +22,7 @@ with sync_playwright() as p:
     assert page.locator('body').get_attribute('data-vis') == 'cad'
     assert menu.get_attribute('open') is None
     page.set_viewport_size({'width': 1200, 'height': 800})
-    page.wait_for_function("!!document.querySelector('#sideExp #autorIn')")
+    page.locator('#sideExp #autorIn').wait_for(state='attached')   # sem eval: a CSP da página não permite
     if not page.locator('#sideExp #autorIn').is_visible(): page.locator('#sideT').click()
     assert page.locator('#sideExp #autorIn').is_visible()
     page.set_viewport_size({'width': 390, 'height': 844})

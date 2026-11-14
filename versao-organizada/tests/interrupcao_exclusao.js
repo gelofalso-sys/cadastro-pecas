@@ -1,0 +1,15 @@
+const {chromium}=require('playwright'),path=require('path'),{pathToFileURL}=require('url'),assert=require('node:assert/strict');
+(async()=>{const b=await chromium.launch({channel:'chrome'}),url=pathToFileURL(path.resolve('Cadastro de Pecas - abrir no Chrome.html')).href;
+for(const loja of ['roms','tabs'])for(const fase of ['antes_indice','depois_indice','registro_novo']){
+ const ctx=await b.newContext(),p=await ctx.newPage();let errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto(url);await p.waitForFunction(()=>!document.body.inert);
+ await p.evaluate(async({loja,fase})=>{const id='teste-'+loja,rec=loja==='tabs'?{id,nome:'Original',em:10,lanc:[],linhas:[],roms:[]}:{id,doc:'Original',em:10,rows:[],form:{}};
+  const db=await new Promise((ok,no)=>{const r=indexedDB.open('cadpecas-big',3);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+  await new Promise((ok,no)=>{const t=db.transaction(['pontos',loja],'readwrite'),s=t.objectStore(loja);t.objectStore('pontos').put({loja,id,rec},'exclusao-pendente-v1:'+loja+':'+encodeURIComponent(id));s.delete(id);if(fase==='registro_novo')s.put({...rec,...(loja==='tabs'?{nome:'Novo'}:{doc:'Novo'})},id);t.oncomplete=ok;t.onerror=()=>no(t.error)});db.close();
+  localStorage.setItem(loja==='tabs'?'cadpecas-tabs':'cadpecas-roms',JSON.stringify(fase==='antes_indice'?[{id,em:10,ids:[],cods:[]}]:[]));
+ },{loja,fase});
+ await p.reload();await p.waitForFunction(()=>!document.body.inert);const estado=await p.evaluate(async loja=>{const id='teste-'+loja,db=await new Promise((ok,no)=>{const r=indexedDB.open('cadpecas-big',3);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}),read=(s,k)=>new Promise((ok,no)=>{const r=db.transaction(s).objectStore(s).get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});const out={rec:await read(loja,id),diario:await read('pontos','exclusao-pendente-v1:'+loja+':'+encodeURIComponent(id)),idx:JSON.parse(localStorage.getItem(loja==='tabs'?'cadpecas-tabs':'cadpecas-roms')||'[]')};db.close();return out},loja);
+ assert(estado.rec&&estado.idx.some(x=>x.id==='teste-'+loja),JSON.stringify(estado));assert.equal(estado.diario,undefined);assert.equal(estado.rec[loja==='tabs'?'nome':'doc'],fase==='registro_novo'?'Novo':'Original');assert.deepEqual(errors,[]);await ctx.close();
+}
+const ctx=await b.newContext(),a=await ctx.newPage();await a.goto(url);await a.waitForFunction(()=>!document.body.inert);await a.evaluate(async()=>{let acquired;const ready=new Promise(r=>acquired=r);navigator.locks.request('cadpecas-exclusoes',()=>new Promise(r=>{window.__liberarTeste=r;acquired()}));await ready});
+const c=await ctx.newPage();await c.goto(url);await c.waitForTimeout(500);assert.equal(await c.evaluate(()=>document.body.inert),true,'abertura deve aguardar operação ativa');await a.evaluate(()=>window.__liberarTeste());await c.waitForFunction(()=>!document.body.inert);await ctx.close();await b.close();console.log('OK recuperação de interrupções, índices, versão nova e espera por operação ativa');
+})().catch(e=>{console.error(e);process.exitCode=1});

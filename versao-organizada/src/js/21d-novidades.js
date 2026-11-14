@@ -24,23 +24,24 @@ function simuladorFator(){
   repModal(`<div class="rep-h"><div><b class="rep-t">Simular fator</b><div class="hint">Varejo = custo × fator. Escolha “Usar” para aplicar o fator na peça que está sendo lançada.</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div><div class="rep-b">${custos.map(tab).join("")}</div>`)}
 
 /* ===== aviso de impacto: quando um cadastro muda e as peças já criadas passam a custar outro valor ===== */
-let CUSTO_BASE=null,impT=null;
-function custoPorLanc(){const g=gerar(),m={};g.linhas.forEach(r=>{const q=num(r.v.W)||1;m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*q});return m}
-function impactoAgendar(){if(typeof restaurando!=="undefined"&&restaurando)return;clearTimeout(impT);impT=setTimeout(impactoConferir,1500)}
-function impactoConferir(){
-  let novo;try{novo=custoPorLanc()}catch(e){return}
-  if(!CUSTO_BASE){CUSTO_BASE=novo;return}
-  let n=0,a=0,b=0;Object.keys(novo).forEach(id=>{if(!(id in CUSTO_BASE))return;const x=CUSTO_BASE[id],y=novo[id];if(Math.abs(x-y)>=0.005){n++;a+=x;b+=y}});
-  CUSTO_BASE=novo;
+let impConfigAntes=null,impT=null;
+/* Compara a MESMA lista de peças com os cadastros anterior e atual. Uma edição de
+   peça ocorrida antes do cadastro não pode ser atribuída à alteração do cadastro. */
+function custoPorLanc(config,pecas){const anterior=S.config;try{S.config=config;const g=gerar(clone(pecas)),m={};g.linhas.forEach(r=>{const q=num(r.v.W);m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*(q==null?1:q)});return m}finally{S.config=anterior}}
+function impactoAgendar(){if(typeof restaurando!=="undefined"&&restaurando)return;
+  if(!impT){try{impConfigAntes=snapC?JSON.parse(snapC):null}catch(e){impConfigAntes=null}}
+  clearTimeout(impT);impT=setTimeout(impactoConferir,1500)}
+function impactoConferir(){const anterior=impConfigAntes;impConfigAntes=null;impT=null;if(!anterior)return;
+  let antes,depois;try{const pecas=clone(S.lanc);antes=custoPorLanc(anterior,pecas);depois=custoPorLanc(S.config,pecas)}catch(e){return}
+  let n=0,a=0,b=0;Object.keys(depois).forEach(id=>{if(!(id in antes))return;const x=antes[id],y=depois[id];if(Math.abs(x-y)>=0.005){n++;a+=x;b+=y}});
   if(n)toast(`Esta mudança alterou o custo de ${n} peça(s) já criadas: de R$ ${brl(r2c(a))} para R$ ${brl(r2c(b))} (${b>=a?"+":"−"}R$ ${brl(r2c(Math.abs(b-a)))}).`)}
-setTimeout(()=>{try{CUSTO_BASE=custoPorLanc()}catch(e){}},3000);
 
 /* ===== primeiros passos (instalação nova) ===== */
 function primeirosHtml(){
   const C=cfg();if(abertos.primeiros===false||S.lanc.length>=3)return "";
   const passos=[["banho","Cadastre a galvânica e os banhos",C.banhistas.length>0,"Nome, banhos (ouro, prata…) e valor por grama"],["cat","Confira as categorias",true,"Prefixos, apelidos e fiscal de cada uma"],["forn","Cadastre os fornecedores",C.fornecedores.length>0,"Desconto e tipo (bruta/pronta) de cada um"],["lancar","Lance a primeira peça ou importe um romaneio",S.lanc.length>0,"Pelo formulário abaixo ou em Importar romaneio"]];
   if(passos[0][2]&&passos[2][2]&&S.lanc.length)return "";
-  return `<div class="primeiros" role="region" aria-label="Primeiros passos"><b>Primeiros passos</b>${passos.map((p,i)=>`<button type="button" class="prim-p ${p[2]?"ok":""}" data-act="prim-ir" data-p="${p[0]}" title="${esc(p[3])}"><span>${i+1}</span> ${esc(p[1])}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="prim-fechar" title="Não mostrar mais">Dispensar</button></div>`}
+  return `<div class="primeiros" role="region" aria-label="Primeiros passos"><b>Primeiros passos</b><span>Já tem uma planilha? Importe a última em Cadastros › Importar e backup para continuar a numeração.</span>${passos.map((p,i)=>`<button type="button" class="prim-p ${p[2]?"ok":""}" data-act="prim-ir" data-p="${p[0]}" title="${esc(p[3])}"><span>${i+1}</span> ${esc(p[1])}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="prim-fechar" title="Não mostrar mais">Dispensar</button></div>`}
 /* atualiza o cartão de primeiros passos só na abertura e depois de ações explícitas (não a cada clique: o cartão aparecendo e sumindo deslocaria a tela) */
 function primeirosAtualizar(){const pw=document.getElementById("primeirosWrap");if(pw)pw.innerHTML=primeirosHtml()}
 setTimeout(primeirosAtualizar,1200);

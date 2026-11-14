@@ -32,12 +32,13 @@ with sync_playwright() as p:
     pg.fill('#f-I','Brincos');pg.press('#f-I','Tab');pg.wait_for_timeout(300)
     pg.click('#f-J');pg.keyboard.type('Argolas');pg.keyboard.press('Tab');pg.wait_for_timeout(500)
     chips=pg.locator('.banco-rapido [data-act="desc-palavra"]').all_inner_texts()[:2];print('chips',chips,'| descrição:',repr(pg.input_value('#f-F')))
-    assert chips==['Brinco','Argola'] and pg.input_value('#f-F').strip()=='Brinco Argola',(chips,pg.input_value('#f-F'))
+    assert chips==['Argolinha','Click'] and pg.input_value('#f-F')=='',(chips,pg.input_value('#f-F'))   # a descrição não é mais preenchida sozinha: os complementos são sugestões
+    pg.fill('#f-F','Brinco Argola ')
     pg.focus('#f-F');pg.wait_for_timeout(150);pg.keyboard.type('lisa fina');pg.fill('#f-N','1');pg.fill('#f-P','2');pg.fill('#f-ouro-W','1');pg.locator('#f-prata-W').fill('')
     pg.locator('button.btn.pri.big[type="submit"]').click();pg.wait_for_timeout(600)
     d=pg.locator('tr[data-l] [data-c="F"]').first.inner_text();print('descrição criada:',d);assert d.startswith('Brinco Argola lisa fina')
     # clicar na palavra
-    pg.fill('#f-F','');pg.locator('.banco-rapido [data-act="desc-palavra"]').first.click();pg.wait_for_timeout(300);assert pg.input_value('#f-F').strip()=='Brinco'
+    pg.fill('#f-F','');palavra=pg.locator('.banco-rapido [data-act="desc-palavra"]').first.inner_text();pg.locator('.banco-rapido [data-act="desc-palavra"]').first.click();pg.wait_for_timeout(300);assert pg.input_value('#f-F').strip()==palavra
     # categoria Anel exporta como Anel
     pg.fill('#f-I','Anel');pg.press('#f-I','Tab');pg.wait_for_timeout(400);pg.fill('#f-F','Anel teste');pg.fill('#f-N','1');pg.fill('#f-P','2');pg.fill('#f-ouro-W','1')
     for t in ('a12','a13'):pg.locator(f'label:has([data-gi="{t}"])').click()

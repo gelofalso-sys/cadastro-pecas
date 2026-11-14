@@ -1,7 +1,0 @@
-#cadBar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:min(96vw,720px);background:var(--surface);color:var(--ink);border:2px solid #d99a00;border-radius:10px;padding:10px 14px;box-shadow:0 6px 24px rgba(0,0,0,.28);font-size:12.5px}
-#cadBar.pisca{animation:cadPisca .6s}
-@keyframes cadPisca{0%,100%{transform:translateX(-50%) scale(1)}30%{transform:translateX(-50%) scale(1.05);border-color:#e03131}}
-
-.xbar{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto}
-.trow .tools{flex:1 1 120px}
-@media (max-width:760px){.xbar{display:none}}

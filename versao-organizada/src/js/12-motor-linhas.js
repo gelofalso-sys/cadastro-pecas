@@ -52,10 +52,10 @@ function gerar(list){
               const v={...comum,E:base+letra,F:descVar(descBanho(l,b,i),it),L:b.cor,O:milDe(b,cat),W:""};if(it&&it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it&&it.extra)Object.assign(v,it.extra);
               const row=aplicaOv({...meta,mk:(num(mk[b.id])||num(b.fator)||null),key:it?b.id+"~"+it.id:b.id,bid:b.id,gi:it?it.id:null,part:letra,col:b.coluna,v},l);refs[l.id].push(row.v.E);
               if(C.ordem==="ab")(baldes[i]=baldes[i]||[]).push(row);else seq.push(row)})});return}
-          if(vars.length){refs[l.id]=[];const qv=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.some(it=>qv("p~"+it.id));vars.forEach(it=>{if(soComQ&&!qv("p~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}const v={...comum,E:base+refParte(null,it),F:descVar(comSufixoCat(comum.F,cat),it),W:""};if(it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it.extra)Object.assign(v,it.extra);
+          if(vars.length){refs[l.id]=[];const qv=k=>qtdPos(((l.ov||{})[k]||{}).W),soComQ=vars.some(it=>qv("p~"+it.id));vars.forEach(it=>{if(soComQ&&!qv("p~"+it.id)){semQ[l.id]=(semQ[l.id]||0)+1;return}const v={...comum,E:base+refParte(null,it),F:descVar(comSufixoCat(comum.F,cat,l.semSufixoCat),it),W:""};if(it.col&&!vazio(it.valor))v[it.col]=it.valor;if(it.extra)Object.assign(v,it.extra);
             const row=aplicaOv({...meta,mk:num(mk.p),key:"p~"+it.id,bid:"p",gi:it.id,part:refParte(null,it),v},l);refs[l.id].push(row.v.E);if(C.ordem==="ab")prontas.push(row);else seq.push(row)});return}
           const ref=ov&&g.length===1?ov:base+(g.length>1?letraN(k):"");
-          const row=aplicaOv({...meta,mk:num(mk.p),key:"p",part:"",v:{...comum,E:ref,F:comSufixoCat(comum.F,cat)}},l);
+          const row=aplicaOv({...meta,mk:num(mk.p),key:"p",part:"",v:{...comum,E:ref,F:comSufixoCat(comum.F,cat,l.semSufixoCat)}},l);
           refs[l.id]=[row.v.E];
           if(C.ordem==="ab")prontas.push(row);else seq.push(row);
         }

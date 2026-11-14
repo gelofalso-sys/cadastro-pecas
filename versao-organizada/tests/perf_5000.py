@@ -7,7 +7,9 @@ url=(Path(__file__).resolve().parent.parent/'Cadastro de Pecas - abrir no Chrome
 with sync_playwright() as p:
  b=p.chromium.launch(channel='msedge');ctx=b.new_context(viewport={'width':1400,'height':900},accept_downloads=True);page=ctx.new_page();page.set_default_timeout(120000)
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.on('dialog',lambda d:d.accept())
- page.goto(url);page.locator('[data-tipo="pronta"]').click();page.locator('#f-H').fill('Evidência');page.locator('#f-H').press('Tab');page.locator('#f-I').fill('Pulseiras');page.locator('#f-I').press('Tab');page.locator('#f-F').fill('Peça sintética 00001');page.locator('#f-P').fill('10');page.locator('#f-N').fill('1');page.locator('#f-W').fill('1');page.locator('button.btn.pri.big[type="submit"]').click()
+ page.goto(url)
+ if 'Mostrar tudo' in page.locator('[data-act="tg-min"]').inner_text():page.locator('[data-act="tg-min"]').click()
+ page.locator('[data-tipo="pronta"]').click();page.locator('#f-H').fill('Evidência');page.locator('#f-H').press('Tab');page.locator('#f-I').fill('Pulseiras');page.locator('#f-I').press('Tab');page.locator('#f-F').fill('Peça sintética 00001');page.locator('#f-P').fill('10');page.locator('#f-N').fill('1');page.locator('#f-W').fill('1');page.locator('button.btn.pri.big[type="submit"]').click()
  page.wait_for_function("() => { const s=JSON.parse(localStorage.getItem('cadpecas4')||'{}');return s.lanc?.length===1 }")
  print("Peça inicial criada",flush=True)
  size=page.evaluate('''() => {let s=JSON.parse(localStorage.getItem('cadpecas4'));const base=s.lanc[0];s.lanc=Array.from({length:5000},(_,i)=>{let l=structuredClone(base);l.id='perf-'+i;l.v.F='Peça sintética '+String(i+1).padStart(5,'0');l.v.E='PF'+(i+1);l.rf=1;return l});let j=JSON.stringify(s);localStorage.setItem('cadpecas4',j);return j.length}''')

@@ -13,7 +13,9 @@ script='try { if (!localStorage.getItem("cadpecas4") && !sessionStorage.getItem(
 original=Page.goto
 def goto(self,*args,**kwargs):
     self.add_init_script(script=script)
-    return original(self,*args,**kwargs)
+    result=original(self,*args,**kwargs)
+    if not any(nome in str(arg) for arg in sys.argv for nome in ("t80_abrir_sem_idb", "t102_banho_concorrencia")): self.wait_for_function("()=>!document.body.inert",timeout=30000)
+    return result
 Page.goto=goto
 sys.argv=sys.argv[1:]
 runpy.run_path(sys.argv[0],run_name='__main__')

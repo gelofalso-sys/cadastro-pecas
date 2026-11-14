@@ -18,14 +18,20 @@ function cadConferir(){
   if(CAD.snap){const mudou=JSON.stringify(S.config)!==CAD.snap.c||cadLancSig()!==CAD.snap.l;
     if(mudou&&!CAD.pend){CAD.pend=true;setStatus("Cadastros: alterações NÃO salvas",true)}
     if(!mudou&&CAD.pend){CAD.pend=false;setStatus("Salvo neste navegador")}
-    if(!mudou)CAD.snap=null}
+    if(!mudou){CAD.snap=null;if(bnReserva&&!bnEmExclusao)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."))}}
   cadBarra()}
 function cadRomAtualizar(){   /* romaneio aberto acompanha o cadastro (valores da galvânica, banhos, fornecedores…) */
   if(!ROM||!ROM.rows||!ROM.rows.length)return;
   const s=JSON.stringify(S.config);if(s===CAD.sig)return;CAD.sig=s;
   clearTimeout(CAD.rt);CAD.rt=setTimeout(()=>{CAD.rt=null;if(!ROM||!ROM.rows||!ROM.rows.length)return;const w=document.getElementById("romWrap"),pos=[];for(let e=w;e;e=e.parentElement)if(e.scrollHeight>e.clientHeight)pos.push([e,e.scrollTop]);
     try{renderRom()}finally{pos.forEach(([e,t])=>{e.scrollTop=t})}},350)}
-function cadSalvar(){if(!CAD.pend)return;CAD.pend=false;CAD.snap=null;cadBarra();
+async function cadSalvar(){if(!CAD.pend||CAD.salvando)return;
+  if(bnReserva){CAD.salvando=true;document.body.inert=true;CAD.pend=false;
+    try{dirty.c=true;dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);sT=null;setStatus("Salvando…");chain=chain.then(flush);if(!await chain){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
+      CAD.snap=null;cadBarra();render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.");await bnLiberarUso();return
+    }catch(e){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
+    finally{CAD.salvando=false;document.body.inert=false}}
+  CAD.pend=false;CAD.snap=null;cadBarra();
   dirty.c=true;dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);sT=null;setStatus("Salvando…");chain=chain.then(flush);
   render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.")}
 function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
@@ -36,6 +42,7 @@ function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
   if(s.rasc&&rascunho){const o=JSON.parse(s.rasc);Object.keys(rascunho).forEach(k=>{if(k!=="ft"&&!(k in o))delete rascunho[k]});Object.assign(rascunho,o)}
   HIST.length=Math.min(HIST.length,CAD.hL);REDO.length=0;CAD.hR.forEach(x=>REDO.push(x));
   CAD.pend=false;CAD.snap=null;CAD.sig=JSON.stringify(S.config);cadBarra();
+  if(bnReserva)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."));
   try{sincGrade(S.form)}catch(e){}
   try{histIni()}catch(e){}
   render();if(ROM&&ROM.rows&&ROM.rows.length){renderRom();romSalvarSoon()}setStatus(db?"Salvo na sua conta":"Salvo neste navegador");toast("Alterações dos Cadastros descartadas.")}

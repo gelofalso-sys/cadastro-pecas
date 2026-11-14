@@ -7,7 +7,9 @@ with sync_playwright() as p:
  q.fill('#f-F','Foto teclado');q.fill('#f-N','2');q.fill('#f-P','10')
  for e in q.locator('[id^="f-"][id$="-W"]').all():
   if e.is_visible():e.fill('1')
- q.locator('button.btn.pri.big[type="submit"]').click();q.wait_for_timeout(800)
+ q.locator('button.btn.pri.big[type="submit"]').click();q.wait_for_function("()=>{try{return (JSON.parse(localStorage.getItem('cadpecas4')||'{}').lanc||[]).length>0}catch(e){return false}}")
  data=q.evaluate("JSON.parse(localStorage.getItem('cadpecas4'))");assert data['lanc'];data['lanc'][0]['ftR']=png;q.evaluate("v=>localStorage.setItem('cadpecas4',JSON.stringify(v))",data);q.reload();q.wait_for_timeout(1000)
  f=q.locator('tr[data-l] .tf button[data-act="tab-foto"]').first;f.wait_for();f.focus();q.keyboard.press('Enter');assert q.locator('.lbox img').get_attribute('src').startswith('data:image/');q.locator('.lbox [data-z="x"]').click()
+ q.locator('tr[data-l] [data-act="editar"]').first.click()
+ f=q.locator('.ftslot.ftr button[data-act="tab-foto"]');f.wait_for();f.focus();assert f.evaluate('e=>document.activeElement===e');q.keyboard.press('Enter');assert q.locator('.lbox img').get_attribute('src').startswith('data:image/');q.locator('.lbox [data-z="x"]').click()
  assert not errors,errors;b.close();print('OK foto da tabela acessível por teclado')

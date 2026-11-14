@@ -22,9 +22,14 @@ with sync_playwright() as p:
     pg.set_input_files("#impFile",nome);pg.wait_for_timeout(1500)
     if pg.locator("text=Abrir o primeiro").count():pg.click("text=Abrir o primeiro")   # um arquivo só abre sozinho; com arquivo repetido ou vários, a fila continua
     pg.wait_for_timeout(1500)
-    sel=pg.eval_on_selector('select[data-k="cod"]',"e=>e.selectedOptions[0].text")
-    ok("Referência" in sel,"código vem da coluna Referência, não do ID vazio: %s"%sel)
-    prev=pg.inner_text(".prevg")
+    # Planilhas no formato do sistema são reconhecidas pelo cabeçalho e dispensam o mapeamento de colunas.
+    if pg.locator('select[data-k="cod"]').count():
+        sel=pg.eval_on_selector('select[data-k="cod"]',"e=>e.selectedOptions[0].text")
+        ok("Referência" in sel,"código vem da coluna Referência, não do ID vazio: %s"%sel)
+        prev=pg.inner_text(".prevg")
+    else:
+        prev=pg.inner_text("#romWrap")
+        ok("Formato do sistema identificado" in prev and "AB10" in prev and "Colar y" in prev,"formato do sistema: código vem da coluna Referência, não do ID vazio")
     ok("AB10" in prev and "Brinco x" in prev,"prévia mostra os dados da planilha")
     pg.click('[data-act="rom-plan-ok"]');pg.wait_for_timeout(1500)
     ok(pg.locator("#romWrap").count()>0 and not errs,"planilha com preço 0 e peso 0 importa sem bloquear: %s"%errs[:2])

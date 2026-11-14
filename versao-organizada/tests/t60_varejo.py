@@ -6,7 +6,7 @@ url=(Path(__file__).resolve().parent.parent/'Cadastro de Pecas - abrir no Chrome
 with sync_playwright() as p:
  b=p.chromium.launch(channel='msedge');q=b.new_page(viewport={'width':390,'height':844});errors=[];q.on('pageerror',lambda e:errors.append(str(e)));q.on('dialog',lambda d:d.accept());q.goto(url)
  q.locator('#mobileMenu summary').click();q.locator('[data-mobile="act:rom-abrir"]').click();q.locator('#romWrap [data-act="rom-tipo"][data-v="pronta"]').click()
- q.locator('#romWrap textarea').fill('Romaneio do Link TESTE\nColar 45+5, [#900001] R$ 10,90 R$ 9,27 2 R$ 18,54\nValor Produtos R$ 18,54');q.locator('#romWrap [data-act="rom-ler"]').click();q.locator('#romWrap [data-act="rom-criar"]').click()
+ q.locator('#romWrap textarea').fill('Romaneio do Link TESTE\nColar 45+5, [#900001] R$ 10,90 R$ 9,27 2 R$ 18,54\nValor Produtos R$ 18,54');q.locator('#romWrap [data-act="rom-ler"]').click();q.locator('#romWrap .rc').first.locator('[data-rp="bon"][data-b="ouro"]').set_checked(True);q.locator('#romWrap .rc').first.locator('[data-rp="q"][data-b="ouro"]').fill('2');q.locator('#romWrap [data-act="rom-criar"]').click()
  txt=q.locator('.rev').inner_text();assert 'sem preço de varejo' not in txt and ('Sugestão' in txt or 'A definir' in txt),txt
  q.locator('[data-act="rev-ok"]').click();q.locator('.rep [data-act="rel-fechar"]').click();q.locator('[data-act="ir-lista"]').first.click()
  with q.expect_download() as d:

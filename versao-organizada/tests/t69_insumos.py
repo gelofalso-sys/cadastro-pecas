@@ -16,7 +16,7 @@ with sync_playwright() as p:
  assert valores() and all(x=='0,50' for x in valores()),valores()
  q.locator('details[data-open="insit"] summary').click() if q.locator('details[data-open="insit"]').get_attribute('open') is None else None
  q.locator('[data-insmodo]').select_option('somar');q.locator('[data-cad="salvar"]').click();q.wait_for_timeout(500);assert all(x=='1,30' for x in valores()),valores()
- q.locator('[data-insmodo]').select_option('substituir');q.locator('[data-cad="salvar"]').click();q.wait_for_timeout(700);assert all(x=='0,80' for x in valores()),valores();exp=q.locator('#custos').inner_text();assert 'Caixa' in exp and 'Tarraxa' in exp,exp
+ q.locator('[data-insmodo]').select_option('substituir');q.locator('[data-cad="salvar"]').click();q.wait_for_timeout(700);assert all(x=='0,80' for x in valores()),valores();q.fill('#f-F','Outra peça');q.fill('#f-N','1');q.fill('#f-P','2');q.locator('[id^="f-"][id$="-W"]:visible').first.fill('1');exp=q.locator('#custos').inner_text();assert 'Caixa' in exp and 'Tarraxa' in exp,exp
  q.reload();q.wait_for_timeout(500);assert all(x=='0,80' for x in valores()),valores();assert q.locator('[data-insmodo]').input_value()=='substituir'
  q.evaluate("document.querySelector('[data-act=rom-lista]').click()")
  with q.expect_download() as d:q.locator('.rep [data-act="backup-total"]').click()

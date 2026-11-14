@@ -4,6 +4,10 @@ from playwright.sync_api import sync_playwright
 D=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SC=tempfile.gettempdir()
 class Q(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/favicon.ico":
+            self.send_response(204); self.end_headers(); return
+        super().do_GET()
     def log_message(self,*a):pass
 socketserver.TCPServer.allow_reuse_address=True
 srv=socketserver.TCPServer(("127.0.0.1",8771),functools.partial(Q,directory=D));threading.Thread(target=srv.serve_forever,daemon=True).start()
@@ -18,7 +22,7 @@ with sync_playwright() as p:
     ctx=b.new_context(viewport={"width":1280,"height":900})
     pg=ctx.new_page()
     pg.on("pageerror",lambda e:errs.append(str(e)))
-    pg.on("console",lambda m:errs.append(m.text) if m.type=="error" and "net::" not in m.text and "ERR_" not in m.text else None)
+    pg.on("console",lambda m:errs.append(m.text+" "+str(m.location)) if m.type=="error" and "net::" not in m.text and "ERR_" not in m.text else None)
     pg.goto(URL);pg.wait_for_timeout(800)
     pg.click('[data-act="ctab"][data-id="cat"]');pg.wait_for_timeout(300)
     ok(pg.locator(".banner").count()==1,"banner de primeiro acesso aparece")
@@ -75,5 +79,6 @@ with sync_playwright() as p:
     pg.screenshot(path=SC+r"\s_cat.png")
     # faixa
     print("erros de console:",errs)
+    ok(not errs,"sem erros de página ou console: "+str(errs))
     b.close()
 print("FALHAS:",falhas)

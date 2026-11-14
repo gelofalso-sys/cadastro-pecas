@@ -1,5 +1,5 @@
 """Lote por peso: o peso informado pode diferir do peso da lista (e a divisão por banho pode estar incompleta) sem bloquear a criação.
-O valor do lote é rateado pelo peso informado; só há alertas. Usa o PDF Elvis (lote 1: 81,440 g = R$ 1.197,17)."""
+O peso divergente não bloqueia; a quantidade física incorreta exige correção. Usa o PDF Elvis (lote 1: 81,440 g = R$ 1.197,17)."""
 from pathlib import Path
 import sys
 from playwright.sync_api import sync_playwright
@@ -20,14 +20,18 @@ with sync_playwright() as p:
     assert 'informados até agora' in resumo and 'valor por grama até agora' in resumo,resumo
     custos=[n(cards().nth(i).locator('[data-rp="custo"]').input_value()) for i in range(3)]
     print('custos',custos,'soma',round(sum(custos),2));assert abs(sum(custos)-1197.17)<0.005,'o valor do lote deve ser o mesmo, rateado pelo peso informado'
-    # divisão incompleta (sem quantidade distribuída em um item, 2 unidades em outro) não bloqueia
+    # divisão incompleta (sem quantidade distribuída em um item, 2 unidades em outro) bloqueia
     cards().nth(0).locator('[data-act="rom-div"]').click()
     x=cards().nth(1).locator('[data-rp="q"][data-b="ouro"]');x.fill('1');x.press('Tab')
     y=cards().nth(1).locator('[data-rp="q"][data-b="prata"]');y.fill('1');y.press('Tab')   # 2 unidades num item que vale 1
     pg.wait_for_timeout(400)
     assert pg.locator('#romCriar').is_enabled()
     pg.locator('#romCriar').click();pg.wait_for_timeout(800)
-    assert pg.locator('[data-act="rev-ok"]').is_enabled(),'revisão não pode bloquear'
+    assert pg.locator('[data-act="rev-ok"]').is_disabled(),'quantidade inconsistente deve bloquear'
+    pg.locator('[data-act="rev-fechar"]').first.click()
+    y=cards().nth(1).locator('[data-rp="q"][data-b="prata"]');y.fill('0');y.press('Tab')
+    x=cards().nth(2).locator('[data-rp="q"][data-b="ouro"]');x.fill('1');x.press('Tab')
+    pg.locator('#romCriar').click();assert pg.locator('[data-act="rev-ok"]').is_enabled(),'peso divergente não pode bloquear'
     pg.locator('[data-act="rev-ok"]').click();pg.wait_for_timeout(1500)
     rows=pg.locator('tr[data-l]').evaluate_all("es=>es.map(e=>['G','N','P','W'].map(k=>e.querySelector('[data-c='+k+']').innerText.trim()))")
     print(rows);assert len(rows)>=3,rows
