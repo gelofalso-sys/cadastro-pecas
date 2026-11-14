@@ -1,7 +1,7 @@
 /* ===== núcleo: configuracao — funções que recebem o estado S como primeiro argumento (nome$) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
 import { NOME, semAc } from "./colunas.js";
-import { BANCO_PALAVRAS, apelidosDe, brl, catPad, catSing, corKey, efetivo, esc, fmt, num, palavraDeNome, selFaixa, vazio } from "./utilidades.js";
+import { BANCO_PALAVRAS, apelidosDe, brl, catPad, catSing, corKey, efetivo, esc, fmt, num, palavraDeNome, selFaixa, vazio, vzPad } from "./utilidades.js";
 // @fim-imports
 export const cfg$=(S)=>S.config;
 export const catBy$=(S,n)=>cfg$(S).categorias.find(c=>c.nome===n);
@@ -91,3 +91,26 @@ export function descBanho$(S,l,b,i){const d=comSufixoCat$(S,val$(S,l,"F"),val$(S
 export const modeloAtual$=(S)=>{const C=cfg$(S);return (C.modelos||[]).find(x=>x.id===C.modelo)||C.modelos[0]};
 export const colunasExport$=(S)=>modeloAtual$(S).cols.filter(c=>c.on!==false);
 export const nomeTela$=(S,L)=>{const c=modeloAtual$(S).cols.find(x=>x.on!==false&&x.k===L);return c?c.h:NOME[L]};
+/* Ajuda de custo exibida em cada banho do cadastro de galvânica: mostra as fórmulas e um exemplo com os valores atuais,
+   para escolher o valor por grama e o fator sem fazer conta de cabeça. */
+export function bnAjuda(C,bh,x){
+  const m=num(x.mult),fa=num(x.fator),vz=num(bh.verniz)||0,usaVz=vzPad(bh,x)&&vz>0,ins=num((C.colcfg&&C.colcfg.Q&&C.colcfg.Q.padrao))||0;
+  const R=n=>"R$ "+brl(n),g=n=>String(Math.round(n*1000)/1000).replace(".",",");
+  let banho,formula;
+  if(x.modo==="nenhum"||!x.coluna){return `<tr class="bn-ajuda"><td colspan="10" data-th=""><div class="bnx"><b>Custo</b><span>Este banho não gera custo de banho nem de verniz: só marca a peça.</span></div></td></tr>`}
+  if(x.modo==="fixo"){formula=`Banho = ${m==null?"valor fixo (digite abaixo, em “Milésimos e valor por categoria”)":R(m)+" por peça"}`;banho=m||0}
+  else{formula=`Banho = peso × ${m==null?"R$/g (digite abaixo, em “Milésimos e valor por categoria”)":R(m)+"/g"}`;banho=null}
+  const peso=2,compra=5;
+  const bn=x.modo==="fixo"?(m||0):(m||0)*peso,vn=usaVz?vz*peso:0,custo=compra+ins+bn+vn;
+  const exemplo=m==null?"":`Ex.: peça de ${g(peso)} g, compra ${R(compra)}${ins?`, insumos ${R(ins)}`:""} → banho ${R(bn)}${usaVz?` + verniz ${R(vn)}`:""} = custo <b>${R(custo)}</b>${fa?` → × ${g(fa)} = varejo <b>${R(custo*fa)}</b>`:" · defina o Fator × para ver o preço de venda"}`;
+  return `<tr class="bn-ajuda"><td colspan="10" data-th=""><div class="bnx"><b>Como o custo é calculado</b><span>${formula}${usaVz?` · Verniz = peso × ${R(vz)}/g`:""}</span><span>Custo = compra + insumos + banho${usaVz?" + verniz":""} · Varejo = custo × fator${fa?` (${g(fa)})`:""}</span>${exemplo?`<span class="ex">${exemplo}</span>`:""}</div></td></tr>`;
+}
+/* Fórmulas do custo desta linha (banho e verniz) e o preço de venda para alguns fatores, para escolher o fator ou o valor do banho. */
+export function bfFormula(r,custo,mk){
+  const R=n=>"R$ "+brl(n),b=r.banho,partes=[];
+  if(b&&b.mult!=null){partes.push(b.modo==="fixo"?`banho = <b>${R(b.mult)}</b> fixo`:`banho = peso × <b>${R(b.mult)}/g</b>`)}
+  if(b&&r.verniz!=null)partes.push(`verniz = peso × <b>${R(r.verniz)}/g</b>`);
+  const sug=custo>0?[2,2.5,3,3.5,4].map(f=>`×${fmt(f)} = <b>${R(custo*f)}</b>`).join(" · "):"";
+  if(!partes.length&&!sug)return "";
+  return `${partes.length?`<span class="bfx-d">${partes.join(" · ")}</span>`:""}${sug?`<br><span class="bfx-d">Preço de venda: ${sug}${mk?` · atual ×${fmt(mk)}`:""}</span>`:""}`;
+}

@@ -19,3 +19,4 @@
 35-visoes-menu-e-final.js
 
 36-cadastros-salvar.js
+37-moeda.js

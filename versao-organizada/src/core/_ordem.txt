@@ -1,6 +1,6 @@
+formulas.js
 colunas.js
 utilidades.js
-formulas.js
 configuracao.js
 dominio.js
 romaneio.js

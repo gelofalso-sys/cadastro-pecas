@@ -1613,3 +1613,82 @@ select,#modSel,.mod select,[data-rp="tid"]{font-size:16px!important}.mod select{
 #form .z-end{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 #form.lanc{padding-bottom:calc(196px + env(safe-area-inset-bottom,0px))}
 }
+
+/* ===== v20: ajuda de custo no banho, campos em reais e cadastros alinhados no celular ===== */
+.bn-ajuda td{padding:6px 8px!important}
+.bnx{display:grid;gap:3px;font-size:12.5px;line-height:1.4;color:var(--ink);background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:6px;padding:7px 10px}
+.bnx b{font:600 12px var(--body);color:var(--accent)}
+.bnx .ex{color:var(--muted)}.bnx .ex b{font:inherit;font-weight:700;color:var(--ink)}
+/* "R$" fixo à esquerda dos campos de dinheiro (o valor é formatado em reais ao sair do campo) */
+input[data-col="P"],input[data-col="Q"],input[data-col="R"],input[data-col="S"],input[data-col="T"],input[data-col="U"],input[data-col="V"],
+input[data-k="_m"],input[data-k="P"],input[data-k="Q"],input[data-k="R"],input[data-k="S"],input[data-k="T"],input[data-k="U"],input[data-k="V"],
+input[data-bhf="verniz"],input[data-bmv],tr[data-cc="P"] input[data-ccf="padrao"],tr[data-cc="Q"] input[data-ccf="padrao"],tr[data-cc="R"] input[data-ccf="padrao"],tr[data-cc="S"] input[data-ccf="padrao"],tr[data-cc="T"] input[data-ccf="padrao"],tr[data-cc="U"] input[data-ccf="padrao"],tr[data-cc="V"] input[data-ccf="padrao"],input[data-cf="insumos"],input[data-cf="compraGrama"],input[data-inscampo="valor"],input.mny{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='20'><text x='3' y='14' font-family='sans-serif' font-size='11' font-weight='600' fill='%237a8594'>R$</text></svg>");
+  background-repeat:no-repeat;background-position:left 4px center;padding-left:30px!important}
+@media (max-width:700px){
+  /* cadastro de categorias e galvânicas: um campo por linha, os curtos lado a lado, ações juntas no fim */
+  #cfg .card>.row{gap:8px 10px;align-items:flex-end}
+  #cfg .card>.row>.fl{flex:1 1 100%!important;width:auto!important;min-width:0}
+  #cfg .card>.row>.fl:has(input[data-cf=prefixo]),#cfg .card>.row>.fl:has(input[data-cf=ultimo]),
+  #cfg .card>.row.fisc>.fl{flex:1 1 calc(50% - 6px)!important}
+  #cfg .card>.row .fl input:not([type=checkbox]),#cfg .card>.row .fl select{width:100%!important;box-sizing:border-box}
+  #cfg .card>.row>.dh,#cfg .card>.row>.x{flex:0 0 44px;height:44px;display:inline-flex;align-items:center;justify-content:center}
+  #cfg .card>.row>.btn{flex:1 1 calc(50% - 6px)}
+  #cfg .card>.row>.hint{flex:1 1 100%}
+  #cfg .d,#cfg p.d{max-height:none!important;overflow:visible!important;-webkit-line-clamp:unset!important;display:block!important}
+  /* cartão do banho: nome na largura toda (com a alça), pares alinhados, caixinhas lado a lado */
+  table.bnt tr[data-bn]{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end}
+  table.bnt td[data-th="Banho"]{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+  table.bnt td[data-th="Banho"]::before{flex:0 0 100%}
+  table.bnt td[data-th="Banho"] .dh{flex:0 0 28px;display:inline-flex;align-items:center;justify-content:center;height:40px}
+  table.bnt td[data-th="Banho"] input{flex:1 1 0;min-width:0}
+  table.bnt td[data-th^="Texto na Descrição"]{grid-column:1/-1}
+  table.bnt td.c{display:flex;align-items:center;gap:8px;flex-direction:row-reverse;justify-content:flex-end;min-height:44px}
+  table.bnt td.c::before{margin:0}
+  table.bnt td.c input[type=checkbox]{width:22px;height:22px;margin:0}
+  table.bnt tr.bn-ajuda{display:block;padding:0;border:0;background:none;margin:-4px 0 8px}
+  table.bnt tr.bn-ajuda td{display:block}table.bnt tr.bn-ajuda td::before{display:none}
+  #cfg .card>.row>span[style*="margin-left:auto"]{display:none}
+  table.bnt tr[data-bn]{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-start}
+  table.bnt tr[data-bn]>td.c,table.bnt tr[data-bn]>td.acts{align-self:flex-end}
+  table.bnt tr[data-bn]>td{flex:1 1 calc(50% - 6px);min-width:0;order:5}
+  table.bnt tr[data-bn]>td[data-th="Banho"]{flex-basis:100%;order:1}
+  table.bnt tr[data-bn]>td[data-th="Letra"]{order:2}table.bnt tr[data-bn]>td[data-th="Cor"]{order:3}
+  table.bnt tr[data-bn]>td[data-th="Cálculo"]{order:4}table.bnt tr[data-bn]>td[data-th="Coluna"]{order:5}
+  table.bnt tr[data-bn]>td[data-th="Fator ×"]{order:6}table.bnt tr[data-bn]>td[data-th="Verniz"]{order:7}
+  table.bnt tr[data-bn]>td[data-th="Vem marcado"]{order:8}
+  table.bnt tr[data-bn]>td.acts{order:9;flex:1 1 calc(50% - 6px);justify-content:flex-end}
+  table.bnt tr[data-bn]>td[data-th^="Texto na Descrição"]{order:10;flex-basis:100%}
+  #cfg .clbl{display:flex!important;flex-direction:column;align-items:flex-start;gap:2px;margin:12px 0 4px}#cfg .clbl span{margin:0!important;white-space:normal}
+  #cfg .chips{flex-direction:column;align-items:stretch;gap:8px}
+  #cfg .chips>input{width:100%!important;height:44px;box-sizing:border-box;font-size:16px}
+  #cfg .chip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border-radius:12px;padding:10px;width:100%;box-sizing:border-box;background:var(--surface-2)}
+  #cfg .chip .cn,#cfg .chip .cn-in{order:1;flex:1 1 calc(100% - 170px);min-width:0;max-width:none;width:auto;height:44px;text-align:left;font-weight:600;font-size:15px;border-radius:8px}
+  #cfg .chip .cn{padding:0 4px}
+  #cfg .chip .cn-in{border:1px solid var(--line);padding:0 8px}
+  #cfg .chip button.mv,#cfg .chip button[data-act=sub-del]{flex:0 0 44px;width:44px;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:18px;color:var(--ink)}
+  #cfg .chip [data-act=sub-up]{order:2}#cfg .chip [data-act=sub-down]{order:3}#cfg .chip [data-act=sub-del]{order:4}
+  #cfg .chip .sp{order:5;flex:0 0 88px;width:88px;height:44px;border-radius:8px;font-size:16px;text-align:center;padding:0 6px;margin:0}
+  #cfg .chip .sa{order:6;flex:1 1 0;min-width:0;width:auto;height:44px;border-radius:8px;font-size:16px;padding:0 10px}
+  #cfg .chip .sr{order:7;flex:1 1 100%;margin:0;min-height:32px;white-space:normal;font-size:13px;gap:8px}
+  #cfg .chip .sr input{width:20px;height:20px;flex:none}
+  #cfg table.cfg:not(.bnt) tr{align-items:start;gap:10px}
+  #cfg table.cfg:not(.bnt) td:has(>input[type=checkbox]:only-child){display:flex;align-items:center;gap:8px;flex-direction:row-reverse;justify-content:flex-end;min-height:44px;align-self:end}
+  #cfg table.cfg:not(.bnt) td:has(>input[type=checkbox]:only-child)::before{margin:0}
+  #cfg table.cfg:not(.bnt) td input[type=checkbox]{width:22px;height:22px;margin:0}
+  #cfg table.cfg:not(.bnt) td:has(>button.x:only-child),#cfg table.cfg:not(.bnt) td.acts{grid-column:1/-1;display:flex;justify-content:flex-end;gap:6px}
+  #cfg table.cfg:not(.bnt) td:has(>button.x:only-child)::before{display:none}
+  #cfg table.cfg:not(.bnt) td:last-child:has(>button){grid-column:1/-1;display:flex;justify-content:flex-end;gap:6px}
+  #cfg table.cfg:not(.bnt) td:last-child:has(>button)::before{display:none}
+  #cfg table.cfg:not(.bnt) td input:not([type=checkbox]),#cfg table.cfg:not(.bnt) td select{height:44px;box-sizing:border-box;font-size:16px}
+}
+.bff{display:block;margin-top:2px}
+#cfg .chip .sa{border-style:solid}
+@media (max-width:700px){
+  .bcard .bh2{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px}
+  .bcard .bh2 .ck{white-space:nowrap}
+  .bcard .bh2 small{flex:0 1 auto;font-size:12px}
+  .bcard .bf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .bcard .bf>.bfx,.bcard .bf>.pv{grid-column:1/-1}
+}
+@media (max-width:900px){#cfg table.cfg:not(.bnt) td.c{text-align:left}#cfg table.cfg:not(.bnt) td.c::before{text-align:left}}
