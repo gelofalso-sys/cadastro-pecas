@@ -19,7 +19,7 @@ js/16-selecao.js
 js/17-lancamento.js
 js/18-conjunto.js
 js/19-configuracoes-e-catalogo.js
-js/19b-assistente-outro-sistema.js
+fatias/exportacao/19b-assistente-outro-sistema.js
 js/19c-colar-romaneio.js
 js/19d-tabelas-salvas.js
 js/20-armazenamento-idb.js
@@ -33,8 +33,8 @@ js/24-ui-numeracao-e-colunas.js
 js/25-relatorio-romaneio.js
 js/26-acoes.js
 js/27-fotos-escolher-colar.js
-js/28-exportar.js
-js/29-importar-e-copia.js
+fatias/exportacao/28-exportar.js
+fatias/exportacao/29-importar-e-copia.js
 js/30-eventos-mouse-e-clique.js
 js/31-eventos-campos-e-grade.js
 js/32-eventos-entrada-teclado-e-arrasto.js
