@@ -1418,7 +1418,7 @@ body.side-mini .sn button[aria-current=true]{box-shadow:none}
 /* O selo do provedor pode ocupar o canto inferior direito. O menu continua
    disponível quando a gaveta de lançamento ou o teclado estiver aberto. */
 @media(max-width:900px){
-  body:not(.fopen) #mbar{bottom:0}   /* encostada no rodapé da tela (o respiro do iPhone vem do padding da barra) */
+  body:not(.fopen) #mbar{bottom:calc(72px + env(safe-area-inset-bottom,0px))}   /* folga: o selo "Powered by Netlify" do site publicado (cadastrolote.netlify.app) fica no canto inferior direito, ~55px acima do fundo, e cobria "Lançar peça" */
   body.fopen #mbar{display:block;position:fixed;top:8px;left:8px;right:auto;bottom:auto;z-index:50;padding:0;background:none;border:0;backdrop-filter:none}
   body.fopen:has(input:focus,select:focus,textarea:focus) #mbar{display:block}
   body.fopen #mbar > :not(.mobile-menu){display:none}
@@ -1606,4 +1606,10 @@ select,#modSel,.mod select,[data-rp="tid"]{font-size:16px!important}.mod select{
 #form .z-end .btn{font-size:14px;padding-left:6px;padding-right:6px}
 #form .z-end .btn.pri{flex-grow:1.3}
 #form.lanc{padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))}
+}
+
+/* Selo "Powered by Netlify" (iframe fixo, 197x64px, canto inferior direito): a barra Adicionar/Cancelar do formulário mantém os botões acima dessa faixa */
+@media(max-width:900px){
+#form .z-end{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+#form.lanc{padding-bottom:calc(196px + env(safe-area-inset-bottom,0px))}
 }
