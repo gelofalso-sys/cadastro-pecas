@@ -82,6 +82,3 @@ function marcaRuim(ri,L){const td=document.querySelector(`#sheet tr[data-ri="${r
 /* número de um valor digitado na linha: aceita fórmula (=2*3, =N2*2) e calcula; rv são os valores digitados da linha */
 /* desc = desconto do fornecedor (%): a referência ao custo (P) vale a compra JÁ com desconto, o mesmo número da célula calculada e do arquivo */
 /* valor calculado de uma coluna de banho (sem digitação) */
-const modeloAtual=()=>{const C=cfg();return (C.modelos||[]).find(x=>x.id===C.modelo)||C.modelos[0]};
-const colunasExport=()=>modeloAtual().cols.filter(c=>c.on!==false);
-const nomeTela=L=>{const c=modeloAtual().cols.find(x=>x.on!==false&&x.k===L);return c?c.h:NOME[L]};

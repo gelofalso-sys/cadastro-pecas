@@ -103,28 +103,6 @@ async function migrarFotos(){let mexeu=0;
   if(mexeu){salvar(true);toast(`${mexeu} foto(s) de peças antigas foram para a coluna “Foto do romaneio”.`,{t:"Desfazer",fn:desfazer})}
   return mexeu}
 /* Uma vez por conta: traz as categorias do Jueri (renomeia Anéis→Anél, acrescenta as que faltam, ajusta subcategorias) sem apagar o que você cadastrou nem as peças já lançadas. */
-function migrarJueri(){
-  const C=cfg();if(C.v9)return false;const lo=x=>String(x||"").trim().toLowerCase();
-  const usa=(cat,sub)=>S.lanc.some(l=>l.v.I===cat&&l.v.J===sub)||(S.form.v.I===cat&&S.form.v.J===sub);
-  JUERI_CATS.forEach(j=>{
-    let c=C.categorias.find(x=>lo(x.nome)===lo(j.nome))||C.categorias.find(x=>(j.alias||[]).some(a=>lo(a)===lo(x.nome)));
-    if(!c){c={nome:j.nome,prefixo:j.prefixo,subs:[]};if(j.sufixo)c.sufixo=j.sufixo;C.categorias.push(c)}
-    if(c.nome!==j.nome){const old=c.nome;c.nome=j.nome;S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=j.nome});if(S.form.v.I===old)S.form.v.I=j.nome}
-    if(!c.prefixo)c.prefixo=j.prefixo;const pu=String(c.prefixo).toUpperCase();if(!(pu in C.seqs))C.seqs[pu]="0";
-    Object.entries(j.trocas||{}).forEach(([a,b])=>{const i=c.subs.indexOf(a);if(i>=0){c.subs[i]=b;S.lanc.forEach(l=>{if(l.v.I===c.nome&&l.v.J===a)l.v.J=b});if(S.form.v.I===c.nome&&S.form.v.J===a)S.form.v.J=b}});
-    (j.remover||[]).forEach(r=>{const i=c.subs.indexOf(r);if(i>=0&&!usa(c.nome,r))c.subs.splice(i,1)});
-    j.subs.forEach(x=>{if(!c.subs.some(y=>lo(y)===lo(x)))c.subs.push(x)});c.subs=[...new Set(c.subs)];
-    if(j.subPref){c.subPref=c.subPref||{};Object.entries(j.subPref).forEach(([k,v])=>{if(!c.subPref[k])c.subPref[k]=v;if(!(v in C.seqs))C.seqs[v]="0"})}
-    if(j.subSoRef){c.subSoRef=c.subSoRef||{};c.subs.forEach(x=>{if(!(x in c.subSoRef))c.subSoRef[x]=true})}
-  });
-  (C.grades||[]).forEach(g=>{
-    if(/an[eé]is/i.test(g.auto||"")&&!/an[eé]l/i.test(g.auto))g.auto=String(g.auto).replace(/an[eé]is/i,"Anel; Anéis");
-    /* Textos copiados no cadastro antigo: se todos têm o mesmo começo (ex.: " aro 12", " aro 14"), era uma cópia do rótulo — passam a seguir o rótulo atual, e o termo antigo ainda é reconhecido na Descrição. */
-    const pre=g.itens.map(x=>x.texto!=null&&x.nome&&String(x.texto).endsWith(x.nome)?String(x.texto).slice(0,String(x.texto).length-x.nome.length):null);
-    if(g.itens.length>1&&pre.every(v=>v!==null&&v===pre[0])){const o=String(pre[0]).trim();if(o&&o.toLowerCase()!==String(g.rotulo||"").trim().toLowerCase()){g.sin=g.sin||[];if(!g.sin.some(z=>z.toLowerCase()===o.toLowerCase()))g.sin.push(o)}g.itens.forEach(x=>{delete x.texto})}
-    g.itens.forEach(x=>{if(x.texto===rotG(g)+(x.nome||x.letra))delete x.texto;if(x.col&&x.col===(g.col||""))delete x.col;if(x.valor!=null&&x.valor===x.nome)delete x.valor})});
-  C.v9=true;return true;
-}
 /* Uma vez por conta: a variação (tamanhos de anel etc.) passa para dentro da categoria, cada banho ganha a marca de verniz e some o que estava fora do lugar (observação na lista de cores). */
 /* v11: a tabela passa a mostrar as peças na ordem em que foram lançadas (a opção "A depois B" continua disponível) */
 /* "Anél" era um erro de português: a categoria passa a se chamar "Anel" (peças, rascunho e romaneios salvos acompanham). A planilha também passa a usar "Anel"; outros nomes de exportação definidos pelo usuário são preservados. */
@@ -142,25 +120,6 @@ function migrarGrades(){const a0=migrarAnel(),a=migrarGrades0()||a0,C=cfg();let 
     for(let n=11;n<=25;n++){const nm=String(n);if(!g.itens.some(x=>String(x.nome)===nm)){let id="a"+nm;if(g.itens.some(x=>x.id===id))id=uid();g.itens.push({id,letra:proxLetra(g.itens.map(x=>x.letra)),nome:nm})}}
     g.itens.sort((x,y)=>(parseFloat(x.nome)||0)-(parseFloat(y.nome)||0))});C.v12=true;m=true}
   return m}
-function migrarGrades0(){
-  const C=cfg();if(C.v10)return false;
-  const resto=[];
-  (C.grades||[]).forEach(g=>{
-    const tk=String(g.auto||"").split(/[;,]/).map(semAc).filter(Boolean),alvo=[];
-    if(tk.length)C.categorias.forEach(c=>{
-      const nomes=[semAc(c.nome)],j=JUERI_CATS.find(x=>x.nome===c.nome);if(j&&j.alias)j.alias.forEach(a=>nomes.push(semAc(a)));
-      const subs=(c.subs||[]).filter(s=>tk.includes(semAc(s)));
-      if(nomes.some(n=>tk.includes(n)))alvo.push({c,subs:[]});else if(subs.length)alvo.push({c,subs})});
-    const livres=alvo.filter(a=>!a.c.grade);
-    if(!livres.length){resto.push(g);return}
-    livres.forEach((a,i)=>{const x=JSON.parse(JSON.stringify(g));delete x.auto;if(i>0)x.id=uid();x.subs=a.subs;a.c.grade=x})});
-  C.grades=resto;
-  C.banhistas.forEach(b=>b.banhos.forEach(x=>{if(x.vz==null)x.vz=b.vernizOn!==false}));
-  const obs=new Set(C.observacoes);C.cores=C.cores.filter(c=>!obs.has(c));
-  const arruma=v=>{if(v&&v.L&&obs.has(v.L)){if(vazio(v.M))v.M=v.L;delete v.L}};
-  S.lanc.forEach(l=>arruma(l.v));arruma(S.form.v);
-  C.v10=true;return true;
-}
 /* aceita lançamentos das versões anteriores */
 /* dados salvos que não dá para ler: NÃO apaga nem sobrescreve nada até a pessoa escolher (baixar cópia, restaurar backup ou começar vazio) */
 function resolverCorrompido(){corrompido=false;rawCorrompido="";const b=document.getElementById("dadosRuins");if(b)b.remove()}

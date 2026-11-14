@@ -1,6 +1,8 @@
 /* ===== núcleo: notafiscal — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
 import { MAX_XML_BYTES, checaTam, semAc } from "./colunas.js";
+import { catBy$, cfg$ } from "./configuracao.js";
+import { mapaCat$ } from "./romaneio.js";
 import { brl, num } from "./utilidades.js";
 // @fim-imports
 export const nfU=s=>semAc(s).toUpperCase(),nfR2=n=>Math.round((Number(n)||0)*100)/100,NFKEY="cadpecas-nf";
@@ -71,3 +73,11 @@ export const NFCAT=[[/\b(BRINC|ARGOLA|TRIO|DUO|PIERC)/,"Brincos"],[/\b(COLAR|COL
 export const NFSUB=[[/\b(TRIO|DUO)/,"Trios/duos"],[/ARGOLA/,"Argolas"],[/PIERC/,"Piercings"],[/CHOKER/,"Chokers"],[/CORRENTE/,"Correntes"],[/GARGANTILHA/,"Gargantilhas"]];
 export const nfForma=c=>String(c).replace(/\*+$/,"").replace(/[A-Za-z]+/g,"A").replace(/\d+/g,"9");
 export const nfQtdInt=q=>q>0?Math.max(1,Math.round(q)):0;
+export function nfCatDe$(S,desc){const d=nfU(desc),C=cfg$(S);let nome="";
+  for(const [re,n] of NFCAT){if(re.test(d)){const a=semAc(n);const c=C.categorias.find(c=>semAc(c.nome)===a||(c.alias||[]).some(x=>semAc(x)===a))||C.categorias.find(c=>semAc(c.nome).slice(0,4)===a.slice(0,4));if(c){nome=c.nome;break}}}
+  if(!nome){const m=String(mapaCat$(S,desc,C.romaneios[0])||"").split(">");if(m[0]&&catBy$(S,m[0]))nome=m[0]}
+  const c=catBy$(S,nome);let sub="";if(c){for(const [re,s] of NFSUB){if(re.test(d)){const f=c.subs.find(x=>semAc(x)===semAc(s));if(f){sub=f;break}}}}
+  return {cat:nome,sub}}
+export function nfAcharForn$(S,e){const C=cfg$(S),cn=String(e.cnpj||"").replace(/\D/g,""),limpa=s=>nfU(s).replace(/[^A-Z0-9 ]/g," ").replace(/\s+/g," ").trim(),nn=limpa(e.nome);
+  let f=cn&&C.fornecedores.find(x=>String(x.cnpj||"").replace(/\D/g,"")===cn);if(f)return {f,por:"CNPJ"};
+  f=C.fornecedores.find(x=>{const xn=limpa(x.nome);return xn.length>=4&&(nn===xn||(" "+nn+" ").includes(" "+xn+" ")||nn.startsWith(xn))});return f?{f,por:"nome"}:{f:null}}

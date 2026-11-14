@@ -1,8 +1,9 @@
 /* ===== núcleo: dominio — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
-import { JUERI_CATS, LET, celulas, proxLetra, r2c, semAc } from "./colunas.js";
-import { pesoLinha } from "./formulas.js";
-import { brl, esc, fmt, num, opts, vazio } from "./utilidades.js";
+import { JUERI_CATS, LET, NOME, celulas, clone, kDesc, multItem, proxLetra, r2c, semAc } from "./colunas.js";
+import { banhistaBy$, bhDe$, bonP$, catBy$, cfg$, fornBy$, insumosContaHTML$, insumosItensResumo$, padraoDe$, todasGrades$, ultimo$, val$ } from "./configuracao.js";
+import { numRaw, pesoLinha, qtdPos } from "./formulas.js";
+import { banhoSemCalc, brl, descAuto, esc, fmt, num, opts, rotG, vazio, vzPad } from "./utilidades.js";
 // @fim-imports
 export const MISTO=new Set(["H","I","J","L","M","AD","AE"]);
 export const PMG={pequeno:"P",pequena:"P",medio:"M","médio":"M",media:"M","média":"M",grande:"G"};
@@ -83,3 +84,161 @@ export function histDescrever(antesL,depoisL,e){
     if(!p.length)return e.soCfg?"mudou cadastros (categorias, banhos, fornecedores…)":"alteração";
     return (e.R?"romaneio: ":"")+p.join(", ")}catch(x){return "alteração"}}
 export const refBase=r=>{const m=/^([A-Za-z]+\d+)/.exec(String(r||""));return m?m[1].toUpperCase():String(r||"").toUpperCase()};
+export function migrarJueri$(S){
+  const C=cfg$(S);if(C.v9)return false;const lo=x=>String(x||"").trim().toLowerCase();
+  const usa=(cat,sub)=>S.lanc.some(l=>l.v.I===cat&&l.v.J===sub)||(S.form.v.I===cat&&S.form.v.J===sub);
+  JUERI_CATS.forEach(j=>{
+    let c=C.categorias.find(x=>lo(x.nome)===lo(j.nome))||C.categorias.find(x=>(j.alias||[]).some(a=>lo(a)===lo(x.nome)));
+    if(!c){c={nome:j.nome,prefixo:j.prefixo,subs:[]};if(j.sufixo)c.sufixo=j.sufixo;C.categorias.push(c)}
+    if(c.nome!==j.nome){const old=c.nome;c.nome=j.nome;S.lanc.forEach(l=>{if(l.v.I===old)l.v.I=j.nome});if(S.form.v.I===old)S.form.v.I=j.nome}
+    if(!c.prefixo)c.prefixo=j.prefixo;const pu=String(c.prefixo).toUpperCase();if(!(pu in C.seqs))C.seqs[pu]="0";
+    Object.entries(j.trocas||{}).forEach(([a,b])=>{const i=c.subs.indexOf(a);if(i>=0){c.subs[i]=b;S.lanc.forEach(l=>{if(l.v.I===c.nome&&l.v.J===a)l.v.J=b});if(S.form.v.I===c.nome&&S.form.v.J===a)S.form.v.J=b}});
+    (j.remover||[]).forEach(r=>{const i=c.subs.indexOf(r);if(i>=0&&!usa(c.nome,r))c.subs.splice(i,1)});
+    j.subs.forEach(x=>{if(!c.subs.some(y=>lo(y)===lo(x)))c.subs.push(x)});c.subs=[...new Set(c.subs)];
+    if(j.subPref){c.subPref=c.subPref||{};Object.entries(j.subPref).forEach(([k,v])=>{if(!c.subPref[k])c.subPref[k]=v;if(!(v in C.seqs))C.seqs[v]="0"})}
+    if(j.subSoRef){c.subSoRef=c.subSoRef||{};c.subs.forEach(x=>{if(!(x in c.subSoRef))c.subSoRef[x]=true})}
+  });
+  (C.grades||[]).forEach(g=>{
+    if(/an[eé]is/i.test(g.auto||"")&&!/an[eé]l/i.test(g.auto))g.auto=String(g.auto).replace(/an[eé]is/i,"Anel; Anéis");
+    /* Textos copiados no cadastro antigo: se todos têm o mesmo começo (ex.: " aro 12", " aro 14"), era uma cópia do rótulo — passam a seguir o rótulo atual, e o termo antigo ainda é reconhecido na Descrição. */
+    const pre=g.itens.map(x=>x.texto!=null&&x.nome&&String(x.texto).endsWith(x.nome)?String(x.texto).slice(0,String(x.texto).length-x.nome.length):null);
+    if(g.itens.length>1&&pre.every(v=>v!==null&&v===pre[0])){const o=String(pre[0]).trim();if(o&&o.toLowerCase()!==String(g.rotulo||"").trim().toLowerCase()){g.sin=g.sin||[];if(!g.sin.some(z=>z.toLowerCase()===o.toLowerCase()))g.sin.push(o)}g.itens.forEach(x=>{delete x.texto})}
+    g.itens.forEach(x=>{if(x.texto===rotG(g)+(x.nome||x.letra))delete x.texto;if(x.col&&x.col===(g.col||""))delete x.col;if(x.valor!=null&&x.valor===x.nome)delete x.valor})});
+  C.v9=true;return true;
+}
+export function migrarGrades0$(S){
+  const C=cfg$(S);if(C.v10)return false;
+  const resto=[];
+  (C.grades||[]).forEach(g=>{
+    const tk=String(g.auto||"").split(/[;,]/).map(semAc).filter(Boolean),alvo=[];
+    if(tk.length)C.categorias.forEach(c=>{
+      const nomes=[semAc(c.nome)],j=JUERI_CATS.find(x=>x.nome===c.nome);if(j&&j.alias)j.alias.forEach(a=>nomes.push(semAc(a)));
+      const subs=(c.subs||[]).filter(s=>tk.includes(semAc(s)));
+      if(nomes.some(n=>tk.includes(n)))alvo.push({c,subs:[]});else if(subs.length)alvo.push({c,subs})});
+    const livres=alvo.filter(a=>!a.c.grade);
+    if(!livres.length){resto.push(g);return}
+    livres.forEach((a,i)=>{const x=JSON.parse(JSON.stringify(g));delete x.auto;if(i>0)x.id=uid();x.subs=a.subs;a.c.grade=x})});
+  C.grades=resto;
+  C.banhistas.forEach(b=>b.banhos.forEach(x=>{if(x.vz==null)x.vz=b.vernizOn!==false}));
+  const obs=new Set(C.observacoes);C.cores=C.cores.filter(c=>!obs.has(c));
+  const arruma=v=>{if(v&&v.L&&obs.has(v.L)){if(vazio(v.M))v.M=v.L;delete v.L}};
+  S.lanc.forEach(l=>arruma(l.v));arruma(S.form.v);
+  C.v10=true;return true;
+}
+export function pendente$(S,r){const cc=cfg$(S).colcfg;if(r.dup)return "ref. repetida";if(r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo")return "sem peso";
+  if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))return "banho sem multiplicador";
+  for(const L of LET){if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):vazio(r.v[L])))return "sem "+NOME[L].toLowerCase()}return ""}
+export function novaLivre$(S,v){const l={id:uid(),tipo:"pronta",desconto:"0",banhista:"",vinc:false,v:{...v},on:{},ov:{}};if(vazio(l.v.I))l.v.I=S.form.v.I||"";return l}
+export function detalheCelulaSelecionada$(S,row,L,ri){
+  if(!row||!["P","Q","R","S","T","U","V"].includes(L))return "";
+  const x=celulas(row,ri+2)[LET.indexOf(L)],valor=x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null;
+  const l=S.lanc.find(p=>p.id===row.lancId),q=numRaw(row.v.W,row.v,0,row.desconto);
+  if(L==="P"){
+    if(valor==null)return "";return `Compra: R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}${l&&l.lote?` · item ${l.lote.i}/${l.lote.n} de um lote`:""}.`}
+  if(L==="V"){
+    const cs=celulas(row,ri+2),nv=k=>{const c=cs[LET.indexOf(k)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:0},custo=r2c(["P","Q","R","S","T","U"].reduce((t,k)=>t+nv(k),0));
+    if(valor!=null)return `Preço de varejo digitado: R$ ${brl(valor)}${custo>0?` · custo R$ ${brl(custo)} (compra + insumos + banho + verniz) → fator ${fmt(Math.round(valor/custo*100)/100)} · lucro R$ ${brl(r2c(valor-custo))} (${fmt(Math.round((valor-custo)/valor*1000)/10)}%)`:""}.`;
+    return `Preço de varejo vazio (só entra se digitado). Custo R$ ${brl(custo)} (compra + insumos + banho + verniz)${row.mk?` × fator ${fmt(row.mk)} = sugestão R$ ${brl(r2c(custo*row.mk))}`:""}.`}
+  if(L==="Q"){
+    if(!l)return "";
+    if(l.insRom&&!(row.ovs||[]).includes("Q")&&!vazio(l.v.Q))return `Insumos: padrão R$ ${brl(l.insRom.base)} + parte dos insumos do romaneio${l.insRom.rom?" ("+l.insRom.rom+")":""} R$ ${brl(l.insRom.ins)} = R$ ${brl(valor==null?0:valor)} por unidade${q>0&&valor!=null?` × ${fmt(q)} un. = R$ ${brl(valor*q)} na linha`:""}.`;
+    if((row.ovs||[]).includes("Q")||!vazio(l.v.Q))return `Insumos: valor informado na peça ${valor==null?"—":"R$ "+brl(valor)} por unidade${q>0&&valor!=null?` × ${fmt(q)} un. = R$ ${brl(valor*q)} na linha`:""}.`;
+    const C=cfg$(S),cat=l.v.I||"",it=insumosItensResumo$(S,cat),modo=C.insumosModo||"off",parts=it.itens.map(i=>`${i.nome} (${i.cat?"categoria":"geral"}): ${fmt(num(i.qtd)||0)} × R$ ${brl(num(i.valor)||0)}`);
+    const base=catBy$(S,cat),anterior=num(base&&!vazio(base.insumos)?base.insumos:C.colcfg.Q.padrao)||0;
+    const detalhe=modo==="off"?`valor atual R$ ${brl(anterior)} (itens não aplicados)`:modo==="somar"?`valor atual R$ ${brl(anterior)} + itens ${parts.length?parts.join(" + "):"nenhum"}`:`itens ${parts.length?parts.join(" + "):"nenhum"}`;
+    return `Insumos: ${detalhe} = R$ ${brl(valor||0)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl((valor||0)*q)} na linha`:""}.`;
+  }
+  if(l&&l.conj)return `Conjunto · ${NOME[L]}: ${valor==null?"sem valor":"R$ "+brl(valor)+" por conjunto"}. Abra Editar para conferir os componentes.`;
+  if(row.ovs&&row.ovs.includes(L))return `${NOME[L]} informado na peça: ${valor==null?"sem valor":"R$ "+brl(valor)+" por unidade"}.`;
+  if(!row.banho)return "";
+  const peso=pesoLinha(row),taxa=L==="U"?row.verniz:(L===row.banho.coluna?row.banho.mult:null);
+  if(taxa==null)return `${NOME[L]}: sem valor configurado para esta linha.`;
+  if(L!=="U"&&row.banho.modo==="fixo")return `${NOME[L]}: R$ ${brl(taxa)} por unidade (valor fixo)${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(taxa)*q)} na linha`:""}.`;
+  if(peso==null)return `${NOME[L]}: informe o peso para calcular.`;
+  const unidade=r2c(peso*taxa);return `${NOME[L]}: ${fmt(peso)} g × R$ ${fmt(taxa)}/g = R$ ${brl(unidade)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(unidade*q)} na linha`:""}.`;
+}
+export function letrasDeTamanho$(S){return todasGrades$(S).flatMap(g=>g.itens.filter(x=>String(x.letra||"").toUpperCase()===String(x.nome||"").toUpperCase()).map(x=>String(x.letra).toUpperCase()))}
+export function conjErro$(S,f,i){const c=(f.comp||[])[i];if(!c)return "";if(vazio(c.desc)&&vazio(c.peso)&&vazio(c.custo))return "";const m=[];
+  if(conjQtd(c)==null)m.push("quantidade deve ser um inteiro de 1 a 9999");
+  if(c.cat&&!conjCat$(S,c))m.push("categoria não existe mais; escolha outra");
+  if(vazio(c.desc))m.push("falta o nome da peça");
+  if(vazio(c.peso))m.push("falta o peso");else if(num(c.peso)==null||num(c.peso)<=0)m.push("peso inválido");
+  if(vazio(c.custo))m.push("falta o custo de compra");else if(num(c.custo)==null||num(c.custo)<0)m.push("custo inválido");
+  if(!vazio(c.desc)&&f.comp.some((o,q)=>q<i&&semAc(o.desc)===semAc(c.desc)))m.push("nome repetido");
+  return m.join(" · ")}
+export function conjResumoHTML$(S,f){const cs=f.comp||[],ok=cs.filter(c=>!vazio(c.desc)||!vazio(c.peso)||!vazio(c.custo)),n=ok.reduce((a,c)=>a+(conjQtd(c)||0),0),peso=ok.reduce((a,c)=>a+(num(c.peso)||0)*(conjQtd(c)||0),0),compra=ok.reduce((a,c)=>a+(num(c.custo)||0)*(conjQtd(c)||0),0),nErr=cs.filter((c,i)=>{const e=conjErro$(S,f,i);return e&&e!=="nome repetido"}).length,nomes=ok.map(c=>String(c.desc||"").trim()).filter(Boolean);
+  return `<span class="cj-p">Conjunto</span> <b>${esc(nomes.length?nomes.join(" + "):"(sem peças ainda)")}</b> <span class="cj-m">${n} peça${n===1?"":"s"} · ${fmt(peso)} g · compra R$ ${brl(compra)}</span>${nErr?` <span class="cj-e2">⚠ ${nErr} peça${nErr>1?"s":""} com dado faltando</span>`:""}`}
+export function conjCat$(S,c){let nome=c.cat||"",n=0;const alias=cfg$(S).catAlias||{};while(nome&&!catBy$(S,nome)&&alias[nome]&&n++<10)nome=alias[nome];return nome&&catBy$(S,nome)?nome:""}
+export function conjCatOpts$(S,c){const cs=cfg$(S).categorias||[],v=conjCat$(S,c)||c.cat||"",invalida=v&&!catBy$(S,v);return `<option value="" ${!v?"selected":""}>Categoria do conjunto</option>${invalida?`<option value="${esc(v)}" selected>${esc(v)} (não existe mais)</option>`:""}${cs.map(x=>`<option value="${esc(x.nome)}" ${v===x.nome?"selected":""}>${esc(x.nome)}</option>`).join("")}`}
+export function conjCalc$(S,f){
+  const bh=bhDe$(S,f),bp=bonP$(S,f),temBanho=bp.length>0,vars=temBanho?bp:[null];
+  const res=vars.map(vb=>{const tot={N:0,P:0,R:0,S:0,T:0,U:0},lin=[];let semMult=false;
+    (f.comp||[]).forEach(c=>{const qtd=conjQtd(c)||0,peso=(num(c.peso)||0)*qtd,custo=(num(c.custo)||0)*qtd,
+      b=c.banho==="-"?null:(c.banho?(bh.banhos||[]).find(x=>x.id===c.banho)||null:vb);let banho=0,vern=0;
+      if(b&&!banhoSemCalc(b)){const cat=conjCat$(S,c),m=c.cat&&!cat?null:num(multItem(f,b,cat||(f.v&&f.v.I)));if(m==null)semMult=true;else banho=b.modo==="fixo"?m*qtd:peso*m;
+        const vzv=c.vz==null?vzPad(bh,b):!!c.vz,vv=num(bh.verniz);if(vzv&&vv!=null)vern=peso*vv;tot[b.coluna]=(tot[b.coluna]||0)+banho}
+      tot.N+=peso;tot.P+=custo;tot.U+=vern;lin.push({peso,custo,banho,vern,total:custo+banho+vern})});
+    return {b:vb,tot,lin,semMult}});
+  return {vars:res,temBanho,tot:res[0].tot,lin:res[0].lin};
+}
+export function conjContasHTML$(S,f,R){
+  R=R||conjCalc$(S,f);const bh=bhDe$(S,f),comp=f.comp||[];
+  if(!comp.some(c=>!vazio(c.peso)||!vazio(c.custo)))return "";
+  const secoes=R.vars.map(v=>{const itens=comp.map((c,i)=>{const qtd=conjQtd(c),peso=num(c.peso),compra=num(c.custo),lin=v.lin[i]||{},nome=String(c.desc||"").trim()||`Componente ${i+1}`;
+    if(qtd==null||peso==null||compra==null)return `<li>${esc(nome)}: preencha quantidade, peso e compra para conferir.</li>`;
+    const cat=conjCat$(S,c)||(c.cat?"":f.v&&f.v.I)||"",b=c.banho==="-"?null:(c.banho?(bh.banhos||[]).find(x=>x.id===c.banho)||null:v.b),ov=b&&f.ov&&(f.ov[b.id]||{}),individual=ov&&!vazio(ov._m),m=b&&(!c.cat||conjCat$(S,c))?num(multItem(f,b,cat)):null;
+    const origem=individual?"valor informado para o conjunto":b&&b.multCat&&!vazio(b.multCat[cat])?"valor da categoria":"valor padrão da galvânica";
+    let banho="sem banho";if(b){banho=m==null?`${b.nome}: valor de banho indisponível`:b.modo==="fixo"?`${b.nome}: ${qtd} × R$ ${fmt(m)} (fixo, ${origem}) = R$ ${brl(lin.banho||0)}`:`${b.nome}: ${qtd} × ${fmt(peso)} g × R$ ${fmt(m)}/g (${origem}) = R$ ${brl(lin.banho||0)}`}
+    const varn=b&&lin.vern?` · verniz ${qtd} × ${fmt(peso)} g × R$ ${fmt(num(bh.verniz))}/g = R$ ${brl(lin.vern)}`:"";
+    return `<li><b>${esc(nome)}</b> · categoria ${esc(cat||"não encontrada")} · compra ${qtd} × R$ ${fmt(compra)} = R$ ${brl(lin.custo||0)} · ${esc(banho)}${esc(varn)}</li>`}).join("");return `<div><b>${esc(v.b?v.b.nome:"Conjunto")}</b><ul>${itens}</ul></div>`}).join("");
+  return `<div class="contas-componentes"><b>Como o banho é calculado por conjunto</b>${secoes}<small>Os valores são arredondados em centavos na linha final. Na planilha, o banho do conjunto sai como valor calculado.</small></div>`;
+}
+export function conjTotHTML$(S,f){
+  const R=conjCalc$(S,f),q=num(vazio(f.v.Q)?padraoDe$(S,f.v.I,"Q"):f.v.Q)||0,mk=f.mk||{},ov=f.ov||{};
+  if(!(f.comp||[]).some(c=>!vazio(c.peso)||!vazio(c.custo)))return `<p class="hint">Preencha o peso e o custo das peças para ver a somatória por banho.</p>`;
+  const linhas=R.vars.map(x=>{const id=x.b?x.b.id:"p",t=x.tot,dsc=num(f.desconto)||0,P=dsc>0?r2c(r4c(t.P)-r4c(t.P)*kDesc(dsc)):r4c(t.P),qq=r4c(q),custo=0+P+qq+r4c(t.R)+r4c(t.S)+r4c(t.T)+r4c(t.U),m=num(mk[id]),man=x.b?(ov[id]||{}).V:f.v.V,
+    vr=!vazio(man)&&num(man)!=null?num(man):(m?r2c(custo*m):null);
+    return `<tr><th>${x.b?`<span class="dot d-${x.b.coluna}"></span>${esc(x.b.letra)} · ${esc(x.b.nome)}`:"Conjunto"}</th><td>${fmt(t.N)} g</td><td>${brl(P)}</td><td>${brl(r4c(t.R)+r4c(t.S)+r4c(t.T))}</td><td>${brl(r4c(t.U))}</td><td>${q?brl(qq):"–"}</td><td><b>${brl(custo)}</b></td><td>${m?fmt(m):"–"}</td><td><b>${vr!=null?"R$ "+brl(vr):"digite o Fator × abaixo"}</b></td></tr>`}).join("");
+  const aviso=R.vars.some(x=>x.semMult)?`<p class="hint cj-w">⚠ Um banho usado aqui está sem o R$ por grama (Cadastros › Galvânicas): o custo dela entra como zero.</p>`:"";
+  return `<table class="cj-s"><thead><tr><th>Somatória</th><th>Peso</th><th>Compra</th><th>Banho</th><th>Verniz</th><th>Insumos</th><th>Custo</th><th>Fator ×</th><th>Varejo</th></tr></thead><tbody>${linhas}</tbody></table><p class="hint">Insumos por conjunto: ${insumosContaHTML$(S,f.v.I,f.v.Q,false)}. Aplicados uma vez por conjunto, não por componente.</p>${aviso}${conjContasHTML$(S,f,R)}`}
+export function dupAviso$(S,C,d){const p=String(d.pre||"").toUpperCase();if(!p)return "Escolha um prefixo de 1 a 4 letras.";
+  const com=C.categorias.filter(x=>String(x.prefixo||"").toUpperCase()===p||Object.values(x.subPref||{}).some(v=>String(v).toUpperCase()===p)).map(x=>x.nome);
+  return com.length?`O prefixo ${p} já é de ${com.join(", ")}: a cópia vai dividir a mesma numeração (continua de ${p}${ultimo$(S,p)}). Troque o prefixo se não quiser.`:""}
+export function aplicarMemForn$(S,f,fo){const m=fo&&fo.mem;if(!m)return "";const C=cfg$(S),dito=[];
+  if(f.tipo==="bruta"&&m.banhista&&C.banhistas.some(b=>b.id===m.banhista)&&(!fo.banhista||fo.banhista===m.banhista)){const bh=banhistaBy$(S,m.banhista);
+    if(f.banhista!==m.banhista)trocarBanhista$(S,f,m.banhista);dito.push(bh.nome);
+    if(m.on){f.on={};bh.banhos.forEach(b=>f.on[b.id]=!!m.on[b.id])}
+    f.mk=f.mk||{};bh.banhos.forEach(b=>{if(m.mk&&!vazio(m.mk[b.id])){f.mk[b.id]=m.mk[b.id];if(f.on[b.id])dito.push(b.letra+" ×"+m.mk[b.id])}})}
+  if(f.tipo==="pronta"&&!vazio(m.mkp)){f.mk=f.mk||{};f.mk.p=m.mkp;dito.push("×"+m.mkp)}
+  return dito.join(" · ")}
+export function resumoMem$(S,fo){const m=fo.mem;if(!m)return "";const bh=m.banhista&&cfg$(S).banhistas.find(b=>b.id===m.banhista),out=[];
+  if(bh){out.push(bh.nome);bh.banhos.forEach(b=>{if(m.on&&m.on[b.id])out.push(b.letra+(m.mk&&!vazio(m.mk[b.id])?" ×"+m.mk[b.id]:""))})}
+  if(!vazio(m.mkp))out.push("pronta ×"+m.mkp);return out.join(" · ")}
+export function marcadosPadrao$(S,f){f.on={};banhistaBy$(S,f.banhista).banhos.forEach(b=>f.on[b.id]=!!b.marcado)}
+export function trocarBanhista$(S,f,id){f.banhista=id;marcadosPadrao$(S,f);f.onP={};f.vz={};
+  Object.keys(f.ov||{}).forEach(k=>{const o=f.ov[k];if(!o||typeof o!=="object"){delete f.ov[k];return}Object.keys(o).forEach(L=>{if(L!=="W")delete o[L]});if(!Object.keys(o).length)delete f.ov[k]})}
+export function banhistaDoFornecedor$(S,f){const fo=fornBy$(S,f.v.H);if(f.tipo==="bruta"&&fo&&fo.banhista&&fo.banhista!==f.banhista&&cfg$(S).banhistas.some(b=>b.id===fo.banhista))trocarBanhista$(S,f,fo.banhista)}
+export function continuoCfg$(S){const c=cfg$(S).continuo;return c&&typeof c==="object"?c:{ativo:false,categoria:true,fornecedor:true,banho:true}}
+export function continuoProxima$(S,f){const c=continuoCfg$(S);delete f.v.F;delete f.v.N;delete f.v.P;delete f.v.W;delete f.v.V;delete f.v.E;delete f._descAuto;f.ov={};f.ft=null;f.ftR=null;f.loteN="";f.vinc=false;
+  if(!c.categoria){delete f.v.I;delete f.v.J;f.grade="";f.gsel=[];f.csel=[]}if(!c.fornecedor){delete f.v.H;delete f.v.G;f.desconto="0"}if(!c.banho){f.banhista="";f.on={};f.onP={};f.vz={}}if(f.conj){f.comp=[novaComp(),novaComp()];delete f.fConj}if(c.categoria&&!f.conj)descAuto(f)}
+export function presetAtual$(S,nome){const f=S.form;return {nome,tipo:f.tipo,cat:f.v.I||"",sub:f.v.J||"",forn:f.v.H||"",codigo:f.v.G||"",desconto:f.desconto||"0",banhista:f.banhista||"",on:clone(f.on||{}),onP:clone(f.onP||{})}}
+export function registrarLivres$(S,l){const C=cfg$(S),h=String(val$(S,l,"H")||"").replace(/\s+/g," ").trim(),j=String(val$(S,l,"J")||"").replace(/\s+/g," ").trim(),c=catBy$(S,val$(S,l,"I"));
+  if(h&&!C.fornecedores.some(x=>x.nome.toLowerCase()===h.toLowerCase()))C.fornecedores.push({nome:h,codigo:String(val$(S,l,"G")||""),desconto:String(l.desconto||"0"),tipo:l.tipo==="pronta"?"pronta":"bruta"});
+  if(j&&c&&Array.isArray(c.subs)&&!c.subs.some(x=>String(x).toLowerCase()===j.toLowerCase()))c.subs.push(j)}
+export function gradeDoEl$(S,el){const e=el.closest("[data-gr]");if(!e)return null;const k=e.dataset.gr;return k.charAt(0)==="o"?(cfg$(S).grades||[])[+k.slice(1)]:cfg$(S).categorias[+k].grade}
+export function validaBanho$(S,bh,b,campo,valor){
+  const v=String(valor==null?"":valor).trim();
+  if(b&&campo==="fator"&&v){const n=num(v);if(n==null||n<=0||n>1e5)return "O Fator × precisa ser um número maior que 0 (ex.: 2,5)."}
+  if(!b&&campo==="nome"){if(!v)return "O nome da galvânica não pode ficar vazio.";if(cfg$(S).banhistas.some(x=>x!==bh&&semAc(x.nome)===semAc(v)))return `Já existe a galvânica “${v}” — use outro nome.`}
+  if(b&&campo==="nome"){
+    if(!v)return "O nome do banho não pode ficar vazio.";
+    if(bh.banhos.some(x=>x!==b&&semAc(x.nome)===semAc(v)))return `Já existe um banho chamado “${v}” neste galvânica — use outro nome (ex.: ${v} 2).`}
+  if(b&&campo==="letra"){
+    if(!v)return "";
+    if(!/^[A-Za-z]{1,2}$/.test(v))return "A letra do banho deve ter só letras (A–Z), no máximo 2.";
+    if(bh.banhos.some(x=>x!==b&&String(x.letra||"").trim().toLowerCase()===v.toLowerCase()))return `Já existe um banho com a letra “${v}” neste galvânica — escolha outra.`}
+  if((b&&(campo==="mil"||campo==="mult"))||(!b&&campo==="verniz")){
+    if(v==="")return "";
+    const n=num(v);if(n==null||n<0)return `${campo==="mil"?"Milésimos":campo==="mult"?"Multiplicador":"Verniz"} precisa ser um número maior ou igual a 0 (sem texto nem negativo).`}
+  return ""}
+export const cadLancSig$=(S)=>JSON.stringify(S.lanc,(k,v)=>(k==="ft"||k==="ftR"||k==="foto")?undefined:v);

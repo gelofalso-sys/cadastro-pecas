@@ -5,24 +5,8 @@ document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.dataset&&t.dat
 document.addEventListener("dblclick",e=>{if(e.target.classList&&e.target.classList.contains("rz")){delete colW[e.target.dataset.rz];try{localStorage.setItem("cadpecas-colw",JSON.stringify(colW))}catch(x){}renderTopo()}});
 document.addEventListener("mouseover",e=>{const tr=e.target.closest("tr[data-l]");document.querySelectorAll("tr.hl").forEach(x=>{if(!tr||x.dataset.l!==tr.dataset.l)x.classList.remove("hl")});if(tr)document.querySelectorAll(`tr[data-l="${CSS.escape(String(tr.dataset.l))}"]`).forEach(x=>x.classList.add("hl"))});
 /* a variação do elemento (cartão da categoria ou variação sem categoria) */
-function gradeDoEl(el){const e=el.closest("[data-gr]");if(!e)return null;const k=e.dataset.gr;return k.charAt(0)==="o"?(cfg().grades||[])[+k.slice(1)]:cfg().categorias[+k].grade}
 function aplicaFaixa(txt){const f=S.form,gr=gradeBy(f.grade);if(!gr)return;f.gsel=selFaixa(gr,txt);erro="";salvar(false);renderTopo();renderForm()}
 /* campos do banho/banhista: devolve a mensagem de erro ("" = válido). Letra opcional (vazia = a referência sai sem letra), única quando preenchida; milésimos, multiplicador e verniz >= 0 */
-function validaBanho(bh,b,campo,valor){
-  const v=String(valor==null?"":valor).trim();
-  if(b&&campo==="fator"&&v){const n=num(v);if(n==null||n<=0||n>1e5)return "O Fator × precisa ser um número maior que 0 (ex.: 2,5)."}
-  if(!b&&campo==="nome"){if(!v)return "O nome da galvânica não pode ficar vazio.";if(cfg().banhistas.some(x=>x!==bh&&semAc(x.nome)===semAc(v)))return `Já existe a galvânica “${v}” — use outro nome.`}
-  if(b&&campo==="nome"){
-    if(!v)return "O nome do banho não pode ficar vazio.";
-    if(bh.banhos.some(x=>x!==b&&semAc(x.nome)===semAc(v)))return `Já existe um banho chamado “${v}” neste galvânica — use outro nome (ex.: ${v} 2).`}
-  if(b&&campo==="letra"){
-    if(!v)return "";
-    if(!/^[A-Za-z]{1,2}$/.test(v))return "A letra do banho deve ter só letras (A–Z), no máximo 2.";
-    if(bh.banhos.some(x=>x!==b&&String(x.letra||"").trim().toLowerCase()===v.toLowerCase()))return `Já existe um banho com a letra “${v}” neste galvânica — escolha outra.`}
-  if((b&&(campo==="mil"||campo==="mult"))||(!b&&campo==="verniz")){
-    if(v==="")return "";
-    const n=num(v);if(n==null||n<0)return `${campo==="mil"?"Milésimos":campo==="mult"?"Multiplicador":"Verniz"} precisa ser um número maior ou igual a 0 (sem texto nem negativo).`}
-  return ""}
 /* "Última peça": só dígitos, até 9; avisa quando tira sinal/letras ou corta */
 function limpaUlt(raw){raw=String(raw==null?"":raw);const so=raw.replace(/[^0-9]/g,""),ign=raw.replace(/\s/g,"").length;
   if(so.length>9)toast("A última peça aceita no máximo 9 dígitos — o excedente foi cortado.");

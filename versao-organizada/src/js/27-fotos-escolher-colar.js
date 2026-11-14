@@ -55,9 +55,6 @@ function fotoRemover(lid){
     if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
     else fotoDoFormulario(fl[0])},true)})();
 /* fornecedor e subcategoria digitados à mão passam a existir no cadastro (o fornecedor leva o código, o desconto e o tipo que estão no formulário) */
-function registrarLivres(l){const C=cfg(),h=String(val(l,"H")||"").replace(/\s+/g," ").trim(),j=String(val(l,"J")||"").replace(/\s+/g," ").trim(),c=catBy(val(l,"I"));
-  if(h&&!C.fornecedores.some(x=>x.nome.toLowerCase()===h.toLowerCase()))C.fornecedores.push({nome:h,codigo:String(val(l,"G")||""),desconto:String(l.desconto||"0"),tipo:l.tipo==="pronta"?"pronta":"bruta"});
-  if(j&&c&&Array.isArray(c.subs)&&!c.subs.some(x=>String(x).toLowerCase()===j.toLowerCase()))c.subs.push(j)}
 function adicionar(limpar,quiet){
   if(!quiet&&Date.now()<addTrava)return;   /* duplo clique / Enter repetido: só a primeira conta */
   const f=S.form;erro="";

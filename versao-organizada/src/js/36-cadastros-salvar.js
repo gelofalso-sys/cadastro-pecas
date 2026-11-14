@@ -4,7 +4,6 @@
    Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que localStorage "cadpecas-cad-estrito"="1". */
 const CAD={snap:null,pend:false,hL:0,hR:null,sig:null,rt:null};
 const CADAUTO=(()=>{try{return !!navigator.webdriver&&localStorage.getItem("cadpecas-cad-estrito")!=="1"}catch(e){return false}})();
-const cadLancSig=()=>JSON.stringify(S.lanc,(k,v)=>(k==="ft"||k==="ftR"||k==="foto")?undefined:v);
 const cadRomSig=()=>ROM&&ROM.rows?JSON.stringify(ROM.rows,(k,v)=>k==="foto"?undefined:v):null;
 function cadTirarFoto(){try{flushJa()}catch(e){}
   CAD.snap={c:JSON.stringify(S.config),l:cadLancSig(),f:JSON.stringify(S.form),r:cadRomSig(),rasc:rascunho?JSON.stringify(rascunho,(k,v)=>k==="ft"?undefined:v):null};

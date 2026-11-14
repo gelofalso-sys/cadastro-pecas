@@ -24,9 +24,6 @@ function formAbrir(abre){
 gavetaAlt();
 function vista(){let v=null;try{v=localStorage.getItem("cadpecas-vista")}catch(e){}return v==="lista"||v==="planilha"?v:(celular()?"lista":"planilha")}
 const banhoDe=r=>r.banho?(BANHO_COLS[r.col]||r.col||"Banho"):"Pronta";
-function pendente(r){const cc=cfg().colcfg;if(r.dup)return "ref. repetida";if(r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo")return "sem peso";
-  if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))return "banho sem multiplicador";
-  for(const L of LET){if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):vazio(r.v[L])))return "sem "+NOME[L].toLowerCase()}return ""}
 function casa(r){
   if(FIL.cat&&(r.v.I||"")!==FIL.cat)return false;
   if(FIL.forn&&(r.v.H||"")!==FIL.forn)return false;
@@ -171,7 +168,6 @@ function abrirCel(ri,L,cursorFim){
 }
 let w=150;
 /* linha colada ou digitada direto na tabela: vira uma peça pronta com os valores dados */
-function novaLivre(v){const l={id:uid(),tipo:"pronta",desconto:"0",banhista:"",vinc:false,v:{...v},on:{},ov:{}};if(vazio(l.v.I))l.v.I=S.form.v.I||"";return l}
 function gravarCel(ri,L,valor){
   const row=G.linhas[ri],l=row&&S.lanc.find(x=>x.id===row.lancId);if(!l)return;
   l.ov=l.ov||{};const o=l.ov[row.key]=l.ov[row.key]||{};

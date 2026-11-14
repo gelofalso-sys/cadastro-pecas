@@ -5,5 +5,5 @@ export default [{
   files: ["**/*.js"],
   languageOptions: { ecmaVersion: 2023, sourceType: "script",
     globals: { ...globals.browser, XLSX: "readonly", pdfjsLib: "readonly" } },
-  rules: { "no-undef": "warn", "no-unused-vars": ["warn", { args: "none" }], "no-shadow": "warn" }
+  rules: { "no-undef": "warn", "no-unused-vars": ["warn", { args: "none" }], "no-shadow": ["warn", { allow: ["S"] }] }
 }];

@@ -43,7 +43,6 @@ function romLote(){const b=ROM.bulk||{mk:{}},f=S.form;let alvo=ROM.rows.filter(r
   ROM.bulk={...b,aberto:true};renderRom();toast(`Aplicado a ${n} peça(s).`)}
 /* ===== revisão final ===== */
 /* Um cartão de lote representa uma unidade; distribuir mais ou menos gera conferência enganosa. */
-function romLoteDistribuicaoInvalida(r){return !!(r&&r.loteDe&&!r.skip&&romSomaDe(r,romColsR(r))!==r.qtd)}
 let romRevSeq=0;
 async function romRevisar(){const seq=++romRevSeq,antes=romInsAssinatura(),insPend=await romInsConferirArquivos();if(seq!==romRevSeq||!insPend)return;if(antes!==romInsAssinatura()){toast("Os dados mudaram durante a conferência. Abra a revisão novamente.");return}const pv=romPreview(),it=[];
   ROM.rows.forEach((r,i)=>{if(r.skip)return;const p=pv[i],q=romForm(r).q,cols=romColsR(r),al=[],cria=q.length>0;
@@ -192,7 +191,6 @@ function romParteTag(r){if(!r.parteG)return "";const ps=romPartes(r),s=ps.reduce
   return `<span class="rch" title="Item partido: o custo do item foi repartido entre as partes (edite o custo de cada uma se quiser)">Parte ${r.parteK}/${r.parteN} · partes somam R$ ${brl(s)}${o!=null?" de R$ "+brl(o):""} <button type="button" class="x" data-act="rom-juntar" title="Desfazer a divisão e voltar a um só item">juntar</button></span>`}
 function romLoteDecora(){if(!ROM)return;const cs=document.querySelectorAll("#romWrap .rc[data-i]");cs.forEach(c=>{const r=ROM.rows[+c.dataset.i];if(!r||!r.loteDe||c.querySelector(".lote-tag"))return;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);
   c.insertAdjacentHTML("afterbegin",`<div class="lote-tag"><span class="lote-num" title="Posição deste item no lote">${lot?romLoteKids(lot).indexOf(r)+1:"?"}/${lot?romLoteKids(lot).length:"?"}</span><span>Item do lote ${esc(lot?lot.cod:"")} · ${lot&&lot.ratear!==false?"valor do lote rateado pelo peso":"custo = peso × R$ "+String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")+"/g"}</span><button type="button" class="x" data-act="lote-del" data-i="${c.dataset.i}" aria-label="Remover este item do lote">×</button></div>`)})}
-function romNovaCat(r){const g=gradeDaCat(r.cat,r.sub);r.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];r.csel=coresPadrao(r.cat,r.sub);r.semG=false;r.open=false;r.q={};if(!romIds(r).length&&!g&&romTipo(r)!=="bruta")r.q.p=String(r.qtd)}
 /* Conserva quantidades compatíveis ao trocar categoria de uma parte; exige confirmação para descartar distribuições incompatíveis. */
 function romTrocarCategoria(r,cat,sub){if(r.cat===cat&&(r.sub||"")===(sub||""))return true;
   const oldq=clone(r.q||{}),novo={...clone(r),cat,sub:sub||""};
@@ -204,8 +202,6 @@ function romTrocarCategoria(r,cat,sub){if(r.cat===cat&&(r.sub||"")===(sub||""))r
   {const cn=catBy(cat);if(cn&&cn.semBanho){if(!r.sb){r.sb=true;r.tipoAntes=r.tipo;r.q={}}r.tipo="pronta"}else if(r.sb){r.sb=false;if(r.tipoAntes)r.tipo=r.tipoAntes;else delete r.tipo;r.q={}}}
   r.cat=novo.cat;r.sub=novo.sub;romCompraGrama(r);return true}
 /* categoria vendida por grama: custo de compra = peso × valor do grama quando o custo está vazio (ou foi calculado assim) */
-function romCompraGrama(r){const c=catBy(r.cat),g=c&&num(c.compraGrama),p=num(r.peso);if(!(g>0)||r.lote||r.loteDe||!(vazio(r.custo)||r.custoAuto))return false;
-  if(p>0){r.custo=virg(r2c(p*g));r.custoAuto=true}else if(r.custoAuto){r.custo="";r.custoAuto=false}return true}
 /* texto de arquivo: UTF-8 (com ou sem BOM); se não for UTF-8 válido, Windows-1252 */
 async function romPlanilha(file){if(!(await impPrepara(file)))return;return romPlanilha0(file)}
 async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha");if(typeof XLSX==="undefined")throw new Error("A biblioteca de planilha não carregou.");
@@ -316,4 +312,3 @@ function romAplicaR(R){const f=S.form,T=romT();
   {const kids=(ROM.rows||[]).filter(x=>x.loteDe);if(kids.length){const old={};(ROM.rows||[]).forEach(x=>{if(x.lote&&x.cod)old[x.cod]=x});const out=[];R.rows.forEach(x=>{out.push(x);if(x.lote&&old[x.cod]){x.lid=old[x.cod].lid;kids.filter(k=>k.loteDe===x.lid).forEach(k=>out.push(k))}});R.rows=out}}
   {const ex=(ROM.rows||[]).filter(x=>x.extra);if(ex.length)R.rows=R.rows.concat(ex)}   /* peças criadas à mão no romaneio sobrevivem a uma nova leitura da lista */
   ROM.rows=R.rows;ROM.rows.forEach(romConjAuto);ROM.obs=R.obs||ROM.obs||"";ROM.conf=R.conf;ROM.msg=`${R.rows.length} peças lidas${R._mant?` · ${R._mant} com as suas edições mantidas`:""}`;romSalvarSoon();renderRom();{const pe=[...document.querySelectorAll('#romWrap [data-rp=peso]')].find(x=>!x.value);if(pe)pe.focus({preventScroll:true})}}
-function romDividir(r,cols){const ks=romKeys(r,cols),n=ks.length;if(!n)return;const base=Math.floor(r.qtd/n);let resto=r.qtd-base*n;ks.forEach(k=>{r.q[k]=String(base+(resto-->0?1:0))})}

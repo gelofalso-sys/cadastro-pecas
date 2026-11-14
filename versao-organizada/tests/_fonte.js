@@ -15,3 +15,9 @@ exports.core = (...nomes) => {
   nomes.forEach(visita);
   return saida.join('\n');
 };
+// Todo o núcleo (na ordem do montador) mais os adaptadores f(...) -> f$(S, ...): o app inteiro de funções puras e dependentes só de S.
+// O teste fornece `S` no contexto do vm (ex.: { config, lanc }).
+exports.tudo = () => {
+  const ordem = fs.readFileSync(path.join(__dirname, '..', 'src', 'core', '_ordem.txt'), 'utf8').split(/\r?\n/).filter(Boolean).map(n => n.replace(/\.js$/, ''));
+  return exports.core(...ordem) + '\n' + fs.readFileSync(path.join(__dirname, '..', 'src', 'js', '00-adaptadores-nucleo.js'), 'utf8');
+};

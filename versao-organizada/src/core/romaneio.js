@@ -1,8 +1,10 @@
 /* ===== núcleo: romaneio — funções sem DOM e sem estado global (movidas de src/js sem alterar o código) ===== */
 // @auto-imports (gerado por tools/extrair_para_core.mjs --imports)
 import { ehObj } from "./backup.js";
-import { MAX_PLANILHA_LINHAS, MAX_TEXTO_COLADO, csvq, ftOk } from "./colunas.js";
-import { brl, num, vazio } from "./utilidades.js";
+import { MAX_PLANILHA_LINHAS, MAX_TEXTO_COLADO, clone, csvq, ftOk, milDe, r2c, semAc } from "./colunas.js";
+import { banhistaBy$, catBy$, cfg$, coresDaCat$, coresPadrao$, gradeDaCat$, prefDe$, val$ } from "./configuracao.js";
+import { novaComp } from "./dominio.js";
+import { brl, esc, num, selFaixa, vazio } from "./utilidades.js";
 // @fim-imports
 export const MON="(\\d[\\d.]*,\\d{2})";
 export const numQtd=s=>{s=String(s);return /^\d{1,3}(\.\d{3})+$/.test(s)?num(s.replace(/\./g,"")):num(s)};
@@ -133,3 +135,41 @@ export function relNormalizar(R){
     ign:(R.ign||[]).map(g=>ehObj(g)?{...g,desc:T(g.desc),cod:T(g.cod),motivo:T(g.motivo)}:{desc:"",cod:"",motivo:""})}}
 export function parseMapa(m){return String(m||"").split(/[;\n]/).map(z=>z.trim()).filter(Boolean).map(z=>{const [a,b]=z.split("="),[c,s]=String(b||"").split(">");return {w:(a||"").trim(),c:(c||"").trim(),s:(s||"").trim()}})}
 export const mapaStr=arr=>arr.map(m=>m.w+"="+m.c+(m.s?">"+m.s:"")).join("; ");
+export function mapaCat$(S,desc,T){const d=semAc(desc);
+  for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a))&&catBy$(S,b.split(">")[0].trim()))return b}
+  const w=d.split(/[\s,]+/)[0];const c=cfg$(S).categorias.find(c=>w&&semAc(c.nome).startsWith(w.slice(0,4)));return c?c.nome:""}
+export function romTabelaCategoria$(S,texto){const raw=String(texto||"").replace(/\u00a0/g," ").replace(/\r\n?/g,"\n"),cab=/categoria[ \t]+descri[cç][aã]o[ \t]+valor[ \t]+unit[aá]rio[ \t]+quantidade[ \t]+valor[ \t]+total/i.exec(raw);if(!cab)return null;
+  const corpo=raw.slice(cab.index+cab[0].length),fim=corpo.search(/(?:^|\n)[ \t]*(?:valor[ \t]+total[ \t]+da[ \t]+compra|valor[ \t]+produtos|quantidade[ \t]+total[ \t]+de[ \t]+produtos)[ \t]*:/i),area=fim<0?corpo:corpo.slice(0,fim),rows=[];
+  const re=/^[ \t]*([^\r\n]{1,250}?)[ \t]+\[#([^\]\s]+)\][ \t]+R\$[ \t]*(\d[\d.]*,\d{2})[ \t]+(\d{1,3}(?:\.\d{3})+|\d+)[ \t]+R\$[ \t]*(\d[\d.]*,\d{2})[ \t]*$/gm;let m;
+  while((m=re.exec(area))&&rows.length<3000){const desc=m[1].trim().replace(/[ \t]+/g," "),q=numQtd(m[4]),categoria=cfg$(S).categorias.some(c=>semAc(c.nome)===semAc(desc));if(!q||q<1)continue;rows.push({cod:m[2],desc,preco:num(m[3]),precod:null,total:num(m[5]),qtd:q,peso:"",q:{},skip:false,aviso:categoria?"só a categoria foi informada como descrição: complete ou confira":""})}
+  if(!rows.length)return null;const R={rows,obs:"",conf:"✓ tabela com categoria e valores lida: "+rows.length+" item(ns)",erro:""},codigos=(area.match(/\[#([^\]\s]+)\]/g)||[]).length;if(codigos>rows.length)R.conf+=" · ⚠ "+(codigos-rows.length)+" código(s) não lido(s): confira a lista original";
+  if(rows.some(r=>r.aviso))R.conf+=" · ⚠ descrição incompleta: confira os itens marcados";return R}
+export function lerRomaneioAuto$(S,texto,T){const t=romTsv(texto)||romTabelaCategoria$(S,texto),R=t||lerRomaneioAuto0(texto,T);romConfTotais(R);return R}
+export const romTemVar$=(S,cat,sub)=>!!gradeDaCat$(S,cat,sub)||coresDaCat$(S,cat,sub).length>0;
+export function romIds$(S,r){const g=gradeDaCat$(S,r.cat,r.sub),cs=coresDaCat$(S,r.cat,r.sub).filter(x=>(r.csel||[]).includes(x.id)).map(x=>"c_"+x.id),sz=g&&!r.semG?(r.gsel||[]):[];if(!cs.length)return sz;if(!sz.length)return cs;return sz.flatMap(a=>cs.map(c=>a+"+"+c))}
+export function romNomeId$(S,cat,sub,id){const g=gradeDaCat$(S,cat,sub),lc=coresDaCat$(S,cat,sub),p=String(id).split("+"),o=[];p.forEach(x=>{if(x.startsWith("c_")){const c=lc.find(y=>"c_"+y.id===x);o.push(c?c.nome:"")}else{const it=g&&g.itens.find(y=>y.id===x);o.push(it?(it.nome||it.letra):"")}});return o.filter(Boolean).join(" ")}
+export const romKeys$=(S,r,cols)=>{const g=gradeDaCat$(S,r.cat,r.sub),ids=romIds$(S,r);return ids.length?cols.flatMap(c=>ids.map(id=>c.id+"~"+id)):(g&&!r.semG?[]:cols.map(c=>c.id))};
+export const romSomaDe$=(S,r,cols)=>romKeys$(S,r,cols).reduce((t,k)=>t+Math.trunc(num(r.q[k])||0),0);
+export const romTipo$=(S,r)=>(r&&(r.tipo==="bruta"||r.tipo==="pronta"))?r.tipo:S.form.tipo;
+export const romBh$=(S,r)=>banhistaBy$(S,(r&&r.bh)||S.form.banhista);
+export const romOn$=(S,r,b)=>r&&r.on&&(b.id in r.on)?r.on[b.id]:((r&&r.bh&&r.bh!==S.form.banhista)?(romTipo$(S,r)==="bruta"&&!!b.marcado):(romTipo$(S,r)==="bruta"?S.form.on:(S.form.onP||{}))[b.id]);
+export function romReset$(S,r){r.on={};r.q={};r.bo={};r.mk={};r.vz={};if(romTipo$(S,r)!=="bruta"&&!romIds$(S,r).length&&!gradeDaCat$(S,r.cat,r.sub))r.q.p=String(r.qtd)}
+export function romColsR$(S,r){const f=S.form,bh=romBh$(S,r);
+  if(romTipo$(S,r)!=="bruta"){const sel=r&&r.sb?[]:bh.banhos.filter(b=>romOn$(S,r,b));if(!sel.length)return [{id:"p",nome:"Quantidade",letra:"",cor:"",col:""}];return sel.map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:"",mil:milDe(b,(r&&r.cat)||f.v.I)}))}
+  return bh.banhos.filter(b=>romOn$(S,r,b)).map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:b.coluna,mil:milDe(b,(r&&r.cat)||f.v.I)}))}
+export const romCols$=(S)=>romColsR$(S,null);
+export const romPrefDe$=(S,l)=>prefDe$(S,val$(S,l,"I")||"",val$(S,l,"J"));
+export function romLinhasHTML$(S,pv,r,cols){if(!pv||!pv.rows.length)return `<span class="hint">Escolha a categoria (e os banhos) para ver as referências desta peça.</span>`;
+  const aviso=pv.troca?`<span class="hint" title="A peça mudou de categoria: recebe a próxima referência da nova sequência. As outras peças da categoria antiga NÃO são renumeradas">↪ categoria nova: próxima referência da sequência; as outras peças da categoria antiga mantêm as referências (fica uma vaga)</span> `:"";
+  const g=gradeDaCat$(S,r.cat,r.sub);
+  return pv.rows.map(x=>{const c=cols.find(c=>c.id===x.bid),it=x.gi?{nome:romNomeId$(S,r.cat,r.sub,x.gi)}:null;
+    return `<span class="rch${x.dup?" dup":""}" title="${esc(x.dup?"Referência repetida":"Linha que será criada")}"><b>${esc(x.ref)}</b>${c&&c.nome?` <i>${esc(c.nome)}</i>`:""}${it?` <i>${esc(it.nome||it.letra)}</i>`:""} <em>${x.q?x.q+" un.":"sem qtd"}</em> <u>${x.sugerido&&x.v!=null?"Sugestão ":""}${fm(x.v)}</u></span>`}).join("")+aviso}
+export function romConjAtivar$(S,r){if(r.conjComp)return;delete r.conjDesativado;const cols=romColsR$(S,r);r.conjOriginal={peso:r.peso,custo:r.custo,tipo:r.tipo,on:clone(r.on||{})};r.on=Object.fromEntries(cols.filter(c=>c.id!=="p").map(c=>[c.id,true]));r.tipo="pronta";r.conjComp=[novaComp(),novaComp()]}
+export function romConjAuto$(S,r){if(!r||r.feito||r.planSistema||r.conjDesativado||r.conjComp)return;if([r.cat,r.sub].some(x=>/^conjuntos?$/.test(semAc(x||""))))romConjAtivar$(S,r)}
+export function romLoteDistribuicaoInvalida$(S,r){return !!(r&&r.loteDe&&!r.skip&&romSomaDe$(S,r,romColsR$(S,r))!==r.qtd)}
+export function romNovaCat$(S,r){const g=gradeDaCat$(S,r.cat,r.sub);r.gsel=g&&g.faixa?selFaixa(g,g.faixa):[];r.csel=coresPadrao$(S,r.cat,r.sub);r.semG=false;r.open=false;r.q={};if(!romIds$(S,r).length&&!g&&romTipo$(S,r)!=="bruta")r.q.p=String(r.qtd)}
+export function romCompraGrama$(S,r){const c=catBy$(S,r.cat),g=c&&num(c.compraGrama),p=num(r.peso);if(!(g>0)||r.lote||r.loteDe||!(vazio(r.custo)||r.custoAuto))return false;
+  if(p>0){r.custo=virg(r2c(p*g));r.custoAuto=true}else if(r.custoAuto){r.custo="";r.custoAuto=false}return true}
+export function romDividir$(S,r,cols){const ks=romKeys$(S,r,cols),n=ks.length;if(!n)return;const base=Math.floor(r.qtd/n);let resto=r.qtd-base*n;ks.forEach(k=>{r.q[k]=String(base+(resto-->0?1:0))})}
+export function romSit$(S,r){if(r.feito&&!r.refaz)return "lancadas";if(r.skip)return "ignoradas";
+  if(num(r.peso)==null||romSomaDe$(S,r,romColsR$(S,r))!==r.qtd||r.catq)return "pendentes";return "prontas"}

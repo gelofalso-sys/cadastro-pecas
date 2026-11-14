@@ -25,7 +25,7 @@ src="\n".join([grab("11-utilidades.js","function num("),grab("11-utilidades.js",
  grab("12-motor-linhas.js","const FORM_SEGURA"),grab("12-motor-linhas.js","const QTD_MAX"),grab("12-motor-linhas.js","function qtdPos"),grab("12-motor-linhas.js","function lerValor"),
  grab("12-motor-linhas.js","function calcExpr"),grab("12-motor-linhas.js","function avalF"),grab("12-motor-linhas.js","function sintaxeF"),
  grab("12-motor-linhas.js","function numRaw"),grab("12-motor-linhas.js","const pesoLinha"),grab("12-motor-linhas.js","function calcBanho"),
- grab("13-modelo-e-variacoes.js","const r2c"),grab("13-modelo-e-variacoes.js","const kDesc"),grab("13-modelo-e-variacoes.js","function valorCol")])
+ grab("13-modelo-e-variacoes.js","const r2c"),grab("13-modelo-e-variacoes.js","const kDesc"),grab("13-modelo-e-variacoes.js","function valorCol"),"const valorCol=(...a)=>valorCol$(null,...a);"])
 teste='''
 const out={};
 const rw={desconto:50,v:{P:"10",N:"=P2*2"},banho:{coluna:"R",mult:1.5,modo:"peso"}};

@@ -1,8 +1,9 @@
-formulas.js
 colunas.js
 utilidades.js
-backup.js
-romaneio.js
-notafiscal.js
+formulas.js
+configuracao.js
 dominio.js
+romaneio.js
+backup.js
+notafiscal.js
 exportacao.js

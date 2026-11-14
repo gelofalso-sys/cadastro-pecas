@@ -26,34 +26,6 @@ function preencherAbaixo(){const b=selBox();if(!b||b.r2<=b.r1||!G.linhas[b.r1])r
     for(let c=b.c1;c<=b.c2;c++){const L=LET[c];if(L==="E")continue;const v=src.banho&&FORMULA.has(L)&&!src.ovs.includes(L)?"":String(src.v[L]??"");gravarCel(r,L,v)}}
   undo={tipo:"multi",antes};salvar(false);renderTopo();if(editId)renderForm();toast("Preenchido para baixo.",{t:"Desfazer",fn:desfazer})}
 /* Mostra a conta da linha selecionada sem alterar a fórmula nem o valor da peça. */
-function detalheCelulaSelecionada(row,L,ri){
-  if(!row||!["P","Q","R","S","T","U","V"].includes(L))return "";
-  const x=celulas(row,ri+2)[LET.indexOf(L)],valor=x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null;
-  const l=S.lanc.find(p=>p.id===row.lancId),q=numRaw(row.v.W,row.v,0,row.desconto);
-  if(L==="P"){
-    if(valor==null)return "";return `Compra: R$ ${brl(valor)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(valor*q))} na linha`:""}${l&&l.lote?` · item ${l.lote.i}/${l.lote.n} de um lote`:""}.`}
-  if(L==="V"){
-    const cs=celulas(row,ri+2),nv=k=>{const c=cs[LET.indexOf(k)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:0},custo=r2c(["P","Q","R","S","T","U"].reduce((t,k)=>t+nv(k),0));
-    if(valor!=null)return `Preço de varejo digitado: R$ ${brl(valor)}${custo>0?` · custo R$ ${brl(custo)} (compra + insumos + banho + verniz) → fator ${fmt(Math.round(valor/custo*100)/100)} · lucro R$ ${brl(r2c(valor-custo))} (${fmt(Math.round((valor-custo)/valor*1000)/10)}%)`:""}.`;
-    return `Preço de varejo vazio (só entra se digitado). Custo R$ ${brl(custo)} (compra + insumos + banho + verniz)${row.mk?` × fator ${fmt(row.mk)} = sugestão R$ ${brl(r2c(custo*row.mk))}`:""}.`}
-  if(L==="Q"){
-    if(!l)return "";
-    if(l.insRom&&!(row.ovs||[]).includes("Q")&&!vazio(l.v.Q))return `Insumos: padrão R$ ${brl(l.insRom.base)} + parte dos insumos do romaneio${l.insRom.rom?" ("+l.insRom.rom+")":""} R$ ${brl(l.insRom.ins)} = R$ ${brl(valor==null?0:valor)} por unidade${q>0&&valor!=null?` × ${fmt(q)} un. = R$ ${brl(valor*q)} na linha`:""}.`;
-    if((row.ovs||[]).includes("Q")||!vazio(l.v.Q))return `Insumos: valor informado na peça ${valor==null?"—":"R$ "+brl(valor)} por unidade${q>0&&valor!=null?` × ${fmt(q)} un. = R$ ${brl(valor*q)} na linha`:""}.`;
-    const C=cfg(),cat=l.v.I||"",it=insumosItensResumo(cat),modo=C.insumosModo||"off",parts=it.itens.map(i=>`${i.nome} (${i.cat?"categoria":"geral"}): ${fmt(num(i.qtd)||0)} × R$ ${brl(num(i.valor)||0)}`);
-    const base=catBy(cat),anterior=num(base&&!vazio(base.insumos)?base.insumos:C.colcfg.Q.padrao)||0;
-    const detalhe=modo==="off"?`valor atual R$ ${brl(anterior)} (itens não aplicados)`:modo==="somar"?`valor atual R$ ${brl(anterior)} + itens ${parts.length?parts.join(" + "):"nenhum"}`:`itens ${parts.length?parts.join(" + "):"nenhum"}`;
-    return `Insumos: ${detalhe} = R$ ${brl(valor||0)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl((valor||0)*q)} na linha`:""}.`;
-  }
-  if(l&&l.conj)return `Conjunto · ${NOME[L]}: ${valor==null?"sem valor":"R$ "+brl(valor)+" por conjunto"}. Abra Editar para conferir os componentes.`;
-  if(row.ovs&&row.ovs.includes(L))return `${NOME[L]} informado na peça: ${valor==null?"sem valor":"R$ "+brl(valor)+" por unidade"}.`;
-  if(!row.banho)return "";
-  const peso=pesoLinha(row),taxa=L==="U"?row.verniz:(L===row.banho.coluna?row.banho.mult:null);
-  if(taxa==null)return `${NOME[L]}: sem valor configurado para esta linha.`;
-  if(L!=="U"&&row.banho.modo==="fixo")return `${NOME[L]}: R$ ${brl(taxa)} por unidade (valor fixo)${q>0?` × ${fmt(q)} un. = R$ ${brl(r2c(taxa)*q)} na linha`:""}.`;
-  if(peso==null)return `${NOME[L]}: informe o peso para calcular.`;
-  const unidade=r2c(peso*taxa);return `${NOME[L]}: ${fmt(peso)} g × R$ ${fmt(taxa)}/g = R$ ${brl(unidade)} por unidade${q>0?` × ${fmt(q)} un. = R$ ${brl(unidade*q)} na linha`:""}.`;
-}
 function renderSelBar(){
   const el=document.getElementById("selbar");if(!el)return;const b=selBox();
   if(!b){el.innerHTML=vista()==="lista"?"":G&&G.linhas.length?`<span class="hint">Clique numa célula para selecionar · arraste ou <kbd>Shift</kbd>+clique para várias · clique no nome da coluna ou na margem esquerda da linha para selecionar inteira · duplo clique, <kbd>Enter</kbd> ou comece a digitar para editar</span>`:"";return}

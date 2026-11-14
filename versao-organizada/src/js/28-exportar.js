@@ -1,27 +1,9 @@
 /* ===== exportar ===== */
-function faixaRefs(g){const c=contFinal(g);return Object.keys(c).filter(p=>c[p]>ultimo(p)).map(p=>{const i=ultimo(p)+1,A=p+fnum(p,i),B=p+fnum(p,c[p]);return i===c[p]?A:`${A}–${B}`}).join(", ")}
 const DLNAV={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};
 async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}return dl||DLNAV}
 /* pendências antes de exportar: obrigatório vazio, peso faltando (banho sem custo) e banho sem multiplicador */
-function pendenciasExport(g,porPeca){
-  const cc=cfg().colcfg,pend=[],seenL=new Set();
-  g.linhas.forEach((r,i)=>{const falta=[];
-    LET.forEach(L=>{if(cc[L]&&cc[L].obrig&&(L==="W"?!qtdPos(r.v.W,r.v,r.desconto):(vazio(r.v[L]))))falta.push(NOME[L])});
-    {const cs=celulas(r,i+2);Object.keys(r.v).forEach(L=>{if(!VALIDA_NUM.has(L)||L==="W")return;const x=cs[LET.indexOf(L)];if(!x||x.v!=null||!x.f||!x.txt)return;
-      if(typeof x.calc!=="number")falta.push(NOME[L]+": a fórmula não dá resultado (divisão por zero ou célula vazia)");else if(x.calc<0)falta.push(NOME[L]+": a fórmula dá número negativo")})}
-    if(!vazio(r.v.W)&&!qtdPos(r.v.W,r.v,r.desconto)&&!falta.includes(NOME.W))falta.push("Quantidade precisa ser um número inteiro de 1 em diante (a fórmula não dá isso)");
-    if(r.banho&&pesoLinha(r)==null&&r.banho.modo!=="fixo"&&!falta.includes(NOME.N))falta.push("Peso (sem ele o custo do banho fica vazio)");
-    if(r.banho&&r.banho.mult==null&&vazio(r.v[r.banho.coluna]))falta.push("multiplicador do banho (custo do banho fica vazio)");
-    {["N","P","Q","V"].forEach(L=>{const x=num(r.v[L]);if(x!=null&&x<0)falta.push(NOME[L]+" negativo")});const pv=num(r.v.V),pc=num(r.v.P);if(pv!=null&&pc!=null&&pv>0&&pv<pc)falta.push("Preço de Varejo menor que o Custo de Compra");if(!vazio(r.v.I)&&!catBy(r.v.I))falta.push("categoria \""+String(r.v.I).slice(0,30)+"\" não cadastrada (a referência sai com prefixo BR)");const lc=(S.lanc||[]).find(l=>l&&l.id===r.lancId);if(lc&&lc.conj&&!seenL.has(lc.id)){seenL.add(lc.id);(lc.comp||[]).forEach((c,k)=>{const m=conjErro(lc,k);if(m)falta.push("componente "+(k+1)+": "+m)})}}if(falta.length)pend.push({i,r,falta})});
-  /* o mesmo campo faltando em (quase) todas as peças vira UMA linha de aviso, não dezenas (ex.: sem Preço de Varejo definido) */
-  const cont={};pend.forEach(p=>p.falta.forEach(f=>cont[f]=(cont[f]||0)+1));const tot=g.linhas.length,todos=porPeca?[]:Object.keys(cont).filter(f=>tot>=4&&cont[f]>=Math.ceil(tot*0.8));
-  const out=todos.map(f=>`Em ${cont[f]} de ${tot} peças falta: ${f}. Se isso é esperado (ex.: ainda sem preço de venda), pode seguir.`);
-  pend.forEach(p=>{const fl=p.falta.filter(f=>!todos.includes(f));if(fl.length)out.push(`Linha ${p.i+2} (${p.r.v.E||"sem ref."}): ${fl.join(", ")}`)});
-  {const dups=[...new Set(g.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(dups.length)out.unshift(`Referência repetida em ${dups.length} peça(s): ${dups.slice(0,6).join(", ")}${dups.length>6?"…":""}. O arquivo sai assim; confira se o outro sistema aceita referências iguais.`)}
-  return out}
 /* conferência antes de exportar: pendências da tabela + regras do modelo escolhido */
 let expPend=null;
-function conferirExport(g,cols){const ger=pendenciasExport(g,true),mod=validarModelo(g,cols);return {ger,mod,n:ger.length+mod.length}}
 function abrirConferencia(g,cols,acao){const p=conferirExport(g,cols);if(!p.n)return false;expPend=acao||null;mostrarConferencia(p,!!acao);return true}
 let expAgrupa=false,expUlt=null;
 /* pendências agrupadas por tipo: "Peso (sem ele…): 12 peças", com botões para ir às primeiras */
@@ -30,15 +12,6 @@ function mostrarConferencia(p,podeSeguir){expUlt={p,podeSeguir};const LIM=300,mo
   ${p.ger.length?`<div class="rep-rf"><b>Pendências da tabela (${p.ger.length})</b> <button type="button" class="btn ghost sm" data-act="exp-agrupar">${expAgrupa?"Ver peça por peça":"Agrupar por tipo"}</button></div><div class="rep-tb"><table><tbody>${expAgrupa?pendGrupos(p.ger):p.ger.slice(0,LIM).map(s=>{const m=s.match(/^Linha \d+ \(([^)]+)\)/);return `<tr><td>${esc(s)} ${m?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(m[1])}">Ir à peça</button>`:""}</td></tr>`}).join("")}</tbody></table></div>`:""}
   ${p.mod.length?`<div class="rep-rf"><b>Regras do modelo (${p.mod.length})</b></div><div class="rep-tb"><table><thead><tr><th class="n">Linha</th><th>Referência</th><th>Coluna</th><th>Problema</th></tr></thead><tbody>${p.mod.slice(0,LIM).map(x=>`<tr><td class="n">${x.l}</td><td class="mono">${esc(x.ref)} ${x.ref&&x.ref!=="—"?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(x.ref)}" data-colnome="${esc(x.col)}">Ir à peça</button>`:""}</td><td>${esc(x.col)}</td><td class="al-t">${esc(x.msg)}</td></tr>`).join("")}</tbody></table></div>`:""}`)}
 /* arquivo CSV do modelo: separador, decimal e codificação escolhidos no modelo */
-function montarCsv(g,cols,mo,slx){
-  const sep=mo.sep==="tab"?String.fromCharCode(9):mo.sep===","?",":";",dec=mo.dec==="."?".":",",Q=String.fromCharCode(34),NL=String.fromCharCode(13,10);
-  const q=s=>{s=String(s);return (s.includes(sep)||s.includes(Q)||/[\r\n]/.test(s))?Q+s.split(Q).join(Q+Q)+Q:s};
-  const lin=[cols.map(c=>q(protegeTxt(c.h))).join(sep)];
-  const sl=slx||saidaLinhas(g,mo);
-  sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);lin.push(cols.map(c=>{let r=valorCol(c,celCol(c,cs,e));
-    if(r&&r.v==null&&r.f){const gv=(L,d)=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.f&&d<5?avalF(x.f,K=>gv(K,d+1)):null},n0=typeof r.calc==="number"?r.calc:avalF(r.f,L=>gv(L,0)),n=n0;if(n!=null)r={...r,v:c.tipo==="dinheiro"?Math.round(n*(c.k==="P"?10000:100))/(c.k==="P"?10000:100):parseFloat(n.toPrecision(12))}}   /* CSV não tem fórmula: sai o valor calculado */
-    let s=txtSaida(r,c,dec);if(!r||typeof r.v!=="number")s=protegeTxt(s);return q(s)}).join(sep))});
-  return (mo.enc==="utf8"?"":String.fromCharCode(65279))+lin.join(NL)+NL}
 /* com filtro ativo, baixar e copiar levam as PEÇAS que o filtro mostra, sempre com todas as variações (pai e filhos não se separam) */
 function gerarExport(){const g0=gerar(),fil=filtroOn();
   /* com filtro: sai EXATAMENTE o que o filtro mostra. Só no modelo que agrupa em produto pai + variações a peça vai inteira (senão o pai ficaria sem filhos) */
@@ -88,8 +61,6 @@ async function copiar(ids,forcar){
   try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`+(avZ?" "+avZ:""));if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
-function sigCfg(){const c={...S.config};delete c.seqs;delete c.observacoes;return JSON.stringify(c)}
-function sigLanc(){const o={};S.lanc.forEach(l=>{o[l.id]=JSON.stringify(l)});return o}
 function gravarExport(limpar){
   if(!lastExport)return;Object.entries(lastExport.cont).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});
   S.lanc.forEach(l=>{const o=val(l,"M");if(o&&!cfg().observacoes.includes(o))cfg().observacoes.unshift(o)});cfg().observacoes=cfg().observacoes.slice(0,30);

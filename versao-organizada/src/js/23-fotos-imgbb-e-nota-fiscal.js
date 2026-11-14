@@ -90,14 +90,6 @@ async function nfPdfItens(f){checaTam(f,MAX_PDF_BYTES,"O PDF");const L=await car
   checaPaginas(doc);const its=[];for(let pg=1;pg<=doc.numPages;pg++){const tc=await (await doc.getPage(pg)).getTextContent();tc.items.forEach(it=>{const s=String(it.str||"").trim();if(s)its.push({pg,x:it.transform[4],y:it.transform[5],w:it.width||0,s})})}
   return its}
 /* categoria pelas palavras da descrição, usando as categorias que já estão cadastradas */
-function nfCatDe(desc){const d=nfU(desc),C=cfg();let nome="";
-  for(const [re,n] of NFCAT){if(re.test(d)){const a=semAc(n);const c=C.categorias.find(c=>semAc(c.nome)===a||(c.alias||[]).some(x=>semAc(x)===a))||C.categorias.find(c=>semAc(c.nome).slice(0,4)===a.slice(0,4));if(c){nome=c.nome;break}}}
-  if(!nome){const m=String(mapaCat(desc,C.romaneios[0])||"").split(">");if(m[0]&&catBy(m[0]))nome=m[0]}
-  const c=catBy(nome);let sub="";if(c){for(const [re,s] of NFSUB){if(re.test(d)){const f=c.subs.find(x=>semAc(x)===semAc(s));if(f){sub=f;break}}}}
-  return {cat:nome,sub}}
-function nfAcharForn(e){const C=cfg(),cn=String(e.cnpj||"").replace(/\D/g,""),limpa=s=>nfU(s).replace(/[^A-Z0-9 ]/g," ").replace(/\s+/g," ").trim(),nn=limpa(e.nome);
-  let f=cn&&C.fornecedores.find(x=>String(x.cnpj||"").replace(/\D/g,"")===cn);if(f)return {f,por:"CNPJ"};
-  f=C.fornecedores.find(x=>{const xn=limpa(x.nome);return xn.length>=4&&(nn===xn||(" "+nn+" ").includes(" "+xn+" ")||nn.startsWith(xn))});return f?{f,por:"nome"}:{f:null}}
 function nfIniciar(nota){const forma={};nota.itens.forEach(i=>{if(i.cod){const s=nfForma(i.cod);forma[s]=(forma[s]||0)+1}});
   const ord=Object.entries(forma).sort((a,b)=>b[1]-a[1]),tot=ord.reduce((t,x)=>t+x[1],0),pad=ord.length&&ord[0][1]>=Math.max(2,tot*0.6)?ord[0][0]:"";
   const rows=nota.itens.map((it,i)=>{const ct=nfCatDe(it.desc),gen=[];

@@ -116,7 +116,6 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   if(quick){const i=document.getElementById("q1");if(i)i.focus()}
 }
 /* tamanhos com letra: P, M, G (ou Pequeno, Médio, Grande) entram na referência com a própria letra; números seguem a sequência de letras */
-function letrasDeTamanho(){return todasGrades().flatMap(g=>g.itens.filter(x=>String(x.letra||"").toUpperCase()===String(x.nome||"").toUpperCase()).map(x=>String(x.letra).toUpperCase()))}
 function salvarRapido(){
   const C=cfg(),f=S.form,g=id=>{const e=document.getElementById(id);return e?e.value.trim():""},n=g("q1"),lo=s=>s.toLowerCase();
   if(!n){document.getElementById("q1").focus();return}const rq=romQRow;if(rq!=null&&ROM&&ROM.rows[rq])romArma(ROM.rows[rq]);

@@ -1,8 +1,5 @@
 /* ===== colar romaneio: lê a lista do fornecedor com um modelo de leitura ===== */
 /* padrão com quantificador dentro de grupo também quantificado, ex.: (a+)+ ou (\d*)* , pode travar a aba: não é aceito */
-function mapaCat(desc,T){const d=semAc(desc);
-  for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a))&&catBy(b.split(">")[0].trim()))return b}
-  const w=d.split(/[\s,]+/)[0];const c=cfg().categorias.find(c=>w&&semAc(c.nome).startsWith(w.slice(0,4)));return c?c.nome:""}
    /* o mesmo limite vale para texto colado e para o texto lido do PDF */
 const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(ROM&&ROM.tid))||C.romaneios[0]};
    /* preço com 3-4 casas não é arredondado */
@@ -12,31 +9,11 @@ let ROM=null;
 /* lista copiada do Excel (colunas separadas por tabulação): lê por coluna, pelo cabeçalho ou deduzindo a ordem (qtd × unitário = total) */
 /* Romaneio com colunas Categoria, Descrição, Valor Unitário, Quantidade e Valor Total.
    Reconhecido pelo cabeçalho completo, sem depender do modelo selecionado. */
-function romTabelaCategoria(texto){const raw=String(texto||"").replace(/\u00a0/g," ").replace(/\r\n?/g,"\n"),cab=/categoria[ \t]+descri[cç][aã]o[ \t]+valor[ \t]+unit[aá]rio[ \t]+quantidade[ \t]+valor[ \t]+total/i.exec(raw);if(!cab)return null;
-  const corpo=raw.slice(cab.index+cab[0].length),fim=corpo.search(/(?:^|\n)[ \t]*(?:valor[ \t]+total[ \t]+da[ \t]+compra|valor[ \t]+produtos|quantidade[ \t]+total[ \t]+de[ \t]+produtos)[ \t]*:/i),area=fim<0?corpo:corpo.slice(0,fim),rows=[];
-  const re=/^[ \t]*([^\r\n]{1,250}?)[ \t]+\[#([^\]\s]+)\][ \t]+R\$[ \t]*(\d[\d.]*,\d{2})[ \t]+(\d{1,3}(?:\.\d{3})+|\d+)[ \t]+R\$[ \t]*(\d[\d.]*,\d{2})[ \t]*$/gm;let m;
-  while((m=re.exec(area))&&rows.length<3000){const desc=m[1].trim().replace(/[ \t]+/g," "),q=numQtd(m[4]),categoria=cfg().categorias.some(c=>semAc(c.nome)===semAc(desc));if(!q||q<1)continue;rows.push({cod:m[2],desc,preco:num(m[3]),precod:null,total:num(m[5]),qtd:q,peso:"",q:{},skip:false,aviso:categoria?"só a categoria foi informada como descrição: complete ou confira":""})}
-  if(!rows.length)return null;const R={rows,obs:"",conf:"✓ tabela com categoria e valores lida: "+rows.length+" item(ns)",erro:""},codigos=(area.match(/\[#([^\]\s]+)\]/g)||[]).length;if(codigos>rows.length)R.conf+=" · ⚠ "+(codigos-rows.length)+" código(s) não lido(s): confira a lista original";
-  if(rows.some(r=>r.aviso))R.conf+=" · ⚠ descrição incompleta: confira os itens marcados";return R}
-function lerRomaneioAuto(texto,T){const t=romTsv(texto)||romTabelaCategoria(texto),R=t||lerRomaneioAuto0(texto,T);romConfTotais(R);return R}
-const romTemVar=(cat,sub)=>!!gradeDaCat(cat,sub)||coresDaCat(cat,sub).length>0;
-function romIds(r){const g=gradeDaCat(r.cat,r.sub),cs=coresDaCat(r.cat,r.sub).filter(x=>(r.csel||[]).includes(x.id)).map(x=>"c_"+x.id),sz=g&&!r.semG?(r.gsel||[]):[];if(!cs.length)return sz;if(!sz.length)return cs;return sz.flatMap(a=>cs.map(c=>a+"+"+c))}
-function romNomeId(cat,sub,id){const g=gradeDaCat(cat,sub),lc=coresDaCat(cat,sub),p=String(id).split("+"),o=[];p.forEach(x=>{if(x.startsWith("c_")){const c=lc.find(y=>"c_"+y.id===x);o.push(c?c.nome:"")}else{const it=g&&g.itens.find(y=>y.id===x);o.push(it?(it.nome||it.letra):"")}});return o.filter(Boolean).join(" ")}
-const romKeys=(r,cols)=>{const g=gradeDaCat(r.cat,r.sub),ids=romIds(r);return ids.length?cols.flatMap(c=>ids.map(id=>c.id+"~"+id)):(g&&!r.semG?[]:cols.map(c=>c.id))};
-const romSomaDe=(r,cols)=>romKeys(r,cols).reduce((t,k)=>t+Math.trunc(num(r.q[k])||0),0);
 function romSetForn(nome){const f=S.form,fo=fornBy(nome);f.v.H=nome;
   if(fo){f.desconto=fo.desconto;if(fo.codigo)f.v.G=fo.codigo;else delete f.v.G;
     if(fo.tipo&&fo.tipo!==f.tipo){f.tipo=fo.tipo;if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f)}
     if(f.tipo==="bruta"){banhistaDoFornecedor(f);aplicarMemForn(f,fo)}}
   salvar(false);renderForm();renderTopo()}
-const romTipo=r=>(r&&(r.tipo==="bruta"||r.tipo==="pronta"))?r.tipo:S.form.tipo;
-const romBh=r=>banhistaBy((r&&r.bh)||S.form.banhista);
-const romOn=(r,b)=>r&&r.on&&(b.id in r.on)?r.on[b.id]:((r&&r.bh&&r.bh!==S.form.banhista)?(romTipo(r)==="bruta"&&!!b.marcado):(romTipo(r)==="bruta"?S.form.on:(S.form.onP||{}))[b.id]);
-function romReset(r){r.on={};r.q={};r.bo={};r.mk={};r.vz={};if(romTipo(r)!=="bruta"&&!romIds(r).length&&!gradeDaCat(r.cat,r.sub))r.q.p=String(r.qtd)}
-function romColsR(r){const f=S.form,bh=romBh(r);
-  if(romTipo(r)!=="bruta"){const sel=r&&r.sb?[]:bh.banhos.filter(b=>romOn(r,b));if(!sel.length)return [{id:"p",nome:"Quantidade",letra:"",cor:"",col:""}];return sel.map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:"",mil:milDe(b,(r&&r.cat)||f.v.I)}))}
-  return bh.banhos.filter(b=>romOn(r,b)).map(b=>({id:b.id,nome:b.nome,letra:b.letra,cor:b.cor,col:b.coluna,mil:milDe(b,(r&&r.cat)||f.v.I)}))}
-const romCols=()=>romColsR(null);
 /* monta, para uma peça do romaneio, o mesmo lançamento que o formulário montaria */
 function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g=gradeDaCat(r.cat,r.sub),cols=romColsR(r),original=r.refaz&&(r.lancIds||[]).map(id=>S.lanc.find(l=>l.id===id)).find(Boolean),f=clone(original||snap),ovAnterior=original?clone(original.ov||{}):{};f.tipo=romTipo(r);f.banhista=romBh(r).id;
   if((!original&&snap.conj)||r.conjDesativado){delete f.conj;delete f.comp;delete f.fConj}
@@ -70,7 +47,6 @@ function romForm(r,prev){const snap=S.form,T=romT(),bruta=romTipo(r)==="bruta",g
   return {f,q,cols,g}}
 /* simula o que vai ser criado (referências, preços) sem gravar nada */
 /* a peça refeita mantém a posição (e portanto a referência) se a categoria/prefixo é o mesmo; mudou o prefixo, vai para o fim e recebe a próxima referência da sequência nova */
-const romPrefDe=l=>prefDe(val(l,"I")||"",val(l,"J"));
 /* peça que sai de uma sequência (trocou de categoria): as seguintes da sequência antiga NÃO são renumeradas; ficam com a referência que já tinham (fixada como referência própria) e a vaga fica livre */
 function romFixaRefs(arr,pos,p,ign,clon){const g=gerar(arr);
   for(let i=pos+1;i<arr.length;i++){const l=arr[i];if(ign.includes(l.id)||romPrefDe(l)!==p||!vazio(l.v.E))continue;
@@ -89,11 +65,6 @@ function romPreview(){const out=[],base=S.lanc.slice();
     const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null};
     o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),sugerido:vazio(row.v.V),compra:n("P"),cb:row.banho?n(row.banho.coluna):null,contaBanho:detalheBanhoLinha(row,row.banho?n(row.banho.coluna):null),custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
-function romLinhasHTML(pv,r,cols){if(!pv||!pv.rows.length)return `<span class="hint">Escolha a categoria (e os banhos) para ver as referências desta peça.</span>`;
-  const aviso=pv.troca?`<span class="hint" title="A peça mudou de categoria: recebe a próxima referência da nova sequência. As outras peças da categoria antiga NÃO são renumeradas">↪ categoria nova: próxima referência da sequência; as outras peças da categoria antiga mantêm as referências (fica uma vaga)</span> `:"";
-  const g=gradeDaCat(r.cat,r.sub);
-  return pv.rows.map(x=>{const c=cols.find(c=>c.id===x.bid),it=x.gi?{nome:romNomeId(r.cat,r.sub,x.gi)}:null;
-    return `<span class="rch${x.dup?" dup":""}" title="${esc(x.dup?"Referência repetida":"Linha que será criada")}"><b>${esc(x.ref)}</b>${c&&c.nome?` <i>${esc(c.nome)}</i>`:""}${it?` <i>${esc(it.nome||it.letra)}</i>`:""} <em>${x.q?x.q+" un.":"sem qtd"}</em> <u>${x.sugerido&&x.v!=null?"Sugestão ":""}${fm(x.v)}</u></span>`}).join("")+aviso}
 function renderRom(){renderRom0();romLoteDecora();romConjDecora()}
 function renderRom0(){const el=document.getElementById("romWrap");if(!el)return;if(!ROM){el.innerHTML="";renderNum();return}
   const C=cfg(),f=S.form,bruta=f.tipo==="bruta",bh=banhistaBy(f.banhista),cols=romCols();
@@ -119,8 +90,6 @@ function renderRom0(){const el=document.getElementById("romWrap");if(!el)return;
   el.innerHTML=h+`</div>`;if(ROM.rows.length)romAtual()}
 
 /* Componentes do conjunto ficam no próprio item do romaneio e são lançados juntos. */
-function romConjAtivar(r){if(r.conjComp)return;delete r.conjDesativado;const cols=romColsR(r);r.conjOriginal={peso:r.peso,custo:r.custo,tipo:r.tipo,on:clone(r.on||{})};r.on=Object.fromEntries(cols.filter(c=>c.id!=="p").map(c=>[c.id,true]));r.tipo="pronta";r.conjComp=[novaComp(),novaComp()]}
-function romConjAuto(r){if(!r||r.feito||r.planSistema||r.conjDesativado||r.conjComp)return;if([r.cat,r.sub].some(x=>/^conjuntos?$/.test(semAc(x||""))))romConjAtivar(r)}
 function romConjDecora(){if(!ROM)return;document.querySelectorAll("#romWrap .rc[data-i]").forEach(rc=>{const r=ROM.rows[+rc.dataset.i];if(!r||r.lote)return;const box=document.createElement("details");box.className="rom-conjunto";box.open=!!r.conjComp;box.innerHTML=`<summary>Conjunto: ${r.conjComp?"editar componentes":"configurar componentes"}</summary><div class="rom-conjunto-body">${r.conjComp?romConjCampos(r):'<p class="hint">Cadastre os componentes deste item e confira a soma de peso e compra.</p><button type="button" class="btn sm" data-rcj="ativar">Configurar conjunto</button>'}</div>`;rc.appendChild(box);if(r.conjComp){["peso","custo"].forEach(k=>{const el=rc.querySelector(`[data-rp="${k}"]`);if(el){el.readOnly=true;el.title="Calculado pela soma dos componentes do conjunto"}});const total=box.querySelector("[data-rcj-total]");if(total)total.textContent=`Soma: ${fmt(r.conjComp.reduce((t,c)=>t+(num(c.peso)||0)*(conjQtd(c)||0),0))} g · compra R$ ${brl(r.conjComp.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0))}${r.conjOriginal&&num(r.conjOriginal.custo)!=null?` · compra original R$ ${brl(num(r.conjOriginal.custo))}`:""}`}})}
 function romConjCampos(r){const bh=romBh(r),opts=c=>`${c.banho&&c.banho!=="-"&&!(bh.banhos||[]).some(b=>b.id===c.banho)?`<option value="${esc(c.banho)}" selected>⚠ Banho indisponível — escolha outro</option>`:""}<option value="">Banho do conjunto</option><option value="-" ${c.banho==="-"?"selected":""}>Sem banho</option>${(bh.banhos||[]).map(b=>`<option value="${esc(b.id)}" ${c.banho===b.id?"selected":""}>${esc(b.nome)}</option>`).join("")}`;return `<p class="hint">Informe a quantidade de cada componente por conjunto; peso e compra são por unidade e multiplicados pela quantidade. Após conferir os cálculos, informe a quantidade de conjuntos e o fator nos cartões de banho acima. A categoria de cada componente determina o valor por grama do banho; se não escolher, usa a categoria do conjunto.</p>${r.conjComp.map((c,i)=>`<div class="rom-conjunto-linha" data-rcji="${i}"><label>Peça <input data-rcjf="desc" value="${esc(c.desc||"")}" aria-label="Nome do componente ${i+1}"></label><label>Categoria <select data-rcjf="cat" aria-label="Categoria do componente ${i+1}">${conjCatOpts(c)}</select></label><label>Quantidade <input data-rcjf="qtd" inputmode="numeric" value="${esc(c.qtd??"1")}" aria-label="Quantidade do componente ${i+1} por conjunto"></label><label>Peso unitário (g) <input data-rcjf="peso" inputmode="decimal" value="${esc(c.peso||"")}" aria-label="Peso do componente ${i+1}"></label><label>Compra unitária (R$) <input data-rcjf="custo" inputmode="decimal" value="${esc(c.custo||"")}" aria-label="Compra do componente ${i+1}"></label><label>Banho <select data-rcjf="banho" aria-label="Banho do componente ${i+1}">${opts(c)}</select></label><button type="button" class="btn sm" data-rcj="remover" aria-label="Remover componente ${i+1}">×</button></div>`).join("")}<p class="hint" data-rcj-total></p><div data-rcj-contas>${conjContasHTML(romForm(r,true).f)}</div><button type="button" class="btn sm" data-rcj="adicionar">＋ Componente</button> <button type="button" class="btn sm" data-rcj="desativar">Desfazer conjunto</button>`}
 function romConjSomar(r,rc){const cs=r.conjComp||[],peso=cs.reduce((t,c)=>t+(num(c.peso)||0)*(conjQtd(c)||0),0),custo=cs.reduce((t,c)=>t+(num(c.custo)||0)*(conjQtd(c)||0),0);r.peso=txtN(peso);r.custo=txtN(custo);const a=rc.querySelector('[data-rp="peso"]'),b=rc.querySelector('[data-rp="custo"]');if(a)a.value=r.peso;if(b)b.value=r.custo;const t=rc.querySelector('[data-rcj-total]');if(t)t.textContent=`Soma: ${fmt(peso)} g · compra R$ ${brl(custo)}${r.conjOriginal&&num(r.conjOriginal.custo)!=null?` · compra original R$ ${brl(num(r.conjOriginal.custo))}`:""}`;const contas=rc.querySelector("[data-rcj-contas]");if(contas)contas.innerHTML=conjContasHTML(romForm(r,true).f);romAtualSoon()}
