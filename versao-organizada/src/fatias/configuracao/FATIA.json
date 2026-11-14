@@ -1,0 +1,17 @@
+{
+  "nome": "configuracao",
+  "descricao": "Tela Cadastros e personalizacao (categorias, banhos, fornecedores, insumos, cores, variacoes, modelos de exportacao), catalogo rapido, salvar/descartar cadastros e campos em reais.",
+  "arquivos": [
+    "19-catalogo-rapido.js",
+    "19a-secao-categorias.js",
+    "19a2-grafico-rosca.js",
+    "19a3-secao-exportar-para.js",
+    "25b-cadastros-render.js",
+    "36-cadastros-salvar.js",
+    "37-moeda.js"
+  ],
+  "expoe": [],
+  "usa": ["core"],
+  "testes": [],
+  "fronteira": "aponta"
+}

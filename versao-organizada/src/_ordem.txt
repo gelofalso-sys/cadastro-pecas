@@ -18,7 +18,10 @@ js/15-planilha.js
 js/16-selecao.js
 js/17-lancamento.js
 js/18-conjunto.js
-js/19-configuracoes-e-catalogo.js
+fatias/configuracao/19-catalogo-rapido.js
+fatias/configuracao/19a-secao-categorias.js
+fatias/configuracao/19a2-grafico-rosca.js
+fatias/configuracao/19a3-secao-exportar-para.js
 fatias/exportacao/19b-assistente-outro-sistema.js
 js/19c-colar-romaneio.js
 fatias/tabelas/19d-tabelas-indice-e-fotos.js
@@ -33,6 +36,7 @@ js/22-importar-pdf-romaneio.js
 js/23-fotos-imgbb-e-nota-fiscal.js
 js/24-ui-numeracao-e-colunas.js
 js/25-relatorio-romaneio.js
+fatias/configuracao/25b-cadastros-render.js
 js/26-acoes.js
 js/27-fotos-escolher-colar.js
 fatias/exportacao/28-exportar.js
@@ -46,5 +50,5 @@ js/32-eventos-entrada-teclado-e-arrasto.js
 js/33-janelas-busca-e-paleta.js
 js/34-filtros-importacao-e-cartoes.js
 js/35-visoes-menu-e-final.js
-js/36-cadastros-salvar.js
-js/37-moeda.js
+fatias/configuracao/36-cadastros-salvar.js
+fatias/configuracao/37-moeda.js
