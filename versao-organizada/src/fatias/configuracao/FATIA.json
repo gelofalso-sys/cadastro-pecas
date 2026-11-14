@@ -1,6 +1,6 @@
 {
   "nome": "configuracao",
-  "descricao": "Tela Cadastros e personalizacao (categorias, banhos, fornecedores, insumos, cores, variacoes, modelos de exportacao), catalogo rapido, salvar/descartar cadastros e campos em reais.",
+  "descricao": "Tela Cadastros e personalizacao (categorias, banhos, fornecedores, insumos, cores, variacoes, modelos de exportacao, modelos de leitura de romaneio, fiscal das categorias), catalogo rapido, salvar/descartar cadastros e campos em reais.",
   "arquivos": [
     "19-catalogo-rapido.js",
     "19a-secao-categorias.js",
@@ -18,7 +18,6 @@
     "renderCfg",
     "renderGraf",
     "estadoConfig",
-    "sec",
     "catUI",
     "atualizaPrevia",
     "subRenomear",
@@ -29,11 +28,15 @@
     "CAD",
     "CADAUTO",
     "cadConferir",
-    "cadTirarFoto"
+    "cadTirarFoto",
+    "fiscalCampo",
+    "romUI",
+    "romExAtualiza"
   ],
   "usa": [
     "core",
-    "fotos"
+    "fotos",
+    "romaneio"
   ],
   "testes": [
     "^categoria_exclusao_regressao.js$",

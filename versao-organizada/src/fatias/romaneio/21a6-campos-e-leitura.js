@@ -1,4 +1,3 @@
-let romBusy=false;
 function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan){ROM.plan.map[t.dataset.k]=t.value===""?null:+t.value;renderRom()}return}const k=t.dataset.rp;if(!k)return;const f=S.form;romSalvarSoon();
   if(k==="texto"){ROM.texto=t.value;return}
   if(k==="obs"){ROM.obs=t.value;romAtualSoon();return}
@@ -19,9 +18,9 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   const rc=t.closest(".rc");if(!rc)return;const i=+rc.dataset.i,r=ROM.rows[i];if(!r)return;const estadoAntes={skip:r.skip,refaz:r.refaz,aviso:r.aviso};
   if(k!=="sel"&&k!=="use"){if(r.feito&&r.arq){if(fin)toast("Esta peça está na tabela salva “"+r.arq+"”. Restaure a tabela para corrigir.");return}
     if(romArma(r)){rc.classList.remove("sk");const u=rc.querySelector('[data-rp="use"]');if(u)u.checked=true;const bd=rc.querySelector(".rfeito");if(bd)bd.outerHTML=romBadge(r);if(fin)toast("Peça já lançada: ao criar ela é substituída, na mesma posição e com a mesma referência.")}}
-  if(k==="qall"){const v=t.value;if(!vazio(v)){const n=num(v);if(n==null||n<0||!Number.isInteger(n)){if(fin)toast("Quantidade precisa ser um número inteiro, 0 ou mais.");return}}if(!fin||romBusy)return;romBusy=true;try{romKeys(r,[{id:t.dataset.b}]).forEach(kk=>{r.q[kk]=vazio(v)?"":String(num(v))});renderRom()}finally{romBusy=false}return}
+  if(k==="qall"){const v=t.value;if(!vazio(v)){const n=num(v);if(n==null||n<0||!Number.isInteger(n)){if(fin)toast("Quantidade precisa ser um número inteiro, 0 ou mais.");return}}if(!fin||estadoRomaneio.busy)return;estadoRomaneio.busy=true;try{romKeys(r,[{id:t.dataset.b}]).forEach(kk=>{r.q[kk]=vazio(v)?"":String(num(v))});renderRom()}finally{estadoRomaneio.busy=false}return}
   if(k==="gusar"){if(!fin)return;const c=catBy(r.cat),v=t.value;if(c&&v&&!c.grade){romArma(r);if(v.startsWith("o:")){const og=(cfg().grades||[]).find(x=>x.id===v.slice(2));if(og)c.grade={id:uid(),nome:og.nome,subs:[],usaId:og.id,itens:[]}}else{const src=catBy(v.slice(2));if(src&&src.grade){const o=src.grade.usa?(catBy(src.grade.usa)||src):src;c.grade={id:uid(),nome:o.grade.nome,subs:[],usa:o.nome,itens:[]}}}salvar(true,false);renderRom()}return}
-  if(k==="faixa"){if(!fin||romBusy)return;romBusy=true;try{const g0=gradeDaCat(r.cat,r.sub);if(g0){r.gsel=selFaixa(g0,t.value);r.semG=false}renderRom()}finally{romBusy=false}return}
+  if(k==="faixa"){if(!fin||estadoRomaneio.busy)return;estadoRomaneio.busy=true;try{const g0=gradeDaCat(r.cat,r.sub);if(g0){r.gsel=selFaixa(g0,t.value);r.semG=false}renderRom()}finally{estadoRomaneio.busy=false}return}
   if(k==="dscI"){const n=num(t.value);if(!vazio(t.value)&&(n==null||n<0||n>100)){if(fin)toast("Desconto precisa estar entre 0 e 100%.");return}r.dsc=t.value;romAtualSoon();return}
   if(k==="tipoI"||k==="bhI"){const temAj=x=>Object.keys(x.q||{}).some(z=>z!=="p"&&!vazio(x.q[z]))||(x.q&&x.q.p!==undefined&&String(x.q.p).trim()!==String(x.qtd).trim())||["bo","mk","vz"].some(z=>Object.keys(x[z]||{}).length>0);
     if(r.feito){const novo=clone(r);if(k==="tipoI")novo.tipo=t.value||undefined;else novo.bh=t.value||undefined;const validos=new Set(romKeys(novo,romColsR(novo))),incomp=Object.keys(r.q||{}).filter(z=>!vazio(r.q[z])&&(num(r.q[z])||0)>0&&!validos.has(z));

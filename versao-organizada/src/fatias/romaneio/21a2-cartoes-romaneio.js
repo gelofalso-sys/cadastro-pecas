@@ -42,8 +42,7 @@ function romBodyHTML(r){const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=rom
   return h}
 function romUltHTML(){const C=cfg(),ps=[...new Set(ROM.rows.filter(r=>!r.skip).map(r=>prefDe(r.cat,r.sub)))];if(!ps.length)return "";
   return `<div class="rom-ult"><b>Numeração do sistema</b><span class="hint">última peça já cadastrada de cada tipo — é a partir dela que saem as próximas referências</span>${ps.map(p=>`<label class="fq ult${ultimo(p)>0?"":" bad"}"><span>Última peça ${esc(p)}</span><div class="ub"><input class="n" data-rp="ult" data-p="${esc(p)}" value="${esc(C.seqs[p]||"")}" inputmode="numeric"><small data-nx="${esc(p)}">próxima ${esc(p)}<b>${proxDe(p)}</b></small></div></label>`).join("")}</div>`}
-let romT0=null;
-const romAtualSoon=()=>{clearTimeout(romT0);romT0=setTimeout(romAtual,120);romSalvarSoon()};
+const romAtualSoon=()=>{clearTimeout(estadoRomaneio.t0);estadoRomaneio.t0=setTimeout(romAtual,120);romSalvarSoon()};
 function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();romExtrasAtual();const pv=romPreview(),f=S.form;
   let nl=0,var_=0,cus=0;
   ROM.rows.forEach((r,i)=>{if(r.lote)return;const rc=document.querySelector(`#romWrap .rc[data-i="${i}"]`);if(!rc)return;const cols=romColsR(r),sm=romSomaDe(r,cols),p=pv[i];

@@ -25,6 +25,7 @@ O historico de tabelas montadas ("Tabelas salvas") e tudo o que fica em volta de
 
 ## Armadilhas
 - `tabArm`, `TABS`, `TABDEL`, `AUTOR`, `ARQ` vivem em `src/js/20` e 10/14 (armazenamento ainda nao e fatia): codigo legado isento.
+- `tab-csv` grava o arquivo com `arqSalvar`, exposto pela fatia `romaneio` (por isso `usa` lista `romaneio`).
 - `estadoTabelas.semVarredura` impede a varredura de fotos (app aberto sem varrer, apos recuperacao de backup).
 - Texto com quebra de linha: `String.fromCharCode(10)`.
 

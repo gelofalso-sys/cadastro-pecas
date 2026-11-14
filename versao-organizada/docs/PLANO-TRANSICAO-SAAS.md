@@ -241,3 +241,10 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 - `src/fatias/fotos/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core"]`), `LEIA-ME.md` e `acoes.js` (6 ações: fotos-enviar, foto-testar, foto-add, foto-form, foto-rem, tab-foto). `configuracao` passou a listar `fotos` em `usa` (usa `fotoKey`/`fotoAuto`).
 - Dividido: 22 (zoom da foto em `22b`; PDF fica), 23 (fotos; `23b-romaneio-criar.js` e `23c-nota-fiscal.js` ficam em `src/js` para a Tarefa 14), 27 (fotos; `27b-lancamento-formulario.js`, `27d-duplicar-excluir.js` ficam em `src/js`; `fotoCopia` em `27c`). Mover/dividir manteve o HTML idêntico (hash `bb8db4f6…`); a migração das ações mudou a ordem de carga, a prova passou a ser a suíte.
 - Globais mutáveis: 88 -> 85 (`FT_GRANDE`, `ftAlvo`, `fotosEnv` viraram `estadoFotos`).
+
+### Fatia `romaneio` — concluída em 14/11/2026 (Tarefa 14, quinta fatia; inclui a nota fiscal)
+- `src/fatias/romaneio/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core", "exportacao"]`), `LEIA-ME.md`, 15 arquivos de código e `acoes.js` (62 ações `rom-*`, `rev-*`, `rel-*`, `imp-*`, `lote-*`, `rins-*`). O antigo 21 (68 KB) virou seis arquivos por assunto; 34 foi dividido (importação na fatia; filtros/pílula e cartões ficam em `src/js` para `planilha`).
+- Para não criar ciclo: `secRom`, o modelo por exemplo (`romUI`) e o fiscal das categorias foram para `configuracao` (com 11 ações), e as fotos dos itens (`romFoto*`) para `fotos` (com 4 ações). `configuracao`, `fotos` e `tabelas` passaram a listar `romaneio` em `usa` (`renderRom`, `arqSalvar`); `romaneio` não usa nenhuma das três.
+- `ROM`/`romT` ficaram em `src/js/19c0-romaneio-global.js` e `ROMS` em `src/js/20`: globais de domínio que irão para `core` com funções de acesso (não movidos agora).
+- Mover/dividir manteve o HTML idêntico (hash `d4fcb6e7…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
+- Globais mutáveis: 85 -> 78 (`romRevSeq`, `romT0`, `romBusy`, `pdfLib`, `REL`, `IMPQ`, `IMPST` viraram `estadoRomaneio`). `NF` e `relTem` continuam globais (usados por 17, 20, 32, 33).

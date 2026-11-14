@@ -66,6 +66,7 @@ fatias/exportacao/acoes.js
 fatias/tabelas/acoes.js
 fatias/configuracao/acoes.js
 fatias/fotos/acoes.js
+fatias/romaneio/acoes.js
 js/31-eventos-campos-e-grade.js
 js/32-eventos-entrada-teclado-e-arrasto.js
 js/33-janelas-busca-e-paleta.js

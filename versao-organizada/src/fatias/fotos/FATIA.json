@@ -1,6 +1,6 @@
 {
   "nome": "fotos",
-  "descricao": "Fotos das pecas: escolher, arrastar ou colar (Ctrl+V), anexar/remover, copia ao duplicar, envio ao imgbb (link publico), teste da chave e ampliacao com zoom.",
+  "descricao": "Fotos das pecas: escolher, arrastar ou colar (Ctrl+V), anexar/remover (inclusive a foto de cada item do romaneio), copia ao duplicar, envio ao imgbb (link publico), teste da chave e ampliacao com zoom.",
   "arquivos": [
     "21b1-fotos-romaneio.js",
     "22b-zoom-foto.js",
@@ -14,12 +14,11 @@
     "fotoKey",
     "fotoAuto",
     "autoEnviar",
-    "fotoNaPeca",
-    "lerFotoArquivo",
     "fotoCopia"
   ],
   "usa": [
-    "core"
+    "core",
+    "romaneio"
   ],
   "testes": [
     "^calculos_precisao_regressao.js$",

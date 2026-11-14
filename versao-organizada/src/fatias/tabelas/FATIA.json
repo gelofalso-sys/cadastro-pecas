@@ -19,7 +19,8 @@
     "tabsMigrar"
   ],
   "usa": [
-    "core"
+    "core",
+    "romaneio"
   ],
   "testes": [
     "^t44\\.py$",

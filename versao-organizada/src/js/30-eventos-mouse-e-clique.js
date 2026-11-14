@@ -174,20 +174,6 @@ document.addEventListener("click",e=>{
     case "ir":if(celular())formAbrir(false);irPara(t.dataset.sec);break;
     case "exemplo":abrirExemploVisual();break;
 
-    case "lote-add":{const r=ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));break}
-    case "rom-partir":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i];if(!r)break;const bx=rc.querySelector(".partbox");if(bx){bx.remove();break}
-      t.insertAdjacentHTML("afterend",`<span class="partbox"><label class="fq"><span>Partes</span><input class="n" data-partn value="3" inputmode="numeric" style="width:48px" aria-label="Quantas partes"></label><button type="button" class="btn pri sm" data-act="rom-partir-ok">Partir</button></span>`);const pi=rc.querySelector("[data-partn]");pi.focus();pi.select();break}
-    case "rom-partir-ok":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i],pi=rc.querySelector("[data-partn]");if(r)romPartir(r,num(pi&&pi.value));break}
-    case "rom-juntar":{const r=ROM.rows[+t.closest(".rc").dataset.i];if(r)romJuntar(r);break}
-    case "lote-resto":{const r=ROM.rows[+t.dataset.i];if(!r)break;const R=romLoteResumo(r);if(R.dif>0)romLoteAdd(r,1,R.dif);else toast("Não há peso restante no lote.");break}
-    case "lote-del":{const r=ROM.rows[+t.dataset.i];if(!r)break;if(r.feito||(r.lancIds||[]).length){toast("Esta peça já foi lançada. Exclua o lançamento na tabela antes de remover o item do lote.");break}{const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);ROM.rows.splice(+t.dataset.i,1);if(lot)romLoteRecalc(lot)}if(ROM.rows.length)romSalvarSoon();else romLimparRascunho();renderRom();break}   /* lista vazia: apaga o rascunho, senão o anterior reaparece */
-    case "imp-pick":{document.getElementById("impFile").click();break}
-    case "imp-up":{const i=+t.dataset.i;if(i>0){[IMPQ[i-1],IMPQ[i]]=[IMPQ[i],IMPQ[i-1]];renderImp()}break}
-    case "imp-down":{const i=+t.dataset.i;if(i<IMPQ.length-1){[IMPQ[i+1],IMPQ[i]]=[IMPQ[i],IMPQ[i+1]];renderImp()}break}
-    case "imp-del":{IMPQ.splice(+t.dataset.i,1);renderImp();break}
-    case "imp-limpar":{IMPQ=[];renderImp();break}
-    case "imp-abrir":{const q=IMPQ.splice(+t.dataset.i,1)[0];renderImp();if(q)impAbrirArq(q.file);break}
-    case "rom-nova":{romNovaPeca();break}
     case "trabalho-toggle":trabalhoAberto=!trabalhoAberto;renderForm();break;
     case "preset-salvar":{const el=document.querySelector("[data-preset-nome]"),nome=el&&el.value.trim();if(!nome){toast("Digite um nome para a combinação.");break}C.presetsLancamento=Array.isArray(C.presetsLancamento)?C.presetsLancamento:[];if(C.presetsLancamento.some(p=>semAc(p.nome)===semAc(nome))){toast("Já existe uma combinação com esse nome.");break}if(C.presetsLancamento.length>=30){toast("Limite de 30 combinações.");break}C.presetsLancamento.push(presetAtual(nome));salvar(true,false);renderForm();toast("Combinação salva.");break}
     case "preset-usar":case "preset-excluir":{const el=document.querySelector("[data-preset-select]"),ps=C.presetsLancamento||[],i=el&&el.value!==""?Number(el.value):-1;if(!ps[i]){toast("Escolha uma combinação.");break}if(a==="preset-usar")presetAplicar(ps[i]);else{if(!confirm(`Excluir a combinação “${ps[i].nome}”?`))break;ps.splice(i,1);salvar(true,false);renderForm();toast("Combinação excluída.")}break}
@@ -203,102 +189,21 @@ document.addEventListener("click",e=>{
     case "sim-usar":{const f=S.form;f.mk=f.mk||{};f.mk[t.dataset.bid]=String(t.dataset.fator).replace(".",",");document.querySelectorAll(".rep").forEach(x=>x.remove());salvar(false);renderForm();toast(`Fator ${t.dataset.fator.replace(".",",")} aplicado.`);break}
     case "prim-ir":{primeirosIr(t.dataset.p);primeirosAtualizar();break}
     case "prim-fechar":{abertos.primeiros=false;guardarAbertos();primeirosAtualizar();break}
-    case "rom-xlsx":{const ids=new Set(ROM.rows.flatMap(r=>r.lancIds||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("Nenhuma peça deste romaneio está na tabela atual.");break}baixar(false,ids);break}
-    case "rel-xlsx":{const rel=relLer(),ids=new Set((rel&&rel.lids||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("As peças desta criação não estão mais na tabela.");break}baixar(false,ids);break}
-    case "rom-bulk-div":{const rs=romSelRows().filter(r=>!r.skip&&!r.feito&&!r.lote&&(!gradeDaCat(r.cat,r.sub)||r.semG)&&!(r.csel||[]).length);rs.forEach(r=>romDividir(r,romColsR(r)));renderRom();toast(`${rs.length} peça(s) divididas entre os banhos.`);break}
-    case "rom-bulk-lote":{const idx=ROM.rows.map((r,i)=>[r,i]).filter(([r])=>romSelRows().includes(r)&&!r.lote&&!r.loteDe&&!r.feito&&!Array.isArray(r.conjComp)).map(x=>x[1]).reverse();idx.forEach(i=>romLotear(i,true));if(idx.length)toast(`${idx.length} item(ns) viraram lote.`);else toast("Nenhuma peça elegível (já é lote, já lançada ou conjunto).");break}
-    case "rom-bulk-criar":{const v=t.dataset.v==="1",rs=romSelRows().filter(r=>!r.feito&&!r.lote);rs.forEach(r=>{r.skip=!v});renderRom();toast(`${rs.length} peça(s) ${v?"marcadas para criar":"marcadas para não criar"}.`);break}
-    case "rom-passo":{romPassoIr(+t.dataset.p);break}
     case "novidades":novidadesAbrir();break
-    case "fisc-aplicar":{fiscalAplicarTodas();break}
-    case "rom-lotear":{romLotear(+t.dataset.i);break}
-    case "rom-lote-off":{romLoteOff(+t.dataset.i);break}
-    case "imp-ir":{rolarPane(document.getElementById("romWrap"));break}
-    case "rom-foto-add":{romFotoEscolher(+t.dataset.i);break}
-    case "rom-foto-del":{romFotoRemover(+t.dataset.i);break}
-    case "rins-add":{if(!ROM)break;ROM.ins=ROM.ins||{itens:[],base:"un"};if(ROM.ins.itens.length>=30){toast("Limite de 30 insumos por romaneio.");break}ROM.ins.itens.push({nome:"",valor:""});abertos.rins=true;guardarAbertos();romSalvarSoon();renderRom();break}
-    case "rins-del":{if(!ROM||!ROM.ins)break;ROM.ins.itens.splice(+t.dataset.i,1);romSalvarSoon();renderRom();break}
     case "cor-on":{const f=S.form;f.corOn=true;renderForm();break}
     case "cor-off":{const f=S.form;f.corOn=false;f.csel=[];renderTopo();renderForm();break}
-    case "rom-cor-on":{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);r.corOn=true;renderRom();break}
     case "cs-padrao":{const f=S.form,c=catBy(f.v.I);if(!c)break;c.coresCfg=c.coresCfg||{};c.coresCfg.padrao=(f.csel||[]).slice();salvar(true,false);renderCfg();toast((f.csel||[]).length?"Cores padrão salvas: ao escolher "+f.v.I+" elas já vêm marcadas.":"Padrão removido: nenhuma cor vem marcada.");break}
     case "cs-todas":{const f=S.form,l=coresDaCat(f.v.I,f.v.J);f.csel=f.csel&&f.csel.length===l.length?[]:l.map(x=>x.id);renderTopo();renderForm();salvar(false);break}
     case "gi-todos":{const f=S.form,gr=gradeBy(f.grade);if(gr){f.gsel=f.gsel&&f.gsel.length===gr.itens.length?[]:gr.itens.map(x=>x.id);renderTopo();renderForm();salvar(false)}break}
-    case "rom-abrir":{if(editId){avisoEdicao(romAbrirNovo);break}romAbrirNovo();break}
-    case "rom-fechar":{const lsOk=romSalvar(),pr=romGravP;ROM=null;renderRom();renderForm();
-      Promise.resolve(pr).then(idbOk=>toast(lsOk?"Romaneio guardado — use “Retomar romaneio” quando quiser continuar.":idbOk?"O rascunho rápido não gravou, mas o romaneio ficou em “Romaneios salvos” (Cadastros): abra por lá para continuar.":"ATENÇÃO: não consegui guardar o romaneio (memória do navegador cheia, bloqueada ou outra aba alterou). Baixe o backup antes de sair."));break}
-    case "rom-descartar":{if(romConflito){const b=document.getElementById("outraAbaRom");if(b)b.remove();romConflito=false;ROM=null;renderRom();renderForm();toast("Fechei este romaneio sem apagar nada: outra aba alterou o rascunho e a versão dela foi mantida.");break}
-      if(t.disabled)break;t.disabled=true;const atual=ROM;romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito),antes=ROM?JSON.stringify({...ROM,pdf:null}):null;
-      (async()=>{try{if(sid0&&!jaFeito&&!(await romExcluirSalvo(sid0))){toast("Não consegui descartar o romaneio salvo. Ele continua aberto; confira o armazenamento.");return}
-        if(ROM!==atual)return;if(ROM&&JSON.stringify({...ROM,pdf:null})!==antes){romSalvar();toast("O romaneio mudou durante a exclusão e foi mantido aberto.");return}
-        romLimparRascunho();ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{localStorage.setItem(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null)
-      }catch(err){console.error("cadastro-pecas: não foi possível descartar o romaneio",err);toast("Não consegui descartar o romaneio. Ele continua aberto.")}finally{t.disabled=false}})();break}
-    case "rom-lote":romLote();break;
-    case "rom-excluir-selecionadas":romExcluirSelecionadas();break;
-    case "rom-revogar-todas":if(ROM)romRevogar(ROM.rows.filter(r=>r.feito));break;
-    case "rom-revogar":{const rc=t.closest(".rc"),r=rc&&ROM&&ROM.rows[+rc.dataset.i];if(r)romRevogar([r]);break}
     case "gr-novo-pmg":{const c=catBy(S.form.v.I);if(!c)break;if(!c.grade)c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};const gr=effGrade(c);if(gr.itens.length&&(gr.subs||[]).length&&!(gr.subs||[]).includes(S.form.v.J)){toast(`Os tamanhos desta categoria valem só para: ${gr.subs.join(", ")}. Para usar P M G aqui, tire essa restrição em Cadastros › Categorias.`);break}addTamanhos(gr,"P M G");sincGrade(S.form);S.form.gsel=gr.itens.map(x=>x.id);S.form.semGrade=false;salvar(true,false);renderForm();renderCfg();toast("Tamanhos P, M e G criados: a letra de cada um entra na referência.");break}
     case "gi-pmg":{const gr=gradeBy(S.form.grade);if(gr){const novos=addTamanhos(gr,"P M G");S.form.gsel=gr.itens.map(x=>x.id).filter(id=>novos.includes(id)||(S.form.gsel||[]).includes(id));S.form.semGrade=false;salvar(true,false);renderForm();toast("Tamanhos P, M e G prontos: a letra de cada um entra na referência.")}break}
     case "comp-add":{const f=S.form;f.comp=f.comp||[];if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");break}const vaz=f.comp.findIndex(x=>!x.desc&&!x.peso&&!x.custo);let n;if(vaz>=0){n=vaz;if(t.dataset.nome)f.comp[vaz].desc=t.dataset.nome}else{n=f.comp.length;f.comp.push(novaComp(t.dataset.nome||""))}conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${n}"] [data-cp="${t.dataset.nome?"peso":"desc"}"]`);break}
     case "comp-dup":{const f=S.form,i=+t.dataset.ci,c=f.comp&&f.comp[i];if(!c)break;if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");break}f.comp.splice(i+1,0,{...clone(c),id:uid()});conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${i+1}"] [data-cp="peso"]`);break}
     case "comp-up":case "comp-down":{const f=S.form,i=+t.dataset.ci,j=a==="comp-up"?i-1:i+1;if(!f.comp||j<0||j>=f.comp.length)break;[f.comp[i],f.comp[j]]=[f.comp[j],f.comp[i]];conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${j}"] [data-act="${a}"]`);break}
     case "comp-del":{const f=S.form;f.comp.splice(+t.dataset.ci,1);conjSync(f);salvar(false);renderTopo();renderForm();break}
-    case "foto-rem-rom":{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");break}
-    case "rom-lista":romListaAbrir();break;
     case "diag-dados":diagnosticoDados();break;
-    case "rom-refazer-todas":{if(!ROM)break;let n=0;ROM.rows.forEach(r=>{if(r.feito&&!r.arq){r.refaz=true;r.skip=false;r.aviso="";n++}});ROM.msg=n?`${n} peça(s) já lançadas liberadas para edição. Mude o que quiser e clique em Criar peças: elas substituem as antigas.`:"Nenhuma peça já lançada para editar.";renderRom();break}
-    case "rom-salvo-abrir":{document.querySelectorAll(".rep").forEach(x=>x.remove());Promise.resolve(romAbrirSalvo(t.dataset.id)).catch(e=>{try{console.error("romaneio salvo",e)}catch(x){}toast("Não consegui abrir esse romaneio: "+((e&&e.message)||e)+". Abra “Diagnóstico dos dados” na lista de romaneios salvos.")});break}
-    case "rom-salvo-del":{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(romArm);romArm=null;romListaRef();renderForm()}break}
     case "backup-total":backupTotal();break;
     case "renumerar":{if(!S.lanc.length){toast("Nenhuma peça para renumerar.");break}if(!confirm("Renumerar as referências na ordem da tabela? As referências automáticas (as que você não digitou) serão refeitas do começo da sequência, e as peças já enviadas ao fornecedor podem mudar de número. Dá para desfazer."))break;renumerarRefs();salvar(false);renderTopo();toast("Referências renumeradas na ordem da tabela.",{t:"Desfazer",fn:desfazer});break}
-    case "rel-abrir":relAbrir();break;
-    case "rel-fechar":{tabArm=null;romArm=null;const o=document.querySelector(".rep");if(o)o.remove();renderForm();break}
-    case "rel-print":window.print();break;
-    case "rel-copy":{const R=relLer();if(R)navigator.clipboard.writeText(relTexto(R)).then(()=>toast("Resumo copiado.")).catch(()=>toast("O navegador não liberou a cópia."));break}
-    case "rel-csv":{const R=relLer();if(R)arqSalvar("Relatorio romaneio "+new Date(R.em).toISOString().slice(0,10)+".csv",relCsv(R));break}
-    case "rel-undo":{const o=document.querySelector(".rep");if(o)o.remove();desfazer();break}
-    case "rom-pend":{let ri=-1,cmp=0;ROM.rows.forEach((r,i)=>{if(ri>=0||r.skip)return;if(num(r.peso)==null){ri=i;cmp=1}else if(romSomaDe(r,romColsR(r))!==r.qtd){ri=i;cmp=2}else if(gradeDaCat(r.cat,r.sub)&&!r.semG&&!(r.gsel||[]).length&&!(r.csel||[]).length){ri=i;cmp=3}else if(r.catq){ri=i;cmp=4}});
-      if(ri<0){toast("Nenhuma pendência: tudo preenchido.");break}const rc=document.querySelector(`#romWrap .rc[data-i="${ri}"]`);if(rc){rolarPane(rc);if(cmp===3){const r3=ROM.rows[ri];if(!r3.open){r3.open=true;rc.classList.add("op");const bd=rc.querySelector("[data-body]");if(bd&&!bd.innerHTML.trim()){bd.innerHTML=romBodyHTML(r3);romAtual()}}}const el=cmp>=3?rc.querySelector("[data-rp=cat]"):cmp===1?rc.querySelector("[data-rp=peso]"):(rc.querySelector("[data-rp=q]")||rc.querySelector("[data-act=rom-x]"));if(el)setTimeout(()=>el.focus({preventScroll:true}),250)}break}
-    case "rev-fechar":{const o=document.querySelector(".rev");if(o)o.remove();break}
-    case "rev-ok":{const o=document.querySelector(".rev");if(o)o.remove();romCriar();break}
-    case "rev-filtro":{const o=document.querySelector(".rev");if(o)o.classList.toggle("so-al",t.checked);break}
-    case "rev-ir":{const o=document.querySelector(".rev");if(o)o.remove();const rc=document.querySelector(`#romWrap .rc[data-i="${t.dataset.i}"]`),r=ROM.rows[+t.dataset.i];if(rc&&r){r.open=true;rc.classList.add("op");const bd=rc.querySelector("[data-body]");if(bd&&!bd.innerHTML.trim()){bd.innerHTML=romBodyHTML(r);romAtual()}rolarPane(rc)}break}
-    case "rom-foto":{const im=t.querySelector("img");if(im)abrirZoom(im.src);break}
-    case "rom-ex-add":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i],k=rc.querySelector("[data-rp=exk]").value,v=rc.querySelector("[data-rp=exv]").value;if(!vazio(v)){r.ex=r.ex||{};r.ex[k]=v;r.open=true;renderRom()}break}
-    case "rom-ex-del":{const r=ROM.rows[+t.closest(".rc").dataset.i];delete r.ex[t.dataset.k];r.open=true;renderRom();break}
-    case "rom-ler":romLer();break;
-    case "rom-criar":romRevisar();break;
-    case "rom-x":{const rc=t.closest(".rc"),r=ROM.rows[+rc.dataset.i];r.open=!r.open;rc.classList.toggle("op",r.open);const bd=rc.querySelector("[data-body]");if(r.open&&bd&&!bd.innerHTML.trim()){bd.innerHTML=romBodyHTML(r);romAtual()}break}
-    case "rom-div":{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);if(romKeys(r,romColsR(r)).length)romDividir(r,romColsR(r));else toast("Escolha os tamanhos antes.");renderRom();break}
-    case "rom-div-todas":{ROM.rows.forEach(r=>{if(!r.skip&&(!gradeDaCat(r.cat,r.sub)||r.semG)&&!(r.csel||[]).length)romDividir(r,romColsR(r))});renderRom();break}
-    case "rom-pmg":{const i=+t.dataset.i,r=ROM&&ROM.rows[i];if(!r)break;romArma(r);let g=gradeDaCat(r.cat,r.sub);const c=catBy(r.cat);if(!g&&c){c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};g=c.grade}if(!g)break;const nv=addTamanhos(g,"P M G");r.gsel=g.itens.map(x=>x.id).filter(id=>nv.includes(id)||(r.gsel||[]).includes(id));r.semG=false;salvar(true,false);renderRom();break}
-    case "rom-gpad":{const i=+t.dataset.i,r=ROM&&ROM.rows[i],g=r&&gradeDaCat(r.cat,r.sub);if(!g)break;g.faixa=g.itens.filter(x=>(r.gsel||[]).includes(x.id)).map(x=>x.nome).join(", ");salvar(true,false);toast(g.faixa?"Tamanhos padrão: "+g.faixa:"Padrão removido: nenhum tamanho vem marcado.");break}
-    case "rom-cpad":{const i=+t.dataset.i,r=ROM&&ROM.rows[i],c=r&&catBy(r.cat);if(!c)break;c.coresCfg=c.coresCfg||{};c.coresCfg.padrao=(r.csel||[]).slice();salvar(true,false);toast((r.csel||[]).length?"Cores padrão salvas para "+c.nome+".":"Padrão removido: nenhuma cor vem marcada.");break}
-    case "rom-ct":{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);const l=coresDaCat(r.cat,r.sub);r.csel=(r.csel||[]).length===l.length?[]:l.map(x=>x.id);renderRom();break}
-    case "rom-gt":{const r=ROM.rows[+t.closest(".rc").dataset.i],g=gradeDaCat(r.cat,r.sub);if(g){romArma(r);r.gsel=(r.gsel||[]).length===g.itens.length?[]:g.itens.map(x=>x.id);renderRom()}break}
-    case "rom-tipo":{const f=S.form;f.tipo=t.dataset.v;if(f.tipo==="bruta"){if(!Object.values(f.on||{}).some(Boolean))marcadosPadrao(f);banhistaDoFornecedor(f)}ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});salvar(false);renderForm();renderRom();break}
-    case "rom-add":C.romaneios.push({...clone(ROMS0()[0]),id:uid(),nome:"Novo fornecedor",forn:""});salvar(true,false);renderCfg();break;
-    case "rom-dup":{const i=+t.closest("[data-rom]").dataset.rom,x=clone(C.romaneios[i]);x.id=uid();x.nome+=" (cópia)";C.romaneios.splice(i+1,0,x);salvar(true,false);renderCfg();break}
-    case "rom-del":{if(C.romaneios.length>1){C.romaneios.splice(+t.closest("[data-rom]").dataset.rom,1);salvar(true,false);renderCfg()}else toast("Mantenha pelo menos um modelo.");break}
-    case "rom-map-auto":{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);let n=0;const add=(w,cat,sub)=>{w=String(w).trim();if(!w||a.some(m=>kSub(m.w)===kSub(w)))return;a.push({w,c:cat,s:sub||""});n++};
-      C.categorias.forEach(c=>add(c.nome,c.nome,""));C.categorias.forEach(c=>(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,c.nome,sb)}));
-      T.mapa=mapaStr(a);salvar(true,false);renderCfg();toast(n?`${n} palavra(s) criadas a partir das suas categorias.`:"Todas as suas categorias já estão no mapa.",{t:"Desfazer",fn:desfazer});break}
-    case "rom-plan-ok":{const P=ROM&&ROM.plan;if(!P)break;const m=P.map,nq=v=>{const x=String(v==null?"":v).replace(/[R$\s]/g,"");return x===""?null:numQtd(x)},nn=v=>{const x=String(v==null?"":v).replace(/[R$\s]/g,"");return x===""?null:num(x)},rows=[];
-      if(P.sistema){const erros=[];P.rows.forEach((linha,i)=>{const v={};Object.entries(P.sistema).forEach(([k,j])=>{v[k]=linha[j]});const desc=String(v.F??"").trim(),qn=nq(v.W);if(!desc||qn==null||!Number.isInteger(qn)||qn<0){erros.push(i+2);return}rows.push({desc,cod:String(v.G??"").trim(),qtd:qn,preco:nn(v.P),precod:null,total:null,aviso:"",_sistema:v})});if(erros.length||!rows.length){ROM.msg=`Planilha não importada: confira descrição e quantidade inteira nas linhas ${erros.slice(0,10).join(", ")||"do arquivo"}.`;renderRom();break}ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha do sistema: ${rows.length} linhas para editar`,erro:""});break}
-      const ruim=[],zero=[],semd=[];P.rows.forEach(r=>{const desc=String(m.desc==null?"":r[m.desc]).replace(/\s+/g," ").trim();if(!desc){const cd=m.cod==null?"":String(r[m.cod]||"").trim();if(cd&&(m.qtd==null||nq(r[m.qtd])>0))ruim.push(cd.slice(0,30)+" (sem descrição)");else{const qv=m.qtd==null?null:nq(r[m.qtd]),pv=m.preco==null?null:nn(r[m.preco]),tv=m.total==null?null:nn(r[m.total]);if((qv!=null&&qv!==0)||(pv!=null&&pv!==0)||(tv!=null&&tv!==0))semd.push("qtd "+(m.qtd==null?"?":String(r[m.qtd]).trim()||"vazia")+(pv?" · R$ "+pv:""))}return}const qn=m.qtd==null?1:nq(r[m.qtd]);if(qn===0){zero.push(desc.slice(0,30));return}if(qn==null||!Number.isFinite(qn)||qn<0||qn!==Math.trunc(qn)){ruim.push(desc.slice(0,30)+" ("+(m.qtd==null?"":String(r[m.qtd]).trim()||"vazio")+")");return}const qtd=qn;rows.push({desc,cod:m.cod==null?"":String(r[m.cod]||"").trim().replace(/^#/,""),qtd,preco:m.preco==null?null:nn(r[m.preco]),precod:null,total:m.total==null?null:nn(r[m.total]),aviso:""})});
-      rows.forEach(r=>romAvisoTotal(r));if(ruim.length){ROM.msg=`${ruim.length} linha(s) com quantidade vazia/decimal/inválida ou sem descrição, não importei nada: ${ruim.slice(0,5).join("; ")}${ruim.length>5?"…":""}. Corrija a planilha ou a coluna de quantidade.`;renderRom();break}
-      if(!rows.length){ROM.msg="Nenhuma linha com descrição e quantidade. Confira as colunas.";renderRom();break}
-      ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças${zero.length?` · ${zero.length} linha(s) com quantidade 0 ficaram de fora: ${zero.slice(0,5).join("; ")}${zero.length>5?"…":""}`:""}${semd.length?` · ⚠ ${semd.length} linha(s) SEM DESCRIÇÃO e com quantidade/valor ficaram de fora (pode ser a linha de total): ${semd.slice(0,5).join("; ")}${semd.length>5?"…":""}. Confira a planilha.`:""}`,erro:""});break}
-    case "rom-plan-no":ROM.plan=null;renderRom();break;
-    case "rom-ex-abrir":romUI.ex=true;renderCfg();refocar("#romExTx");break;
-    case "rom-ex-fechar":romUI.ex=false;renderCfg();break;
-    case "rom-ex-ok":{const r=romExInfo();if(!r.ok)break;const tx=String(romUI.txt||"").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"Novo modelo",nome=(String(romUI.nome||"").trim()||tx).slice(0,50),T=({...clone(ROMS0()[0]),id:uid(),nome,forn:"",mapa:""}),a=parseMapa("");
-      C.categorias.forEach(c=>{const add=(w,sub)=>{w=String(w).trim();if(!w||a.some(m=>kSub(m.w)===kSub(w)))return;a.push({w,c:c.nome,s:sub||""})};add(c.nome,"");(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,sb)})});
-      T.mapa=mapaStr(a);C.romaneios.push(T);romUI={ex:false,txt:"",nome:""};abertos.tab="rom";guardarAbertos();salvar(true,false);renderCfg();toast(`Modelo “${nome}” criado com ${r.R.rows.length} peça(s) de exemplo reconhecidas. Ajuste fornecedor e palavras abaixo, se quiser.`,{t:"Desfazer",fn:desfazer});break}
-    case "rom-map-add":{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom];T.mapa=(T.mapa?T.mapa+"; ":"")+"nova palavra=";salvar(true,false);renderCfg();break}
-    case "rom-map-del":{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);a.splice(+t.closest(".rmr").dataset.rmj,1);T.mapa=mapaStr(a);salvar(true,false);renderCfg();break}
-    case "rom-testar":{const card=t.closest("[data-rom]"),T=C.romaneios[+card.dataset.rom],R=lerRomaneioAuto(card.querySelector("[data-rtest]").value,T),o=card.querySelector(".rtres");
-      o.textContent=R.erro||`${R.rows.length} peças lidas${R.conf?" · "+R.conf:""} · 1ª: ${R.rows[0].desc} (${R.rows[0].cod||"sem código"}) ${R.rows[0].qtd} un.`;break}
     case "abrir-arq":{const i=document.getElementById(t.dataset.alvo);if(i)i.click();break}
   }
   if(snapCfg&&JSON.stringify(S.config)!==JSON.stringify(snapCfg))toast("Cadastro alterado.",{t:"Desfazer",fn:()=>{S.config=snapCfg;salvar(true);render()}});
