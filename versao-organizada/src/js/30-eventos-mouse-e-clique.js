@@ -95,7 +95,7 @@ document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.clo
 function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=(cfg().banhistas[0]||{}).id||"";conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del","cv-del","cv-todas","cv-num"];
 /* Registro de ações de clique (data-act). Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
-const ACOES={};
+const ACOES=Object.create(null);
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo==="conjunto"){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];
@@ -159,15 +159,6 @@ document.addEventListener("click",e=>{
     case "zoom":{const k=t.dataset.z,d=+t.dataset.d;ZM[k]=d===0?1:Math.min(1.6,Math.max(0.7,Math.round((ZM[k]+d*0.1)*10)/10));zoomAplicar(true);break}
     case "mod-av":abertos.modAv=!abertos.modAv;guardarAbertos();renderCfg();break;
     case "mod-brancas":abertos.modTodas=!abertos.modTodas;guardarAbertos();renderCfg();break;
-    case "mod-novo":abrirNovoSistema();break;
-    case "novo-ok":{const N=NOVO;if(!N)break;const mo={id:uid(),nome:(String(N.nome||"").trim()||"Novo sistema"),formato:N.formato,sep:N.sep,dec:N.dec,enc:"utf8bom",
-      cols:N.cols.map(c=>{const x={k:c.k||"",h:c.h||"",on:true};if(c.tipo)x.tipo=c.tipo;if(c.fator)x.fator=c.fator;return x})};
-      C.modelos.push(mo);C.modelo=mo.id;NOVO=null;const o=document.querySelector(".rep");if(o)o.remove();salvar(true,false);render();
-      toast(`“${mo.nome}” pronto: é só escolher “${mo.nome}” em Exportar para e baixar. Faça um teste pequeno no outro sistema antes de importar tudo.`);break}
-    case "mod-conferir":{const g=gerar();if(!g.linhas.length){toast("A tabela está vazia: lance ou cole peças antes de conferir.");break}if(!abrirConferencia(g,colunasExport(),null))toast("Tudo certo: a tabela atende às regras do modelo.");break}
-    case "mod-salvar":modeloParaJson(modeloAtual());break;
-    case "exp-ir":{const ref=t.dataset.ref,ri=G&&G.linhas.findIndex(r=>String(r.v.E||"")===ref);if(ri==null||ri<0){toast("A peça não está na tabela atual.");break}if(FV&&!FV.has(ri)){toast("Esta peça está fora do filtro atual. Feche esta janela e limpe o filtro para encontrá-la.");break}const o=t.closest(".rep");if(o)o.remove();expPend=null;visPara(celular()?"planilha":"tudo");const col=LET.findIndex(L=>NOME[L]===t.dataset.colnome);selecionar(ri,col>=0?col:LET.indexOf("F"));rolarAte();setTimeout(()=>{const e=document.querySelector("#sheet td.sa");if(e)e.focus()},100);break}
-    case "exp-assim":{const o=document.querySelector(".rep");if(o)o.remove();const a=expPend;expPend=null;if(a&&a.tipo==="copiar")copiar(a.ids,true);else baixar(true,a&&a.ids);break}
     case "mod-bling":{const mo=modeloBling();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast("Modelo Bling criado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele (depois de cadastrá-los, ligue-os em “Recebe o dado de”). Use o botão Validar do Bling antes de Importar.");break}
     case "mod-jueri":{const mo=modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();break}
     case "ordem":C.ordem=t.dataset.v;salvar(true,false);renderTopo();break;
@@ -199,9 +190,6 @@ document.addEventListener("click",e=>{
     case "ir":if(celular())formAbrir(false);irPara(t.dataset.sec);break;
     case "ctab":if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);break;
     case "exemplo":abrirExemploVisual();break;
-    case "xlsx":baixar();break;
-    case "copiar":copiar();break;
-    case "exp-limpar":gravarExport(true);break;case "exp-so":gravarExport(false);break;case "exp-nao":lastExport=null;renderTopo();break;
     case "cat-add":{const inp=document.getElementById("novaCat"),v=inp.value.replace(/\s+/g," ").trim();
       const er=nomeCatErro(C,v,null);if(er){toast(er);inp.focus();break}
       const pf=prefixoNovo(C,v),p=pf.p;
@@ -273,7 +261,6 @@ document.addEventListener("click",e=>{
     case "sim-usar":{const f=S.form;f.mk=f.mk||{};f.mk[t.dataset.bid]=String(t.dataset.fator).replace(".",",");document.querySelectorAll(".rep").forEach(x=>x.remove());salvar(false);renderForm();toast(`Fator ${t.dataset.fator.replace(".",",")} aplicado.`);break}
     case "prim-ir":{primeirosIr(t.dataset.p);primeirosAtualizar();break}
     case "prim-fechar":{abertos.primeiros=false;guardarAbertos();primeirosAtualizar();break}
-    case "exp-agrupar":{expAgrupa=!expAgrupa;if(expUlt)mostrarConferencia(expUlt.p,expUlt.podeSeguir);break}
     case "rom-xlsx":{const ids=new Set(ROM.rows.flatMap(r=>r.lancIds||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("Nenhuma peça deste romaneio está na tabela atual.");break}baixar(false,ids);break}
     case "rel-xlsx":{const rel=relLer(),ids=new Set((rel&&rel.lids||[]).filter(id=>S.lanc.some(l=>l.id===id)));if(!ids.size){toast("As peças desta criação não estão mais na tabela.");break}baixar(false,ids);break}
     case "rom-bulk-div":{const rs=romSelRows().filter(r=>!r.skip&&!r.feito&&!r.lote&&(!gradeDaCat(r.cat,r.sub)||r.semG)&&!(r.csel||[]).length);rs.forEach(r=>romDividir(r,romColsR(r)));renderRom();toast(`${rs.length} peça(s) divididas entre os banhos.`);break}
@@ -408,9 +395,7 @@ document.addEventListener("click",e=>{
     case "rom-map-del":{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);a.splice(+t.closest(".rmr").dataset.rmj,1);T.mapa=mapaStr(a);salvar(true,false);renderCfg();break}
     case "rom-testar":{const card=t.closest("[data-rom]"),T=C.romaneios[+card.dataset.rom],R=lerRomaneioAuto(card.querySelector("[data-rtest]").value,T),o=card.querySelector(".rtres");
       o.textContent=R.erro||`${R.rows.length} peças lidas${R.conf?" · "+R.conf:""} · 1ª: ${R.rows[0].desc} (${R.rows[0].cod||"sem código"}) ${R.rows[0].qtd} un.`;break}
-    case "imp-ok":aplicarImp();break;
     case "abrir-arq":{const i=document.getElementById(t.dataset.alvo);if(i)i.click();break}
-    case "backup":backup();break;
   }
   if(snapCfg&&JSON.stringify(S.config)!==JSON.stringify(snapCfg))toast("Cadastro alterado.",{t:"Desfazer",fn:()=>{S.config=snapCfg;salvar(true);render()}});
 });

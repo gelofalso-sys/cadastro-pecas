@@ -37,6 +37,7 @@ fatias/exportacao/28-exportar.js
 fatias/exportacao/29-importar-e-copia.js
 js/29b-exemplo-visual.js
 js/30-eventos-mouse-e-clique.js
+fatias/exportacao/acoes.js
 js/31-eventos-campos-e-grade.js
 js/32-eventos-entrada-teclado-e-arrasto.js
 js/33-janelas-busca-e-paleta.js

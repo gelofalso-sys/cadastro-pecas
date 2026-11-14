@@ -1,6 +1,8 @@
+/* Estado da fatia exportacao (antes globais soltas): pend = acao esperando a conferencia (28), agrupa/ult = tela de conferencia (28),
+   novo = assistente "Outro sistema" (19b), imp = planilha lida em Importar (29). */
+const estadoExportacao={pend:null,agrupa:false,ult:null,novo:null,imp:null};
 /* ===== assistente "Outro sistema": escolhe a planilha modelo do sistema de destino e confere as colunas ===== */
-let NOVO=null;
-function abrirNovoSistema(){NOVO=null;
+function abrirNovoSistema(){estadoExportacao.novo=null;
   repModal(`<div class="rep-h"><div><b class="rep-t">Exportar para outro sistema</b><div class="hint">Baixe no outro sistema a <b>planilha modelo de importação de produtos</b> (costuma se chamar “planilha modelo” ou “tabela modelo”) e escolha o arquivo aqui. O app lê só a primeira linha, com os nomes das colunas, e não guarda o resto.</div></div><div class="rep-ac"><button type="button" class="btn sm" data-act="rel-fechar">Cancelar</button></div></div>
   <div class="rep-rf" data-novo style="padding:22px 18px;border:2px dashed var(--line);margin:14px 18px;border-radius:12px;justify-content:center"><label class="btn pri big" style="cursor:pointer">Escolher a planilha modelo<input type="file" id="fileNovo" accept=".xlsx,.xls,.csv" class="vh"></label><span class="hint">ou solte o arquivo aqui · .xlsx, .xls ou .csv</span></div>`)}
 async function lerNovo(file){
@@ -16,9 +18,9 @@ async function lerNovo(file){
     if(!hdr.some(Boolean)||hdr.length>200)throw new Error("não achei os nomes das colunas na primeira linha");
     const usados=new Set(),cols=hdr.map(h=>{let k=h?(chaveDoCabecalho(h)||""):"";if(k&&usados.has(k))k="";if(k)usados.add(k);
       const c={k,h:h.slice(0,80),auto:!!k};if(k&&TIPO_PAD[k])c.tipo=TIPO_PAD[k];if(k==="N"&&/\bkg\b/i.test(h))c.fator="0.001";return c});
-    NOVO={nome:file.name.replace(/[.][^.]+$/,"").slice(0,60),formato,sep,dec:sep===","?".":",",cols};{const tt=document.getElementById("toast");if(tt)tt.hidden=true}mostrarNovo()}
+    estadoExportacao.novo={nome:file.name.replace(/[.][^.]+$/,"").slice(0,60),formato,sep,dec:sep===","?".":",",cols};{const tt=document.getElementById("toast");if(tt)tt.hidden=true}mostrarNovo()}
   catch(e){toast("Não consegui ler essa planilha: "+(e&&e.message?e.message:"arquivo inválido")+".")}}
-function mostrarNovo(){const N=NOVO,reco=N.cols.filter(c=>c.k).length,chaves=[["","(deixar em branco)"],...LET.map(L=>[L,NOME[L]])];
+function mostrarNovo(){const N=estadoExportacao.novo,reco=N.cols.filter(c=>c.k).length,chaves=[["","(deixar em branco)"],...LET.map(L=>[L,NOME[L]])];
   repModal(`<div class="rep-h"><div><b class="rep-t">Conferir as colunas</b><div class="hint">${reco} de ${N.cols.length} colunas reconhecidas. Ajuste o que estiver errado; o resto sai em branco. Arquivo: ${N.formato==="csv"?"texto (.csv)":"planilha (.xlsx)"}.</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="novo-ok">Usar este modelo</button><button type="button" class="btn sm" data-act="rel-fechar">Cancelar</button></div></div>
   <div class="rep-rf"><label class="fl" style="width:280px"><span>Nome do sistema</span><input data-nv="nome" value="${esc(N.nome)}"></label></div>
   <div class="rep-tb"><table class="cfg"><thead><tr><th>Coluna do outro sistema</th><th>Vai receber</th><th></th></tr></thead><tbody>${N.cols.map((c,i)=>`<tr class="${c.k?"":"nv-nao"}"><td>${esc(c.h||"(sem nome)")}</td><td><select data-nv="k" data-i="${i}" style="width:250px">${opts(chaves,c.k||"")}</select></td><td class="hint">${c.k?"✓ reconhecida":"em branco"}</td></tr>`).join("")}</tbody></table></div>`)}

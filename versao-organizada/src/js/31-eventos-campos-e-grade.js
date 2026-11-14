@@ -57,9 +57,9 @@ function onField(t,isChange){
   if(t.dataset&&t.dataset.fauto!==undefined){if(t.checked&&!confirm("Ativar envio automático? As fotos anexadas serão enviadas ao imgbb, um serviço de terceiros, e qualquer pessoa com o link poderá acessá-las.")){t.checked=false;return}try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0");localStorage.setItem("cadpecas-imgbb-consent-v1",t.checked?"1":"0")}catch(e){t.checked=false;toast("Não consegui salvar a preferência de envio automático.")}return}
   if(t.dataset&&t.dataset.fkey!==undefined){try{localStorage.setItem("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange&&!faixaBusy){faixaBusy=true;try{aplicaFaixa(t.value)}finally{faixaBusy=false}}return}
-  if(t.dataset&&t.dataset.nv!==undefined){if(!NOVO)return;
-    if(t.dataset.nv==="nome"){NOVO.nome=String(t.value).slice(0,60);return}
-    if(t.dataset.nv==="k"&&isChange){const c=NOVO.cols[+t.dataset.i];if(c){c.k=t.value;c.auto=false;if(c.k&&TIPO_PAD[c.k]&&!c.tipo)c.tipo=TIPO_PAD[c.k];const tr=t.closest("tr");if(tr){tr.className=c.k?"":"nv-nao";const h=tr.querySelector(".hint");if(h)h.textContent=c.k?"escolhida por você":"em branco"}}}
+  if(t.dataset&&t.dataset.nv!==undefined){if(!estadoExportacao.novo)return;
+    if(t.dataset.nv==="nome"){estadoExportacao.novo.nome=String(t.value).slice(0,60);return}
+    if(t.dataset.nv==="k"&&isChange){const c=estadoExportacao.novo.cols[+t.dataset.i];if(c){c.k=t.value;c.auto=false;if(c.k&&TIPO_PAD[c.k]&&!c.tipo)c.tipo=TIPO_PAD[c.k];const tr=t.closest("tr");if(tr){tr.className=c.k?"":"nv-nao";const h=tr.querySelector(".hint");if(h)h.textContent=c.k?"escolhida por você":"em branco"}}}
     return}
   if(t.id==="modSel"){const v=t.value;
     if(v==="@bling"||v==="@jueri"){const mo=v==="@bling"?modeloBling():modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast(v==="@bling"?"Bling adicionado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele.":"Jueri adicionado.")}

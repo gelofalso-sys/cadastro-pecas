@@ -1,0 +1,55 @@
+{
+  "nome": "exportacao",
+  "descricao": "Exportar a tabela (xlsx/csv/copiar) com conferencia previa, assistente de outro sistema, modelos em .json, importar planilha de referencia e copia/restauracao dos cadastros.",
+  "arquivos": [
+    "19b-assistente-outro-sistema.js",
+    "28-exportar.js",
+    "29-importar-e-copia.js",
+    "acoes.js"
+  ],
+  "expoe": [
+    "baixar",
+    "copiar",
+    "importar",
+    "restaurar",
+    "obterDL",
+    "abrirNovoSistema",
+    "lerNovo",
+    "modeloDeJson",
+    "estadoExportacao"
+  ],
+  "usa": [
+    "core"
+  ],
+  "testes": [
+    "^t100_xml_precisao\\.py$",
+    "^t33\\.py$",
+    "^t34\\.py$",
+    "^t35\\.py$",
+    "^t36\\.py$",
+    "^t40\\.py$",
+    "^t46\\.py$",
+    "^t48\\.py$",
+    "^t56_conjunto_romaneio\\.py$",
+    "^t58_backup_integridade\\.py$",
+    "^t60_varejo\\.py$",
+    "^t65_categoria_conjunto\\.py$",
+    "^t67_conjunto_quantidade\\.py$",
+    "^t67_referencias_cores\\.py$",
+    "^t69_banho_categoria_quantidade\\.py$",
+    "^t69_banho_divisoes_exportacao\\.py$",
+    "^t69_banho_fixo_categoria_quantidade\\.py$",
+    "^t69_insumos\\.py$",
+    "^t69_lote_por_grama_categorias\\.py$",
+    "^t71_romaneios_reais\\.py$",
+    "^t78_baixar_selecionadas\\.py$",
+    "^t87_ajustes_cadastros\\.py$",
+    "^t94_backup_real\\.py$",
+    "^t95_lapidacao\\.py$",
+    "^t96_fluxos\\.py$",
+    "^backup_exclusao_pendente\\.js$",
+    "^t90_banco_backup\\.js$",
+    "^t93_revisao_agil\\.js$"
+  ],
+  "fronteira": "falha"
+}

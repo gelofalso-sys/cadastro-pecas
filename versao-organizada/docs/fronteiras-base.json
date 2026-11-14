@@ -1,5 +1,5 @@
 {
-  "globaisMutaveisTotal": 103,
+  "globaisMutaveisTotal": 98,
   "globaisMutaveisPorArquivo": {
     "js/14-persistencia.js": 17,
     "js/20-armazenamento-idb.js": 14,
@@ -13,18 +13,15 @@
     "js/21d-novidades.js": 3,
     "js/25-relatorio-romaneio.js": 3,
     "js/27-fotos-escolher-colar.js": 3,
-    "js/28-exportar.js": 3,
     "js/11-utilidades.js": 2,
     "js/16-selecao.js": 2,
     "js/23-fotos-imgbb-e-nota-fiscal.js": 2,
     "js/26-acoes.js": 2,
     "js/34-filtros-importacao-e-cartoes.js": 2,
     "js/18-conjunto.js": 1,
-    "js/19b-assistente-outro-sistema.js": 1,
     "js/19c-colar-romaneio.js": 1,
     "js/21b-romaneio-extras.js": 1,
     "js/22-importar-pdf-romaneio.js": 1,
-    "js/29-importar-e-copia.js": 1,
     "js/33-janelas-busca-e-paleta.js": 1
   },
   "duplicadas": [],

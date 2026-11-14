@@ -1,5 +1,4 @@
 /* ===== importar / cópia ===== */
-let impPend=null;
 function importar(file){
   try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha")}catch(e){document.getElementById("impRes").innerHTML=`<p class="status bad">${esc(e.message)}. Nada foi lido.</p>`;return}
   const fr=new FileReader();fr.onload=()=>{try{
@@ -10,17 +9,17 @@ function importar(file){
     aoa.slice(1).forEach(r=>{const m=String(r[iR]||"").trim().toUpperCase().match(/^([A-Z]+)(\d+)[A-Z]*$/);if(m&&!(max[m[1]]>=+m[2]))max[m[1]]=+m[2];if(m&&m[2].length>1&&m[2][0]==="0")pad[m[1]]=Math.max(pad[m[1]]||0,m[2].length);
       if(iF>=0&&r[iF])forn.add(String(r[iF]).trim());if(iC>=0&&r[iC]){const c=String(r[iC]).trim();cats[c]=cats[c]||{subs:new Set(),pref:null};if(!cats[c].pref&&m)cats[c].pref=m[1];if(iS>=0&&r[iS])cats[c].subs.add(String(r[iS]).trim())}
       if(iCor>=0&&r[iCor])cores.add(String(r[iCor]).trim());if(iO>=0&&r[iO])obs.add(String(r[iO]).trim())});
-    impPend={max,pad,forn,cats,cores,obs};
+    estadoExportacao.imp={max,pad,forn,cats,cores,obs};
     document.getElementById("impRes").innerHTML=`<div class="banner"><p>Última peça encontrada: ${Object.entries(max).map(([p,n])=>`<b class="mono">${esc(p)}${esc(n)}</b>`).join(", ")||"nenhuma"} · ${forn.size} fornecedor(es) · ${Object.keys(cats).length} categoria(s) · ${cores.size} cor(es).</p><button class="btn pri sm" type="button" data-act="imp-ok">Aplicar</button></div>`;
   }catch(e){document.getElementById("impRes").innerHTML=e&&e.lim?`<p class="status bad">${esc(e.message)}. Nada foi lido.</p>`:`<p class="status bad">Não consegui ler. A primeira linha precisa ter o cabeçalho “Referência”.</p>`}};fr.readAsArrayBuffer(file);
 }
 function aplicarImp(){
-  if(!impPend)return;const C=cfg(),lo=s=>s.toLowerCase(),{max,pad,forn,cats,cores,obs}=impPend;
+  if(!estadoExportacao.imp)return;const C=cfg(),lo=s=>s.toLowerCase(),{max,pad,forn,cats,cores,obs}=estadoExportacao.imp;
   Object.entries(max).forEach(([p,n])=>{if(!(ultimo(p)>=n))C.seqs[p]=String(n).padStart((pad&&pad[p])||0,"0")});
   forn.forEach(f=>{if(!C.fornecedores.some(x=>lo(x.nome)===lo(f)))C.fornecedores.push({nome:f,desconto:"0",tipo:"bruta",codigo:""})});
   Object.entries(cats).forEach(([c,v])=>{let k=C.categorias.find(x=>lo(x.nome)===lo(c));if(!k){k={nome:c,prefixo:v.pref||"BR",subs:[]};C.categorias.push(k)}v.subs.forEach(s=>{if(!k.subs.some(x=>lo(x)===lo(s)))k.subs.push(s)})});
   cores.forEach(c=>{if(!C.cores.some(x=>lo(x)===lo(c)))C.cores.push(c)});obs.forEach(o=>{if(!C.observacoes.includes(o))C.observacoes.push(o)});
-  impPend=null;salvar(true,false);render();toast("Importado.");
+  estadoExportacao.imp=null;salvar(true,false);render();toast("Importado.");
 }
 async function backup(){const dl=await obterDL();
   try{await dl.save({filename:"cadastro-pecas-cadastros.json",data:JSON.stringify({config:S.config},null,2)})}catch(e){if(e&&e.code!=="declined")toast("Não consegui salvar a cópia.")}}

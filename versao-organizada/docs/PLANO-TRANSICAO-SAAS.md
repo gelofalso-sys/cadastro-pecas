@@ -220,3 +220,9 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 5. (feito na Tarefa 9) testes importam os módulos do núcleo; resta recortar de `src/js` só o que ainda não foi para o núcleo.
 
 **Dívida técnica registrada:** o conjunto de pureza é *estrutural* (o grafo não vê mutação de objetos recebidos por argumento nem de constantes-objeto como `DEFAULT_CONFIG`); revisar quando o servidor reutilizar o núcleo.
+
+### Fatia `exportacao` — concluída em 14/11/2026 (Tarefa 10, primeira fatia)
+- `src/fatias/exportacao/` com `FATIA.json` (`fronteira: "falha"`), `LEIA-ME.md`, 28, 19b, 29 e `acoes.js` (14 ações de clique registradas via `registrarAcoes`). `abrirExemploVisual` saiu de 29 para `src/js/29b-exemplo-visual.js` (não é exportação).
+- Mover os arquivos manteve o HTML idêntico (hash `18394219…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
+- Globais mutáveis: 103 -> 98 (as cinco `NOVO`, `expPend`, `expAgrupa`, `expUlt`, `impPend` viraram `estadoExportacao`). `lastExport` fica em `src/js/10` (usada também por 15 e 19d).
+- `tools/acoplamento.mjs` ganhou `--fatia=<nome>` e `--arquivos=a.js,b.js`.
