@@ -39,6 +39,9 @@ export function gerarMapa(fatias, arestas, globais) {
   return L.join("\n");
 }
 
+// Confere ignorando diferenca de fim de linha (CRLF do checkout no Windows).
+export const mapaConfere = (atual, esperado) => atual != null && atual.replace(/\r\n/g, "\n") === esperado;
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const modo = process.argv.includes("--escrever") ? "escrever" : process.argv.includes("--conferir") ? "conferir" : null;
   if (!modo) { console.error("uso: node tools/mapa.mjs --escrever | --conferir"); process.exit(2); }
@@ -53,7 +56,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (modo === "escrever") { fs.writeFileSync(alvo, md, "utf8"); console.log("docs/ARQUITETURA.md escrito"); }
   else {
     const atual = fs.existsSync(alvo) ? fs.readFileSync(alvo, "utf8") : null;
-    if (atual !== md) { console.error("docs/ARQUITETURA.md desatualizado; rode: npm run mapa"); process.exit(1); }
+    if (!mapaConfere(atual, md)) { console.error("docs/ARQUITETURA.md desatualizado; rode: npm run mapa"); process.exit(1); }
     console.log("docs/ARQUITETURA.md em dia");
   }
 }
