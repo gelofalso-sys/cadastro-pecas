@@ -1,7 +1,14 @@
 """Auditoria 2: peso/quantidade com compra com desconto, ROUND do XLSX em banho automatico, resumo da tabela salva e aviso de quantidade ajustada."""
 import os,subprocess,json,tempfile,re
 D=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-def rd(a):return open(os.path.join(D,"src","js",a),encoding="utf-8").read()
+import glob
+def _fontes(arq):
+    """texto do arquivo de src/js seguido do núcleo (src/core, sem export): o código puro mudou de arquivo, não de comportamento"""
+    t=[open(os.path.join(D,"src","js",arq),encoding="utf-8").read()]
+    for f in sorted(glob.glob(os.path.join(D,"src","core","*.js"))):
+        t.append(re.sub(r'(?m)^export\s+(?=(?:async\s+function|function|const|let|var|class)\b)','',open(f,encoding="utf-8").read()))
+    return chr(10).join(t)
+rd=_fontes
 def grab(arq,ini):
     L=rd(arq).splitlines();out=[];on=False
     for l in L:

@@ -2,8 +2,15 @@
 As funções puras são extraídas do código-fonte e rodam no Node (sem navegador)."""
 import os,re,subprocess,json,tempfile
 D=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import glob
+def _fontes(arq):
+    """texto do arquivo de src/js seguido do núcleo (src/core, sem export): o código puro mudou de arquivo, não de comportamento"""
+    t=[open(os.path.join(D,"src","js",arq),encoding="utf-8").read()]
+    for f in sorted(glob.glob(os.path.join(D,"src","core","*.js"))):
+        t.append(re.sub(r'(?m)^export\s+(?=(?:async\s+function|function|const|let|var|class)\b)','',open(f,encoding="utf-8").read()))
+    return chr(10).join(t)
 def grab(arq,ini):
-    L=open(os.path.join(D,"src","js",arq),encoding="utf-8").read().splitlines();out=[];on=False
+    L=_fontes(arq).splitlines();out=[];on=False
     for l in L:
         if not on and l.startswith(ini):on=True;out.append(l);continue
         if on:

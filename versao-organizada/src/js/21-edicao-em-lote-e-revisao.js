@@ -69,7 +69,6 @@ async function romRevisar(){const seq=++romRevSeq,antes=romInsAssinatura(),insPe
     </tbody></table></div>
     <div class="rev-f">${bloqueiaFormula?`<span class="hint">⚠ O custo de insumos contém uma fórmula ou valor inválido. Para ratear, informe um valor numérico; a fórmula não foi alterada.</span>`:""}${bloqueiaFora?`<span class="hint">⚠ Frete e separação ficam fora do custo das peças. Retire esses itens dos insumos antes de criar.</span>`:""}${bloqueiaBase?`<span class="hint">⚠ Informe valores válidos para a base do rateio de insumos antes de criar.</span>`:""}${bloqueiaIns&&!bloqueiaBase?`<span class="hint">O rateio foi arredondado por unidade: o valor aplicado é R$ ${brl(Math.abs(difIns))} ${difIns>0?"menor":"maior"} que o total informado. Você pode criar assim.</span>`:""}${bloqueiaLote?`<span class="hint">⚠ Corrija a quantidade dos itens de lote ou desmarque-os antes de criar.</span>`:""}${insPend.length?`<span class="hint">⚠ Não foi possível confirmar o rateio de ${insPend.length} item(ns) já lançado(s), ou o valor mudou. Restaure a tabela salva e confira; se necessário, refaça os itens.</span>`:""}<button type="button" class="btn" data-act="rev-fechar">Voltar e corrigir</button><button type="button" class="btn pri big" data-act="rev-ok" ${cr.length&&!bloqueiaLote&&!bloqueiaBase&&!bloqueiaFora&&!bloqueiaFormula&&!insPend.length?"":"disabled"}>${nal||bloqueiaLote?"Criar mesmo assim":"Confirmar e criar"} ${cr.length} peça${cr.length===1?"":"s"}</button></div></div>`;
   document.body.appendChild(ov)}
-const romFq=(rot,inner,cls)=>`<label class="fq ${cls||""}"><span>${rot}</span>${inner}</label>`;
 function romCardHTML(r,i){if(r.lote)return romLoteHTML(r,i);const C=cfg(),f=S.form,bruta=romTipo(r)==="bruta",bh=romBh(r),g=gradeDaCat(r.cat,r.sub),cc=catBy(r.cat),fq=romFq,rc=romColsR(r);
   const lcor=coresDaCat(r.cat,r.sub),ids=romIds(r),usaVar=(!!g&&!r.semG)||ids.length>0,dupCod=r.cod&&S.lanc.some(l=>!(r.lancIds||[]).includes(l.id)&&String(l.v.G||"")===String(r.cod)&&String(l.v.H||"")===String(r.forn||f.v.H||""));
   const banhoCard=b=>{const on=romOn(r,b),vz=r.vz&&(b.id in r.vz)?r.vz[b.id]:vzOn(f,bh,b),dis=on?"":"disabled";
@@ -134,11 +133,8 @@ function romAtual(){if(!ROM||!ROM.rows.length)return;renderNum();romExtrasAtual(
     if(!sp&&!dv&&!dp&&!semTam.length)pt.push("✓ pronto para criar");chk.textContent="Antes de criar: "+pt.join(" · ");chk.className="rom-c "+((sp||dv||dp||semTam.length)?"bad":"")}
   const tt=document.getElementById("romTot");if(tt)tt.textContent=nl?`${nl} linhas · Custo total ${fm(cus)} · Varejo estimado ${fm(var_)}${var_?` · Lucro ${fmt(Math.round((var_-cus)/var_*1000)/10)}%`:""}`:"";
   const b=document.getElementById("romCriar");if(b){const n=ROM.rows.filter(r=>!r.skip).length;b.textContent=`Criar ${n} peça${n===1?"":"s"}`;b.disabled=!n}}
-const g3=n=>(Math.round((+n||0)*1000)/1000).toFixed(3).replace(".",",");
 const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);
 /* peso "real": o que você pesa sem o insumo que a galvânica pesa junto. O valor do lote não muda; o valor por grama sobe porque o peso caiu */
-const romLoteReal=r=>{const n=num(r.pesoReal);return n>0?n:null};
-function romLoteTaxa(r,w){const tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0),real=romLoteReal(r),base=real!=null?real:(r.ratear!==false&&w>0?w:(r.loteG||0));return base>0?tot/base:0}
 function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>{const p=num(x.peso);if(p>0)w+=p;v+=r2c(num(x.custo)||0)});
   if(r.semPeso){const tt=r.total!=null?r.total:0,ok=kids.length&&Math.round(v*100)===Math.round(tt*100);return {cls:kids.length?(ok?"ok":"warn"):"warn",dif:0,taxa:0,txt:kids.length?`${kids.length} item(ns) numerados 1/${kids.length}${w>0?` · ${g3(w)} g informados · R$ ${brl(w>0?v/w:0)}/g em média`:" · sem pesos ainda: o valor está dividido igualmente"} · valor dos itens R$ ${brl(v)} de R$ ${brl(tt)}${ok?"":" — só um alerta"}`:"Nenhum item ainda: adicione os itens do lote."}}
   const real=romLoteReal(r),ref=real!=null?real:(r.loteG||0),dif=Math.round((ref-w)*1000)/1000,tot=r.total!=null?r.total:(r.loteG||0)*(r.precoG||0),taxa=romLoteTaxa(r,w),rs=x=>String(Math.round(x*10000)/10000).replace(".",","),
@@ -210,10 +206,7 @@ function romTrocarCategoria(r,cat,sub){if(r.cat===cat&&(r.sub||"")===(sub||""))r
 /* categoria vendida por grama: custo de compra = peso × valor do grama quando o custo está vazio (ou foi calculado assim) */
 function romCompraGrama(r){const c=catBy(r.cat),g=c&&num(c.compraGrama),p=num(r.peso);if(!(g>0)||r.lote||r.loteDe||!(vazio(r.custo)||r.custoAuto))return false;
   if(p>0){r.custo=virg(r2c(p*g));r.custoAuto=true}else if(r.custoAuto){r.custo="";r.custoAuto=false}return true}
-const ROM_PAPEIS=[["cod","Código"],["desc","Descrição"],["qtd","Quantidade"],["preco","Valor unitário"],["total","Valor total"]];
-const ROM_SIN={cod:/c[oó]d|ref|sku|^item$|^id$/i,desc:/descri|produto|nome|mercadoria|artigo/i,qtd:/qtd|quant|^qt$|^un/i,preco:/unit|pre[cç]o|vlr un|valor un|^valor$/i,total:/total|subtotal/i};
 /* texto de arquivo: UTF-8 (com ou sem BOM); se não for UTF-8 válido, Windows-1252 */
-function decTexto(buf){try{return new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(e){return new TextDecoder("windows-1252").decode(buf)}}
 async function romPlanilha(file){if(!(await impPrepara(file)))return;return romPlanilha0(file)}
 async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planilha");if(typeof XLSX==="undefined")throw new Error("A biblioteca de planilha não carregou.");
   const buf=await file.arrayBuffer(),ehCsv=/\.(csv|txt)$/i.test(file.name||""),wb=ehCsv?XLSX.read(decTexto(buf),{type:"string",raw:true}):XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];checaLinhasPlan(ws);if(Object.keys(ws).some(k=>k[0]!=="!"&&ws[k]&&ws[k].f&&ws[k].v==null))throw new Error("Há fórmulas sem resultado salvo na planilha. Abra e salve o arquivo em um programa de planilhas antes de importar");const aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});   /* raw:true: número formatado (1.000 / 1,234) vem como número, não como texto */

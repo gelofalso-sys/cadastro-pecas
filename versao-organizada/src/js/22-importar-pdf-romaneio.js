@@ -3,7 +3,6 @@ let pdfLib=null; async function carregarPdfJs(){if(pdfLib)return pdfLib;const L=
   /* aberto direto do disco (file://), o pdf.js não aceita o worker por URL e cai num modo que a CSP bloqueia: criar o Worker aqui evita isso */
   try{L.GlobalWorkerOptions.workerPort=new Worker(wurl)}catch(e){}
   pdfLib=L;return L}
-const mulM=(m,n)=>[m[0]*n[0]+m[2]*n[1],m[1]*n[0]+m[3]*n[1],m[0]*n[2]+m[2]*n[3],m[1]*n[2]+m[3]*n[3],m[0]*n[4]+m[2]*n[5]+m[4],m[1]*n[4]+m[3]*n[5]+m[5]];
 /* miniatura leve (~160 px) que fica guardada na peça só para a coluna Foto da tabela */
 function miniFoto(c,max){max=max||240;try{const k=Math.min(1,max/Math.max(c.width,c.height)),m=document.createElement("canvas");m.width=Math.max(1,Math.round(c.width*k));m.height=Math.max(1,Math.round(c.height*k));const x=m.getContext("2d");x.imageSmoothingQuality="high";x.drawImage(c,0,0,m.width,m.height);return m.toDataURL("image/jpeg",0.88)}catch(e){return null}}
 const objPdf=(page,nome)=>new Promise(res=>{let ok=false;const to=setTimeout(()=>{if(!ok)res(null)},6000);try{page.objs.get(nome,o=>{ok=true;clearTimeout(to);res(o)})}catch(e){clearTimeout(to);res(null)}});

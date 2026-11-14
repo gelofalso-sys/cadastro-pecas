@@ -1,8 +1,5 @@
 /* ===== assistente "Outro sistema": escolhe a planilha modelo do sistema de destino e confere as colunas ===== */
 let NOVO=null;
-const TIPO_PAD={V:"dinheiro",P:"dinheiro",Q:"dinheiro",R:"dinheiro",S:"dinheiro",T:"dinheiro",U:"dinheiro",W:"inteiro",N:"numero"};
-const csvLinha=(l,sep)=>{const o=[];let c="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];
-  if(q){if(ch==='"'){if(l[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===sep){o.push(c);c=""}else c+=ch}o.push(c);return o};
 function abrirNovoSistema(){NOVO=null;
   repModal(`<div class="rep-h"><div><b class="rep-t">Exportar para outro sistema</b><div class="hint">Baixe no outro sistema a <b>planilha modelo de importação de produtos</b> (costuma se chamar “planilha modelo” ou “tabela modelo”) e escolha o arquivo aqui. O app lê só a primeira linha, com os nomes das colunas, e não guarda o resto.</div></div><div class="rep-ac"><button type="button" class="btn sm" data-act="rel-fechar">Cancelar</button></div></div>
   <div class="rep-rf" data-novo style="padding:22px 18px;border:2px dashed var(--line);margin:14px 18px;border-radius:12px;justify-content:center"><label class="btn pri big" style="cursor:pointer">Escolher a planilha modelo<input type="file" id="fileNovo" accept=".xlsx,.xls,.csv" class="vh"></label><span class="hint">ou solte o arquivo aqui · .xlsx, .xls ou .csv</span></div>`)}

@@ -32,7 +32,6 @@ window.addEventListener("beforeunload",flushJa);
 window.addEventListener("beforeunload",e=>{try{const i=document.getElementById("celIn");if((celEd&&i&&i.value!==celEd.orig)||dirty.c||dirty.l||conflito||corrompido){e.preventDefault();e.returnValue="";return ""}   /* dirty só fica ligado quando a gravação falhou (memória cheia, outra aba, dados danificados) */}catch(x){}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushJa()});
 /* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do localStorage vão sem elas, para não estourar a memória do navegador */
-const ftRSalvas=new Set();
 function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
   return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
 async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await idbPut("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
@@ -61,15 +60,12 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
   if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{localStorage.setItem("cadpecas4",jsonLocal(false))}catch(e){}}})}
   return true
 }
-const PONTOS_MAX=15,PONTO_INTERVALO=30*60*1000;
 async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
 async function pontoAuto(motivo,forcar){const snap={n:S.lanc.length,json:jsonLocal(false)};   /* estado de ANTES da operação, capturado já */
   try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return true;if(!snap.n&&!forcar)return true;return await pontoSalvar(motivo,snap)}catch(e){return false}}
 const pontoAviso=p=>p.then(ok=>{if(ok===false)toast("Atenção: NÃO consegui guardar o ponto de restauração (memória do navegador cheia?). Se precisar, use Desfazer agora.",{t:"Desfazer",fn:desfazer})})
 setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)")},5*60*1000);
-const BK_DIAS=7,BK_INTERVALO=30*60*1000;
 async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
-async function bkPerm(h,pedir){try{let p=await h.queryPermission({mode:"readwrite"});if(p==="prompt"&&pedir)p=await h.requestPermission({mode:"readwrite"});return p==="granted"}catch(e){return false}}
 async function bkEscrever(h){const {o,falhas,hoje}=await bkMontar();
   /* Uma cópia incompleta ou que o próprio aplicativo não consegue restaurar não substitui as últimas cópias boas. */
   if(falhas.length)return "incompleto";
@@ -106,31 +102,6 @@ async function migrarFotos(){let mexeu=0;
     mexeu++}
   if(mexeu){salvar(true);toast(`${mexeu} foto(s) de peças antigas foram para a coluna “Foto do romaneio”.`,{t:"Desfazer",fn:desfazer})}
   return mexeu}
-function lerConfig(c){
-  const o=clone(DEFAULT_CONFIG);if(!c)return o;
-  ["seqs","categorias","cores","coresMeta","catAlias","observacoes","ordem","grades","modelos","modelo","romaneios","vLib","vPeso","insumosItens","insumosModo","descAuto","bancoGeral","bancoGeralAtivo","continuo","presetsLancamento"].forEach(k=>{if(c[k]!=null)o[k]=c[k]});if(!Array.isArray(o.grades))o.grades=[];if(!Array.isArray(o.romaneios)||!o.romaneios.length)o.romaneios=ROMS0();
-  if(!Array.isArray(o.insumosItens))o.insumosItens=[];else o.insumosItens=o.insumosItens.filter(x=>x&&typeof x==="object"&&typeof x.nome==="string"&&(x.cat==null||typeof x.cat==="string")&&num(x.qtd)>0&&num(x.qtd)<=1000000&&num(x.valor)!=null&&num(x.valor)>=0&&num(x.valor)<=1000000).slice(0,100);
-  if(!["off","somar","substituir"].includes(o.insumosModo))o.insumosModo="off";
-  o.categorias.forEach(x=>{if(x&&!Array.isArray(x.subs))x.subs=[]});   /* cópia/backup com categoria sem lista de subcategorias não pode quebrar a tela */
-  o.romaneios.forEach(t=>{if(t.id==="carlinha"&&!/Corrente=/.test(t.mapa||"")){const d=ROMS0()[0];t.mapa=d.mapa;t.valorRe=d.valorRe}});
-  if(c.colcfg){LET.forEach(L=>{const x=c.colcfg[L]||{};const pad=o.colcfg[L].form;o.colcfg[L]={...o.colcfg[L],...x};if(!c.v6)o.colcfg[L].form=pad})}
-  else{const fx=c.fixos||{};if(c.insumos!=null)o.colcfg.Q.padrao=c.insumos;if(fx.ncm!=null)o.colcfg.Y.padrao=fx.ncm;if(fx.cfop!=null)o.colcfg.AA.padrao=fx.cfop;if(fx.fcp!=null)o.colcfg.AB.padrao=fx.fcp;if(fx.catalogo)o.colcfg.AD.padrao=fx.catalogo;if(fx.status)o.colcfg.AE.padrao=fx.status}
-  if(Array.isArray(c.banhistas))o.banhistas=c.banhistas.map(b=>({...b,banhos:b.banhos.map(x=>({modo:"peso",...x}))}));
-  else if(c.banhos){const b=clone(BANHISTA0);const bo=c.banhos.ouro||{},bp=c.banhos.prata||{};Object.assign(b.banhos[0],{letra:bo.letra||"A",cor:bo.cor||"Ouro",mil:bo.mil??"1",mult:bo.mult??"1.5"});Object.assign(b.banhos[1],{letra:bp.letra||"B",cor:bp.cor||"Prata",mil:bp.mil??"50",mult:bp.mult??"1.54",sufixo:bp.sufixo??" banho prata"});if(c.verniz!=null)b.verniz=c.verniz;o.banhistas=[b]}
-  if(c.fornecedores)o.fornecedores=c.fornecedores.map(f=>({banhista:"",...f,tipo:f.tipo==="bruto"?"bruta":f.tipo==="pronto"?"pronta":(f.tipo||"bruta")}));
-  if(!c.v7){const pc=o.categorias.find(x=>/prata\s*925/i.test(x.nome||""));const d=DEFAULT_CONFIG.categorias.find(x=>x.nome==="Prata 925");
-    if(pc&&d){if(pc.sufixo==null)pc.sufixo=d.sufixo;if(!pc.subs||!pc.subs.length)pc.subs=[...d.subs];pc.subPref={...d.subPref,...(pc.subPref||{})}}}
-  o.v4=true;o.v5=true;o.v6=true;o.v7=true;o.v8=true;o.v9=c.v9?true:undefined;o.v10=c.v10?true:undefined;if(!Array.isArray(o.modelos)||!o.modelos.length)o.modelos=[modeloJueri()];if(!o.modelos.some(m=>m.id===o.modelo))o.modelo=o.modelos[0].id;o.v11=c.v11?true:undefined;o.v12=c.v12?true:undefined;
-  if(!c.v14){const an=o.categorias.find(x=>x.grade&&!x.grade.usa&&/an[eé]l|anéis|aneis/i.test(x.nome||""));
-    if(an){const nm=g=>g.itens.map(i=>String(i.nome)).join("|");o.categorias.forEach(x=>{if(x!==an&&x.grade&&!x.grade.usa&&nm(x.grade)===nm(an.grade))x.grade.usa=an.nome})}}o.v14=true;
-  if(!c.v13){DEFAULT_CONFIG.cores.forEach(x=>{if(!o.cores.some(y=>semAc(y)===semAc(x)))o.cores.push(x)})}o.v13=true;if(!o.vLib){o.coresMeta=o.coresMeta||{};const M=o.coresMeta,us=new Set();(o.categorias||[]).forEach(c=>(c.cores||[]).forEach(x=>{if(!x||!x.nome)return;if(!o.cores.some(y=>semAc(y)===semAc(x.nome)))o.cores.push(x.nome);const k=semAc(String(x.nome)).trim();M[k]=M[k]||{};M[k].ped=true;const Lt=String(x.letra||'').toUpperCase();if(Lt&&!M[k].sig&&!us.has(Lt)&&!/^[0-9]+$/.test(Lt)){M[k].sig=Lt;us.add(Lt)}if(!M[k].txt&&x.texto&&x.texto!=='-')M[k].txt=String(x.texto).trim()}));o.vLib=true}if(!o.vPeso){o.romaneios=o.romaneios||[];if(!o.romaneios.some(t=>t.id==="pedido-peso")){o.romaneios.push(ROM_PESO())}o.vPeso=true}
-  {const ids=x=>{if(x&&typeof x==="object"&&x.id!=null)x.id=idLimpo(x.id)||uid()};
-    (o.banhistas||[]).forEach(b=>{ids(b);(b.banhos||[]).forEach(ids)});(o.grades||[]).forEach(g=>{ids(g);(g.itens||[]).forEach(ids)});
-    (o.categorias||[]).forEach(c=>{if(c.grade){ids(c.grade);(c.grade.itens||[]).forEach(ids)}});(o.romaneios||[]).forEach(ids);(o.modelos||[]).forEach(ids);
-    if(o.modelo!=null)o.modelo=idLimpo(o.modelo);(o.fornecedores||[]).forEach(f=>{if(f.banhista!=null)f.banhista=idLimpo(f.banhista)})}
-  {const us=new Set();o.categorias.forEach(c=>{us.add(String(c.prefixo||"").toUpperCase());Object.values(c.subPref||{}).forEach(v=>us.add(String(v).toUpperCase()))});Object.keys(o.seqs||{}).forEach(p=>{if(!us.has(p)&&!(Math.trunc(num(o.seqs[p])||0)>0))delete o.seqs[p]})}
-  return o;
-}
 /* Uma vez por conta: traz as categorias do Jueri (renomeia Anéis→Anél, acrescenta as que faltam, ajusta subcategorias) sem apagar o que você cadastrou nem as peças já lançadas. */
 function migrarJueri(){
   const C=cfg();if(C.v9)return false;const lo=x=>String(x||"").trim().toLowerCase();
@@ -191,19 +162,6 @@ function migrarGrades0(){
   C.v10=true;return true;
 }
 /* aceita lançamentos das versões anteriores */
-function lerLanc(l){
-  if(!l.v)l={id:l.id||uid(),tipo:l.tipo==="pronta"?"pronta":"bruta",desconto:l.desconto||"0",banhista:"scarlat",vinc:!!l.vinc,
-    v:{F:l.desc,G:l.codForn,H:l.forn,I:l.cat,J:l.sub,M:l.obs,N:l.peso,P:l.custo,V:l.preco,L:l.cor,W:l.qtd},
-    on:{ouro:!(l.tipo==="bruta"&&l.prata&&!(num(l.qtdA)>0)),prata:!!l.prata},q:{ouro:l.qtdA,prata:l.qtdB},dsc:{prata:l.descB||""}};
-  l.id=idLimpo(l.id)||uid();delete l.pv;
-  l.ov=l.ov||{};
-  if(l.ft&&!ftOk(l.ft)){delete l.ft}
-  if(l.ftR&&!ftOk(l.ftR)){delete l.ftR}
-  if(l.q){Object.entries(l.q).forEach(([b,q])=>{if(!vazio(q)){l.ov[b]=l.ov[b]||{};if(vazio(l.ov[b].W))l.ov[b].W=q}});delete l.q}
-  if(l.dsc){Object.entries(l.dsc).forEach(([b,d])=>{if(!vazio(d)){l.ov[b]=l.ov[b]||{};l.ov[b].F=d}});delete l.dsc}
-  return l;
-}
-function lerForm(f){const o={...FORM0(),...(f||{})};if(!o.v)return FORM0();return lerLanc(o)}
 /* dados salvos que não dá para ler: NÃO apaga nem sobrescreve nada até a pessoa escolher (baixar cópia, restaurar backup ou começar vazio) */
 function resolverCorrompido(){corrompido=false;rawCorrompido="";const b=document.getElementById("dadosRuins");if(b)b.remove()}
 function dadosCorrompidos(raw){

@@ -10,7 +10,6 @@ function romNovaPeca(){
   toast("Peça nova no romaneio: preencha descrição, categoria, peso, custo e a quantidade.")}
 
 /* ---------- foto por item do romaneio ---------- */
-const romTemArq=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
 function romFotoEscolher(i){ftAlvo="rom:"+i;const inp=document.getElementById("ftIn");if(inp)inp.click()}
 async function romFotoGravar(i,F){
   const r=ROM&&ROM.rows[i];if(!r)return;
@@ -35,7 +34,6 @@ function romFotoRemover(i){
 /* ---------- insumos próprios do romaneio ---------- */
 const romInsItens=()=>ROM&&ROM.ins&&Array.isArray(ROM.ins.itens)?ROM.ins.itens:[];
 /* Mantém dados antigos intactos, mas impede lançar frete/separação como insumo. */
-const romInsFora=x=>/^(?:(?:valor|custo|taxa|despesa|servico|preco)\s+(?:(?:de|da|do|com)\s+)?)?(?:fretes?|separacao|separacoes)(?:\b|$)/.test(String(x&&x.nome||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase());
 const romInsProibidos=()=>romInsItens().filter(romInsFora);
 const romInsBase=()=>ROM&&ROM.ins&&["un","custo","peso"].includes(ROM.ins.base)?ROM.ins.base:"un";
 const romInsTotal=()=>r2c(romInsItens().filter(x=>!romInsFora(x)).reduce((t,x)=>t+(num(x.valor)||0),0));
@@ -160,12 +158,6 @@ function qIrGalvanica(q){
   toast(q==="bh"?"Galvânica nova criada na página de Galvânicas e banhos: dê um nome, ajuste os banhos e use no lançamento.":"Escolha o banho (+ Ouro, + Ródio, + Prata, + Outro…) acima da tabela de milésimos; ele já aparece no lançamento.")}
 
 /* ---------- fiscal (NCM, CFOP, FCP) e insumos de todas as categorias numa tabela só ---------- */
-const FISC_COLS=[["ncm","NCM","8 números (ex.: 71131100)",96],["cfop","CFOP","4 números (ex.: 5102)",64],["fcp","FCP %","0 a 100",64],["insumos","Insumos R$","0 em diante (ex.: 0,50)",84]],FISC_PAD={ncm:"Y",cfop:"AA",fcp:"AB",insumos:"Q"};
-function fiscalErro(k,v){v=String(v||"").trim();if(v==="")return "";const n=num(v);
-  if(k==="ncm")return /^\d{8}$/.test(v)?"":"O NCM tem 8 números (ex.: 71131100).";
-  if(k==="cfop")return /^\d{4}$/.test(v)?"":"O CFOP tem 4 números (ex.: 5102).";
-  if(k==="fcp")return n!=null&&n>=0&&n<=100?"":"O FCP é um percentual de 0 a 100.";
-  return n!=null&&n>=0&&n<=1e6?"":"Insumos precisa ser um número de 0 em diante (ex.: 0,50)."}
 function fiscalTodasHTML(C){
   const pad=k=>esc((C.colcfg[FISC_PAD[k]]||{}).padrao||"");
   return `<details class="gdet" data-open="fiscall" ${abertos.fiscall?"open":""}><summary><b>Fiscal e insumos de todas as categorias</b><span>edite tudo numa tabela só, ou aplique um valor a todas de uma vez</span></summary><div class="gb">

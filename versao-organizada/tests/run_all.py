@@ -42,49 +42,69 @@ COM_GALVANICA=set("""t1.py t10.py t15.py t2.py t20.py t21.py t22.py t23.py t24.p
 COM_GALVANICA.add("t103_insumos_frete.py")
 COM_GALVANICA.update(("t47.py","t56.py","t56_rom_acoes.py","t60_varejo.py","t67_rom_acesso.py","t120_edicao_romaneio_menu_numeracao.py"))
 falhas=0;pulos=0
-for n in testes_python():
+import re as _re
+from concurrent.futures import ThreadPoolExecutor
+def _opt(nome,padrao=None):
+    for a in sys.argv:
+        if a.startswith("--"+nome+"="):return a.split("=",1)[1]
+    return padrao
+FILTRO=_re.compile(_opt("so")) if _opt("so") else None
+PARALELO=int(_opt("paralelo","1"))   # --paralelo=N roda N testes ao mesmo tempo (feedback rápido; a conferência final continua sendo sequencial)
+def rodar_py(n):
+    """devolve (linhas_impressas, falhou, pulado)"""
     precisa_real=n in ("t16.py","t18.py")
     if precisa_real and not os.environ.get("CP_BACKUP"):
-        print(f"{n}: PULADO (defina CP_BACKUP)");pulos+=1;continue
+        return [f"{n}: PULADO (defina CP_BACKUP)"],False,True
     comando=[sys.executable]+([os.path.join(AQUI,"fixture_galvanica.py")] if n in COM_GALVANICA or n=="t102_banho_concorrencia.py" else [])+[os.path.join(AQUI,n)]
     try:
         r=subprocess.run(comando,capture_output=True,text=True,encoding="utf-8",errors="replace",env={**os.environ,"PYTHONIOENCODING":"utf-8"},timeout=300)
     except subprocess.TimeoutExpired:
-        print(f"{n}: FALHOU (tempo limite de 300 segundos)",flush=True);falhas+=1;continue
+        return [f"{n}: FALHOU (tempo limite de 300 segundos)"],True,False
     motivos_pulo=[l for l in r.stdout.splitlines() if l.strip().casefold().startswith(("pulado", "pulou", "skip", "skipped"))]
     ruim=[l for l in r.stdout.splitlines() if l.startswith("FALHA ")]
     if r.returncode and r.stderr.strip():
         # Preserva contexto e linha da asserção: apenas "AssertionError" não permite diagnóstico.
         linhas=r.stderr.strip().splitlines()
-        ruim.append("\n      ".join(linhas[-12:]))
+        ruim.append(chr(10)+"      ".join(linhas[-12:]) if False else (chr(10)+"      ").join(linhas[-12:]))
     if r.returncode and not ruim:ruim.append(f"saiu com codigo {r.returncode} sem mensagem de erro: "+((r.stdout.strip().splitlines() or [''])[-1]))   # nenhum retorno nao-zero pode passar como OK
-    print(f"{n}: {'FALHOU' if ruim else 'PULADO' if motivos_pulo else 'OK'}")
-    for l in motivos_pulo:print("   ",l)
-    if motivos_pulo and not ruim:pulos+=1
-    for l in ruim:print("   ",l)
-    falhas+=bool(ruim)
+    out=[f"{n}: {'FALHOU' if ruim else 'PULADO' if motivos_pulo else 'OK'}"]+["    "+l for l in motivos_pulo]+["    "+l for l in ruim]
+    return out,bool(ruim),bool(motivos_pulo and not ruim)
+def varios(fn,nomes):
+    nomes=[n for n in nomes if not FILTRO or FILTRO.search(n)]
+    with ThreadPoolExecutor(max_workers=max(1,PARALELO)) as ex:
+        for out,f,pu in ex.map(fn,nomes):
+            for l in out:print(l,flush=True)
+            yield f,pu
+for f,pu in varios(rodar_py,testes_python()):
+    falhas+=f;pulos+=pu
 # ---- testes em Node: regressões puras (*_regressao.js e afins) e cenários com navegador (t*.js) ----
 NODE = shutil.which("node")
 NP = os.environ.get("NODE_PATH") or next((c for c in (os.path.expanduser("~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules"),) if os.path.isdir(c)), "")
 js = testes_node()
+def rodar_js(n):
+    r = subprocess.run([NODE, os.path.join(AQUI, n)], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                       env={**os.environ, "PYTHONIOENCODING": "utf-8", **({"NODE_PATH": NP} if NP else {})}, timeout=300)
+    saida = (r.stdout or "") + (r.stderr or "")
+    if r.returncode and ("Cannot find module 'playwright'" in saida or "Executable doesn't exist" in saida):
+        return [f"{n}: FALHOU (playwright/Chrome não disponível para o Node; defina NODE_PATH)"],True,False
+    ruim = r.returncode != 0
+    out=[f"{n}: {'FALHOU' if ruim else 'OK'}"]
+    if ruim:out+=["    "+l for l in saida.strip().splitlines()[-3:]]
+    return out,ruim,False
 if not NODE:
-    print("\nFALHA: node não encontrado; testes .js obrigatórios não foram executados")
+    print(chr(10)+"FALHA: node não encontrado; testes .js obrigatórios não foram executados")
     falhas+=1
 else:
-    for n in js:
-        r = subprocess.run([NODE, os.path.join(AQUI, n)], capture_output=True, text=True, encoding="utf-8", errors="replace",
-                           env={**os.environ, "PYTHONIOENCODING": "utf-8", **({"NODE_PATH": NP} if NP else {})}, timeout=300)
-        saida = (r.stdout or "") + (r.stderr or "")
-        if r.returncode and ("Cannot find module 'playwright'" in saida or "Executable doesn't exist" in saida):
-            print(f"{n}: FALHOU (playwright/Chrome não disponível para o Node; defina NODE_PATH)")
-            falhas+=1
-            continue
-        ruim = r.returncode != 0
-        print(f"{n}: {'FALHOU' if ruim else 'OK'}")
-        if ruim:
-            for l in saida.strip().splitlines()[-3:]:
-                print("   ", l)
-            falhas += 1
+    for f,pu in varios(rodar_js,js):falhas+=f
+# ---- testes de unidade do núcleo (src/core), em Node puro, sem navegador ----
+_un=os.path.join(AQUI,"unit")
+if NODE and os.path.isdir(_un) and not FILTRO:
+    _arqs=sorted(os.path.join(_un,f) for f in os.listdir(_un) if f.endswith(".test.mjs"))
+    if _arqs:
+        r=subprocess.run([NODE,"--test"]+_arqs,capture_output=True,text=True,encoding="utf-8",errors="replace",timeout=300)
+        print(f"unit ({len(_arqs)} arquivo(s)): {'FALHOU' if r.returncode else 'OK'}")
+        if r.returncode:
+            print((r.stdout or "")[-1500:]);falhas+=1
 print("\nFalhas:",falhas,"· Testes pulados:",pulos)
 if pulos: print("Execução incompleta: há testes pulados"+(" (permitidos explicitamente)" if permitir_pulos else "; use --permitir-pulos apenas para uma verificação parcial"))
 sys.exit(1 if falhas else 2 if pulos and not permitir_pulos else 0)

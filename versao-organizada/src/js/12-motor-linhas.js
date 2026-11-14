@@ -71,62 +71,17 @@ function gerar(list){
   return {linhas,refs,cont,manual,manualReal,semQ};
 }
 /* validação de número digitado/colado: sem texto, sem negativo; Quantidade = inteiro de 1 em diante */
-const VALIDA_NUM=new Set(["N","O","P","Q","R","S","T","U","V","W","AB","AC"]);
 /* fórmula aceita: só números, células (ex.: P2, AB10), + - * / e parênteses — nenhum nome de função (=RAND(), =HYPERLINK(...) etc.) */
-const FORM_SEGURA=/^=(?:[0-9+\-*\/().,\s]|\b[A-Za-z]{1,2}[0-9]+\b)*$/;
 /* quantidade da variação: número maior que zero, ou fórmula (ex.: =1) — a fórmula não pode fazer a linha sumir da exportação */
-const QTD_MAX=1e7;   /* teto de quantidade por linha */
-function qtdPos(v,rv,desc){const t=String(v==null?"":v).trim();if(t[0]==="="){if(t.length<=1)return false;if(!rv)return true;const n=numRaw(t,rv,0,desc);return n!=null&&Number.isInteger(n)&&n>=1&&n<=QTD_MAX}const q=num(t);return q>0&&q<=QTD_MAX&&Number.isInteger(q)}
-function checaCel(L,v){
-  v=String(v==null?"":v).trim();if(v==="")return {v};
-  if(!VALIDA_NUM.has(L))return {v};
-  if(v[0]==="="){if(!(FORM_SEGURA.test(v)&&sintaxeF(v.slice(1))))return {erro:`${NOME[L]}: fórmula não aceita (só números, células e + - * / ( ))`};
-    {const rf=[...v.matchAll(/\b([A-Za-z]{1,2})[0-9]+\b/g)].map(m=>m[1].toUpperCase());
-      if(rf.some(a=>!LET.includes(a)))return {erro:`${NOME[L]}: a fórmula cita uma coluna que não existe — “${v.slice(0,20)}”`};
-      if(rf.includes(L))return {erro:`${NOME[L]}: a fórmula não pode citar a própria coluna (referência circular) — “${v.slice(0,20)}”`}}
-    if(!/\b[A-Za-z]{1,2}[0-9]+\b/.test(v)){const n=avalF(v.slice(1),()=>null);
-      if(n==null)return {erro:`${NOME[L]}: a fórmula não dá um número (divisão por zero?) — “${v.slice(0,20)}”`};
-      if(n<0)return {erro:`${NOME[L]} não pode ser negativo — “${v.slice(0,20)}”`};
-      if(n>1e9)return {erro:`${NOME[L]}: valor grande demais — “${v.slice(0,20)}”`};
-      if(L==="W"&&(!Number.isInteger(n)||n<1||n>QTD_MAX))return {erro:`Quantidade precisa ser um número inteiro de 1 a 10.000.000 — “${v.slice(0,20)}” não vale`}}
-    return {v}}
-  const n=num(v);
-  if(n==null)return {erro:`${NOME[L]} precisa ser um número — “${v.slice(0,20)}” não vale`};
-  if(n<0)return {erro:`${NOME[L]} não pode ser negativo — “${v}”`};
-  if(n>1e9)return {erro:`${NOME[L]}: valor grande demais — “${v.slice(0,20)}”`};
-  if(L==="W"&&(!Number.isInteger(n)||n<1||n>QTD_MAX))return {erro:`Quantidade precisa ser um número inteiro de 1 a 10.000.000 — “${v}” não vale`};
-  return {v};
-}
+   /* teto de quantidade por linha */
 function marcaRuim(ri,L){const td=document.querySelector(`#sheet tr[data-ri="${ri}"] td[data-c="${L}"]`);if(!td)return;td.style.outline="2px solid #c0392b";td.style.background="#fdecea";setTimeout(()=>{td.style.outline="";td.style.background=""},3000)}
 /* "=" só vira fórmula em coluna numérica e com caracteres seguros; em texto (descrição, código…) vale como texto, nunca como fórmula do Excel */
-function lerValor(v,L,rv){const s=String(v).trim();if(s.startsWith("=")){if(NUM.has(L)&&FORM_SEGURA.test(s)){const f=s.slice(1).toUpperCase().replace(/(\d),(\d)/g,"$1.$2");   /* vírgula decimal vira ponto: no arquivo a vírgula separaria argumentos */
-    if(f.includes(",")||!sintaxeF(f))return {v:s};return {v:null,f,txt:s}}return {v:s}}if(NUM.has(L)&&L!=="Y"&&L!=="AA"){const n=num(s);return n==null?{v:s}:{v:DUAS.has(L)?r2c(n):L==="N"?Math.round(n*1000)/1000:n}}return {v:s}}
 /* avalia uma fórmula segura (números, células, + - * / e parênteses) sem eval/Function (o cabeçalho de segurança do Netlify não permite);
    get(coluna) dá o número da célula referenciada. A linha da referência não conta: vale a própria linha — por isso a exportação reescreve as referências para a linha real */
-function calcExpr(s){s=s.replace(/\s+/g,"").replace(/(\d),(\d)/g,"$1.$2");let i=0;
-  const ex=()=>{let v=te();while(s[i]==="+"||s[i]==="-"){const o=s[i++],r=te();v=o==="+"?v+r:v-r}return v},
-    te=()=>{let v=un();while(s[i]==="*"||s[i]==="/"){const o=s[i++],r=un();v=o==="*"?v*r:v/r}return v},
-    un=()=>{if(s[i]==="-"){i++;return -un()}if(s[i]==="+"){i++;return un()}return at()},
-    at=()=>{if(s[i]==="("){i++;const v=ex();if(s[i]!==")")throw 0;i++;return v}const m=/^(?:\d+\.?\d*|\.\d+)/.exec(s.slice(i));if(!m)throw 0;i+=m[0].length;return parseFloat(m[0])};
-  const r=ex();if(i!==s.length)throw 0;return r}
-function avalF(f,get){let ruim=false;
-  const s=String(f).replace(/\b([A-Za-z]{1,2})[0-9]+\b/g,(m,a)=>{const n=get(a.toUpperCase());if(n==null||!isFinite(n)){ruim=true;return "0"}return "("+(Math.abs(n)<1e-6||Math.abs(n)>=1e21?n.toFixed(12):String(n))+")"});
-  if(ruim)return null;
-  try{const r=calcExpr(s);return typeof r==="number"&&isFinite(r)?r:null}catch(e){return null}}
 /* a fórmula está escrita corretamente? (confere só a forma, com as células valendo 1) */
-function sintaxeF(f){try{calcExpr(String(f).replace(/\b[A-Za-z]{1,2}[0-9]+\b/g,"1"));return true}catch(e){return false}}
 /* número de um valor digitado na linha: aceita fórmula (=2*3, =N2*2) e calcula; rv são os valores digitados da linha */
 /* desc = desconto do fornecedor (%): a referência ao custo (P) vale a compra JÁ com desconto, o mesmo número da célula calculada e do arquivo */
-function numRaw(v,rv,dep,desc){dep=dep||0;const s=String(v==null?"":v).trim();if(s[0]!=="=")return num(v);if(dep>5||!FORM_SEGURA.test(s))return null;
-  return avalF(s.slice(1),L=>{const n=numRaw((rv||{})[L],rv,dep+1,desc);return L==="P"&&desc>0&&n!=null?r2c(n-n*kDesc(desc)):n})}
-const pesoLinha=r=>numRaw(r.v.N,r.v,0,r.desconto);
 /* valor calculado de uma coluna de banho (sem digitação) */
-function calcBanho(row,L,r){
-  const peso=pesoLinha(row);
-  if(L===row.banho.coluna){if(row.banho.mult==null)return null;if(row.banho.modo==="fixo")return {v:r2c(row.banho.mult)};if(peso==null)return null;return {v:r2c(peso*row.banho.mult),f:`ROUND(N${r}*${row.banho.mult},2)`}}
-  if(L==="U"&&row.verniz!=null&&peso!=null)return {v:r2c(peso*row.verniz),f:`ROUND(N${r}*${row.verniz},2)`};
-  return null;
-}
 const modeloAtual=()=>{const C=cfg();return (C.modelos||[]).find(x=>x.id===C.modelo)||C.modelos[0]};
 const colunasExport=()=>modeloAtual().cols.filter(c=>c.on!==false);
 const nomeTela=L=>{const c=modeloAtual().cols.find(x=>x.on!==false&&x.k===L);return c?c.h:NOME[L]};

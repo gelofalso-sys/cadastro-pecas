@@ -1,7 +1,7 @@
 // Compatibilidade de unidade e consentimento para envio externo.
 const assert=require('node:assert/strict'), fs=require('node:fs'),vm=require('node:vm');
-const s=fs.readFileSync('src/js/19c-colar-romaneio.js','utf8');
-const code=s.slice(s.indexOf('const MON='),s.indexOf('/* padrão com quantificador'));
+const s=require('./_fonte').core('romaneio');
+const code=s.slice(s.indexOf('const MON='),s.indexOf('const ROM_MAX='));
 const ctx={num:x=>Number(String(x).replace(',','.'))};vm.createContext(ctx);vm.runInContext(code,ctx);
 let p=ctx.padraoRegex('{desc} {qv} {u} {pu}');
 let m=p.re.exec('Corrente 81,440 GR 14,7000');assert.equal(m[2],'81,440');assert.equal(m[3],'GR');assert.equal(m[4],'14,7000');

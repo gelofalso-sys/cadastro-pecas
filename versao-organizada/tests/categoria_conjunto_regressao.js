@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const s=fs.readFileSync('src/js/18-conjunto.js','utf8');
-const trechos=[s.slice(s.indexOf('function conjQtd'),s.indexOf('function conjResumoHTML')),s.slice(s.indexOf('function conjCat(c)'),s.indexOf('function conjCatOpts')),s.slice(s.indexOf('function conjCalc'),s.indexOf('/* ao sair'))];
+const trechos=[require('./_fonte').core('dominio')+s.slice(s.indexOf('function conjErro('),s.indexOf('function conjResumoHTML')),s.slice(s.indexOf('function conjCat(c)'),s.indexOf('function conjCatOpts')),s.slice(s.indexOf('function conjCalc'),s.indexOf('/* ao sair'))];
 const cats={Brincos:{nome:'Brincos'},Colares:{nome:'Colares'},Conjuntos:{nome:'Conjuntos'}};
 const banho={id:'ouro',coluna:'R',modo:'peso',mult:'1',multCat:{Brincos:'2',Colares:'5',Conjuntos:'3'}};
 const ctx={banhoSemCalc:b=>!!b&&(b.modo==="nenhum"||!b.coluna),cfg:()=>({categorias:Object.values(cats),catAlias:{Antiga:'Brincos'}}),catBy:x=>cats[x],vazio:x=>x==null||x==='',num:x=>x==null||x===''?null:Number(String(x).replace(',','.')),semAc:x=>String(x).toLowerCase(),bhDe:()=>({banhos:[banho],verniz:'0'}),bonP:()=>[banho],vzPad:()=>false,multItem:(f,b,cat)=>f.ov?.[b.id]?._m??b.multCat[cat]??b.mult};

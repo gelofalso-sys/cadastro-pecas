@@ -5,7 +5,6 @@ function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.op
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
 /* Diário de exclusões: registro e diário mudam na mesma transação. Se a aba
    fechar antes de concluir o índice, a próxima abertura recupera o registro. */
-const EX_PREFIXO="exclusao-pendente-v1:";
 function exPreparar(loja,id){return new Promise(resolve=>{let fim=false;const done=x=>{if(!fim){fim=true;resolve(x)}};try{
   const rq=indexedDB.open("cadpecas-big",3);rq.onerror=()=>done(null);rq.onsuccess=()=>{const db0=rq.result;try{
     const tx=db0.transaction([loja,"pontos"],"readwrite"),st=tx.objectStore(loja),pt=tx.objectStore("pontos"),key=EX_PREFIXO+loja+":"+encodeURIComponent(id);let resultado=null;
@@ -46,8 +45,7 @@ async function exAbrirIndices(){const abrir=async()=>{try{const r=JSON.parse(loc
 function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,ins:ROM.ins||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
 function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",hash:rec.hash||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);const ok=gravarIdx("cadpecas-roms",ROMS,ROMDEL);try{romAtualizarListaAberta()}catch(e){console.error("cadastro-pecas: não atualizei a lista de romaneios",e)}return ok}
-let romGravP=null;const romHistUltimo=new Map();
-function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>exSalvarComLock(async()=>{const r=await idbPut("roms",rec.id,rec);if(r===null){avisoIdb("o romaneio");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio; ele pode não aparecer após recarregar");return false}return true}))}
+let romGravP=null;function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>exSalvarComLock(async()=>{const r=await idbPut("roms",rec.id,rec);if(r===null){avisoIdb("o romaneio");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio; ele pode não aparecer após recarregar");return false}return true}))}
 /* As ações de romaneio registram também o estado dos itens, inclusive os ainda não lançados.
    O histórico é da sessão, como o restante de Desfazer. As gravações do mesmo romaneio são enfileiradas. */
 function romHistAntes(){
@@ -61,10 +59,6 @@ function romHistRegistrar(antes){
   antes.R.depois=depois;antes.soCfg=false;antes.t=Date.now();HIST.push(antes);
   while(HIST.length>60||(HIST.length>1&&histTam()>40e6))HIST.shift();
   REDO.length=0;histSep=true;histIni();
-}
-function romHistComparar(rec){
-  if(!rec)return "";const rows=(rec.rows||[]).map(r=>{const c={...r};delete c.sel;delete c.aviso;delete c.arq;if(!c.lancIds||!c.lancIds.length)delete c.lancIds;if(!c.revogados||!c.revogados.length)delete c.revogados;return c});
-  return JSON.stringify({rows,texto:rec.texto||"",obs:rec.obs||"",doc:rec.doc||"",conf:rec.conf||""});
 }
 function romHistPode(esperado){
   if(!esperado)return true;const atual=ROM&&ROM.sid===esperado.id?romRec():romHistUltimo.get(esperado.id);
@@ -103,7 +97,6 @@ async function romExcluirConfirmado(id){
   ROMS=nova;try{romAtualizarListaAberta()}catch(e){}return true})}
 function romExcluirSalvo(id){const anterior=romGravP;romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>romExcluirConfirmado(id));return romGravP}
 /* mexeu numa peça já lançada: ela passa a ser substituída ao criar (mesma posição e mesma referência; categoria nova = próxima referência da nova sequência). Se ela está numa tabela salva, não dá para substituir aqui. */
-function romArma(r){if(r&&r.feito&&r.skip&&!r.arq){r.skip=false;r.refaz=true;r.aviso="";return true}return false}
 function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){const voltar=ROM.removidos.filter(x=>[...(x.row.lancIds||[]),...(x.row.revogados||[])].some(id=>S.lanc.some(l=>l.id===id)));voltar.sort((a,b)=>a.pos-b.pos).forEach(x=>ROM.rows.splice(Math.min(x.pos,ROM.rows.length),0,x.row));ROM.removidos=ROM.removidos.filter(x=>!voltar.includes(x))}ROM.rows.forEach(r=>{if(!(r.lancIds||[]).length&&(r.revogados||[]).some(i=>S.lanc.some(l=>l.id===i))){r.lancIds=r.revogados.filter(i=>S.lanc.some(l=>l.id===i));r.revogados=[];r.feito=true;r.refaz=false;r.skip=true}const vivos=(r.lancIds||[]).filter(i=>S.lanc.some(l=>l.id===i)),arq=(r.lancIds||[]).filter(i=>!vivos.includes(i)&&ARQ[i]),v=vivos.concat(arq);const sumidos=(r.lancIds||[]).filter(i=>!v.includes(i));if(sumidos.length)r.revogados=[...new Set([...(r.revogados||[]),...sumidos])];r.lancIds=v;r.arq=!vivos.length&&arq.length?ARQ[arq[0]]:"";
   if(v.length){r.feito=true;if(!r.refaz||r.arq){r.refaz=false;r.skip=true;r.aviso="· já lançada"}}else if(r.feito){r.feito=false;r.refaz=false;r.skip=false;r.aviso=""}})}
 async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await idbGet("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
@@ -166,91 +159,10 @@ Cancelar = salvar completo mesmo assim (só restauraria por fora do aplicativo).
 /* restaurar backup completo: valida TUDO e monta objetos novos antes de mexer em qualquer coisa. Semântica: SUBSTITUI peças,
    cadastros e formulário atuais pelos do backup (confirmação antes); romaneios, tabelas e fotos do backup são adicionados
    (mesmo id = sobrescreve; o que só existe aqui é mantido). Se algo falhar, nada muda (nem no IndexedDB). */
-const ehObj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
 /* ---- conferência de formato: tudo o que vem de um arquivo é conferido antes de ser usado. Mensagens em português simples. ---- */
-const ehTxt=x=>typeof x==="string",ehLista=(a,f)=>Array.isArray(a)&&a.every(f);
-const ehNumLike=x=>typeof x==="number"?isFinite(x):(typeof x==="string"&&x.trim()!==""&&isFinite(Number(x)));
-const campoOk=x=>x==null||ehTxt(x)||typeof x==="boolean"||(typeof x==="number"&&isFinite(x));   /* valor de um campo digitado */
-const PREFIXO_RUIM=/[<>"'&`\\]/;
-function checarConfig(c){
-  const erro=m=>{throw new Error(m)};
-  if(!ehObj(c))erro("os cadastros estão em formato errado");
-  if(c.cores!=null&&!ehLista(c.cores,ehTxt))erro("a lista de cores está errada");
-  if(c.observacoes!=null&&!ehLista(c.observacoes,ehTxt))erro("a lista de observações está errada");
-  if(c.ordem!=null&&!ehTxt(c.ordem))erro("a ordem da tabela, nos cadastros, está errada");
-  if(c.modelo!=null&&!ehTxt(c.modelo))erro("o modelo de planilha escolhido está errado");
-  if(c.seqs!=null&&!(ehObj(c.seqs)&&Object.values(c.seqs).every(campoOk)))erro("a numeração (última peça de cada tipo) está errada");
-  if(c.categorias!=null){if(!Array.isArray(c.categorias))erro("a lista de categorias está errada");
-    c.categorias.forEach((x,i)=>{if(!ehObj(x)||!ehTxt(x.nome)||!x.nome.trim())erro("a categoria "+(i+1)+" está sem nome ou em formato errado");
-      const nm="“"+x.nome.slice(0,30)+"”";
-      if(x.prefixo!=null&&(!ehTxt(x.prefixo)||PREFIXO_RUIM.test(x.prefixo)))erro("a categoria "+nm+" tem um prefixo inválido");
-      if(x.sufixo!=null&&!ehTxt(x.sufixo))erro("a categoria "+nm+" tem um sufixo inválido");
-      if(x.subs!=null&&!ehLista(x.subs,ehTxt))erro("as subcategorias de "+nm+" estão erradas");
-      if(x.subPref!=null&&!(ehObj(x.subPref)&&Object.values(x.subPref).every(v=>ehTxt(v)&&!PREFIXO_RUIM.test(v))))erro("os prefixos das subcategorias de "+nm+" estão errados");
-      if(x.subSoRef!=null&&!ehObj(x.subSoRef))erro("as subcategorias de "+nm+" estão erradas");
-      if(x.grade!=null&&!(ehObj(x.grade)&&Array.isArray(x.grade.itens)&&x.grade.itens.every(ehObj)))erro("a variação (tamanhos) de "+nm+" está errada")})}
-  if(c.fornecedores!=null&&!ehLista(c.fornecedores,f=>ehObj(f)&&ehTxt(f.nome)))erro("a lista de fornecedores está errada");
-  if(c.banhistas!=null&&!ehLista(c.banhistas,b=>ehObj(b)&&Array.isArray(b.banhos)&&b.banhos.every(ehObj)))erro("a lista de galvânicas está errada");
-  if(c.grades!=null&&!ehLista(c.grades,g=>ehObj(g)&&Array.isArray(g.itens)&&g.itens.every(ehObj)))erro("a lista de variações está errada");
-  if(c.modelos!=null&&!ehLista(c.modelos,m=>ehObj(m)&&Array.isArray(m.cols)&&m.cols.every(ehObj)))erro("a lista de modelos de planilha está errada");
-  if(c.romaneios!=null&&!ehLista(c.romaneios,ehObj))erro("a lista de modelos de romaneio está errada");
-  if(c.colcfg!=null&&!(ehObj(c.colcfg)&&Object.values(c.colcfg).every(ehObj)))erro("a configuração das colunas está errada")}
-function checarLanc(l,i,quem){const n=(quem||"peça")+" "+(i+1),erro=m=>{throw new Error(n+": "+m)};
-  if(!ehObj(l))erro("está em formato errado");
-  if(l.id!=null&&!ehTxt(l.id))erro("o código interno é inválido");
-  if(l.v!=null&&!(ehObj(l.v)&&Object.values(l.v).every(campoOk)))erro("os campos da peça (descrição, preço…) precisam ser texto ou número");
-  if(l.ov!=null&&!(ehObj(l.ov)&&Object.values(l.ov).every(o=>ehObj(o)&&Object.values(o).every(campoOk))))erro("os valores digitados na tabela estão em formato errado");
-  ["on","vz","q","dsc"].forEach(k=>{if(l[k]!=null&&!ehObj(l[k]))erro("o campo “"+k+"” está em formato errado")});
-  if(l.gsel!=null&&!ehLista(l.gsel,ehTxt))erro("a seleção de tamanhos está errada");
-  if(l.comp!=null&&!(Array.isArray(l.comp)&&l.comp.length<=60&&l.comp.every(c=>ehObj(c)&&["desc","peso","custo","banho"].every(k=>c[k]==null||campoOk(c[k]))&&["peso","custo"].every(k=>vazio(c[k])||(num(c[k])!=null&&num(c[k])>=0))&&(c.id==null||typeof c.id==="string"))))erro("as peças do conjunto estão em formato errado");
-  if(l.desconto!=null&&!campoOk(l.desconto))erro("o desconto é inválido");
-  if(l.tipo!=null&&!ehTxt(l.tipo))erro("o tipo é inválido")}
-function romLimpo(k,r,exigeRows){const n="o romaneio “"+String(k).slice(0,20)+"”",erro=m=>{throw new Error(n+" "+m)};
-  if(!ehObj(r))erro("está em formato errado");
-  if(r.rows==null&&!exigeRows)return r;
-  if(!Array.isArray(r.rows)||!r.rows.every(ehObj))erro("tem a lista de peças em formato errado");
-  if(r.log!=null&&!ehLista(r.log,ehObj))erro("tem o histórico em formato errado");
-  if(r.form!=null&&!ehObj(r.form))erro("tem o formulário em formato errado");
-  const rows=r.rows.map((x,i)=>{["qtd","qLanc"].forEach(f=>{if(x[f]!=null&&!ehNumLike(x[f]))erro("tem, na peça "+(i+1)+", uma "+(f==="qtd"?"quantidade":"quantidade lançada")+" que não é número")});
-    if(x.lancIds!=null&&!ehLista(x.lancIds,ehTxt))erro("tem, na peça "+(i+1)+", a ligação com as peças lançadas em formato errado");
-    return {...x,qtd:x.qtd==null?x.qtd:Number(x.qtd),qLanc:x.qLanc==null?x.qLanc:Number(x.qLanc)}});
-  return {...r,rows}}
-function tabLimpa(k,r){const n="a tabela salva “"+String(k).slice(0,20)+"”",erro=m=>{throw new Error(n+" "+m)};
-  if(!ehObj(r)||!Array.isArray(r.lanc))erro("está em formato errado");
-  r.lanc.forEach((l,i)=>{try{checarLanc(l,i)}catch(e){erro("tem, em "+e.message)}});
-  if(r.linhas!=null&&!(Array.isArray(r.linhas)&&r.linhas.every(ehObj)))erro("tem a lista de linhas em formato errado");
-  if(r.roms!=null&&!ehLista(r.roms,ehTxt))erro("tem a lista de romaneios em formato errado");
-  const linhas=(r.linhas||[]).map((l,i)=>{["q","custo","varejo"].forEach(f=>{if(l[f]!=null&&!ehNumLike(l[f]))erro("tem, na linha "+(i+1)+", um valor de "+(f==="q"?"quantidade":f)+" que não é número")});
-    return {...l,q:l.q==null?0:Number(l.q),custo:l.custo==null?0:Number(l.custo),varejo:l.varejo==null?null:Number(l.varejo)}});
-  if(r.em!=null&&!ehNumLike(r.em))erro("tem a data em formato errado");
-  return {...r,linhas,em:r.em==null?Date.now():Number(r.em)}}
-function validarBackup(o){
-  const erro=m=>{throw new Error(m)};
-  if(!ehObj(o))erro("o conteúdo do arquivo não é um backup");
-  if(o.app!=="cadastro-pecas"||o.tipo!=="total")erro("este arquivo não é um backup completo do Cadastro de Peças");
-  if(!(Number.isInteger(o.v)&&o.v>=1&&o.v<=1))erro("este backup é de uma versão que este programa não conhece ("+String(o.v).slice(0,10)+")");
-  if(!ehObj(o.config))erro("o backup não tem os cadastros");
-  try{checarConfig(o.config)}catch(e){erro("cadastros: "+e.message)}
-  if(!Array.isArray(o.lanc))erro("o backup não tem a lista de peças");
-  const ids=new Set();o.lanc.forEach((l,i)=>{checarLanc(l,i);if(l.id!=null){if(ids.has(l.id))erro("há peças repetidas no backup (código interno "+String(l.id).slice(0,20)+")");ids.add(l.id)}});
-  if(o.form!=null&&!ehObj(o.form))erro("o formulário do backup está em formato errado");
-  if(o.form&&o.form.v)checarLanc(o.form,0,"formulário");
-  const roms=o.roms==null?{}:o.roms,tabs=o.tabs==null?{}:o.tabs,fotos=o.fotos==null?{}:o.fotos;
-  if(!ehObj(roms)||!ehObj(tabs)||!ehObj(fotos))erro("os romaneios, tabelas ou fotos do backup estão em formato errado");
-  if(o.rascunho!=null&&!ehObj(o.rascunho))erro("o rascunho de romaneio do backup está em formato errado");
-  if(o.autor!=null&&!ehTxt(o.autor))erro("o nome de quem montou está em formato errado");
-  /* objetos novos (nada é aplicado aqui) */
-  let cfgNova;try{cfgNova=lerConfig(clone(o.config))}catch(e){erro("não consegui ler os cadastros do backup")}
-  const r={config:cfgNova,lanc:clone(o.lanc).map(lerLanc),form:null,roms:{},tabs:{},fotos:{},descartadas:0,incompleto:Array.isArray(o.incompleto)?o.incompleto.map(x=>String(x).slice(0,40)).slice(0,50):null,leve:o.leve===true};
-  if(o.form&&o.form.v)r.form=lerForm(clone(o.form));
-  Object.entries(roms).forEach(([k,x])=>{const l=romLimpo(k,x,true);r.roms[k]={...l,id:ehTxt(l.id)&&l.id?l.id:k}});
-  Object.entries(tabs).forEach(([k,x])=>{const l=tabLimpa(k,x);r.tabs[k]={...l,id:ehTxt(l.id)&&l.id?l.id:k}});
-  Object.entries(fotos).forEach(([k,u])=>{if(ftOk(u))r.fotos[k]=u;else r.descartadas++});
-  r.rascunho=o.rascunho?romLimpo("rascunho",o.rascunho,false):null;r.rel=o.rel!=null?relNormalizar(o.rel):null;r.autor=typeof o.autor==="string"?o.autor:"";
-  return r}
+   /* valor de um campo digitado */
 /* Registro durável anterior à restauração. A recuperação é idempotente: um fechamento
    durante a própria recuperação deixa o registro para nova tentativa na próxima abertura. */
-const BK_JOURNAL="backup-restauracao-pendente-v1";
 /* Cada aba aberta conserva um bloqueio compartilhado. Uma restauração exige o
    bloqueio exclusivo, por isso nunca começa enquanto outra aba usa os dados. */
 let bkUsoLiberar=null,bkUsoPedido=null;
@@ -324,7 +236,7 @@ async function aplicarBackupTotalComLock(n,quieto){
   histSugAgendar();if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
   render();
   if(!quieto)toast(`Backup restaurado: ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""} Peças e cadastros podem ser desfeitos; romaneios, tabelas e fotos não.`,{t:"Desfazer peças",fn:desfazer});return true}
-const ROMKEY="cadpecas-rom";let romTem=false,romST=null,romInfo="";
+let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 let romConflito=false;
 function romSalvar(){if(!ROM||!ROM.rows.length)return true;if(romConflito)return false;romGravarBig();let lsOk=false;const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));

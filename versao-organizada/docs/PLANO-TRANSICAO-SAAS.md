@@ -187,3 +187,36 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 2. Etapa 2, começando por `12-motor-linhas.js` e `28-exportar.js` (maior valor para o servidor).
 3. Em paralelo, responder as perguntas em aberto.
 4. Etapa 3 antes de qualquer protótipo de servidor.
+
+---
+
+## Registro de execução
+
+### Etapa 0 — concluída em 14/11/2026
+- Estado anterior comitado e marcado com a tag local `v-pre-saas` (commit `3af2902`). **Nada foi enviado ao GitHub**: o `git push` e o envio da tag ficam para você decidir.
+- Material antigo movido para `../arquivo/` (fora do Git, no `.gitignore`): HTMLs `parte2` e `parte3_4`, `publicar-netlify*.zip`, `revisao-organizada/`, `auditoria-ui-temporario/`, `suite-auditoria-atual.log`.
+- Árvore duplicada da raiz (`tests/`, `tools/`, `lib/`, `demo-netlify/`) era um subconjunto antigo de `versao-organizada/`; saiu do Git e foi para `../arquivo/arvore-duplicada/`. A fonte única é `versao-organizada/`.
+- `publicar-netlify-unificado/` (gerado por `tools/publicar.py`) passou a ser ignorado pelo Git.
+- Métricas da linha de base (medidas por `tools/grafo_puro.mjs` e contagem de texto): 161 testes verdes (`RELATORIO_SUITE.md`), 800 KB em `src/js` (35 arquivos), 53 globais mutáveis de nível superior, 895 declarações de nível superior, 544 funções, 85 ocorrências de `localStorage`, 4 de `indexedDB`. O grafo de pureza classificou 255 declarações como puras e 640 como dependentes de estado, DOM ou armazenamento.
+
+### Etapa 1 — concluída em 14/11/2026
+- `package.json` com `build`, `test`, `test:unit`, `lint`, `lint:estrito`, `format`, `format:check`.
+- ESLint (regras `no-undef`, `no-unused-vars`, `no-shadow`) roda sobre o **bloco montado**, não arquivo a arquivo, porque o app é um único `<script>` com globais compartilhados. `tools/lint.mjs` aponta `arquivo:linha`. Resultado inicial: 0 `no-undef`, 204 `no-unused-vars`, 84 `no-shadow` (lista de trabalho).
+- pdf.js saiu de dentro do HTML do corpo para `vendor/pdfjs/`; o montador o embute de novo. O HTML gerado ficou **idêntico byte a byte** (SHA-256 `991e2295…`). SheetJS continua em `lib/` (o app o carrega por caminho relativo e o pacote do Netlify o copia dali). Versões e hashes em `vendor/LEIA-ME.md`.
+- `tests/run_all.py` ganhou `--so=<regex>` e `--paralelo=N` (feedback rápido; a conferência final continua sendo sequencial).
+
+### Etapa 2 — parcial (início em 14/11/2026)
+
+**O que existe agora**
+- `src/core/` com 8 módulos ES (`formulas`, `colunas`, `utilidades`, `romaneio`, `notafiscal`, `backup`, `exportacao`, `dominio`): 255 declarações que **não tocam em estado, DOM, armazenamento nem rede**, movidas de `src/js` **sem alterar o código**. O montador as embute no mesmo bloco único do navegador (sem `import`/`export`), então o HTML final segue offline e de arquivo único.
+- `tools/grafo_puro.mjs` classifica cada declaração (895) como pura ou dependente de estado/DOM, com a causa raiz. É a lista de trabalho da etapa. `tools/extrair_para_core.mjs` faz a movimentação sem retocar o texto; `tools/checar_ordem.mjs` confere que nenhum `const` do núcleo é usado na carga antes de ser declarado.
+- `tests/unit/` roda em Node puro (`npm run test:unit`) e já faz parte de `run_all.py`. 12 testes antigos que recortavam texto de `src/js` passaram a ler o núcleo por `tests/_fonte.js` (ponte transitória; o destino é importar o módulo).
+
+**O que falta para fechar a Etapa 2**
+1. As 109 funções que só dependem de `S` (`cfg`, `catBy`, `bhDe`, `val`, `valorCol`, `saidaLinhas`, `validarModelo`, `pendenciasExport`, `conjCalc`, `romBh`…) precisam receber `config` e a lista de peças como argumento. São a ponte entre o núcleo puro e o motor `gerar`.
+2. `gerar()` e `fixarRefs()` dependem de `conjSync`, que toca no DOM (`dom`). Separar o cálculo da escrita no formulário.
+3. Teste de caracterização com o backup real: dado `config` + `lanc`, as linhas exportadas pelo núcleo em Node são idênticas às do app.
+4. Ciclos entre módulos do núcleo (`colunas` ↔ `formulas` ↔ `utilidades`): funcionam porque só funções se chamam entre si, mas devem ser desfeitos ao mover `DEFAULT_CONFIG`/`semAc`.
+5. Migrar de vez os testes que ainda recortam texto (`tests/_fonte.js`) para importar os módulos.
+
+**Dívida técnica registrada:** o conjunto de pureza é *estrutural* (o grafo não vê mutação de objetos recebidos por argumento nem de constantes-objeto como `DEFAULT_CONFIG`); revisar quando o servidor reutilizar o núcleo.

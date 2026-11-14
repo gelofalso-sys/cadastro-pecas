@@ -1,89 +1,15 @@
 /* ===== colar romaneio: lê a lista do fornecedor com um modelo de leitura ===== */
-const MON="(\\d[\\d.]*,\\d{2})";
-const numQtd=s=>{s=String(s);return /^\d{1,3}(\.\d{3})+$/.test(s)?num(s.replace(/\./g,"")):num(s)};
-const TOK={desc:"(.{1,250}?)",cod:"([^\\s\\]\\[]+)",preco:MON,precod:MON,total:MON,qtd:"(\\d{1,3}(?:\\.\\d{3})+|\\d+)",x:"(?:.*?)",item:"(?:\\d{1,4})",u:"(?:\\s+([A-Za-z]{1,4})\\.?\\s+)?",qv:"(\\d[\\d.]*(?:,\\d+)?)",pu:"(\\d[\\d.]*,\\d{2,4})"};
-function padraoRegex(pad){const ordem=[];let src="";
-  String(pad||"").split(/(\{\w+\})/).forEach(p=>{const m=p.match(/^\{(\w+)\}$/);
-    if(m&&TOK[m[1]]){if(m[1]==="u"&&src.endsWith("\\s*"))src=src.slice(0,-3);if(m[1]!=="x"&&m[1]!=="item")ordem.push(m[1]);src+=TOK[m[1]]}
-    else src+=p.split(/\s+/).map(z=>z.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")).join("\\s*")});
-  return {re:new RegExp(src,"g"),ordem}}
 /* padrão com quantificador dentro de grupo também quantificado, ex.: (a+)+ ou (\d*)* , pode travar a aba: não é aceito */
-const rxPerigo=x=>/\((?:[^()\\]|\\.)*[+*}](?:[^()\\]|\\.)*\)\s*(?:[+*]|\{\d)/.test(String(x))||/\((?:\?:)?[^()]*\|[^()]*\)\s*[+*{]/.test(String(x));
-const rxs=(x,f)=>{try{if(rxPerigo(x))return null;return new RegExp(x,f||"i")}catch(e){return null}};
 function mapaCat(desc,T){const d=semAc(desc);
   for(const par of String(T.mapa||"").split(/[;\n]/)){const [a,b]=par.split("=").map(z=>(z||"").trim());if(a&&b&&d.startsWith(semAc(a))&&catBy(b.split(">")[0].trim()))return b}
   const w=d.split(/[\s,]+/)[0];const c=cfg().categorias.find(c=>w&&semAc(c.nome).startsWith(w.slice(0,4)));return c?c.nome:""}
-const ROM_MAX=MAX_TEXTO_COLADO;   /* o mesmo limite vale para texto colado e para o texto lido do PDF */
-function lerRomaneio(texto,T){
-  const R={rows:[],obs:"",conf:"",erro:""};
-  let flat=String(texto||"").replace(/ /g," ").replace(/\s+/g," ").trim();
-  if(!flat){R.erro="Cole o texto da lista.";return R}
-  if(flat.length>ROM_MAX){R.erro=`O texto da lista é grande demais (${Math.round(flat.length/1000)} mil caracteres; o limite é ${ROM_MAX/1000} mil). Cole ou envie a lista por partes (no PDF, só as páginas da lista) — ou confira se não copiou a página inteira.`;return R}
-  const full=flat;
-  if(T.obsRe){const r=rxs(T.obsRe),m=r&&full.match(r);if(m)R.obs=String(m[1]||m[0]).trim()}
-  if(T.lixo){const r=rxs(T.lixo,"gi");if(r)flat=flat.replace(r," ")}
-  if(T.ini){const i=flat.toLowerCase().indexOf(String(T.ini).toLowerCase());if(i>=0)flat=flat.slice(i+T.ini.length)}
-  if(T.fim){const i=flat.toLowerCase().indexOf(String(T.fim).toLowerCase());if(i>=0)flat=flat.slice(0,i)}
-  flat=" "+flat;   /* o 1º item pode vir só com o código, sem descrição: precisa de um espaço antes para o padrão casar sem engolir o item seguinte */
-  let P;try{P=padraoRegex(T.padrao)}catch(e){R.erro="O padrão da linha é inválido.";return R}
-  if(!P.ordem.includes("desc")||!(P.ordem.includes("qtd")||P.ordem.includes("qv"))){R.erro="O padrão precisa ter pelo menos {desc} e {qtd}.";return R}
-  let fimLido=0,corte=false;
-  const colhe=P=>{let m,g=0;
-  while((m=P.re.exec(flat))&&g++<3000){if(!m[0].length){P.re.lastIndex++;continue}fimLido=P.re.lastIndex;
-    const o={};P.ordem.forEach((k,i)=>o[k]=m[i+1]);
-    const desc=String(o.desc||"").replace(/Varia[^:]{1,4}:/i," ").replace(/ {2,}/g," ").replace(/^[\s,;:\-]+|[\s,;:\-]+$/g,"");
-    const un=String(o.u||"").toUpperCase().replace(/[.]/g,""),porPeso=/^(GR|G|KG)$/.test(un),pr=o.preco||o.pu,qn=o.qtd||o.qv;
-    let loteG=null,precoG=null;if(porPeso){const fk=un==="KG"?1000:1;loteG=(numQtd(qn)||0)*fk;precoG=(num(pr)||0)/fk}
-    R.rows.push({cod:o.cod||"",desc,preco:pr?num(pr):null,precod:o.precod?num(o.precod):null,total:o.total?num(o.total):null,qtd:porPeso?1:Math.trunc(numQtd(qn)||0),peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":"",
-      ...(porPeso?{lote:true,und:un,loteG,precoG,lid:uid(),skip:true,aviso:"lote por peso: pese as peças e adicione os itens"}:{})})}
-    if(m&&g>3000)corte=true};   /* saiu do laço com mais uma linha reconhecida: a lista passou do limite */
-  colhe(P);if(!R.rows.length&&String(T.padrao).includes("R$ {precod}")){try{colhe(padraoRegex(String(T.padrao).replace("R$ {precod}","").replace(/ {2,}/g," ")))}catch(e){}}
-  {const r0=R.rows[0];if(r0){const m=r0.desc.match(/^\s*(?:total(?:\s+geral)?|qtd\.?\s*total|quantidade\s+total|romaneio|pedido|resumo)\b[^\d]{0,20}\d[0-9.,]*\s*(?:pe[cç]as?|itens?|unidades?|un\.?|produtos?|volumes?)?\s*/i);
-      if(m&&m[0].length<r0.desc.length){R.cab=m[0].trim();r0.desc=r0.desc.slice(m[0].length).replace(/^[\s,;:-]+/,"")}}}
-  if(!R.rows.length){R.erro="Não reconheci nenhuma peça. Confira se copiou a tabela inteira (com código e valores). Se o fornecedor usa outro formato, veja Cadastros › Romaneios › Avançado.";return R}
-  const sq=R.rows.reduce((t,r)=>t+r.qtd,0),sv=R.rows.reduce((t,r)=>t+(r.lote?(r.total||0):(r.preco!=null?r.preco*r.qtd:(r.total||0))),0),pt=[];
-  if(T.qtdRe){const r=rxs(T.qtdRe),m2=r&&full.match(r);if(m2){const n=+String(m2[1]).replace(/\D/g,"");pt.push(n===sq?`✓ ${sq} peças conferem`:`⚠ a lista diz ${n} peças e li ${sq}`)}}
-  if(T.valorRe){const r=rxs(T.valorRe),m2=r&&full.match(r);if(m2){const v=num(m2[1]);pt.push(v!=null&&Math.round(v*100)===Math.round(sv*100)?`✓ valor R$ ${brl(sv)} confere`:`⚠ a lista diz R$ ${brl(v||0)} e li R$ ${brl(sv)}`)}}
-  if(corte)pt.push("⚠ A LISTA FOI CORTADA: li só as primeiras 3.000 peças e ainda havia mais linhas. Divida o texto em partes e cole de novo.");
-  if(R.cab)pt.push(`⚠ ignorei o cabeçalho “${R.cab}” antes da 1ª peça`);
-  {const sd=R.rows.filter(r=>!r.desc&&!r.lote);if(sd.length){sd.forEach(r=>{r.aviso=(r.aviso?r.aviso+" ":"")+"· só tem o código, sem descrição: preencha ou confira"});pt.push(`⚠ ${sd.length} item(ns) só com o código, sem descrição: ${sd.slice(0,5).map(r=>r.cod||"sem código").join(", ")}${sd.length>5?"…":""}`)}}
-  {const cont={};R.rows.forEach(r=>{if(r.cod)cont[r.cod]=(cont[r.cod]||0)+1});const rep=Object.keys(cont).filter(k=>cont[k]>1);
-    if(rep.length){R.rows.forEach(r=>{if(r.cod&&cont[r.cod]>1)r.aviso=(r.aviso?r.aviso+" ":"")+"· código repetido na lista: confira"});pt.push(`⚠ código repetido na lista: ${rep.slice(0,5).join(", ")}${rep.length>5?"…":""}`)}}
-  if(fimLido&&/R\$\s*\d[0-9.]*,\d{2}/.test(flat.slice(fimLido).replace(/(?:valor\s+(?:total\s+da\s+compra|produtos|j[aá]\s+pago)|custo\s+separa[cç][aã]o|sub-?total|total(?:\s+(?:produtos|geral|itens))?|desconto[^:]{0,40}|frete|taxa[^:]{0,40})\s*:?\s*R\$\s*\d[0-9.]*,\d{2}/gi,"")))pt.push("⚠ sobrou texto com valores depois da última peça lida (alguma linha sem código ou em outro formato?)");
-  R.conf=pt.join(" · ");return R}
+   /* o mesmo limite vale para texto colado e para o texto lido do PDF */
 const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(ROM&&ROM.tid))||C.romaneios[0]};
-const virg=n=>n==null?"":(Math.abs(n*100-Math.round(n*100))<1e-6?(Math.round(n*100)/100).toFixed(2):String(Math.round(n*10000)/10000)).replace(".",",");   /* preço com 3-4 casas não é arredondado */
+   /* preço com 3-4 casas não é arredondado */
 let ROM=null;
-function padroesAuto(){const cods=["[#{cod}]","[{cod}]","#{cod}","({cod})",""],pre=["R$ {preco} R$ {precod} {qtd} R$ {total}","R$ {preco} {qtd} R$ {total}","{qtd} R$ {preco} R$ {total}","R$ {preco} R$ {total} {qtd}","{preco} {qtd} {total}"],o=[];
-  cods.forEach(c=>pre.forEach(q=>o.push("{desc} "+(c?c+" ":"")+q)));return o}
 /* reconhece sozinho o formato da lista: testa o modelo e variações comuns e fica com o que lê mais linhas */
-const romSuja=r=>/\[#?[^\]\s]+\]\s*$|\s#\d+\s*$|R\$\s*\d[0-9.]*,\d{2}/.test(String(r.desc||""));
-const romScore=R=>R.rows.length-2*R.rows.filter(romSuja).length;
 
-function romAvisoTotal(r){const q=r.lote?r.loteG:r.qtd,u=r.lote?r.precoG:(r.precod!=null?r.precod:r.preco),t=r.total;if(!(q>0)||u==null||t==null||!isFinite(u)||!isFinite(t))return false;const esp=q*u;if(Math.abs(esp-t)<=Math.max(0.05,0.001*Math.abs(t)))return false;const f=x=>x.toFixed(2).replace(".",",");r.aviso=(r.aviso?r.aviso+" ":"")+"· "+(r.lote?"peso × valor por grama":"quantidade × valor unitário")+" dá R$ "+f(esp)+" mas o total lido é R$ "+f(t)+": confira";return true}
-function romConfTotais(R){if(!R||!R.rows)return;const k=R.rows.filter(r=>romAvisoTotal(r)).length;if(k)R.conf=(R.conf?R.conf+" · ":"")+"⚠ "+k+" linha(s) com valor calculado diferente do total"}
 /* lista copiada do Excel (colunas separadas por tabulação): lê por coluna, pelo cabeçalho ou deduzindo a ordem (qtd × unitário = total) */
-function romTsv(texto){const L=String(texto||"").split(/\r?\n/).map(l=>l.replace(/\s+$/,"")).filter(l=>l.trim());if(!L.length||L.length>MAX_PLANILHA_LINHAS)return null;
- const M=L.map(l=>l.split("\t").map(c=>c.trim()));if(M.filter(r=>r.length>=3).length<Math.ceil(M.length*0.6))return null;
- const W=Math.max(...M.map(r=>r.length)),nv=c=>{const x=String(c==null?"":c).replace(/R\$|\s/g,"");return x===""?null:num(x)};
- let H=null,D=M;if(M[0].some(c=>/c[oó]d|descri|qtd|quant|valor|pre[cç]o|total|unit|produto|ref/i.test(c))&&!M[0].some(c=>nv(c)!=null)){H=M[0];D=M.slice(1)}
- if(!D.length)return null;let map={cod:null,desc:null,qtd:null,preco:null,total:null},nota="";
- if(H)H.forEach((c,j)=>{if(/total/i.test(c))map.total=j;else if(/qtd|quant/i.test(c))map.qtd=j;else if(/unit|pre[cç]o|valor/i.test(c))map.preco=j;else if(/descri|produto|nome|item/i.test(c))map.desc=j;else if(/c[oó]d|ref|sku/i.test(c))map.cod=j});
- if(map.desc==null||map.qtd==null){map={cod:null,desc:null,qtd:null,preco:null,total:null};
-  const pn=j=>D.filter(r=>nv(r[j])!=null).length/D.length,al=j=>D.reduce((a,r)=>a+String(r[j]||"").length,0)/D.length,tx=[];for(let j=0;j<W;j++)if(pn(j)<0.5)tx.push(j);if(!tx.length)return null;
-  const d=tx.reduce((a,b)=>al(b)>al(a)?b:a);map.desc=d;const nm=[];for(let j=0;j<W;j++)if(j!==d&&pn(j)>=0.6)nm.push(j);
-  const antes=nm.filter(j=>j<d),dep=nm.filter(j=>j>d),ct=tx.find(j=>j!==d&&al(j)<=20);map.cod=ct!=null?ct:(antes.length?antes[0]:null);
-  const ult=dep.slice(-3);
-  if(ult.length===3){const P=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];let bs=-1,bp=P[0];P.forEach(p=>{let ok=0,tot=0,qi=0;D.forEach(r=>{const qr=String(r[ult[p[0]]]==null?"":r[ult[p[0]]]).replace(/R\$|\s/g,""),q=qr===""?null:numQtd(qr),u=nv(r[ult[p[1]]]),t=nv(r[ult[p[2]]]);if(q==null||u==null||t==null)return;tot++;if(Math.abs(q*u-t)<=Math.max(0.05,0.001*Math.abs(t)))ok++;if(Number.isInteger(q)&&q>=1)qi++});const sc=(tot?ok/tot:0)+(tot&&qi===tot?0.01:0);if(sc>bs){bs=sc;bp=p}});
-   if(bs<0.5){bp=[0,1,2];nota=" · ⚠ não deu para deduzir a ordem das colunas; assumi quantidade, unitário, total"}map.qtd=ult[bp[0]];map.preco=ult[bp[1]];map.total=ult[bp[2]]}
-  else if(ult.length===2){const ei=j=>D.every(r=>{const q=nv(r[j]);return q==null||Number.isInteger(q)});const a=ult[0],b=ult[1];if(ei(a)){map.qtd=a;map.preco=b}else{map.qtd=b;map.preco=a}}
-  else if(ult.length===1)map.qtd=ult[0];else return null}
- const rows=[];let semDesc=0,ruins=0;
- D.forEach(r=>{const desc=String(r[map.desc]||"").replace(/\s+/g," ").trim(),cod=map.cod==null?"":String(r[map.cod]||"").trim().replace(/^#/,""),qr=String(r[map.qtd]==null?"":r[map.qtd]).replace(/R\$|\s/g,""),q=qr===""?null:numQtd(qr);
-  if(!desc||(q==null&&/^(sub)?total/i.test(desc))){if(cod||q||desc)semDesc++;return}if(q==null||!isFinite(q)||q<1||q!==Math.trunc(q)){ruins++;return}
-  rows.push({cod,desc:desc.slice(0,250),preco:map.preco==null?null:nv(r[map.preco]),precod:null,total:map.total==null?null:nv(r[map.total]),qtd:q,peso:"",q:{},skip:false,aviso:desc.length>70?"descrição longa: confira":""})});
- if(!rows.length)return null;const R={rows,obs:"",conf:"✓ lido por colunas (colado do Excel): "+rows.length+" peça(s)"+nota,erro:""};
- if(ruins)R.conf+=" · ⚠ "+ruins+" linha(s) com quantidade vazia, decimal ou inválida, não lida(s)";if(semDesc)R.conf+=" · ⚠ "+semDesc+" linha(s) sem descrição ignorada(s) (pode ser a linha de total)";return R}
 /* Romaneio com colunas Categoria, Descrição, Valor Unitário, Quantidade e Valor Total.
    Reconhecido pelo cabeçalho completo, sem depender do modelo selecionado. */
 function romTabelaCategoria(texto){const raw=String(texto||"").replace(/\u00a0/g," ").replace(/\r\n?/g,"\n"),cab=/categoria[ \t]+descri[cç][aã]o[ \t]+valor[ \t]+unit[aá]rio[ \t]+quantidade[ \t]+valor[ \t]+total/i.exec(raw);if(!cab)return null;
@@ -93,13 +19,6 @@ function romTabelaCategoria(texto){const raw=String(texto||"").replace(/\u00a0/g
   if(!rows.length)return null;const R={rows,obs:"",conf:"✓ tabela com categoria e valores lida: "+rows.length+" item(ns)",erro:""},codigos=(area.match(/\[#([^\]\s]+)\]/g)||[]).length;if(codigos>rows.length)R.conf+=" · ⚠ "+(codigos-rows.length)+" código(s) não lido(s): confira a lista original";
   if(rows.some(r=>r.aviso))R.conf+=" · ⚠ descrição incompleta: confira os itens marcados";return R}
 function lerRomaneioAuto(texto,T){const t=romTsv(texto)||romTabelaCategoria(texto),R=t||lerRomaneioAuto0(texto,T);romConfTotais(R);return R}
-function lerRomaneioAuto0(texto,T){let best=lerRomaneio(texto,T);
-  /* escolhe o padrão que lê mais linhas LIMPAS: um padrão sem código que deixa "[#cod]" dentro da descrição perde para o que reconhece o código */
-  const tx=String(texto||"");
-  if(T.auto!==false)padroesAuto().forEach(pad=>{if(pad===T.padrao)return;if(pad.includes("[#")&&!tx.includes("[#"))return;if(pad.includes("R$")&&!tx.includes("R$"))return;const R=lerRomaneio(texto,{...T,padrao:pad});if(R.erro)return;if(best.erro||romScore(R)>romScore(best)||(romScore(R)===romScore(best)&&R.rows.length>best.rows.length))best=R});
-  {const ruins=best.rows.filter(r=>/R\$\s*\d[0-9.]*,\d{2}|\[#/.test(String(r.desc||"")));if(ruins.length){ruins.forEach(r=>{r.aviso=(r.aviso?r.aviso+" ":"")+"· a descrição tem valores ou código: uma linha sem código pode ter sido grudada aqui — confira"});best.conf=(best.conf?best.conf+" · ":"")+`⚠ ${ruins.length} peça(s) com descrição suspeita (linha sem código?)`}}
-  const nc=String(texto).split("[#").length-1;if(best.rows.length&&nc>best.rows.length)best.conf=(best.conf?best.conf+" · ":"")+`⚠ ${nc-best.rows.length} linha(s) com código não entendida(s)`;
-  return best}
 const romTemVar=(cat,sub)=>!!gradeDaCat(cat,sub)||coresDaCat(cat,sub).length>0;
 function romIds(r){const g=gradeDaCat(r.cat,r.sub),cs=coresDaCat(r.cat,r.sub).filter(x=>(r.csel||[]).includes(x.id)).map(x=>"c_"+x.id),sz=g&&!r.semG?(r.gsel||[]):[];if(!cs.length)return sz;if(!sz.length)return cs;return sz.flatMap(a=>cs.map(c=>a+"+"+c))}
 function romNomeId(cat,sub,id){const g=gradeDaCat(cat,sub),lc=coresDaCat(cat,sub),p=String(id).split("+"),o=[];p.forEach(x=>{if(x.startsWith("c_")){const c=lc.find(y=>"c_"+y.id===x);o.push(c?c.nome:"")}else{const it=g&&g.itens.find(y=>y.id===x);o.push(it?(it.nome||it.letra):"")}});return o.filter(Boolean).join(" ")}
@@ -170,7 +89,6 @@ function romPreview(){const out=[],base=S.lanc.slice();
     const cs=celulas(row,ri+2,true),n=L=>{const x=cs[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&typeof x.calc==="number"?x.calc:null};
     o.rows.push({ref:row.v.E,bid:row.bid,gi:row.gi,q:num(row.v.W)||0,v:n("V"),sugerido:vazio(row.v.V),compra:n("P"),cb:row.banho?n(row.banho.coluna):null,contaBanho:detalheBanhoLinha(row,row.banho?n(row.banho.coluna):null),custo:["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),cor:row.v.L,u:n("U"),desc:row.v.F,dup:row.dup})});
   return out}
-const fm=n=>n==null?"—":"R$ "+brl(n);
 function romLinhasHTML(pv,r,cols){if(!pv||!pv.rows.length)return `<span class="hint">Escolha a categoria (e os banhos) para ver as referências desta peça.</span>`;
   const aviso=pv.troca?`<span class="hint" title="A peça mudou de categoria: recebe a próxima referência da nova sequência. As outras peças da categoria antiga NÃO são renumeradas">↪ categoria nova: próxima referência da sequência; as outras peças da categoria antiga mantêm as referências (fica uma vaga)</span> `:"";
   const g=gradeDaCat(r.cat,r.sub);

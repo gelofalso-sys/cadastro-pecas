@@ -1,18 +1,4 @@
 /* ===== utilidades ===== */
-const DENY_ID=/["'<>`=\s&\\]/g;
-const idLimpo=x=>String(x==null?"":x).replace(DENY_ID,"");
-const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function num(s){if(s==null)return null;if(typeof s==="number")return isFinite(s)?s:null;let t=String(s).replace(/R\$|\s|%/g,"");if(!t)return null;
-  /* aceita 1.234,56 (pt-BR) e 1,234.56 (en): o último separador é o decimal; os outros são milhar (grupos de 3). Só "," ou só 1 "." = decimal */
-  {const c=t.lastIndexOf(","),p=t.lastIndexOf(".");
-  if(c>=0&&p>=0){const dec=c>p?",":".",mil=dec===","?".":",",pt=t.split(dec);if(pt.length>2||pt[0].split(mil).slice(1).some(x=>x.length!==3))return null;t=pt[0].split(mil).join("")+"."+pt[1]}
-  else if(c>=0){if(t.split(",").length>2){if(!/^-?\d{1,3}(,\d{3})+$/.test(t))return null;t=t.replace(/,/g,"")}else t=t.replace(",",".")}
-  else if(p>=0&&t.split(".").length>2){if(!/^-?\d{1,3}(\.\d{3})+$/.test(t))return null;t=t.replace(/\./g,"")}}
-  if(!/^-?\d*\.?\d+$/.test(t))return null;const n=parseFloat(t);return isFinite(n)?n:null}
-const r4=n=>Math.round(n*10000)/10000;
-const brl=n=>(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmt=n=>n==null?"":String(r4(n)).replace(".",",");
-const vazio=v=>v==null||String(v).trim()==="";
 const cfg=()=>S.config;
 const catBy=n=>cfg().categorias.find(c=>c.nome===n);
 const fornBy=n=>cfg().fornecedores.find(f=>f.nome===n);
@@ -33,12 +19,6 @@ const gradeBy=id=>id?(todasGrades().find(g=>g.id===id)||null):null;
 /* a variação de cada peça vem só da categoria (e subcategoria) escolhida */
 function gradeDaCat(cat,sub){const c=catBy(cat),g=c&&effGrade(c);if(!g||!g.itens||!g.itens.length)return null;const ss=g.subs||[];return !ss.length||ss.includes(sub)?g:null}
 /* ids das opções para uma faixa digitada: 12-16 (de 12 a 16), 12, 18 (esses), todos */
-function selFaixa(gr,txt){const sel=new Set();
-  String(txt||"").replace(/(\d)\s*(?:-|–|—|a|até|ate|ao)\s*(?=\d)/gi,"$1-").split(/[;, ]+/).filter(Boolean).forEach(tk=>{const m=tk.match(/^([0-9]+)-([0-9]+)$/);
-    if(m){const lo=Math.min(+m[1],+m[2]),hi=Math.max(+m[1],+m[2]);gr.itens.forEach(it=>{const n=parseFloat(it.nome);if(n>=lo&&n<=hi)sel.add(it.id)})}
-    else if(tk.toLowerCase()==="todos")gr.itens.forEach(it=>sel.add(it.id));
-    else gr.itens.forEach(it=>{if(String(it.nome)===tk)sel.add(it.id)})});
-  return gr.itens.map(i=>i.id).filter(id=>sel.has(id))}
 /* categoria "sem banho" (ex.: Prata 925): entra como peça pronta, sem galvânica; ao sair dela volta ao tipo anterior */
 function aplicarSemBanho(f){if(editId||f.conj)return;const c=catBy(f.v.I);
   if(c&&c.semBanho){if(!f._sb){f._tipoAntes=f.tipo;f._sb=true}f.tipo="pronta";f.onP={}}
@@ -50,8 +30,6 @@ function compraGramaAuto(f){const c=catBy(f.v.I),r=c&&num(c.compraGrama);
   const n=num(f.v.N);if(n>0){f.v.P=r2c(n*r).toFixed(2).replace(".",",");f._pAuto=f.v.P}else{if(f.v.P===f._pAuto)delete f.v.P;f._pAuto=null}
   const el=document.getElementById("f-P");if(el&&document.activeElement!==el)el.value=f.v.P||""}
 /* Atalhos digitados: "argolinhas" vira Brincos › Argolas; "choker" vira Colares › Choker. Vale nome da categoria/subcategoria ou apelido cadastrado (singular/plural tanto faz). */
-const catSing=s=>semAc(s).replace(/[^a-z0-9]+/g," ").trim().split(" ").map(w=>w.length>3&&w.endsWith("s")?w.slice(0,-1):w).join(" ");
-const apelidosDe=t=>String(t||"").split(/[;,]/).map(x=>x.trim()).filter(Boolean);
 function resolverCatSub(txt,catAtual){const k=catSing(txt);if(!k)return null;const C=cfg();
   for(const c of C.categorias){if([c.nome].concat(apelidosDe(c.apelidos)).some(n=>catSing(n)===k))return {cat:c.nome,sub:""}}
   const ach=[];C.categorias.forEach(c=>(c.subs||[]).forEach(s=>{if([s].concat(apelidosDe((c.subAlias||{})[s])).some(n=>catSing(n)===k))ach.push({cat:c.nome,sub:s})}));
@@ -62,24 +40,10 @@ function catDaDescricao(desc){const ws=String(desc||"").split(/\s+/).filter(w=>w
   for(let i=0;i<ws.length&&!achado;i++){const r=resolverCatSub(ws[i],"");if(r)achado=r}
   return achado}
 /* palavras que o usuário escreveria no começo da descrição: "Brinco" (categoria Brincos) e "Argola" (subcategoria Argolas). Cadastradas em Categorias; sem cadastro, deduz do nome (singular). */
-function palavraDeNome(n){n=String(n||"").trim();if(!n||/[\/;,]/.test(n))return "";
-  if(/éis$/i.test(n))return n.replace(/éis$/i,"el");if(/(res|zes|ses)$/i.test(n))return n.slice(0,-2);if(/s$/i.test(n)&&!/ss$/i.test(n))return n.slice(0,-1);return n}
 function palavrasDesc(cat,sub){const c=catBy(cat);if(!c)return {cat:"",sub:""};
   const pc=c.palavra!=null?String(c.palavra).trim():palavraDeNome(c.nome),ps=sub?((c.subPalavra||{})[sub]!=null?String((c.subPalavra||{})[sub]).trim():palavraDeNome(sub)):"";
   return {cat:pc==="-"?"":pc,sub:ps==="-"?"":ps}}
 /* Vocabulário inicial: termos observados no estoque, editáveis por categoria e subcategoria. */
-const BANCO_PALAVRAS={
- "Brincos":{"": ["Coração","Flor","Gota","Zircônia","Ponto de luz","Cristal","Cravejado","Liso"],"Argolas":["Argolinha","Click","Cravejada","Lisa","Quadrada","Coração","Zircônias"],"Pequenos":["Coração","Zircônia","Ponto de luz","Flor","Gota","Oval","Cristal","Cravejado"],"Trios/duos":["Trio","Duo","Argolinhas","Ponto de luz"]},
- "Anel":{"": ["Solitário","Cravejado","Liso","Regulável","Aparador","Coração","Zircônias","Entrelaçado"]},
- "Colares":{"": ["Coração","Elos","Bolinhas","Cruz","Ponto de luz","Riviera"],"Correntes":["Corrente","Elos","Veneziana","Cartier","Riviera","Cordão baiano"],"Chokers":["Choker","Elos","Corações","Chapinhas","Bolinhas","Losangos","Folhas"],"Gargantilhas":["Gargantilha","Coração","Ponto de luz","Zircônia"]},
- "Pulseiras":{"": ["Elos","Riviera","Corações","Bracelete","Dupla","Zircônias","Bolinhas","Regulável"]},
- "Pingentes":{"": ["Coração","Cruz","Medalha","Menino","Menina","Bonequinho"]},
- "Conjuntos":{"": ["Coração","Pedra fusion","Borboleta","Trevo","Zircônia","Ponto de luz"]},
- "Prata 925":{"Brincos":["Argolinha","Click","Coração","Ponto de luz","Zircônia"],"Anéis":["Solitário","Cravejado","Liso","Coração","Zircônias"],"Colares":["Corrente","Gargantilha","Coração","Veneziana"],"Pulseiras":["Elos","Coração","Riviera","Bolinhas"],"Pingentes":["Coração","Cruz","Medalha"]},
- "Masculinos":{"Correntes":["Grumet","Veneziana","Aço inox"],"Pulseiras":["Grumet","Elo fígaro","Aço inox"]},
- "Tornozeleiras":{"": ["Elos","Corações","Bolinhas","Miçangas"]},"Acessórios":{"": ["Tarraxa","Tarraxa mágica"]},
- "Infantil":{"": ["Infantil","Borboletinhas","Estrelinha","Coloridas"]},"Personalizado":{"": ["Nome","Coração","Mandala","Filhos"]},"Relógios":{"": ["Bracelete","Quadrado","Aço"]}
-};
 let bancoAberto=false;
 /* Cache descartável: histórico em IndexedDB + tabela atual, sem contar a mesma peça duas vezes. */
 let HIST_SUG=[];function usoSugPecas(){const vistos=new Set(),out=[];for(const l of [...(S.lanc||[]),...HIST_SUG]){if(!l||!l.v)continue;if(l.id&&vistos.has(l.id))continue;if(l.id)vistos.add(l.id);out.push(l)}return out}
@@ -99,7 +63,7 @@ function bancoEditarAbrir(){const d=document.querySelector(".banco-painel detail
 function bancoAtualizar(){const el=document.querySelector("#form .banco-palavras");if(!el)return;const busca=el.querySelector("[data-banco-busca]"),texto=busca?busca.value:"",aberto=!!el.querySelector("details[open]");el.outerHTML=bancoHtml(S.form);const novo=document.querySelector("#form .banco-palavras"),campo=novo&&novo.querySelector("[data-banco-busca]"),det=novo&&novo.querySelector("details");if(det&&aberto)det.open=true;if(campo&&texto){campo.value=texto;campo.dispatchEvent(new Event("input",{bubbles:true}))}}
 function bancoHtml(f){const c=catBy(f.v.I);if(!c||f.conj)return "";const sub=f.v.J||"",lista=bancoComplementos(f),proprias=[...bancoLista(f.v.I,"") ,...(sub?bancoLista(f.v.I,sub):[])],pk=new Set(proprias.map(semAc)),rapidas=lista.filter(x=>pk.has(semAc(x))).concat(lista.filter(x=>!pk.has(semAc(x))).slice(0,9)),escopo=sub?"subcategoria "+sub:"categoria "+c.nome,edit=bancoLista(c.nome,sub);return `<div class="banco-palavras"><div class="banco-rapido"><span class="hint" title="Com o foco na descrição, Alt+Shift+1 a 9 insere o complemento correspondente. Na categoria, cor ou banho, usa a opção correspondente.">Complementos (Alt+Shift+1–9):</span>${rapidas.map(w=>`<button type="button" class="gi tod" data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="banco-toggle" aria-expanded="${bancoAberto}">${bancoAberto?"Fechar palavras":"Mais palavras"}</button></div>${bancoAberto?`<div class="banco-painel"><label>Buscar palavra <input type="search" data-banco-busca placeholder="Digite para filtrar" aria-label="Buscar palavras"></label><div class="banco-lista">${lista.map(w=>`<button type="button" class="gi tod" data-banco-item data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")||'<span class="hint">Ainda não há sugestões para este contexto.</span>'}</div><details><summary>Editar palavras da ${esc(escopo)}</summary><p class="hint">Apenas esta ${sub?"subcategoria":"categoria"} será alterada. Separe várias palavras por ponto e vírgula.</p><div class="banco-editar">${edit.map(w=>`<span class="banco-edit-item">${esc(w)} <button type="button" data-act="banco-remover" data-w="${esc(w)}" aria-label="Remover ${esc(w)}">×</button></span>`).join("")}</div><label>Nova palavra ou expressão <input data-banco-nova maxlength="200" placeholder="ex.: Ponto de luz; Lisa"></label><button type="button" class="btn sm" data-act="banco-adicionar">Adicionar palavras</button></details></div>`:""}</div>`}
 /* preenche a descrição sozinho com as palavras (só enquanto vazia ou ainda igual ao que foi preenchido antes) */
-function descAuto(f){return}   /* a descrição é preenchida pelo usuário ou por sugestões escolhidas */
+   /* a descrição é preenchida pelo usuário ou por sugestões escolhidas */
 /* entradas extras da lista de categorias do formulário: apelidos e subcategorias, cada uma com o caminho completo */
 function entradasAtalho(){const C=cfg(),out=[],vistos=new Set(C.categorias.map(c=>catSing(c.nome)));
   C.categorias.forEach(c=>{apelidosDe(c.apelidos).forEach(a=>{if(!vistos.has(catSing(a))){vistos.add(catSing(a));out.push([a,c.nome])}});
@@ -108,18 +72,10 @@ function sincGrade(f){const g=gradeDaCat(f.v.I,f.v.J),id=g?g.id:"";if(id!==(f.gr
 /* verniz por variação de banho: o que foi marcado nesta peça vale; sem marca, vale o padrão do banho */
 /* banhos marcados: peça bruta usa "on"; peça pronta usa "onP" (só cor, letra e milésimos — sem custo de banho) */
 /* sufixo da referência: letra do banho + letra (AA, BA…) ou nome (A12) da opção, conforme a variação */
-const refParte=(b,it)=>(b?b.letra:"")+(!it?"":(it.ref!=null?it.ref:(it.g&&it.g.modoRef==="nome"?String(it.nome||it.letra):it.letra)));
-const onDe=l=>l.tipo==="bruta"?(l.on=l.on||{}):(l.onP=l.onP||{});
 const bonP=l=>l.tipo==="pronta"?bhDe(l).banhos.filter(b=>(l.onP||{})[b.id]):[];
-const vzPad=(bh,b)=>b.vz!=null?!!b.vz:bh.vernizOn!==false;
-const vzOn=(l,bh,b)=>l.vz&&b.id in l.vz?!!l.vz[b.id]:vzPad(bh,b);
 /* Texto, coluna e valor de cada opção seguem a variação (rótulo, coluna e nome) até serem digitados à mão: trocar "aro" por "tamanho" ou o nome de uma opção atualiza tudo. */
-const rotG=g=>g.rotulo==null?" ":g.rotulo;
-const efetivo=(g,x)=>({...x,g,texto:!vazio(x.texto)?x.texto:rotG(g)+(x.nome||x.letra),col:!vazio(x.col)?x.col:(g.col||""),valor:!vazio(x.valor)?x.valor:(g.col||!vazio(x.col)?(x.nome||""):"")});
 /* sigla sugerida a partir do nome (Azul → AZ, Rosa → RO); se já existe na categoria tenta outras letras; por fim cai no número */
-const proxCorLetra=(c,nome)=>{const us=new Set(((c&&c.cores)||[]).map(x=>String(x.letra||"").toUpperCase()));const w=semAc(String(nome||"")).toUpperCase().replace(/[^A-Z0-9]/g,"");if(w.length>=2){const cand=[w.slice(0,2)];for(let k=2;k<w.length;k++)cand.push(w[0]+w[k]);for(const q of cand)if(!us.has(q))return q}for(let i=1;i<100;i++)if(!us.has(String(i)))return String(i);return ""};
 /* biblioteca de cores (aba Cores, tamanhos e variações): vale para qualquer categoria; a peça escolhe */
-const corKey=n=>semAc(String(n||"")).trim();
 function libSiglas(){const C=cfg(),M=C.coresMeta||{},us=new Set(),out={};(C.cores||[]).forEach(n=>{const m=M[corKey(n)];if(m&&m.sig)us.add(String(m.sig).toUpperCase())});
   (C.cores||[]).forEach(n=>{const k=corKey(n),m=M[k];if(m&&m.sig){out[k]=String(m.sig).toUpperCase();return}
     const w=k.toUpperCase().replace(/[^A-Z0-9]/g,""),cand=[];if(w.length>=2){cand.push(w.slice(0,2));for(let q=2;q<w.length;q++)cand.push(w[0]+w[q])}
@@ -142,11 +98,6 @@ const itensGrade=l=>{const g=gradeBy(l.grade),sz=(!g||l.semGrade)?[]:g.itens.fil
   return sz.flatMap(a=>cs.map(c=>({...a,extra:c.cfCol?{[c.cfCol]:c.nome}:undefined,id:a.id+"+"+c.id,letra:a.letra+c.letra,nome:(a.nome||a.letra)+" "+c.nome,ref:(a.g&&a.g.modoRef==="nome"?String(a.nome||a.letra):a.letra)+c.ref,texto:a.texto+c.texto,seq:[a,c]})))};
 const temGrade=l=>itensGrade(l).length>0;
 /* Se a descrição já traz o tamanho ("aro 14" ou o rótulo antigo), ele é trocado pelo da linha em vez de somado ("aro 14 aro 12"). */
-function descVar(d,it){if(it&&it.seq)return it.seq.reduce((a,x)=>descVar(a,x),d);if(!it||!it.texto)return d;d=String(d||"");const g=it.g;
-  if(g){const B=String.fromCharCode(92),ro=s=>String(s).split("").map(c=>"[]{}()|.*+?^$-/".indexOf(c)>=0?B+c:c).join(""),pal=[g.rotulo,...(g.sin||[])].map(x=>String(x||"").trim()).filter(Boolean),nomes=g.itens.map(x=>x.nome).filter(Boolean).map(ro).join("|");
-    pal.forEach(w=>{d=d.replace(new RegExp("(^| )"+ro(w)+" *(?:[0-9]+(?:[.,][0-9]+)?"+(nomes?"|"+nomes:"")+")(?= |$)","gi"),"$1")});
-    d=d.replace(/ {2,}/g," ").trim()}
-  return d.toLowerCase().includes(it.texto.trim().toLowerCase())?d:d+it.texto}
 function prefixosTodos(){const C=cfg(),m=new Map(),sec=new Map(),add=(mp,p,n)=>{p=String(p||"").toUpperCase();if(!p)return;if(!mp.has(p))mp.set(p,[]);if(n&&!mp.get(p).includes(n))mp.get(p).push(n)};
   C.categorias.forEach(c=>add(m,c.prefixo,c.nome));
   C.categorias.forEach(c=>Object.entries(c.subPref||{}).forEach(([sub,pp])=>{pp=String(pp).toUpperCase();if(m.has(pp))m.get(pp).push(c.nome+" › "+sub);else add(sec,pp,c.nome+" › "+sub)}));
@@ -166,9 +117,7 @@ function renderNum(){const el=document.getElementById("numbar");if(!el)return;co
 function fnum(p,n){const t=String(cfg().seqs[p]??""),w=/^0[0-9]+$/.test(t)?t.length:0;n=String(n);return w>n.length?n.padStart(w,"0"):n}
 function proxDe(p){return Math.max(inicioDe(p),(G&&G.cont&&G.cont[p])||0)+1}
 function inicioDe(p,g){return Math.max(ultimo(p),((g||G||{}).manual||{})[p]||0)}
-function contFinal(g){const o={...g.cont};Object.entries(g.manual||{}).forEach(([p,n])=>{if(n>(o[p]||0))o[p]=n});return o}
 /* NCM, CFOP, FCP e Custo de Insumos podem ter valor próprio em cada categoria; sem ele vale o padrão da coluna */
-const catPad={Y:"ncm",AA:"cfop",AB:"fcp",Q:"insumos"};
 /* Itens detalhados só alteram Q após escolha explícita de uma regra nos Cadastros. */
 function insumosItensResumo(cat){const C=cfg(),it=Array.isArray(C.insumosItens)?C.insumosItens:[],usados=it.filter(x=>x&&(!x.cat||x.cat===cat)),soma=usados.reduce((a,x)=>a+(num(x.qtd)||0)*(num(x.valor)||0),0);return {itens:usados,total:Math.round((soma+Number.EPSILON)*100)/100}}
 const padraoDe=(cat,L)=>{const C=cfg(),k=catPad[L],c=k?catBy(cat):null;if(!C.colcfg[L])return "";const antigo=c&&!vazio(c[k])?c[k]:C.colcfg[L].padrao;
@@ -184,7 +133,6 @@ function insumosContaHTML(cat,manual,linhaManual){
 }
 const val=(l,L)=>L==="J"&&Object.prototype.hasOwnProperty.call(l.v,L)?l.v[L]:(vazio(l.v[L])?padraoDe(l.v.I,L):l.v[L]);
 /* banho sem cálculo: modo "Sem cálculo" ou sem coluna de custo (nada vai para R/S/T) */
-const banhoSemCalc=b=>!!b&&(b.modo==="nenhum"||!b.coluna);
 const opcoesDe=L=>String((cfg().colcfg[L]||{}).opcoes||"").split(";").map(s=>s.trim()).filter(Boolean);
 function listaDe(L,catNome){const C=cfg();let base=[];
   if(L==="H")base=C.fornecedores.map(f=>f.nome);else if(L==="I")base=C.categorias.map(c=>c.nome);
@@ -194,7 +142,6 @@ function listaDe(L,catNome){const C=cfg();let base=[];
   if(!["H","I","J","L","M"].includes(L))return valores;
   const usos=new Map();for(const item of usoSugPecas()){if(L==="J"&&item.v.I!==catNome)continue;const k=String(item.v[L]||"").trim().toLocaleLowerCase("pt-BR");if(k)usos.set(k,(usos.get(k)||0)+1)}
   return valores.map((v,i)=>({v,i,n:usos.get(String(v).trim().toLocaleLowerCase("pt-BR"))||0})).sort((a,b)=>b.n-a.n||a.i-b.i).map(x=>x.v)}
-function opts(list,sel,blank){return (blank!=null?`<option value="">${esc(blank)}</option>`:"")+list.map(v=>{const [vv,tt]=Array.isArray(v)?v:[v,v];return `<option value="${esc(vv)}"${vv===sel?" selected":""}>${esc(tt)}</option>`}).join("")+(sel&&!list.some(v=>(Array.isArray(v)?v[0]:v)===sel)?`<option selected>${esc(sel)}</option>`:"")}
 function toast(msg,acao){if(/NÃO (?:consegui|salv|foi possível)|não consegui (?:salvar|gravar|guardar)|dados (?:danificados|corrompidos)|memória (?:do navegador )?cheia/i.test(String(msg))){let box=document.getElementById("avisosCriticos");if(!box){box=document.createElement("div");box.id="avisosCriticos";box.setAttribute("aria-live","assertive");box.style.cssText="position:fixed;top:12px;right:12px;z-index:10000;display:grid;gap:8px;max-width:min(440px,calc(100vw - 24px))";document.body.appendChild(box)}if([...box.children].some(x=>x.dataset.msg===String(msg)))return;const item=document.createElement("div");item.dataset.msg=String(msg);item.setAttribute("role","alert");item.style.cssText="background:#fff;border:2px solid #a52222;color:#621717;padding:12px;border-radius:8px;box-shadow:0 4px 16px #0003";const texto=document.createElement("span");texto.textContent=msg;item.appendChild(texto);if(acao){const botao=document.createElement("button");botao.type="button";botao.textContent=acao.t;botao.onclick=()=>{item.remove();acao.fn()};item.appendChild(botao)}const fechar=document.createElement("button");fechar.type="button";fechar.textContent="Fechar";fechar.setAttribute("aria-label","Fechar aviso crítico");fechar.onclick=()=>item.remove();item.appendChild(fechar);box.appendChild(item);return}const t=document.getElementById("toast");t.innerHTML=`<span>${esc(msg)}</span>`+(acao?`<button type="button" id="tBtn">${esc(acao.t)}</button>`:"")+`<button type="button" id="tFechar" aria-label="Fechar aviso">×</button>`;t.hidden=false;if(acao)document.getElementById("tBtn").onclick=()=>{t.hidden=true;acao.fn()};document.getElementById("tFechar").onclick=()=>{t.hidden=true;clearTimeout(toast._t)};clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,Math.min(20000,Math.max(acao?10000:6000,String(msg).length*90)))}
 function descBanho(l,b,i){const d=comSufixoCat(val(l,"F"),val(l,"I"),l.semSufixoCat);if(i===0||!b.sufixo)return d;const sx=String(b.sufixo);if(d.toLowerCase().includes(sx.trim().toLowerCase()))return d;
   /* Só une expressões de prata quando o material está no fim e o banho tem o mesmo qualificativo. */

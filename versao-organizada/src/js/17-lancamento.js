@@ -1,7 +1,6 @@
 /* ===== lançamento (parte de baixo) ===== */
 /* campo com o nome da coluna em cima; w = largura (n: número, c: valor, s: curto, m: médio, l: ocupa o resto) */
 /* colunas com cadastro prévio: escolher da lista OU digitar livre (como Observação). Categoria nova pede o prefixo; fornecedor e subcategoria digitados entram no cadastro ao adicionar a peça */
-const MISTO=new Set(["H","I","J","L","M","AD","AE"]);
 function campoHTML(L,f,opt){
   opt=opt||{};const C=cfg(),cc=C.colcfg[L],bid=opt.banho;
   const v=bid?((f.ov[bid]||{})[L]??""):(f.v[L]??"");
@@ -117,15 +116,6 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
   if(quick){const i=document.getElementById("q1");if(i)i.focus()}
 }
 /* tamanhos com letra: P, M, G (ou Pequeno, Médio, Grande) entram na referência com a própria letra; números seguem a sequência de letras */
-const PMG={pequeno:"P",pequena:"P",medio:"M","médio":"M",media:"M","média":"M",grande:"G"};
-function dividirTamanhos(texto){const simples=t=>PMG[t.toLowerCase()]||/^(\d+([.,]\d+)?|(?!cm$|mm$)[A-Za-z]{1,3})$/i.test(t);
-  return String(texto).replace(/(\d),(?=\d)/g,"$1\u0001").split(/[;,\/\n]+/).map(x=>x.replace(/\u0001/g,",").trim()).filter(Boolean).flatMap(x=>{const w=x.split(/\s+/);return w.length>1&&w.every(simples)?w:[x]})}
-function addTamanhos(gr,texto){const ids=[];
-  dividirTamanhos(texto).forEach(tk=>{
-    const sem=tk.toLowerCase(),letraPMG=PMG[sem]||(/^[A-Za-z]{1,3}$/.test(tk)?tk.toUpperCase():""),nome=PMG[sem]||tk;
-    let it=gr.itens.find(x=>String(x.nome).toLowerCase()===nome.toLowerCase());
-    if(!it){const letra=letraPMG&&!gr.itens.some(x=>String(x.letra).toUpperCase()===letraPMG)?letraPMG:proxLetra(gr.itens.map(x=>x.letra));it={id:uid(),letra,nome};gr.itens.push(it)}
-    ids.push(it.id)});return ids}
 function letrasDeTamanho(){return todasGrades().flatMap(g=>g.itens.filter(x=>String(x.letra||"").toUpperCase()===String(x.nome||"").toUpperCase()).map(x=>String(x.letra).toUpperCase()))}
 function salvarRapido(){
   const C=cfg(),f=S.form,g=id=>{const e=document.getElementById(id);return e?e.value.trim():""},n=g("q1"),lo=s=>s.toLowerCase();
@@ -177,7 +167,6 @@ function fatorDoPreco(k){
 }
 
 /* celular: a numeração do sistema (botão + barra de últimas peças) mora dentro do formulário, expansível como no desktop; antes de refazer o formulário os dois voltam ao lugar de origem para não serem apagados */
-const NUMORIG={};
 function numFormGuardar(){const tog=document.getElementById("nbTog"),nb=document.getElementById("numbar");if(!tog||!nb||!NUMORIG.tog)return;
   const volta=(el,[pai,ref])=>{if(el.parentNode!==pai)pai.insertBefore(el,ref&&ref.parentNode===pai?ref:null)};volta(tog,NUMORIG.tog);volta(nb,NUMORIG.nb)}
 function numFormMover(){const tog=document.getElementById("nbTog"),nb=document.getElementById("numbar");if(!tog||!nb)return;

@@ -8,27 +8,9 @@ function relGerar(feitas,ign,meta,romId){
   REL={em:Date.now(),meta,itens,ign,romId:romId||"",lids:feitas.map(x=>x.id)};try{backupLembrarPosCriar()}catch(e){}
   try{localStorage.setItem("cadpecas-rel",JSON.stringify({...REL,itens:itens.map(i=>({...i,foto:null}))}));relTem=true}catch(e){}
   relAbrir()}
-function relFaixas(R){const f={};R.itens.forEach(i=>i.linhas.forEach(l=>{const m=String(l.ref).match(/^([A-Z]+)([0-9]+)/);if(!m)return;const o=f[m[1]]=f[m[1]]||[+m[2],+m[2]];o[0]=Math.min(o[0],+m[2]);o[1]=Math.max(o[1],+m[2]);o[2]=Math.max(o[2]||0,m[2].length)}));
-  const z=(p,i)=>String(f[p][i]).padStart(f[p][2]||0,"0");return Object.keys(f).map(p=>`${p}${z(p,0)}${f[p][1]>f[p][0]?"–"+p+z(p,1):""}`)}
-function relTexto(R){const m=R.meta,tot=R.itens.reduce((t,i)=>({un:t.un+i.un,cu:t.cu+i.custo,vr:t.vr+i.vr,l:t.l+i.linhas.length}),{un:0,cu:0,vr:0,l:0});
-  const L=[`RELATÓRIO DO ROMANEIO — ${new Date(R.em).toLocaleString("pt-BR")}`,`Fornecedor: ${m.forn}${m.banhista?` · Banhista: ${m.banhista}`:""}${m.obs?` · ${m.obs}`:""}`,
-    `${R.itens.length} peças · ${tot.l} linhas · ${tot.un} unidades (lista: ${m.naLista}) · Custo ${fm(tot.cu)} · Varejo ${fm(tot.vr)}`,`Referências criadas: ${relFaixas(R).join(" · ")||"—"}`,m.conf?`Conferência da lista: ${m.conf}`:"",""];
-  R.itens.forEach(i=>L.push(`${i.linhas.map(l=>l.ref).join(" + ")} | ${i.desc} | ${i.cat}${i.sub?" › "+i.sub:""} | ${i.un} un. | compra ${i.compra||"—"} | cód. forn. ${i.cod||"—"}`));
-  if(R.ign.length){L.push("","Não lançadas:");R.ign.forEach(g=>L.push(`${g.desc} (${g.cod||"sem código"}) — ${g.motivo}`))}return L.filter((x,i)=>x!==""||i>4).join("\n")}
-function relCsv(R){const q=csvq,v=n=>n==null?"":(Math.round(n*100)/100).toFixed(2).replace(".",","),o=[["Referência","Descrição","Categoria","Subcategoria","Cód. fornecedor","Cor","Quantidade","Custo de Compra","Custo total unit.","Preço de Varejo"].map(q).join(";")];
-  R.itens.forEach(i=>i.linhas.forEach(l=>o.push([l.ref,i.desc,i.cat,i.sub,i.cod,l.cor,l.q,i.compra,v(l.cu),v(l.v)].map(q).join(";"))));return "﻿"+o.join("\r\n")}
 async function arqSalvar(nome,txt){const dl=await obterDL();
   try{await dl.save({filename:nome,data:new Blob([txt],{type:"text/csv;charset=utf-8"})})}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o arquivo.")}}
 /* relatório em memória (confiável) ou o guardado no navegador, que passa por limpeza de tipos: texto vira texto, número vira número */
-function relNormalizar(R){
-  const N=(v,d)=>{const n=typeof v==="number"?v:(typeof v==="string"&&v.trim()!==""?Number(v):NaN);return isFinite(n)?n:d},T=v=>v==null||typeof v==="object"?"":String(v);
-  if(!ehObj(R)||!ehObj(R.meta)||!Array.isArray(R.itens)||(R.ign!=null&&!Array.isArray(R.ign)))throw new Error("o relatório está em formato errado");
-  const m=R.meta;
-  return {...R,romId:T(R.romId),em:N(R.em,Date.now()),meta:{...m,forn:T(m.forn),banhista:T(m.banhista),obs:T(m.obs),conf:T(m.conf),tipo:T(m.tipo),modelo:T(m.modelo),naLista:N(m.naLista,0),un:N(m.un,0)},
-    itens:R.itens.map((i,n)=>{if(!ehObj(i)||!Array.isArray(i.linhas))throw new Error("o item "+(n+1)+" do relatório está em formato errado");
-      return {...i,desc:T(i.desc),cod:T(i.cod),cat:T(i.cat),sub:T(i.sub),peso:T(i.peso),compra:T(i.compra),foto:ftOk(i.foto)?i.foto:null,un:N(i.un,0),custo:N(i.custo,0),vr:N(i.vr,0),
-        linhas:i.linhas.map(l=>{if(!ehObj(l))throw new Error("uma linha do relatório está em formato errado");return {...l,ref:T(l.ref),cor:T(l.cor),q:N(l.q,0),cu:N(l.cu,0),v:l.v==null?null:N(l.v,null)}})}}),
-    ign:(R.ign||[]).map(g=>ehObj(g)?{...g,desc:T(g.desc),cod:T(g.cod),motivo:T(g.motivo)}:{desc:"",cod:"",motivo:""})}}
 function relLer(){let R=REL;if(!R){try{R=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){R=null}}if(!R)return null;if(R===REL)return R;try{return relNormalizar(R)}catch(e){return null}}
 function relAbrir(){const R=relLer();if(!R){toast("Ainda não há relatório (ou o que estava guardado está danificado).");return}
   const m=R.meta,tot=R.itens.reduce((t,i)=>({un:t.un+i.un,cu:t.cu+i.custo,vr:t.vr+i.vr,l:t.l+i.linhas.length}),{un:0,cu:0,vr:0,l:0}),ok=tot.un===m.naLista;
@@ -43,8 +25,6 @@ function relAbrir(){const R=relLer();if(!R){toast("Ainda não há relatório (ou
     ${R.itens.map(i=>`<tr><td>${i.foto?`<img class="rc-ft sm" src="${fs(i.foto)}" alt="">`:""}</td><td>${i.linhas.map(l=>`<div class="rl"><b class="mono">${esc(l.ref)}</b>${l.cor?` <i>${esc(l.cor)}</i>`:""}</div>`).join("")}</td><td><b>${esc(i.desc)}</b><div class="hint">${esc(i.cod||"")}${i.peso?` · ${esc(i.peso)} g`:""}</div></td><td>${esc(i.cat)}${i.sub?`<div class="hint">${esc(i.sub)}</div>`:""}</td><td class="n">${i.linhas.map(l=>`<div class="rl">${Number(l.q)||0}</div>`).join("")}</td><td class="n"><div class="rl">${esc(i.compra||"—")}</div></td><td class="n">${i.linhas.map(l=>`<div class="rl">${brl(l.cu)}</div>`).join("")}</td><td class="n">${i.linhas.map(l=>`<div class="rl">${l.v==null?"—":brl(l.v)}</div>`).join("")}</td></tr>`).join("")}</tbody></table></div>
     ${R.ign.length?`<div class="rep-ig"><b>Não lançadas (${R.ign.length})</b> ${R.ign.map(g=>`<span>${esc(g.desc)} <span class="hint">(${esc(g.cod||"sem código")}) — ${esc(g.motivo)}</span></span>`).join("")}</div>`:""}</div>`;
   document.body.appendChild(ov)}
-function parseMapa(m){return String(m||"").split(/[;\n]/).map(z=>z.trim()).filter(Boolean).map(z=>{const [a,b]=z.split("="),[c,s]=String(b||"").split(">");return {w:(a||"").trim(),c:(c||"").trim(),s:(s||"").trim()}})}
-const mapaStr=arr=>arr.map(m=>m.w+"="+m.c+(m.s?">"+m.s:"")).join("; ");
 function secRom(C){
   const exPainel=romUI.ex?`<div class="cpanel"><b>Novo modelo a partir de uma lista de exemplo</b><span class="hint">1) cole a lista do cliente · 2) confira como cada linha foi lida · 3) dê um nome e crie. O modelo já nasce com as palavras das suas categorias.</span><textarea id="romExTx" data-rex aria-label="Lista de exemplo" placeholder="Cole aqui o texto da lista do fornecedor…">${esc(romUI.txt)}</textarea><div id="romExPrev" class="prev" aria-live="polite">${romExInfo().html}</div><div class="row"><label class="fl" style="flex:1 1 200px"><span>Nome do modelo (ex.: nome do fornecedor)</span><input data-rexn value="${esc(romUI.nome)}" maxlength="50"></label><button type="button" class="btn pri sm" id="romExOk" data-act="rom-ex-ok" ${romExInfo().ok?"":"disabled"}>Criar modelo</button><button type="button" class="btn ghost sm" data-act="rom-ex-fechar">Cancelar</button></div></div>`:`<div class="row"><button type="button" class="btn sm pri" data-act="rom-ex-abrir" title="Cole uma lista de um fornecedor novo e veja como o app lê; depois é só dar um nome">＋ Novo modelo a partir de uma lista de exemplo</button><span class="hint">Para planilhas (.xlsx/.csv) use “Importar planilha” no romaneio: você escolhe as colunas.</span></div>`;
   const adv=(t,k,rot,w,tit)=>`<label class="fl" style="${w}"><span>${rot}</span><input data-rf="${k}" value="${esc(t[k]||"")}" ${tit?`title="${esc(tit)}"`:""}></label>`;

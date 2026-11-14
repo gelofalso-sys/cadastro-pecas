@@ -1,8 +1,4 @@
 /* ===== "O que mudou": últimas novidades, para conferir o que veio na versão publicada ===== */
-const NOVIDADES=[
-  {d:"2026-11-12",t:"Lote em qualquer cadastro, apelidos e fiscal em massa",i:["Criar em lote (N peças numeradas 1/N) no formulário e “⊞ em lote” em qualquer item do romaneio; dá para desativar","Apelidos de categoria e subcategoria: digitar “argolinhas” já escolhe Brincos › Argolas e o prefixo","Fiscal (NCM, CFOP, FCP) e insumos de todas as categorias numa tabela só","Anel no lugar de “Anél”; instalação nova começa sem galvânica, fornecedores nem observações","Palavras da categoria/subcategoria acima da descrição, com preenchimento automático e banco de palavras"]},
-  {d:"2026-11-11",t:"Lotes por grama, banho sem cálculo e abertura resiliente",i:["Valor do lote por grama rateado pelo peso informado, recalculado a cada item","Banho com letra, cor, cálculo e coluna opcionais; categoria “Sem banho” e “Compra por grama”","Tela de recuperação mostra a etapa que falhou e permite abrir mesmo assim; Diagnóstico dos dados"]},
-  {d:"2026-11-10",t:"Romaneio sem bloqueios",i:["Alertas no lugar de bloqueios ao criar peças do romaneio","Peça nova fora da lista, foto por item e insumos próprios do romaneio rateados","Baixar .xlsx só das peças selecionadas"]}];
 function novidadesAbrir(){
   repModal(`<div class="rep-h"><div><b class="rep-t">O que mudou</b><div class="hint">Versão ${esc(((document.querySelector(".build-version")||{}).textContent||"").replace(/·.*$/,"").replace("Versão","").trim())}</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div><div class="rep-b">${NOVIDADES.map(n=>`<h4 style="margin:10px 0 2px">${esc(n.d.split("-").reverse().join("/"))} · ${esc(n.t)}</h4><ul style="margin:0 0 6px 18px">${n.i.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`).join("")}</div>`)}
 
@@ -15,7 +11,6 @@ function campoMsg(t,msg){
   s.textContent=msg}
 
 /* ===== simulador de fator × margem ===== */
-function custoLinhaDe(g,r){const gi=g.linhas.indexOf(r),cs=celulas(r,gi+2),nv=k=>{const c=cs[LET.indexOf(k)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:0};return r2c(["P","Q","R","S","T","U"].reduce((t,k)=>t+nv(k),0))}
 function simuladorFator(){
   const g=previsao(),meu=editId||"__p",rows=g.linhas.filter(r=>r.lancId===meu).slice(0,4);
   const custos=rows.map(r=>({r,custo:custoLinhaDe(g,r)})).filter(x=>x.custo>0);
@@ -65,12 +60,6 @@ document.addEventListener("drop",e=>{
 });
 
 /* ===== histórico legível das últimas alterações (com "voltar antes desta") ===== */
-function histDescrever(antesL,depoisL,e){
-  try{const A=JSON.parse(antesL),B=JSON.parse(depoisL),ma=new Map(A.map(l=>[l.id,JSON.stringify(l)])),mb=new Map(B.map(l=>[l.id,JSON.stringify(l)]));
-    let add=0,del=0,mud=0;mb.forEach((v,id)=>{if(!ma.has(id))add++;else if(ma.get(id)!==v)mud++});ma.forEach((v,id)=>{if(!mb.has(id))del++});
-    const p=[];if(add)p.push(`criou ${add} peça(s)`);if(mud)p.push(`alterou ${mud} peça(s)`);if(del)p.push(`excluiu ${del} peça(s)`);
-    if(!p.length)return e.soCfg?"mudou cadastros (categorias, banhos, fornecedores…)":"alteração";
-    return (e.R?"romaneio: ":"")+p.join(", ")}catch(x){return "alteração"}}
 function historicoAbrir(){
   const n=HIST.length;if(!n){toast("Ainda não há alterações para listar.");return}
   const atual=JSON.stringify(S.lanc),ini=Math.max(0,n-15),linhas=[];

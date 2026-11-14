@@ -13,9 +13,9 @@
     "lint": "node tools/lint.mjs",
     "lint:estrito": "node tools/lint.mjs --estrito",
     "format": "prettier --write",
-    "format:check": "prettier --check src/js"
+    "format:check": "prettier --check src/js",
+    "test:unit": "node --test tests/unit/*.test.mjs"
   },
-  "type": "module",
   "devDependencies": {
     "eslint": "^9.39.5",
     "globals": "^17.14.0",

@@ -1,15 +1,11 @@
 // Analisa o JavaScript do app como o navegador o vê (um bloco só) e devolve cada aviso
 // com arquivo e linha de src/js. Uso: node tools/lint.mjs [--estrito] [--resumo]
 import { ESLint } from "eslint";
-import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const js = path.join(raiz, "src", "js");
-const ordem = ["_ordem-a.txt", "_ordem-b.txt"].flatMap(m => fs.readFileSync(path.join(js, m), "utf8").split(/\r?\n/).filter(l => l.trim()));
+import { raiz, arquivosDoBloco, lerBloco } from "./_nucleo.mjs";
 let bloco = "", inicios = [];
-for (const n of ordem) { inicios.push({ n, ate: 0, de: bloco.split("\n").length }); bloco += fs.readFileSync(path.join(js, n), "utf8"); inicios.at(-1).ate = bloco.split("\n").length; }
-const onde = l => { const f = inicios.find(i => l >= i.de && l <= i.ate) || inicios.at(-1); return `${f.n}:${l - f.de + 1}`; };
+const linhas = t => t.split(String.fromCharCode(10)).length;
+for (const a of arquivosDoBloco()) { inicios.push({ n: a.n, ate: 0, de: linhas(bloco) }); bloco += lerBloco(a); inicios.at(-1).ate = linhas(bloco); }
 const eslint = new ESLint({ cwd: raiz });
 const [r] = await eslint.lintText(bloco, { filePath: path.join(raiz, "bloco-montado.js") });
 const msgs = r.messages;

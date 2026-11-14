@@ -1,7 +1,5 @@
 /* ===== exportar ===== */
 function faixaRefs(g){const c=contFinal(g);return Object.keys(c).filter(p=>c[p]>ultimo(p)).map(p=>{const i=ultimo(p)+1,A=p+fnum(p,i),B=p+fnum(p,c[p]);return i===c[p]?A:`${A}–${B}`}).join(", ")}
-function faixaFiltro(g){const bs=[...new Set(g.linhas.map(r=>refBase(r.v.E)).filter(Boolean))].sort();return bs.length<=4?bs.join(", "):bs[0]+"–"+bs[bs.length-1]}
-function celulaXlsx(x,cols){if(x.f){const tf=cols?traduzF(x.f,cols):x.f;if(tf){const c={t:"n",f:tf};if(typeof x.v==="number")c.v=x.v;else if(typeof x.calc==="number")c.v=x.calc;return c}return typeof x.v==="number"?{t:"n",v:x.v}:typeof x.calc==="number"?{t:"n",v:x.calc}:{t:"s",v:"="+x.f}}return typeof x.v==="number"?{t:"n",v:x.v}:{t:"s",v:String(x.v).replace(/[\r\n]+/g," ")}}
 const DLNAV={save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}};
 async function obterDL(){let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}return dl||DLNAV}
 /* pendências antes de exportar: obrigatório vazio, peso faltando (banho sem custo) e banho sem multiplicador */
@@ -27,16 +25,11 @@ function conferirExport(g,cols){const ger=pendenciasExport(g,true),mod=validarMo
 function abrirConferencia(g,cols,acao){const p=conferirExport(g,cols);if(!p.n)return false;expPend=acao||null;mostrarConferencia(p,!!acao);return true}
 let expAgrupa=false,expUlt=null;
 /* pendências agrupadas por tipo: "Peso (sem ele…): 12 peças", com botões para ir às primeiras */
-function pendGrupos(ger){const grupos=new Map(),soltas=[];
-  ger.forEach(s=>{const m=s.match(/^Linha \d+ \(([^)]+)\): (.+)$/);if(!m){soltas.push(s);return}m[2].split(/, (?=[A-ZÀ-Ú])/).forEach(t=>{const k=t.trim();if(!grupos.has(k))grupos.set(k,[]);grupos.get(k).push(m[1])})});
-  return [...grupos.entries()].sort((a,b)=>b[1].length-a[1].length).map(([k,refs])=>`<tr><td><b>${esc(k)}</b> — ${refs.length} peça(s): ${refs.slice(0,6).map(r=>`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(r)}">${esc(r)}</button>`).join(" ")}${refs.length>6?` e mais ${refs.length-6}`:""}</td></tr>`).join("")+soltas.map(s=>`<tr><td>${esc(s)}</td></tr>`).join("")}
 function mostrarConferencia(p,podeSeguir){expUlt={p,podeSeguir};const LIM=300,mo=modeloAtual();
   repModal(`<div class="rep-h"><div><b class="rep-t">Conferência antes de exportar</b><div class="hint">Modelo <b>${esc(mo.nome)}</b> · ${p.n} ponto(s) para olhar${p.n>LIM*2?" (mostrando os primeiros)":""}</div></div><div class="rep-ac">${podeSeguir?`<button type="button" class="btn pri sm" data-act="exp-assim">Exportar mesmo assim</button>`:""}<button type="button" class="btn sm" data-act="rel-fechar">${podeSeguir?"Voltar e corrigir":"Fechar"}</button></div></div>
   ${p.ger.length?`<div class="rep-rf"><b>Pendências da tabela (${p.ger.length})</b> <button type="button" class="btn ghost sm" data-act="exp-agrupar">${expAgrupa?"Ver peça por peça":"Agrupar por tipo"}</button></div><div class="rep-tb"><table><tbody>${expAgrupa?pendGrupos(p.ger):p.ger.slice(0,LIM).map(s=>{const m=s.match(/^Linha \d+ \(([^)]+)\)/);return `<tr><td>${esc(s)} ${m?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(m[1])}">Ir à peça</button>`:""}</td></tr>`}).join("")}</tbody></table></div>`:""}
   ${p.mod.length?`<div class="rep-rf"><b>Regras do modelo (${p.mod.length})</b></div><div class="rep-tb"><table><thead><tr><th class="n">Linha</th><th>Referência</th><th>Coluna</th><th>Problema</th></tr></thead><tbody>${p.mod.slice(0,LIM).map(x=>`<tr><td class="n">${x.l}</td><td class="mono">${esc(x.ref)} ${x.ref&&x.ref!=="—"?`<button type="button" class="btn sm" data-act="exp-ir" data-ref="${esc(x.ref)}" data-colnome="${esc(x.col)}">Ir à peça</button>`:""}</td><td>${esc(x.col)}</td><td class="al-t">${esc(x.msg)}</td></tr>`).join("")}</tbody></table></div>`:""}`)}
 /* arquivo CSV do modelo: separador, decimal e codificação escolhidos no modelo */
-function txtSaida(r,c,dec){if(!r)return "";const v=r.v;if(v==null)return r.f?"="+r.f:"";if(typeof v==="number")return (c.tipo==="dinheiro"?(c.k==="P"?(Math.abs(v*100-Math.round(v*100))<1e-7?v.toFixed(2):v.toFixed(4).replace(/0+$/,"")):v.toFixed(2)):String(v)).replace(".",dec);return String(v).replace(/[\r\n]+/g," ")}
-const protegeTxt=s=>{s=String(s==null?"":s);return /^[=+@\t\r]/.test(s)||(s[0]==="-"&&!/^-\d+([.,]\d+)?$/.test(s))?"'"+s:s};
 function montarCsv(g,cols,mo,slx){
   const sep=mo.sep==="tab"?String.fromCharCode(9):mo.sep===","?",":";",dec=mo.dec==="."?".":",",Q=String.fromCharCode(34),NL=String.fromCharCode(13,10);
   const q=s=>{s=String(s);return (s.includes(sep)||s.includes(Q)||/[\r\n]/.test(s))?Q+s.split(Q).join(Q+Q)+Q:s};
@@ -70,13 +63,7 @@ async function baixar(forcar,ids){
     if(avZ)msgs.push(avZ);if(msgs.length)toast(msgs.join(" · "))}
 }
 /* EAN, NCM e código de barras com zero à esquerda: CSV e cópia não têm tipo "texto", então o Excel pode comer o zero ao abrir */
-function avisoZeros(sl,cols,onde){const ks=["C","Y","Z"].filter(k=>cols.some(c=>c.k===k));if(!ks.length)return "";let n=0;const ex=[];
-  sl.forEach(e=>{const v=e.row&&e.row.v;if(!v)return;ks.forEach(k=>{const x=v[k];if(typeof x==="string"&&/^0\d/.test(x.trim())){n++;if(ex.length<2&&!ex.includes(x.trim()))ex.push(x.trim())}})});
-  return n?`Atenção: ${n} valor(es) de EAN/NCM/código de barras começam com zero (ex.: ${ex.join(", ")}). Ao abrir ${onde} no Excel esse zero pode sumir; para manter, use o modelo .xlsx (sai como texto) ou importe a coluna como Texto.`:""}
 /* divide a saída em arquivos de no máximo "lote" linhas, sem separar um produto pai das suas variações */
-function dividirLotes(sl,lote){if(!(lote>0)||sl.length<=lote)return [sl];
-  const grupos=[];sl.forEach(e=>{if(e.t==="filho"&&grupos.length)grupos[grupos.length-1].push(e);else grupos.push([e])});
-  const out=[];let cur=[];grupos.forEach(gp=>{if(cur.length&&cur.length+gp.length>lote){out.push(cur);cur=[]}cur.push(...gp)});if(cur.length)out.push(cur);return out}
 function montarXlsx(cols,mo,sl){const ws=XLSX.utils.aoa_to_sheet([cols.map(c=>c.h)]);
   sl.forEach((e,i)=>{const cs=celulas(e.row,i+2);cols.forEach((c,j)=>{const r=valorCol(c,celCol(c,cs,e));if(!r)return;const cel=celulaXlsx(r,cols);if(r.z&&cel.t==="n")cel.z=r.z;else if(cel.t==="n"&&c.k==="N"&&!c.fator&&!c.tipo)cel.z="0.000";else if(cel.t==="n"&&DUAS.has(c.k)&&!c.fator&&!c.tipo)cel.z=c.k==="P"?"0.00##":"0.00";ws[letraN(j)+(i+2)]=cel})});
   ws["!ref"]="A1:"+letraN(Math.max(cols.length,1)-1)+(sl.length+1);ws["!cols"]=cols.map(c=>({wch:COLW[LET.indexOf(c.k)]||14}));

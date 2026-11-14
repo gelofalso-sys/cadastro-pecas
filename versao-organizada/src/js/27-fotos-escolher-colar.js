@@ -11,7 +11,6 @@ async function lerFotoArquivo(file){
 async function fotoNaPeca(lid,F){const l=S.lanc.find(x=>x.id===lid);if(!l)return false;
   const gr=await idbPut("fotos",lid,F.grande);if(gr===null)throw new Error("Não consegui guardar a foto original (memória do navegador cheia ou bloqueada). A foto desta peça não foi trocada.");
   l.ft=F.mini;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);candFoto.delete(lid);if(editId===lid)S.form.ft=F.mini;return true}
-const refBase=r=>{const m=/^([A-Za-z]+\d+)/.exec(String(r||""));return m?m[1].toUpperCase():String(r||"").toUpperCase()};
 /* várias fotos de uma vez: o nome do arquivo igual à referência (BR1670.jpg) liga sozinho; as que sobram vão em sequência para as peças sem foto, a partir da peça escolhida */
 async function fotosEmLote(files,lidIni){
   const arqs=[...files].filter(f=>f&&(/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif)$/i.test(f.name)));

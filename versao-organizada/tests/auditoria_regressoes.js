@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('src/js/21-edicao-em-lote-e-revisao.js', 'utf8');
-const resumo = source.slice(source.indexOf('const romLoteReal='), source.indexOf('function romLoteHTML'));
+const resumo = require('./_fonte').core('colunas','romaneio') + source.slice(source.indexOf('function romLoteResumo'), source.indexOf('function romLoteHTML'));
 const partir = source.slice(source.indexOf('function romPartir'), source.indexOf('function romJuntar'));
 const ctx = {
   ROM: {rows: []}, uid: () => 'grupo', clone: x => structuredClone(x),
@@ -33,7 +33,7 @@ ctx.ROM.rows = [{loteDe:'l', peso:'5', custo:'10,024'}, {loteDe:'l', peso:'5', c
 assert.equal(ctx.romLoteResumo(lote).cls, 'warn', 'diferença de quatro centavos não deve aparecer como conferida');
 assert.match(ctx.romLoteResumo(lote).txt, /0,04/);
 console.log('Regras de lote e divisão: OK');
-const pesoSource = fs.readFileSync('src/js/12-motor-linhas.js', 'utf8');
+const pesoSource = require('./_fonte').core('formulas');
 const lerValor = pesoSource.slice(pesoSource.indexOf('function lerValor('), pesoSource.indexOf('/* avalia uma fórmula segura'));
 const pesoCtx = {NUM: new Set(['N','P']), DUAS: new Set(['P']), num: ctx.num, r2c: n => Math.round(n*100)/100};
 vm.createContext(pesoCtx);
@@ -52,7 +52,7 @@ console.log('Precisão de peso e divisão em centavos: OK');
 const cjSource=fs.readFileSync('src/js/19c-colar-romaneio.js','utf8');
 const validar=cjSource.slice(cjSource.indexOf('function romConjVerificar()'));
 const conjSource=fs.readFileSync('src/js/18-conjunto.js','utf8');
-const conjErro=conjSource.slice(conjSource.indexOf('function conjQtd('),conjSource.indexOf('function conjResumoHTML'));
+const conjErro=require('./_fonte').core('dominio')+conjSource.slice(conjSource.indexOf('function conjErro('),conjSource.indexOf('function conjResumoHTML'));
 let avisos=0,confirmacoes=0;
 const cctx={ROM:{rows:[]},num:ctx.num,vazio:x=>x==null||String(x).trim()==='',semAc:x=>String(x||'').toLowerCase(),brl:ctx.brl,romBh:()=>({banhos:[{id:'ouro'}]}),toast:()=>avisos++,alert:()=>avisos++,confirm:()=>{confirmacoes++;return false}};
 vm.createContext(cctx);vm.runInContext(conjErro+'\n'+validar,cctx);

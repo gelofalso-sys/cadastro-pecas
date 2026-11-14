@@ -1,7 +1,6 @@
 /* ===== conjunto: soma de peças individuais (brincos + colar…). Cada peça tem peso, compra e banho (o do conjunto, ou só dela).
    Marcando banhos no conjunto (Ouro, Prata, Ródio…) sai UMA linha de conjunto por banho, igual às peças individuais; sem marcar, sai uma linha só. ===== */
 /* Cada componente informa valores por unidade; registros antigos sem qtd valem uma unidade. */
-function conjQtd(c){if(c.qtd==null)return 1;const n=num(c.qtd);return Number.isInteger(n)&&n>=1&&n<=9999?n:null}
 function conjErro(f,i){const c=(f.comp||[])[i];if(!c)return "";if(vazio(c.desc)&&vazio(c.peso)&&vazio(c.custo))return "";const m=[];
   if(conjQtd(c)==null)m.push("quantidade deve ser um inteiro de 1 a 9999");
   if(c.cat&&!conjCat(c))m.push("categoria não existe mais; escolha outra");
@@ -12,7 +11,6 @@ function conjErro(f,i){const c=(f.comp||[])[i];if(!c)return "";if(vazio(c.desc)&
   return m.join(" · ")}
 function conjResumoHTML(f){const cs=f.comp||[],ok=cs.filter(c=>!vazio(c.desc)||!vazio(c.peso)||!vazio(c.custo)),n=ok.reduce((a,c)=>a+(conjQtd(c)||0),0),peso=ok.reduce((a,c)=>a+(num(c.peso)||0)*(conjQtd(c)||0),0),compra=ok.reduce((a,c)=>a+(num(c.custo)||0)*(conjQtd(c)||0),0),nErr=cs.filter((c,i)=>{const e=conjErro(f,i);return e&&e!=="nome repetido"}).length,nomes=ok.map(c=>String(c.desc||"").trim()).filter(Boolean);
   return `<span class="cj-p">Conjunto</span> <b>${esc(nomes.length?nomes.join(" + "):"(sem peças ainda)")}</b> <span class="cj-m">${n} peça${n===1?"":"s"} · ${fmt(peso)} g · compra R$ ${brl(compra)}</span>${nErr?` <span class="cj-e2">⚠ ${nErr} peça${nErr>1?"s":""} com dado faltando</span>`:""}`}
-const novaComp=desc=>({id:uid(),desc:desc||"",qtd:"1",peso:"",custo:"",banho:""});
 /* Componentes antigos sem categoria continuam usando a categoria do conjunto. */
 function conjCat(c){let nome=c.cat||"",n=0;const alias=cfg().catAlias||{};while(nome&&!catBy(nome)&&alias[nome]&&n++<10)nome=alias[nome];return nome&&catBy(nome)?nome:""}
 async function conjExcluirCategoria(nome){
@@ -27,8 +25,6 @@ async function conjExcluirCategoria(nome){
   cfgAntes.categorias.splice(i,1);delCat=null;if(S.form.v.I===nome){S.form.v.I=cfgAntes.categorias.length?cfgAntes.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}salvar(true);if(!CADAUTO)cadConferir();render();toast(`Categoria “${nome}” excluída.`)
 }
 function conjCatOpts(c){const cs=cfg().categorias||[],v=conjCat(c)||c.cat||"",invalida=v&&!catBy(v);return `<option value="" ${!v?"selected":""}>Categoria do conjunto</option>${invalida?`<option value="${esc(v)}" selected>${esc(v)} (não existe mais)</option>`:""}${cs.map(x=>`<option value="${esc(x.nome)}" ${v===x.nome?"selected":""}>${esc(x.nome)}</option>`).join("")}`}
-const r4c=x=>Math.round(x*10000)/10000,txtN=x=>String(r4c(x)).replace(".",",");
-const CJ_NOMES=["Brincos","Colar","Pulseira","Anel","Pingente","Tornozeleira","Gargantilha"],CJ_COL=["R","S","T","U"];
 /* banho que vale para uma peça do conjunto: "" = o banho da linha do conjunto · "-" = sem banho · id = sempre esse banho */
 function conjCalc(f){
   const bh=bhDe(f),bp=bonP(f),temBanho=bp.length>0,vars=temBanho?bp:[null];
@@ -42,11 +38,8 @@ function conjCalc(f){
   return {vars:res,temBanho,tot:res[0].tot,lin:res[0].lin};
 }
 /* ao sair de Conjunto (ou limpar): tira da peça as somas e a descrição automática; as peças ficam guardadas para quando voltar */
-function conjLimpar(f){f.v=f.v||{};["N","P",...CJ_COL].forEach(L=>delete f.v[L]);if(f.fConj&&f.v.F===f.fConj)delete f.v.F;delete f.fConj;
-  Object.keys(f.ov||{}).forEach(k=>{const o=f.ov[k];if(o&&typeof o==="object"){if(k!=="p"&&k.indexOf("~")<0)CJ_COL.forEach(L=>delete o[L]);if(!Object.keys(o).length)delete f.ov[k]}})}
 /* grava as somas na peça: Peso e Compra (iguais em todas as linhas), Banhos e Verniz (de cada banho marcado, em f.ov[banho]) e a Descrição; o Fator × de cada linha dá o Preço de Varejo */
 /* foto dos custos de banho/verniz gravados no conjunto: se continuam iguais à última soma, ninguém digitou por cima e o cadastro de galvânicas pode atualizar */
-const conjSnap=f=>JSON.stringify([CJ_COL.map(L=>(f.v||{})[L]),Object.keys(f.ov||{}).sort().map(k=>[k,f.ov[k]&&typeof f.ov[k]==="object"?CJ_COL.map(L=>f.ov[k][L]):null])]);
 function conjSync(f,dom){
   if(!f.conj||!Array.isArray(f.comp))return;
   const R=conjCalc(f),temComp=f.comp.some(c=>!vazio(c.peso)||!vazio(c.custo));f.v=f.v||{};f.ov=f.ov||{};
@@ -66,15 +59,7 @@ function conjSync(f,dom){
     const t=document.getElementById("conjTot");if(t)t.innerHTML=conjTotHTML(f);
     const sm=document.getElementById("conjSum");if(sm)sm.innerHTML=conjResumoHTML(f);f.comp.forEach((c,i)=>{const e=document.getElementById("cj-e-"+i);if(e)e.textContent=conjErro(f,i)})}
 }
-const conjLinTxt=(R,i,c)=>{if(c&&!num(c.peso)&&!num(c.custo))return "";return R.temBanho?R.vars.map(x=>`<span>${esc(x.b.nome)} R$ ${brl((x.lin[i]||{}).total||0)}</span>`).join(" "):`R$ ${brl((R.lin[i]||{}).total||0)}`};
 /* Explicação de apresentação: usa os mesmos valores do motor e não altera o cálculo. */
-function detalheBanhoLinha(row,valor){
-  if(!row||!row.banho)return "";
-  const b=row.banho,cat=row.v&&row.v.I||"",peso=pesoLinha(row),q=Math.max(0,num(row.v&&row.v.W)||0),manual=!vazio(row.v&&row.v[b.coluna]);
-  if(valor==null)return peso==null&&b.modo!=="fixo"?"Informe o peso para calcular o banho.":"Informe o valor do banho para esta categoria.";
-  const base=manual?`valor de banho informado: R$ ${brl(valor)} por peça`:b.modo==="fixo"?`valor fixo R$ ${fmt(b.mult)} por peça = R$ ${brl(valor)}`:`${fmt(peso)} g × R$ ${fmt(b.mult)}/g = R$ ${brl(valor)} por peça`;
-  return `${cat?`Categoria ${cat} · `:""}${base}${q>1?` · ${q} peças × R$ ${brl(valor)} = R$ ${brl(valor*q)}`:""}`;
-}
 function conjContasHTML(f,R){
   R=R||conjCalc(f);const bh=bhDe(f),comp=f.comp||[];
   if(!comp.some(c=>!vazio(c.peso)||!vazio(c.custo)))return "";

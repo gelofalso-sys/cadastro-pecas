@@ -5,20 +5,17 @@ function histSugAgendar(){clearTimeout(histSugT);const seq=++histSugSeq;histSugT
 function setAutor(v){AUTOR=String(v||"").trim().slice(0,40);try{localStorage.setItem("cadpecas-autor",AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==AUTOR)ai.value=AUTOR}
 function arqRef(){ARQ={};TABS.forEach(t=>(t.ids||[]).forEach(i=>{ARQ[i]=t.nome}))}
 /* índices (romaneios/tabelas) no localStorage: ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
-const ROMDEL=new Set(),TABDEL=new Set();
 function gravarIdx(key,arr,apagados){
   try{let cur=[];try{cur=JSON.parse(localStorage.getItem(key)||"[]")}catch(e){}
     if(!Array.isArray(cur))cur=[];const ids=new Set(arr.map(x=>x.id));
     cur.forEach(x=>{if(x&&x.id&&!ids.has(x.id)&&!(apagados&&apagados.has(x.id)))arr.push(x)});
     arr.sort((a,b)=>b.em-a.em);localStorage.setItem(key,JSON.stringify(arr));return true}catch(e){return false}}
-const chaveCod=(forn,cod)=>String(forn||"")+"\u0001"+String(cod||"");
-const codsDe=rec=>[...new Set((rec.lanc||[]).filter(l=>l&&l.v&&!vazio(l.v.G)).map(l=>chaveCod(l.v.H,l.v.G)))];
 function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.em,por:rec.por||"",n:(rec.lanc||[]).length,linhas:L.length,un:L.reduce((t,l)=>t+(Number(l&&l.q)||0),0),roms:(rec.roms||[]).length,ids:(rec.lanc||[]).map(l=>l.id),cods:codsDe(rec)},i=TABS.findIndex(x=>x.id===m.id);
   if(i<0)TABS.unshift(m);else TABS[i]=m;TABDEL.delete(m.id);const ok=gravarIdx("cadpecas-tabs",TABS,TABDEL);arqRef();return ok}
 /* fotos órfãs: ao excluir uma peça/tabela, a foto (e a miniatura) some do IndexedDB — mas só quando nenhuma peça atual,
    tabela salva ou passo do "desfazer/refazer" ainda precisa dela */
-const candFoto=new Set();let exSemVarredura=false;
-const PONTO_IDS=new Set();   /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
+let exSemVarredura=false;
+   /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
 async function pontosIds(){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await idbGet("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
 function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(PONTO_IDS.has(id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
   if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
@@ -35,7 +32,6 @@ async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArra
       if(!tabIndex(rec))return false;n++}
     if(n)toast(`Encontrei ${n} tabela(s) salva(s) que não apareciam na lista e coloquei de volta em “Tabelas salvas”.`);return true}catch(e){return false}}
 /* O diário permite recuperar o registro se a aba fechar antes de retirar o índice. */
-const tabExcluindo=new Set();
 async function tabExcluirSalvo(id){if(tabExcluindo.has(id))return false;tabExcluindo.add(id);
   try{return await exComLock(async()=>{const prep=await exPreparar("tabs",id);if(!prep){toast("Não consegui proteger e excluir a tabela no armazenamento. Ela continua na lista.");return false}
     const antiga=TABS,jaApagado=TABDEL.has(id),atual=TABS.find(x=>x.id===id),nova=TABS.filter(x=>x.id!==id);TABDEL.add(id);
@@ -45,7 +41,6 @@ async function tabExcluirSalvo(id){if(tabExcluindo.has(id))return false;tabExclu
     if(prep.key&&await idbDel("pontos",prep.key)===null){if(!jaApagado)TABDEL.delete(id);TABS=antiga;const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; a tabela foi mantida.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar a tabela e confira seu backup.");return false}
     TABS=nova;arqRef();histSugAgendar();if(atual)(atual.ids||[]).forEach(i=>candFoto.add(i));varrerFotos();return true;
   })}finally{tabExcluindo.delete(id)}}
-const dtbr=t=>new Date(t).toLocaleString("pt-BR");
 function repModal(inner){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";ov.innerHTML=`<div class="rep-c">${inner}</div>`;document.body.appendChild(ov)}
 async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabela está vazia.");return null}
   if(por)setAutor(por);const g=gerar(),lancSnap=clone(S.lanc),seqsSnap=clone(cfg().seqs),sigT=sigLanc();   /* versão consistente: tudo abaixo usa esta foto, não o estado de depois das esperas */
@@ -88,5 +83,3 @@ async function romVer(id,de){const r=await idbGet("roms",id);if(!r){toast("Não 
   repModal(`<div class="rep-h"><div><b class="rep-t">Romaneio · ${esc((r.form||{}).H||"—")}</b><div class="hint">Colado em ${esc(dtbr(r.criado||r.em))} por <b>${esc(r.por||"não informado")}</b> · ${r.rows.length} peças</div></div><div class="rep-ac">${de?`<button type="button" class="btn sm" data-act="tab-ver" data-id="${esc(de)}">‹ Tabela</button>`:`<button type="button" class="btn sm" data-act="rom-lista">‹ Romaneios</button>`}<button type="button" class="btn sm pri" data-act="rom-salvo-abrir" data-id="${esc(r.id)}" title="Abre no lançamento para lançar o que falta ou corrigir quantidades">Abrir para ajustar</button><button type="button" class="btn sm" data-act="rel-fechar">Fechar</button></div></div>
   <div class="rep-rf"><b>Histórico do romaneio</b></div><div class="rep-tb"><table><tbody>${(r.log||[]).map(x=>`<tr><td>${esc(dtbr(x.em))}</td><td>${esc(x.por||"não informado")}</td><td>${esc(x.acao)}</td></tr>`).join("")||`<tr><td class="hint">Sem registros.</td></tr>`}</tbody></table></div>
   <div class="rep-rf"><b>Peças do romaneio</b></div><div class="rep-tb"><table><thead><tr><th></th><th>Cód.</th><th>Descrição</th><th class="n">Na lista</th><th class="n">Lançado</th><th>Referências</th><th class="n">Compra</th><th>Situação</th></tr></thead><tbody>${r.rows.map(x=>`<tr><td>${x.foto||x.fotoMini?`<img class="rc-ft sm" src="${fs(x.foto||x.fotoMini)}" alt="">`:""}</td><td class="mono">${esc(x.cod||"")}</td><td><b>${esc(x.desc||"")}</b><div class="hint">${esc(x.cat||"")}${x.sub?" › "+esc(x.sub):""}${x.peso?" · "+esc(x.peso)+" g":""}</div></td><td class="n">${Number(x.qtd)||0}</td><td class="n">${x.feito?(x.qLanc!=null?(Number(x.qLanc)||0):"—"):"—"}</td><td class="mono">${esc(x.refs||"")}</td><td class="n">${esc(x.custo||"")}</td><td>${st(x)}${x.arq?`<div class="hint">na tabela “${esc(x.arq)}”</div>`:""}</td></tr>`).join("")}</tbody></table></div>`)}
-function tabCsv(rec){const q=csvq,v=n=>n==null?"":(Math.round(n*100)/100).toFixed(2).replace(".",","),o=[["Referência","Descrição","Categoria","Subcategoria","Cor","Fornecedor","Cód. fornecedor","Quantidade","Custo unit.","Varejo","Montada por"].map(q).join(";")];
-  (rec.linhas||[]).forEach(l=>o.push([l.ref,l.desc,l.cat,l.sub,l.cor,l.forn,l.cod,l.q,v(l.custo),v(l.varejo),l.por].map(q).join(";")));return String.fromCharCode(65279)+o.join("\n")}
