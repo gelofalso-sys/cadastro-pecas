@@ -108,7 +108,7 @@ document.addEventListener("click",e=>{
     case "insitem-del":{const i=+t.dataset.i;if(!Array.isArray(C.insumosItens)||!C.insumosItens[i])break;if(!confirm(`Excluir o insumo “${C.insumosItens[i].nome}”? O custo de insumos será recalculado quando os itens estiverem ativos.`))break;C.insumosItens.splice(i,1);salvar(true,false);renderCfg();renderTopo();renderForm();break}
     case "editar":editar(tr.dataset.l);if(celular())formAbrir(true);break;
     case "form-fechar":formAbrir(false);break;
-    case "form-alt":{abertos.malt=(Number(abertos.malt==null?1:abertos.malt)+1)%3;guardarAbertos();gavetaAlt();break}
+    case "form-alt":{abertos.malt=(Number(abertos.malt==null?2:abertos.malt)+1)%3;guardarAbertos();gavetaAlt();break}
     case "fil-busca":FIL.q="";guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();break;
     case "fil-limpar":FIL={q:"",cat:"",forn:"",ban:"",sit:""};guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();break;
     case "vista":try{localStorage.setItem("cadpecas-vista",t.dataset.v)}catch(x){}renderTopo();break;

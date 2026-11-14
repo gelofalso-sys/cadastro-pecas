@@ -13,7 +13,7 @@ const celular=()=>matchMedia("(max-width:900px)").matches;
 const toque=()=>matchMedia("(pointer:coarse)").matches;   /* dedo, não mouse */
 /* celular: o formulário vira uma gaveta embaixo; a tabela continua aparecendo em cima */
 const ALT_GAVETA=[42,60,80];
-function gavetaAlt(){const i=Math.min(2,Math.max(0,Number(abertos.malt==null?1:abertos.malt)||0));document.documentElement.style.setProperty("--msh",ALT_GAVETA[i]+"dvh");return i}
+function gavetaAlt(){const i=Math.min(2,Math.max(0,Number(abertos.malt==null?2:abertos.malt)||0));document.documentElement.style.setProperty("--msh",ALT_GAVETA[i]+"dvh");return i}
 function formAbrir(abre){
   if(!celular())return;
   /* o formulário mora no painel de baixo: se a visão atual esconde esse painel, troca para "Lançar" (que abre a gaveta) */
