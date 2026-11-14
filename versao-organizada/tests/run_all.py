@@ -21,7 +21,7 @@ permitir_pulos="--permitir-pulos" in sys.argv
 # sem sobrescrever as versões preservadas ou o aplicativo unificado.
 if os.environ.get("CP_SUITE_ISOLADA")!="1":
     with tempfile.TemporaryDirectory(prefix="cadpecas-suite-") as td:
-        for pasta in ("src","tests","tools","lib"):
+        for pasta in ("src","tests","tools","lib","vendor"):
             shutil.copytree(os.path.join(RAIZ,pasta),os.path.join(td,pasta))
         html=os.path.join(td,"cadastro-pecas.html")
         subprocess.run([sys.executable,os.path.join(td,"tools","montar.py"),html],check=True)

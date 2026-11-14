@@ -1,0 +1,25 @@
+{
+  "name": "cadastro-pecas",
+  "version": "0.0.0",
+  "description": "Cadastro de Pecas - app de arquivo unico montado a partir de src/",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "python tools/montar.py",
+    "test": "python tests/run_all.py",
+    "lint": "node tools/lint.mjs",
+    "lint:estrito": "node tools/lint.mjs --estrito",
+    "format": "prettier --write",
+    "format:check": "prettier --check src/js"
+  },
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1"
+  },
+  "private": true
+}
