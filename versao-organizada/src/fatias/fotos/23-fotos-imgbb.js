@@ -30,12 +30,13 @@ async function enviarFoto(l){const key=fotoKey();if(!key)throw new Error("falta 
   await envia("");
   if(!r.ok||!j||!j.success||!j.data||!j.data.url)throw new Error((j&&j.error&&j.error.message)||"o imgbb recusou a foto ("+r.status+")");
   const u=String(j.data.url);if(!/^https:\/\/[^\s"'<>]+$/.test(u))throw new Error("o imgbb devolveu um link estranho");return u}
-let fotosEnv=false;
-async function enviarFotos(soIds){if(fotosEnv)return;
+/* estado da fatia: grande = foto original da peça em preparação; alvo = para quem o seletor de arquivo (#ftIn) foi aberto; enviando = envio ao imgbb em curso */
+const estadoFotos={grande:null,alvo:null,enviando:false};
+async function enviarFotos(soIds){if(estadoFotos.enviando)return;
   if(!fotoKey()){if(!Array.isArray(soIds)){toast("Cole a chave do imgbb em Cadastros › Fotos (link).");irPara("foto")}return}
   const ls=S.lanc.filter(l=>l.ft&&vazio(l.v.B)&&(!Array.isArray(soIds)||soIds.includes(l.id)));if(!ls.length){if(!Array.isArray(soIds))toast("Nenhuma foto esperando link.");return}
   if(!Array.isArray(soIds)&&!confirm(`Enviar ${ls.length} foto(s) ao imgbb, um serviço de terceiros? As imagens saem deste aparelho e os links gerados podem ser acessados por quem os tiver.`))return;
-  fotosEnv=true;let ok=0,falhas=0,sumiu=0,trocou=0,erro=null,chaveRuim=false;
+  estadoFotos.enviando=true;let ok=0,falhas=0,sumiu=0,trocou=0,erro=null,chaveRuim=false;
   try{for(let i=0;i<ls.length;i++){toast(`Enviando foto ${i+1} de ${ls.length}…`);
     try{const ft0=ls[i].ft,u=await enviarFoto(ls[i]);
       /* a peça pode ter sido excluída (ou já ganhado link) durante o envio: só grava se ainda existe e continua sem link */
@@ -43,7 +44,7 @@ async function enviarFotos(soIds){if(fotosEnv)return;
       if(!vazio(viva.v.B))continue;
       viva.v.B=u;ok++;salvar(false)}
     catch(e){falhas++;erro=(e&&e.message)||"erro desconhecido";if(/chave|key|autoriz|unauthor/i.test(erro)&&!/memória/i.test(erro)){chaveRuim=true;break}}}}   /* chave errada falharia em todas: aí sim para */
-  finally{fotosEnv=false}
+  finally{estadoFotos.enviando=false}
   renderTopo();
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}

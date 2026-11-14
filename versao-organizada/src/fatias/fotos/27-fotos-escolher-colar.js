@@ -1,5 +1,4 @@
 /* ===== fotos: escolher, arrastar ou colar (Ctrl+V) ===== */
-let FT_GRANDE=null,ftAlvo=null;
 const blobUrl=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error("foto ilegível"));r.readAsDataURL(b)});
 async function lerFotoArquivo(file){
   if(!file||!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type))throw new Error(`“${file&&file.name||"arquivo"}” não é uma foto JPG, PNG ou WebP`);
@@ -30,12 +29,12 @@ async function fotosEmLote(files,lidIni){
   salvar(false);renderTopo();if(editId)renderForm();
   autoEnviar([...usados]);const tot=nNome+nSeq;toast(`${tot} foto(s) anexada(s)${nNome?` · ${nNome} pelo nome do arquivo`:""}${nSeq?` · ${nSeq} em sequência`:""}${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`);
 }
-async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){const sj0=formSujo();await fotoNaPeca(editId,F);if(!sj0)editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
+async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){const sj0=formSujo();await fotoNaPeca(editId,F);if(!sj0)editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;estadoFotos.grande=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
 function fotoRemover(lid){
-  if(!lid){delete S.form.ft;FT_GRANDE=null;salvar(false);renderForm();return}
+  if(!lid){delete S.form.ft;estadoFotos.grande=null;salvar(false);renderForm();return}
   const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
-  inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=ftAlvo;ftAlvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
+  inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=estadoFotos.alvo;estadoFotos.alvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
     if(typeof al==="string"&&al.startsWith("rom:")){if(ROM)romFotosEscolhidas(+al.slice(4),fl);return}
     if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
     if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto anexada.");autoEnviar([al])}catch(e){toast(e.message)}return}

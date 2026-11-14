@@ -1,0 +1,34 @@
+{
+  "nome": "fotos",
+  "descricao": "Fotos das pecas: escolher, arrastar ou colar (Ctrl+V), anexar/remover, copia ao duplicar, envio ao imgbb (link publico), teste da chave e ampliacao com zoom.",
+  "arquivos": [
+    "22b-zoom-foto.js",
+    "23-fotos-imgbb.js",
+    "27-fotos-escolher-colar.js",
+    "27c-foto-copia.js",
+    "acoes.js"
+  ],
+  "expoe": [
+    "estadoFotos",
+    "fotoKey",
+    "fotoAuto",
+    "autoEnviar",
+    "fotoNaPeca",
+    "lerFotoArquivo",
+    "fotoCopia"
+  ],
+  "usa": [
+    "core"
+  ],
+  "testes": [
+    "^calculos_precisao_regressao.js$",
+    "^pdf_fotos_regressao.js$",
+    "^seguranca_compat_regressao.js$",
+    "^t103_mobile_fluxos.js$",
+    "^t110_romaneio_preservacao.js$",
+    "^t64_acessibilidade.py$",
+    "^t7.py$",
+    "^t74_romaneio_extras.py$"
+  ],
+  "fronteira": "falha"
+}

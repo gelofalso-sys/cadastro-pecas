@@ -145,7 +145,6 @@ document.addEventListener("click",e=>{
     case "repetir":{const l=S.lanc[S.lanc.length-1];if(l)usarModelo(l.id);else toast("Ainda não há peça para repetir.");break}
     case "form-extras":{const f=t.closest("#form"),abriu=f.classList.toggle("fextra-open");t.setAttribute("aria-expanded",String(abriu));t.textContent=abriu?"Menos opções de lançamento":"Mais opções de lançamento";break}
     case "faixa-salvar":{const f=S.form,gr=gradeBy(f.grade);if(gr){gr.faixa=gr.itens.filter(x=>(f.gsel||[]).includes(x.id)).map(x=>x.nome).join(", ");salvar(true,false);renderCfg();toast(gr.faixa?`Tamanhos padrão: ${gr.faixa}`:"Padrão removido: nenhum tamanho vem marcado.")}break}
-    case "fotos-enviar":enviarFotos();break;
     case "zoom":{const k=t.dataset.z,d=+t.dataset.d;ZM[k]=d===0?1:Math.min(1.6,Math.max(0.7,Math.round((ZM[k]+d*0.1)*10)/10));zoomAplicar(true);break}
     case "add-limpar":adicionar(true);break;
     case "tg-min":abertos.min=!abertos.min;guardarAbertos();renderForm();break;
@@ -244,12 +243,7 @@ document.addEventListener("click",e=>{
     case "comp-dup":{const f=S.form,i=+t.dataset.ci,c=f.comp&&f.comp[i];if(!c)break;if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");break}f.comp.splice(i+1,0,{...clone(c),id:uid()});conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${i+1}"] [data-cp="peso"]`);break}
     case "comp-up":case "comp-down":{const f=S.form,i=+t.dataset.ci,j=a==="comp-up"?i-1:i+1;if(!f.comp||j<0||j>=f.comp.length)break;[f.comp[i],f.comp[j]]=[f.comp[j],f.comp[i]];conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${j}"] [data-act="${a}"]`);break}
     case "comp-del":{const f=S.form;f.comp.splice(+t.dataset.ci,1);conjSync(f);salvar(false);renderTopo();renderForm();break}
-    case "foto-testar":testarChaveImgbb();break;
-    case "foto-add":ftAlvo=t.dataset.lid;document.getElementById("ftIn").click();break;
-    case "foto-form":ftAlvo="__form";document.getElementById("ftIn").click();break;
-    case "foto-rem":fotoRemover(editId||null);break;
     case "foto-rem-rom":{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");break}
-    case "tab-foto":{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));break}
     case "rom-lista":romListaAbrir();break;
     case "diag-dados":diagnosticoDados();break;
     case "rom-refazer-todas":{if(!ROM)break;let n=0;ROM.rows.forEach(r=>{if(r.feito&&!r.arq){r.refaz=true;r.skip=false;r.aviso="";n++}});ROM.msg=n?`${n} peça(s) já lançadas liberadas para edição. Mude o que quiser e clique em Criar peças: elas substituem as antigas.`:"Nenhuma peça já lançada para editar.";renderRom();break}

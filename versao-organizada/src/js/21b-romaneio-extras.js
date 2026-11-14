@@ -10,7 +10,7 @@ function romNovaPeca(){
   toast("Peça nova no romaneio: preencha descrição, categoria, peso, custo e a quantidade.")}
 
 /* ---------- foto por item do romaneio ---------- */
-function romFotoEscolher(i){ftAlvo="rom:"+i;const inp=document.getElementById("ftIn");if(inp)inp.click()}
+function romFotoEscolher(i){estadoFotos.alvo="rom:"+i;const inp=document.getElementById("ftIn");if(inp)inp.click()}
 async function romFotoGravar(i,F){
   const r=ROM&&ROM.rows[i];if(!r)return;
   r.foto=F.grande;r.fotoMini=F.mini;

@@ -29,7 +29,8 @@
     "cadTirarFoto"
   ],
   "usa": [
-    "core"
+    "core",
+    "fotos"
   ],
   "testes": [
     "^categoria_exclusao_regressao.js$",

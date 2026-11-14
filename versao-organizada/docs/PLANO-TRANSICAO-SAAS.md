@@ -236,3 +236,8 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 - `src/fatias/configuracao/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core"]`; `romaneio` ainda não é fatia, então `ROM`, `renderRom` etc. são legado isento), `LEIA-ME.md`, 19 dividido em 4 arquivos por assunto, a parte de configurações de 25 (`resetar`, `renderCfg`) em `25b-cadastros-render.js`, `36-cadastros-salvar.js`, `37-moeda.js` e `acoes.js` (66 ações; `snapCfg`/`CFG_UNDO` seguem no listener de 30).
 - Mover/dividir manteve o HTML idêntico (hash `c2628e0d…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
 - Globais mutáveis: 95 -> 88 (`SECS`, `LIBTAM`, `renBusy`, `faixaBusy`, `resetArm`, `delCat` viraram `estadoConfig`; `catUI` passou a `const`). `delCat` saiu de `src/js/10`.
+
+### Fatia `fotos` — concluída em 14/11/2026 (Tarefa 13, quarta fatia; nota fiscal fica em `romaneio`, Tarefa 14)
+- `src/fatias/fotos/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core"]`), `LEIA-ME.md` e `acoes.js` (6 ações: fotos-enviar, foto-testar, foto-add, foto-form, foto-rem, tab-foto). `configuracao` passou a listar `fotos` em `usa` (usa `fotoKey`/`fotoAuto`).
+- Dividido: 22 (zoom da foto em `22b`; PDF fica), 23 (fotos; `23b-romaneio-criar.js` e `23c-nota-fiscal.js` ficam em `src/js` para a Tarefa 14), 27 (fotos; `27b-lancamento-formulario.js`, `27d-duplicar-excluir.js` ficam em `src/js`; `fotoCopia` em `27c`). Mover/dividir manteve o HTML idêntico (hash `bb8db4f6…`); a migração das ações mudou a ordem de carga, a prova passou a ser a suíte.
+- Globais mutáveis: 88 -> 85 (`FT_GRANDE`, `ftAlvo`, `fotosEnv` viraram `estadoFotos`).

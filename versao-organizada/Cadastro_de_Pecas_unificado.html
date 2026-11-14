@@ -4993,7 +4993,7 @@ function romNovaPeca(){
   toast("Peça nova no romaneio: preencha descrição, categoria, peso, custo e a quantidade.")}
 
 /* ---------- foto por item do romaneio ---------- */
-function romFotoEscolher(i){ftAlvo="rom:"+i;const inp=document.getElementById("ftIn");if(inp)inp.click()}
+function romFotoEscolher(i){estadoFotos.alvo="rom:"+i;const inp=document.getElementById("ftIn");if(inp)inp.click()}
 async function romFotoGravar(i,F){
   const r=ROM&&ROM.rows[i];if(!r)return;
   r.foto=F.grande;r.fotoMini=F.mini;
@@ -5399,12 +5399,13 @@ async function enviarFoto(l){const key=fotoKey();if(!key)throw new Error("falta 
   await envia("");
   if(!r.ok||!j||!j.success||!j.data||!j.data.url)throw new Error((j&&j.error&&j.error.message)||"o imgbb recusou a foto ("+r.status+")");
   const u=String(j.data.url);if(!/^https:\/\/[^\s"'<>]+$/.test(u))throw new Error("o imgbb devolveu um link estranho");return u}
-let fotosEnv=false;
-async function enviarFotos(soIds){if(fotosEnv)return;
+/* estado da fatia: grande = foto original da peça em preparação; alvo = para quem o seletor de arquivo (#ftIn) foi aberto; enviando = envio ao imgbb em curso */
+const estadoFotos={grande:null,alvo:null,enviando:false};
+async function enviarFotos(soIds){if(estadoFotos.enviando)return;
   if(!fotoKey()){if(!Array.isArray(soIds)){toast("Cole a chave do imgbb em Cadastros › Fotos (link).");irPara("foto")}return}
   const ls=S.lanc.filter(l=>l.ft&&vazio(l.v.B)&&(!Array.isArray(soIds)||soIds.includes(l.id)));if(!ls.length){if(!Array.isArray(soIds))toast("Nenhuma foto esperando link.");return}
   if(!Array.isArray(soIds)&&!confirm(`Enviar ${ls.length} foto(s) ao imgbb, um serviço de terceiros? As imagens saem deste aparelho e os links gerados podem ser acessados por quem os tiver.`))return;
-  fotosEnv=true;let ok=0,falhas=0,sumiu=0,trocou=0,erro=null,chaveRuim=false;
+  estadoFotos.enviando=true;let ok=0,falhas=0,sumiu=0,trocou=0,erro=null,chaveRuim=false;
   try{for(let i=0;i<ls.length;i++){toast(`Enviando foto ${i+1} de ${ls.length}…`);
     try{const ft0=ls[i].ft,u=await enviarFoto(ls[i]);
       /* a peça pode ter sido excluída (ou já ganhado link) durante o envio: só grava se ainda existe e continua sem link */
@@ -5412,7 +5413,7 @@ async function enviarFotos(soIds){if(fotosEnv)return;
       if(!vazio(viva.v.B))continue;
       viva.v.B=u;ok++;salvar(false)}
     catch(e){falhas++;erro=(e&&e.message)||"erro desconhecido";if(/chave|key|autoriz|unauthor/i.test(erro)&&!/memória/i.test(erro)){chaveRuim=true;break}}}}   /* chave errada falharia em todas: aí sim para */
-  finally{fotosEnv=false}
+  finally{estadoFotos.enviando=false}
   renderTopo();
   const resumo=`${ok} foto(s) com link${falhas?` · ${falhas} falharam (último erro: ${String(erro).replace(/[.\s]+$/,"")}${chaveRuim?" — parei porque a chave parece errada":""})`:""}${sumiu?` · ${sumiu} peça(s) excluída(s) durante o envio`:""}${trocou?` · ${trocou} peça(s) com a foto trocada durante o envio (o link seria da foto antiga; envie de novo)`:""}.`;
   toast(falhas||sumiu?resumo+" Clique em enviar de novo para tentar as que faltam.":`${ok} foto(s) com link: já estão na coluna Foto.`)}
@@ -5772,7 +5773,6 @@ function presetAplicar(p){const f=S.form,C=cfg();if(editId){toast("Termine a edi
 const focarPrimeiro=forca=>{if(celular()&&forca!==true)return;const el=document.querySelector("#f-F")||document.querySelector("#form .fbody input");if(el){el.focus();try{if(S.form._descAuto&&el.value===S.form._descAuto)el.setSelectionRange(el.value.length,el.value.length);else el.select()}catch(x){}}};
 let addTrava=0;
 /* ===== fotos: escolher, arrastar ou colar (Ctrl+V) ===== */
-let FT_GRANDE=null,ftAlvo=null;
 const blobUrl=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(new Error("foto ilegível"));r.readAsDataURL(b)});
 async function lerFotoArquivo(file){
   if(!file||!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type))throw new Error(`“${file&&file.name||"arquivo"}” não é uma foto JPG, PNG ou WebP`);
@@ -5803,12 +5803,12 @@ async function fotosEmLote(files,lidIni){
   salvar(false);renderTopo();if(editId)renderForm();
   autoEnviar([...usados]);const tot=nNome+nSeq;toast(`${tot} foto(s) anexada(s)${nNome?` · ${nNome} pelo nome do arquivo`:""}${nSeq?` · ${nSeq} em sequência`:""}${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`);
 }
-async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){const sj0=formSujo();await fotoNaPeca(editId,F);if(!sj0)editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;FT_GRANDE=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
+async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){const sj0=formSujo();await fotoNaPeca(editId,F);if(!sj0)editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;estadoFotos.grande=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
 function fotoRemover(lid){
-  if(!lid){delete S.form.ft;FT_GRANDE=null;salvar(false);renderForm();return}
+  if(!lid){delete S.form.ft;estadoFotos.grande=null;salvar(false);renderForm();return}
   const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
-  inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=ftAlvo;ftAlvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
+  inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=estadoFotos.alvo;estadoFotos.alvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
     if(typeof al==="string"&&al.startsWith("rom:")){if(ROM)romFotosEscolhidas(+al.slice(4),fl);return}
     if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
     if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto anexada.");autoEnviar([al])}catch(e){toast(e.message)}return}
@@ -5868,7 +5868,7 @@ function adicionar(limpar,quiet){
     /* criar em lote: N peças separadas, cada uma numerada i/N (1 = desligado) */
     {const N=!quiet?Math.max(1,Math.min(200,Math.trunc(num(f.loteN)||1))):1;if(N>1){const lid=uid();novo.lote={id:lid,i:1,n:N};for(let k=2;k<=N;k++){const c=clone(novo);c.id=uid();c.lote={id:lid,i:k,n:N};if(c.v)delete c.v.E;S.lanc.push(c)}f.loteN=""}else if(!quiet)delete novo.lote}
     undo={tipo:"add",id:novo.id,form:clone(f)};
-    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&FT_GRANDE){idbPut("fotos",novo.id,FT_GRANDE).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}FT_GRANDE=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();else if(!quiet){/* Evita reutilizar medidas e compra em nova peça, salvo preferência explícita em Colunas. */
+    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&estadoFotos.grande){idbPut("fotos",novo.id,estadoFotos.grande).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}estadoFotos.grande=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();else if(!quiet){/* Evita reutilizar medidas e compra em nova peça, salvo preferência explícita em Colunas. */
       ["N","P","W"].forEach(L=>{if(!(cfg().colcfg[L]||{}).manter){delete f.v[L];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o[L]})}});
       if(!(cfg().colcfg.P||{}).manter)delete f._pAuto;
       if(f.conj&&!(cfg().colcfg.N||{}).manter&&!(cfg().colcfg.P||{}).manter){f.comp=[novaComp(),novaComp()];conjSync(f)}
@@ -6230,7 +6230,6 @@ document.addEventListener("click",e=>{
     case "repetir":{const l=S.lanc[S.lanc.length-1];if(l)usarModelo(l.id);else toast("Ainda não há peça para repetir.");break}
     case "form-extras":{const f=t.closest("#form"),abriu=f.classList.toggle("fextra-open");t.setAttribute("aria-expanded",String(abriu));t.textContent=abriu?"Menos opções de lançamento":"Mais opções de lançamento";break}
     case "faixa-salvar":{const f=S.form,gr=gradeBy(f.grade);if(gr){gr.faixa=gr.itens.filter(x=>(f.gsel||[]).includes(x.id)).map(x=>x.nome).join(", ");salvar(true,false);renderCfg();toast(gr.faixa?`Tamanhos padrão: ${gr.faixa}`:"Padrão removido: nenhum tamanho vem marcado.")}break}
-    case "fotos-enviar":enviarFotos();break;
     case "zoom":{const k=t.dataset.z,d=+t.dataset.d;ZM[k]=d===0?1:Math.min(1.6,Math.max(0.7,Math.round((ZM[k]+d*0.1)*10)/10));zoomAplicar(true);break}
     case "add-limpar":adicionar(true);break;
     case "tg-min":abertos.min=!abertos.min;guardarAbertos();renderForm();break;
@@ -6329,12 +6328,7 @@ document.addEventListener("click",e=>{
     case "comp-dup":{const f=S.form,i=+t.dataset.ci,c=f.comp&&f.comp[i];if(!c)break;if(f.comp.length>=60){toast("Máximo de 60 peças por conjunto.");break}f.comp.splice(i+1,0,{...clone(c),id:uid()});conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${i+1}"] [data-cp="peso"]`);break}
     case "comp-up":case "comp-down":{const f=S.form,i=+t.dataset.ci,j=a==="comp-up"?i-1:i+1;if(!f.comp||j<0||j>=f.comp.length)break;[f.comp[i],f.comp[j]]=[f.comp[j],f.comp[i]];conjSync(f);salvar(false);renderTopo();renderForm();refocar(`#conj [data-ci="${j}"] [data-act="${a}"]`);break}
     case "comp-del":{const f=S.form;f.comp.splice(+t.dataset.ci,1);conjSync(f);salvar(false);renderTopo();renderForm();break}
-    case "foto-testar":testarChaveImgbb();break;
-    case "foto-add":ftAlvo=t.dataset.lid;document.getElementById("ftIn").click();break;
-    case "foto-form":ftAlvo="__form";document.getElementById("ftIn").click();break;
-    case "foto-rem":fotoRemover(editId||null);break;
     case "foto-rem-rom":{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");break}
-    case "tab-foto":{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));break}
     case "rom-lista":romListaAbrir();break;
     case "diag-dados":diagnosticoDados();break;
     case "rom-refazer-todas":{if(!ROM)break;let n=0;ROM.rows.forEach(r=>{if(r.feito&&!r.arq){r.refaz=true;r.skip=false;r.aviso="";n++}});ROM.msg=n?`${n} peça(s) já lançadas liberadas para edição. Mude o que quiser e clique em Criar peças: elas substituem as antigas.`:"Nenhuma peça já lançada para editar.";renderRom();break}
@@ -6523,6 +6517,17 @@ registrarAcoes(ACOES,"configuracao",{
   "gi-del":({t})=>{const g=gradeDoEl(t);g.itens.splice(+t.closest("[data-gii]").dataset.gii,1);sincGrade(S.form);salvar(true);render();return},
   "reset":({t})=>{if(estadoConfig.resetArm!==t.dataset.r){estadoConfig.resetArm=t.dataset.r;renderCfg()}else resetar(estadoConfig.resetArm);return;},
   "reset-no":()=>{estadoConfig.resetArm=null;renderCfg();return;}
+});
+/* Ações de clique (data-act) da fatia fotos: enviar fotos ao imgbb, testar a chave, escolher/remover a foto da peça e ampliar (zoom).
+   Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo). Convenção: o que era `break` no switch virou `return`.
+   `foto-rem-rom` (foto do romaneio) e `rom-foto` ficam em 30 porque pertencem ao fluxo do romaneio. */
+registrarAcoes(ACOES,"fotos",{
+  "fotos-enviar":()=>{enviarFotos();return},
+  "foto-testar":()=>{testarChaveImgbb();return},
+  "foto-add":({t})=>{estadoFotos.alvo=t.dataset.lid;document.getElementById("ftIn").click();return},
+  "foto-form":()=>{estadoFotos.alvo="__form";document.getElementById("ftIn").click();return},
+  "foto-rem":()=>{fotoRemover(editId||null);return},
+  "tab-foto":({t})=>{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));return}
 });
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.cont)return;const c=continuoCfg();cfg().continuo={...c,[t.dataset.cont]:!!t.checked};salvar(true,false)});
 document.addEventListener("change",e=>{const t=e.target;if(!t||!t.dataset)return;const palavras=v=>[...new Map(String(v).split(/[;\n]/).map(x=>x.trim().replace(/\s+/g," ")).filter(x=>x&&x.length<=60).map(x=>[semAc(x),x])).values()];if(t.hasAttribute("data-cbank")){const el=t.closest("[data-cat]"),c=el&&cfg().categorias[+el.dataset.cat];if(!c)return;c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[t.dataset.cbank]=palavras(t.value).slice(0,100);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral")){cfg().bancoGeral=palavras(t.value).slice(0,500);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral-on")){cfg().bancoGeralAtivo=t.checked;salvar(true,false);renderForm()}});
