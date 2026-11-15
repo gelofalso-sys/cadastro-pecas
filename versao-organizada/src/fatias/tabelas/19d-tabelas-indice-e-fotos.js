@@ -3,14 +3,14 @@
 /* estado da fatia: sugT/sugSeq = temporizador e geração do histórico de sugestões; semVarredura = o app abriu sem varrer fotos (33 liga) */
 const estadoTabelas={sugT:null,sugSeq:0,semVarredura:false};
 function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await idbGet("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
-function setAutor(v){definirAutor(String(v||"").trim().slice(0,40));try{localStorage.setItem("cadpecas-autor",AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==AUTOR)ai.value=AUTOR}
+function setAutor(v){definirAutor(String(v||"").trim().slice(0,40));try{gravarPref("cadpecas-autor",AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==AUTOR)ai.value=AUTOR}
 function arqRef(){definirArq({});TABS.forEach(t=>(t.ids||[]).forEach(i=>{ARQ[i]=t.nome}))}
-/* índices (romaneios/tabelas) no localStorage: ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
+/* índices (romaneios/tabelas) no armazenamento local (src/store): ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
 function gravarIdx(key,arr,apagados){
-  try{let cur=[];try{cur=JSON.parse(localStorage.getItem(key)||"[]")}catch(e){}
+  try{let cur=[];try{cur=JSON.parse(lerPref(key)||"[]")}catch(e){}
     if(!Array.isArray(cur))cur=[];const ids=new Set(arr.map(x=>x.id));
     cur.forEach(x=>{if(x&&x.id&&!ids.has(x.id)&&!(apagados&&apagados.has(x.id)))arr.push(x)});
-    arr.sort((a,b)=>b.em-a.em);localStorage.setItem(key,JSON.stringify(arr));return true}catch(e){return false}}
+    arr.sort((a,b)=>b.em-a.em);gravarPref(key,JSON.stringify(arr));return true}catch(e){return false}}
 function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.em,por:rec.por||"",n:(rec.lanc||[]).length,linhas:L.length,un:L.reduce((t,l)=>t+(Number(l&&l.q)||0),0),roms:(rec.roms||[]).length,ids:(rec.lanc||[]).map(l=>l.id),cods:codsDe(rec)},i=TABS.findIndex(x=>x.id===m.id);
   if(i<0)TABS.unshift(m);else TABS[i]=m;TABDEL.delete(m.id);const ok=gravarIdx("cadpecas-tabs",TABS,TABDEL);arqRef();return ok}
 /* fotos órfãs: ao excluir uma peça/tabela, a foto (e a miniatura) some do IndexedDB — mas só quando nenhuma peça atual,

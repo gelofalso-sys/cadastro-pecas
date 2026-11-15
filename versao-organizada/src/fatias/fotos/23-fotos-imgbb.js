@@ -1,7 +1,7 @@
 /* ===== fotos com link (imgbb): o sistema de destino pede um endereço público da foto ===== */
-const fotoKey=()=>{try{return (localStorage.getItem("cadpecas-imgbb")||"").trim()}catch(e){return ""}};
+const fotoKey=()=>{try{return (lerPref("cadpecas-imgbb")||"").trim()}catch(e){return ""}};
 /* envio automático: com a chave do imgbb guardada, a foto anexada já sobe e o link entra na coluna Foto (pode ser desligado em Cadastros › Fotos) */
-const fotoAuto=()=>{try{return localStorage.getItem("cadpecas-imgbb-auto")==="1"&&localStorage.getItem("cadpecas-imgbb-consent-v1")==="1"}catch(e){return false}};
+const fotoAuto=()=>{try{return lerPref("cadpecas-imgbb-auto")==="1"&&lerPref("cadpecas-imgbb-consent-v1")==="1"}catch(e){return false}};
 const autoEnviar=ids=>{if(fotoKey()&&fotoAuto()&&ids&&ids.length)enviarFotos(ids)};
 /* testa a chave: envia uma imagem de 1 pixel que o imgbb apaga sozinho em 60 segundos */
 async function testarChaveImgbb(){const key=fotoKey();if(!key){toast("Cole a chave do imgbb primeiro.");return}

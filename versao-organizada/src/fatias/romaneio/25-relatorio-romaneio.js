@@ -6,12 +6,12 @@ function relGerar(feitas,ign,meta,romId){
       custo+=cu*q;vr+=(n("V")||0)*q;un+=q;return {ref:x.v.E,q,cor:x.v.L||"",cu,v:n("V")}});
     return {cod:r.cod,desc:r.desc,cat:r.cat,sub:r.sub||"",peso:r.peso,compra:r.custo,linhas,un,custo,vr,foto:r.foto||null}});
   estadoRomaneio.rel={em:Date.now(),meta,itens,ign,romId:romId||"",lids:feitas.map(x=>x.id)};try{backupLembrarPosCriar()}catch(e){}
-  try{localStorage.setItem("cadpecas-rel",JSON.stringify({...estadoRomaneio.rel,itens:itens.map(i=>({...i,foto:null}))}));relTem=true}catch(e){}
+  try{gravarPref("cadpecas-rel",JSON.stringify({...estadoRomaneio.rel,itens:itens.map(i=>({...i,foto:null}))}));relTem=true}catch(e){}
   relAbrir()}
 async function arqSalvar(nome,txt){const dl=await obterDL();
   try{await dl.save({filename:nome,data:new Blob([txt],{type:"text/csv;charset=utf-8"})})}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o arquivo.")}}
 /* relatório em memória (confiável) ou o guardado no navegador, que passa por limpeza de tipos: texto vira texto, número vira número */
-function relLer(){let R=estadoRomaneio.rel;if(!R){try{R=JSON.parse(localStorage.getItem("cadpecas-rel")||"null")}catch(e){R=null}}if(!R)return null;if(R===estadoRomaneio.rel)return R;try{return relNormalizar(R)}catch(e){return null}}
+function relLer(){let R=estadoRomaneio.rel;if(!R){try{R=JSON.parse(lerPref("cadpecas-rel")||"null")}catch(e){R=null}}if(!R)return null;if(R===estadoRomaneio.rel)return R;try{return relNormalizar(R)}catch(e){return null}}
 function relAbrir(){const R=relLer();if(!R){toast("Ainda não há relatório (ou o que estava guardado está danificado).");return}
   const m=R.meta,tot=R.itens.reduce((t,i)=>({un:t.un+i.un,cu:t.cu+i.custo,vr:t.vr+i.vr,l:t.l+i.linhas.length}),{un:0,cu:0,vr:0,l:0}),ok=tot.un===m.naLista;
   document.querySelectorAll(".rep").forEach(x=>x.remove());

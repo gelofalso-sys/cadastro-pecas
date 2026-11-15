@@ -120,7 +120,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | configuracao -> legado | 34: `G`, `ROM`, `S`, `abertos`, `bancoGeralLista`, `bancoLista`, `bnEmExclusao`, `bnLiberarUso`, ... |
 | configuracao -> planilha | 1: `renderTopo` |
 | configuracao -> romaneio | 1: `renderRom` |
-| configuracao -> store | 1: `idbOp` |
+| configuracao -> store | 2: `idbOp`, `lerPref` |
 | exportacao -> armazenamento | 2: `migrarGrades`, `salvar` |
 | exportacao -> core | 33: `COLW`, `DUAS`, `LET`, `LIM_EXPORT`, `MAX_BACKUP_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `NOME`, ... |
 | exportacao -> legado | 25: `S`, `cfg`, `chaveDoCabecalho`, `checaLinhasPlan`, `colunasExport`, `conferirExport`, `faixaRefs`, `fnum`, ... |
@@ -131,7 +131,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | fotos -> legado | 7: `G`, `ROM`, `S`, `editId`, `gerar`, `irPara`, `toast` |
 | fotos -> planilha | 3: `casa`, `filtroOn`, `renderTopo` |
 | fotos -> romaneio | 1: `renderRom` |
-| fotos -> store | 3: `idbDel`, `idbGet`, `idbPut` |
+| fotos -> store | 4: `idbDel`, `idbGet`, `idbPut`, `lerPref` |
 | lancamento -> armazenamento | 6: `AUTOR`, `ROMS`, `ftSalvas`, `romInfo`, `romTem`, `salvar` |
 | lancamento -> configuracao | 1: `renderCfg` |
 | lancamento -> core | 47: `BANHO_COLS`, `CJ_NOMES`, `DUAS`, `FORM0`, `FORMULA`, `LET`, `MISTO`, `NOME`, ... |
@@ -151,19 +151,20 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | planilha -> core | 23: `BANHO_COLS`, `DUAS`, `FORMULA`, `LET`, `MONEY`, `NOME`, `NUM`, `PAL`, ... |
 | planilha -> lancamento | 4: `dobrarOv`, `estadoLancamento`, `formSujo`, `renderForm` |
 | planilha -> legado | 31: `G`, `S`, `abertos`, `avisos`, `catBy`, `celEd`, `cfg`, `chaveDoCabecalho`, ... |
+| planilha -> store | 2: `gravarPref`, `lerPref` |
 | romaneio -> armazenamento | 20: `ARQ`, `AUTOR`, `ROMS`, `TABS`, `pontoAuto`, `pontoAviso`, `romAbrirSalvo`, `romBadge`, ... |
 | romaneio -> core | 60: `LET`, `MAX_PDF_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `MAX_TEXTO_COLADO`, `NFKEY`, `NOME`, `ROMKEY`, ... |
 | romaneio -> exportacao | 1: `obterDL` |
 | romaneio -> lancamento | 4: `adicionar`, `avisoEdicao`, `conjSync`, `renderForm` |
 | romaneio -> legado | 66: `G`, `ROM`, `S`, `abertos`, `aplicarMemForn`, `backupLembrarPosCriar`, `banhistaBy`, `banhistaDoFornecedor`, ... |
 | romaneio -> planilha | 2: `mostrarNoFim`, `renderTopo` |
-| romaneio -> store | 3: `idbGet`, `idbOp`, `idbPut` |
+| romaneio -> store | 5: `gravarPref`, `idbGet`, `idbOp`, `idbPut`, `lerPref` |
 | tabelas -> armazenamento | 16: `ARQ`, `AUTOR`, `HIST`, `REDO`, `TABS`, `definirArq`, `definirAutor`, `definirTabs`, ... |
 | tabelas -> core | 19: `LET`, `PONTO_IDS`, `TABDEL`, `brl`, `candFoto`, `celulas`, `clone`, `codsDe`, ... |
 | tabelas -> lancamento | 1: `avisoEdicao` |
 | tabelas -> legado | 15: `HIST_SUG`, `S`, `bancoAtualizar`, `cfg`, `editId`, `fnum`, `gerar`, `lastExport`, ... |
 | tabelas -> planilha | 1: `renderListas` |
-| tabelas -> store | 5: `exPreparar`, `idbDel`, `idbGet`, `idbOp`, `idbPut` |
+| tabelas -> store | 7: `exPreparar`, `gravarPref`, `idbDel`, `idbGet`, `idbOp`, `idbPut`, `lerPref` |
 
 ## Globais mutaveis por dono
 
