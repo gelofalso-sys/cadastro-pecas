@@ -17,7 +17,7 @@ async function fotoReduzida(src,max){
   const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.imageSmoothingQuality="high";x.drawImage(im,0,0,c.width,c.height);
   return new Promise(ok=>c.toBlob(ok,"image/jpeg",0.85))}
 async function enviarFoto(l){const key=fotoKey();if(!key)throw new Error("falta a chave do imgbb");
-  const src=await idbGet("fotos",l.id);if(typeof src!=="string"||!/^data:image\//.test(src))throw new Error(l.ft?"a foto original não está mais guardada neste aparelho (só a miniatura); anexe a foto de novo":"a peça não tem foto");
+  const src=await bancoLer("fotos",l.id);if(typeof src!=="string"||!/^data:image\//.test(src))throw new Error(l.ft?"a foto original não está mais guardada neste aparelho (só a miniatura); anexe a foto de novo":"a peça não tem foto");
   const blob=await fotoReduzida(src,1200);if(!blob)throw new Error("não consegui preparar a foto");
   const nome=String(((G&&G.refs[l.id])||[])[0]||l.id).replace(/[^A-Za-z0-9_-]/g,"-"),fd=new FormData();fd.append("image",blob,nome+".jpg");fd.append("name",nome);
   /* a chave vai no corpo do envio (não no endereço da requisição, que fica em históricos e registros); sem resposta em 30 s, desiste */

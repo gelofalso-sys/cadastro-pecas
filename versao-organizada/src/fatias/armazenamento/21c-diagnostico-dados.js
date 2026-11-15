@@ -11,12 +11,12 @@ async function diagnosticoDados(){
   ln(`Peças na tabela: ${S.lanc.length} · com foto na tela: ${S.lanc.filter(l=>l.ft).length} · fotos marcadas no armazenamento grande: ${S.lanc.filter(l=>l.ftIdb).length}`);
   ln(`Romaneios salvos no índice: ${ROMS.length} · tabelas salvas: ${TABS.length}`);
   for(const st of ["roms","fotos","tabs","pontos"]){
-    const t=Date.now();let ks=null;try{ks=await idbOp(st,"readonly",s=>s.getAllKeys())}catch(e){}
+    const t=Date.now();let ks=null;try{ks=await bancoChaves(st)}catch(e){}
     ln(`IndexedDB ${st}: ${ks===null?"NÃO RESPONDEU (erro ao abrir o armazenamento)":ks.length+" registro(s)"} (${Date.now()-t} ms)`)}
   /* cada romaneio do índice: o registro existe e abre? */
   let ok=0,falta=[],ruim=[];
   for(const r of ROMS){
-    try{const rec=await idbGet("roms",r.id);if(rec===undefined||rec===null){falta.push((r.doc||r.forn||r.id)+" ("+impData(r)+")");continue}
+    try{const rec=await bancoLer("roms",r.id);if(rec===undefined||rec===null){falta.push((r.doc||r.forn||r.id)+" ("+impData(r)+")");continue}
       if(!Array.isArray(rec.rows)){ruim.push((r.doc||r.id)+": sem lista de peças");continue}
       rec.rows.forEach(x=>{if(x&&typeof x!=="object")throw new Error("peça inválida")});ok++}
     catch(e){ruim.push((r.doc||r.id)+": "+((e&&e.message)||e))}}

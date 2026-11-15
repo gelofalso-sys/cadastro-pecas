@@ -3121,6 +3121,18 @@ function dadoChave(chave){if(!DADOS.has(chave))throw new Error("chave de dado de
 function dadoLer(chave){return lerPref(dadoChave(chave))}
 function dadoGravar(chave,valor){gravarPref(dadoChave(chave),valor)}
 function dadoRemover(chave){removerPref(dadoChave(chave))}
+/* ===== src/store/banco.js: lojas do IndexedDB "cadpecas-big" por funcao nomeada =====
+   Script simples, carregado depois de store/dados.js (src/_ordem.txt). Embrulha idbGet/idbPut/idbDel/idbOp de store/idb.js sem
+   mudar a semantica: nenhuma rejeita; erro ou transacao abortada devolve null; bancoLer devolve undefined quando a chave nao
+   existe. Loja fora de fotos, roms, tabs e pontos lanca na hora (antes de tocar o banco). */
+const BANCO_LOJAS=new Set(["fotos","roms","tabs","pontos"]);
+function bancoLoja(loja){if(!BANCO_LOJAS.has(loja))throw new Error("loja desconhecida: "+loja);return loja}
+function bancoLer(loja,chave){return idbGet(bancoLoja(loja),chave)}
+function bancoGravar(loja,chave,valor){return idbPut(bancoLoja(loja),chave,valor)}
+function bancoApagar(loja,chave){return idbDel(bancoLoja(loja),chave)}
+function bancoChaves(loja){return idbOp(bancoLoja(loja),"readonly",st=>st.getAllKeys())}
+function bancoTodos(loja){return idbOp(bancoLoja(loja),"readonly",st=>st.getAll())}
+function bancoAdicionar(loja,chave,valor){return idbOp(bancoLoja(loja),"readwrite",st=>st.add(valor,chave))}
 /* ===== src/store/eventos.js: o armazenamento avisa, a casca decide o que mostrar =====
    Script simples, carregado depois de store/prefs.js (src/_ordem.txt). Eventos: "salvo", "erro", "conflito", "cota".
    Carga (info): {texto, erro} e, em "cota", opcionalmente {toast}. Emissao SINCRONA, na ordem de registro, para o aviso
@@ -3452,8 +3464,8 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 /* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do armazenamento local (dadoLer/dadoGravar) vão sem elas, para não estourar a memória do navegador */
 function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
   return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
-async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await idbPut("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
-    if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await idbPut("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
+async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await bancoGravar("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
+    if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await bancoGravar("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
 async function flush(){   /* devolve true só quando a gravação foi confirmada */
   const d={...dirty};dirty={c:false,l:false};
   if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",erro:true});return false}
@@ -3478,12 +3490,12 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
   if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{dadoGravar("cadpecas4",jsonLocal(false))}catch(e){}}})}
   return true
 }
-async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
+async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await bancoGravar("pontos","p:"+t,v);if(r===null)return false;const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await bancoApagar("pontos",k);await pontosIds();return true}catch(e){return false}}
 async function pontoAuto(motivo,forcar){const snap={n:S.lanc.length,json:jsonLocal(false)};   /* estado de ANTES da operação, capturado já */
-  try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return true;if(!snap.n&&!forcar)return true;return await pontoSalvar(motivo,snap)}catch(e){return false}}
+  try{const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return true;if(!snap.n&&!forcar)return true;return await pontoSalvar(motivo,snap)}catch(e){return false}}
 const pontoAviso=p=>p.then(ok=>{if(ok===false)toast("Atenção: NÃO consegui guardar o ponto de restauração (memória do navegador cheia?). Se precisar, use Desfazer agora.",{t:"Desfazer",fn:desfazer})})
 setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)")},5*60*1000);
-async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
+async function bkPasta(){const h=await bancoLer("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
 async function bkEscrever(h){const {o,falhas,hoje}=await bkMontar();
   /* Uma cópia incompleta ou que o próprio aplicativo não consegue restaurar não substitui as últimas cópias boas. */
   if(falhas.length)return "incompleto";
@@ -3500,23 +3512,23 @@ async function bkStatus(){const el=document.getElementById("bkStatus");if(!el)re
   const h=await bkPasta();if(!h){el.textContent="Desligado. Escolha uma pasta para ligar.";return}
   const ok=await bkPerm(h,false);let u=0;try{u=+prefLer("backupUltimo")||0}catch(e){}
   el.innerHTML=`Pasta: <b>${esc(h.name)}</b> · ${ok?"permissão ok":`<span class="warn">o navegador pede permissão de novo</span> <button type="button" class="btn sm" data-act="bk-perm">Permitir</button>`} · último backup: ${u?esc(new Date(u).toLocaleString("pt-BR")):"ainda não"}`}
-async function pontosCarregar(){bkStatus();const el=document.getElementById("pontosLista");if(!el)return;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort().reverse(),out=[];for(const k of ks){const v=await idbGet("pontos",k);if(v&&typeof v==="object")out.push({k,t:v.t,motivo:v.motivo,n:v.n})}
+async function pontosCarregar(){bkStatus();const el=document.getElementById("pontosLista");if(!el)return;const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:")).sort().reverse(),out=[];for(const k of ks){const v=await bancoLer("pontos",k);if(v&&typeof v==="object")out.push({k,t:v.t,motivo:v.motivo,n:v.n})}
   const el2=document.getElementById("pontosLista");if(!el2)return;el2.innerHTML=out.length?out.map(p=>`<div class="pt"><span><b>${esc(new Date(p.t).toLocaleString("pt-BR"))}</b> · ${p.n} peça(s) <small>${esc(p.motivo)}</small></span><button type="button" class="btn sm" data-act="ponto-voltar" data-k="${esc(p.k)}">Voltar para este ponto</button></div>`).join(""):`<span class="hint">Ainda não há pontos. Um é criado ao abrir o app e a cada 30 minutos de uso, e antes de excluir várias linhas.</span>`}
-async function pontoRestaurar(k){const v=await idbGet("pontos",k);if(!v||typeof v!=="object"||!v.json){toast("Esse ponto não pode ser lido.");return}
+async function pontoRestaurar(k){const v=await bancoLer("pontos",k);if(!v||typeof v!=="object"||!v.json){toast("Esse ponto não pode ser lido.");return}
   const q=new Date(v.t).toLocaleString("pt-BR");if(!confirm(`Voltar para ${q} (${v.n} peça(s))?\n\nO que está agora fica guardado como outro ponto, e dá para voltar a ele.\n\nAs fotos não voltam no tempo: ficam as que estão guardadas agora.`))return;
   if(!(await pontoSalvar("antes de voltar no tempo"))&&!confirm("NÃO consegui guardar o que está agora como ponto (memória do navegador cheia ou bloqueada).\n\nSe continuar, o estado atual será perdido. Voltar mesmo assim?"))return;
   try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();editId=null;rascunho=null;sel.clear();estadoPlanilha.selR=null;ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
-async function pedirPersistencia(){try{if(!navigator.storage||!navigator.storage.persist)return;let ja=false;try{ja=await navigator.storage.persisted()}catch(e){}if(ja)return;const ok=await navigator.storage.persist();if(ok)return;let pasta=null;try{pasta=await bkPasta()}catch(e){}if(pasta)return;let av=null;try{av=prefLer("persistAviso")}catch(e){}if(av==="1")return;try{prefGravar("persistAviso","1")}catch(e){}toast("O navegador não garante guardar estes dados para sempre. Ligue o backup em pasta (Importar e backup) para não perder nada.")}catch(e){}} async function carregarMinis(){setTimeout(pedirPersistencia,3000);setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
-  for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await idbGet("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
+async function pedirPersistencia(){try{if(!navigator.storage||!navigator.storage.persist)return;let ja=false;try{ja=await navigator.storage.persisted()}catch(e){}if(ja)return;const ok=await navigator.storage.persist();if(ok)return;let pasta=null;try{pasta=await bkPasta()}catch(e){}if(pasta)return;let av=null;try{av=prefLer("persistAviso")}catch(e){}if(av==="1")return;try{prefGravar("persistAviso","1")}catch(e){}toast("O navegador não garante guardar estes dados para sempre. Ligue o backup em pasta (Importar e backup) para não perder nada.")}catch(e){}} async function carregarMinis(){setTimeout(pedirPersistencia,3000);setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await bancoLer("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
+  for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await bancoLer("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
   if(await migrarFotos())n++;
   if(n){try{renderTopo()}catch(e){}}}
 /* peças lançadas antes da coluna "Foto do romaneio": a foto guardada era a do romaneio (sem original anexado) e passa para a coluna certa; uma vez só */
 async function migrarFotos(){let mexeu=0;
   for(const l of S.lanc){if(l.ftMig||!l.ft||l.ftR)continue;
-    const big=await idbGet("fotos",l.id);l.ftMig=1;
+    const big=await bancoLer("fotos",l.id);l.ftMig=1;
     if(typeof big==="string"&&/^data:image\//.test(big))continue;
     l.ftR=l.ft;ftRSalvas.delete(l.id);
-    if(vazio(l.v&&l.v.B)){delete l.ft;delete l.ftIdb;ftSalvas.delete(l.id);idbDel("fotos","m:"+l.id)}
+    if(vazio(l.v&&l.v.B)){delete l.ft;delete l.ftIdb;ftSalvas.delete(l.id);bancoApagar("fotos","m:"+l.id)}
     mexeu++}
   if(mexeu){salvar(true);toast(`${mexeu} foto(s) de peças antigas foram para a coluna “Foto do romaneio”.`,{t:"Desfazer",fn:desfazer})}
   return mexeu}
@@ -4056,7 +4068,7 @@ function numFormMover(){const tog=document.getElementById("nbTog"),nb=document.g
 async function conjExcluirCategoria(nome){
   const cfgAntes=cfg(),usa=c=>c&&c.cat&&conjCat(c)===nome,tem=cs=>Array.isArray(cs)&&cs.some(usa),emLanc=l=>l&&tem(l.comp),emRom=r=>r&&tem(r.conjComp);
   if((S.lanc||[]).some(emLanc)||tem((S.form||{}).comp)||(ROM&&ROM.rows||[]).some(emRom)){toast(`Não excluí “${nome}”: há componentes de conjunto usando esta categoria. Altere-os antes.`);return}
-  let tabs,roms;try{[tabs,roms]=await Promise.all([idbOp("tabs","readonly",st=>st.getAll()),idbOp("roms","readonly",st=>st.getAll())])}catch(e){tabs=null}
+  let tabs,roms;try{[tabs,roms]=await Promise.all([bancoTodos("tabs"),bancoTodos("roms")])}catch(e){tabs=null}
   if(!Array.isArray(tabs)||!Array.isArray(roms)){toast("Não excluí a categoria: não consegui verificar os conjuntos salvos. Tente novamente.");return}
   if(tabs.some(t=>(t.lanc||[]).some(emLanc))||roms.some(r=>(r.rows||[]).some(emRom))){toast(`Não excluí “${nome}”: conjuntos em tabelas ou romaneios salvos usam esta categoria.`);return}
   const i=cfgAntes.categorias.findIndex(c=>c.nome===nome);if(cfg()!==cfgAntes||i<0||estadoConfig.delCat!==nome){toast("Os cadastros mudaram durante a verificação. Tente novamente.");return}
@@ -4471,7 +4483,7 @@ function romConjVerificar(){const diverg=[],avisos=[];for(const r of ROM.rows){i
 /* ===== tabelas salvas: histórico de tabelas, quem montou e o que cada romaneio fez ===== */
 /* estado da fatia: sugT/sugSeq = temporizador e geração do histórico de sugestões; semVarredura = o app abriu sem varrer fotos (33 liga) */
 const estadoTabelas={sugT:null,sugSeq:0,semVarredura:false};
-function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await idbGet("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
+function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await bancoLer("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
 function setAutor(v){definirAutor(String(v||"").trim().slice(0,40));try{prefGravar("autor",AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==AUTOR)ai.value=AUTOR}
 function arqRef(){definirArq({});TABS.forEach(t=>(t.ids||[]).forEach(i=>{ARQ[i]=t.nome}))}
 /* índices (romaneios/tabelas) no armazenamento local (src/store): ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
@@ -4485,17 +4497,17 @@ function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.
 /* fotos órfãs: ao excluir uma peça/tabela, a foto (e a miniatura) some do IndexedDB — mas só quando nenhuma peça atual,
    tabela salva ou passo do "desfazer/refazer" ainda precisa dela */
    /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
-async function pontosIds(){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await idbGet("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
+async function pontosIds(){try{const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await bancoLer("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
 function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(PONTO_IDS.has(id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
   if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
-function varrerFotos(){if(estadoTabelas.semVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
-async function varrerTudo(){if(estadoTabelas.semVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
-  for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await idbDel("fotos",k)}}
+function varrerFotos(){if(estadoTabelas.semVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);bancoApagar("fotos",id);bancoApagar("fotos","m:"+id);bancoApagar("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
+async function varrerTudo(){if(estadoTabelas.semVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await bancoChaves("fotos"))||[];
+  for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await bancoApagar("fotos",k)}}
 /* tabelas salvas antes desta versão não guardavam cód.+fornecedor no índice: lê do IndexedDB uma vez */
-async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await idbGet("tabs",t.id);if(rec===null)return false;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou&&!gravarIdx("cadpecas-tabs",TABS,TABDEL))return false;
+async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await bancoLer("tabs",t.id);if(rec===null)return false;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou&&!gravarIdx("cadpecas-tabs",TABS,TABDEL))return false;
   /* se a lista (índice) de tabelas falhou ao ser gravada, as tabelas continuam no IndexedDB: refaz a lista a partir de lá */
-  try{const ks=await idbOp("tabs","readonly",st=>st.getAllKeys());if(!Array.isArray(ks))return false;let n=0;
-    for(const k of ks){if(typeof k!=="string"||TABS.some(t=>t.id===k)||TABDEL.has(k))continue;const rec=await idbGet("tabs",k);
+  try{const ks=await bancoChaves("tabs");if(!Array.isArray(ks))return false;let n=0;
+    for(const k of ks){if(typeof k!=="string"||TABS.some(t=>t.id===k)||TABDEL.has(k))continue;const rec=await bancoLer("tabs",k);
       if(rec===null)return false;
       if(!ehObj(rec)||!Array.isArray(rec.lanc)||!rec.lanc.every(ehObj))continue;if(!rec.id)rec.id=k;if(!ehNumLike(rec.em))rec.em=Date.now();
       if(!tabIndex(rec))return false;n++}
@@ -4507,7 +4519,7 @@ async function tabExcluirSalvo(id){if(tabExcluindo.has(id))return false;tabExclu
     if(!gravarIdx("cadpecas-tabs",nova,TABDEL)){if(!jaApagado)TABDEL.delete(id);definirTabs(antiga);
       const voltou=await exReverter(prep.key);
       toast(voltou?"Não consegui atualizar a lista; a tabela foi mantida.":"ATENÇÃO: não consegui atualizar a lista nem restaurar a tabela excluída. Confira seu backup.");return false}
-    if(prep.key&&await idbDel("pontos",prep.key)===null){if(!jaApagado)TABDEL.delete(id);definirTabs(antiga);const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; a tabela foi mantida.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar a tabela e confira seu backup.");return false}
+    if(prep.key&&await bancoApagar("pontos",prep.key)===null){if(!jaApagado)TABDEL.delete(id);definirTabs(antiga);const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; a tabela foi mantida.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar a tabela e confira seu backup.");return false}
     definirTabs(nova);arqRef();histSugAgendar();if(atual)(atual.ids||[]).forEach(i=>candFoto.add(i));varrerFotos();return true;
   })}finally{tabExcluindo.delete(id)}}
 function repModal(inner){document.querySelectorAll(".rep").forEach(x=>x.remove());const ov=document.createElement("div");ov.className="rep";ov.innerHTML=`<div class="rep-c">${inner}</div>`;document.body.appendChild(ov)}
@@ -4515,10 +4527,10 @@ async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabel
   if(por)setAutor(por);const g=gerar(),lancSnap=clone(S.lanc),seqsSnap=clone(cfg().seqs),sigT=sigLanc();   /* versão consistente: tudo abaixo usa esta foto, não o estado de depois das esperas */
   const linhas=g.linhas.map((x,ri)=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:null},q=n("W")??(num(x.v.W)||0),cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0),l=S.lanc.find(z=>z.id===x.lancId)||{};
     return {ref:x.v.E,desc:x.v.F||"",cat:x.v.I||"",sub:x.v.J||"",cor:x.v.L||"",forn:x.v.H||"",cod:x.v.G||"",q,custo:cu,varejo:n("V"),lanc:x.lancId,por:l.por||""}});
-  const ids=new Set(lancSnap.map(l=>l.id)),ks=(await idbOp("roms","readonly",st=>st.getAllKeys()))||[],roms=[];
-  for(const k of ks){const r=await idbGet("roms",k);if(r&&r.rows.some(x=>(x.lancIds||[]).some(i=>ids.has(i))))roms.push(k)}
+  const ids=new Set(lancSnap.map(l=>l.id)),ks=(await bancoChaves("roms"))||[],roms=[];
+  for(const k of ks){const r=await bancoLer("roms",k);if(r&&r.rows.some(x=>(x.lancIds||[]).some(i=>ids.has(i))))roms.push(k)}
   const rec={id:uid(),nome,em:Date.now(),por:por||AUTOR,lanc:lancSnap,seqs:seqsSnap,linhas,roms};
-  const gravou=await exSalvarComLock(async()=>{if(await idbPut("tabs",rec.id,rec)===null){toast("NÃO consegui salvar a tabela — memória do navegador cheia. Baixe o backup completo. A tabela atual foi mantida.");setStatus("Tabela NÃO salva (memória cheia)",true);return false}
+  const gravou=await exSalvarComLock(async()=>{if(await bancoGravar("tabs",rec.id,rec)===null){toast("NÃO consegui salvar a tabela — memória do navegador cheia. Baixe o backup completo. A tabela atual foi mantida.");setStatus("Tabela NÃO salva (memória cheia)",true);return false}
     if(!tabIndex(rec)){toast("A tabela foi guardada, mas NÃO consegui anotá-la na lista de tabelas salvas (memória do navegador cheia). Por segurança, NÃO limpei a tabela atual nem comecei outra. Baixe o backup completo e libere espaço; a tabela guardada reaparece na lista quando você reabrir o programa.");setStatus("Tabela guardada, mas fora da lista (memória cheia)",true);return false}return true});if(!gravou)return null;histSugAgendar();
   if(nova){const c=contFinal(g);Object.entries(c).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});let ficou=0;S.lanc=S.lanc.filter(l=>{if(sigT[l.id]!==undefined&&sigT[l.id]===JSON.stringify(l))return false;ficou++;return true});sel.clear();lastExport=null;salvar(true);render();if(ficou)setTimeout(()=>toast(ficou+" peça(s) lançadas ou editadas durante o salvamento ficaram na lista."),50)}
   if(!quieto)toast(`Tabela “${nome}” salva${nova?" — nova tabela começada, a numeração continua de onde parou":""}.`);
@@ -4533,21 +4545,21 @@ function tabSalvarAbrir(){const d=new Date(),nm="Tabela "+String(d.getDate()).pa
   <div class="rep-ac" style="padding:12px 16px"><button type="button" class="btn pri" data-act="tab-salvar-ok">Salvar</button><button type="button" class="btn" data-act="tab-lista">Cancelar</button></div>`)}
 async function tabSalvarOk(){if(editId){avisoEdicao(()=>tabSalvarOk());return}const nome=(document.getElementById("tsNome").value||"").trim()||("Tabela "+new Date().toLocaleDateString("pt-BR")),por=(document.getElementById("tsPor").value||"").trim(),nova=document.getElementById("tsNova").checked;
   document.querySelectorAll(".rep").forEach(x=>x.remove());await tabSalvar(nome,por,nova);tabListaAbrir()}
-async function tabRestaurar(id){if(editId){avisoEdicao(()=>tabRestaurar(id));return}const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
+async function tabRestaurar(id){if(editId){avisoEdicao(()=>tabRestaurar(id));return}const rec=await bancoLer("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
   if(!Array.isArray(rec.lanc)){toast("Esta tabela salva está danificada (sem as peças): não restaurei nada.");return}
   if(S.lanc.length){const bk=await tabSalvar("Antes de restaurar · "+dtbr(Date.now()),AUTOR,false,true);if(!bk){toast("Não restaurei: não consegui guardar a tabela atual no histórico antes.");return}}
   S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();lastExport=null;ftSalvas.clear();ftRSalvas.clear();salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
   let renum="";try{const nv=gerar().linhas.map(r=>r.v.E),vl=(rec.linhas||[]).map(x=>x&&x.ref);if(vl.some((r,i)=>r&&nv[i]&&nv[i]!==r))renum=" ATENÇÃO: algumas referências mudaram em relação à tabela salva (a numeração é refeita a partir da última peça de hoje): confira antes de exportar."}catch(e){}
   toast(`Tabela “${rec.nome}” restaurada (${S.lanc.length} peças). A tabela que estava aqui foi guardada no histórico. A numeração não voltou atrás: vale o maior número de cada prefixo.${renum}`)}
-async function tabVer(id){const rec=await idbGet("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
-  const rs=[];for(const k of rec.roms||[]){const r=await idbGet("roms",k);if(r)rs.push(r)}
+async function tabVer(id){const rec=await bancoLer("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
+  const rs=[];for(const k of rec.roms||[]){const r=await bancoLer("roms",k);if(r)rs.push(r)}
   const L=(Array.isArray(rec.linhas)?rec.linhas:[]).filter(ehObj).map(l=>({...l,q:Number(l.q)||0,custo:Number(l.custo)||0,varejo:l.varejo==null?null:(Number(l.varejo)||0)})),tot=L.reduce((t,l)=>({un:t.un+l.q,cu:t.cu+l.custo*l.q,vr:t.vr+(l.varejo||0)*l.q}),{un:0,cu:0,vr:0}),romDe={};rs.forEach(r=>r.rows.forEach(x=>(x.lancIds||[]).forEach(i=>{romDe[i]=r})));
   const lanc=rs.map(r=>{const fe=r.rows.filter(x=>(x.lancIds||[]).some(i=>(rec.lanc||[]).some(l=>l.id===i)));return `<tr><td><b>${esc((r.form||{}).H||"—")}</b></td><td>${esc(dtbr(r.criado||r.em))}</td><td>${esc(r.por||"não informado")}</td><td class="n">${fe.length} de ${r.rows.length}</td><td class="n">${r.rows.filter(x=>!x.feito&&!x.skip).length}</td><td><button type="button" class="btn sm pri" data-act="rom-ver" data-id="${esc(r.id)}" data-de="${esc(rec.id)}">Ver o que foi feito</button></td></tr>`}).join("");
   repModal(`<div class="rep-h"><div><b class="rep-t">${esc(rec.nome)}</b><div class="hint">Montada por <b>${esc(rec.por||"não informado")}</b> · salva em ${esc(dtbr(rec.em))}</div></div><div class="rep-ac"><button type="button" class="btn sm" data-act="tab-lista">‹ Tabelas</button><button type="button" class="btn sm" data-act="tab-csv" data-id="${esc(rec.id)}">Baixar .csv</button><button type="button" class="btn sm danger" data-act="tab-restaurar" data-id="${esc(rec.id)}" title="Coloca esta tabela de volta como tabela atual (a atual vai para o histórico)">Restaurar como atual</button><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div>
   <div class="rep-k"><div class="kpi"><b>${(rec.lanc||[]).length}</b><span>peças</span></div><div class="kpi"><b>${L.length}</b><span>linhas</span></div><div class="kpi"><b>${tot.un}</b><span>unidades</span></div><div class="kpi"><b>${fm(tot.cu)}</b><span>custo total</span></div><div class="kpi"><b>${fm(tot.vr)}</b><span>varejo total</span></div></div>
   <div class="rep-rf"><b>Romaneios desta tabela (${rs.length})</b></div><div class="rep-tb"><table><thead><tr><th>Fornecedor</th><th>Colado em</th><th>Montado por</th><th class="n">Peças nesta tabela</th><th class="n">Pendentes</th><th></th></tr></thead><tbody>${lanc||`<tr><td colspan="6" class="hint">Nenhum romaneio — todas as peças foram lançadas à mão.</td></tr>`}</tbody></table></div>
   <div class="rep-rf"><b>Peças e referências</b></div><div class="rep-tb"><table><thead><tr><th>Referência</th><th>Descrição</th><th>Categoria</th><th>Cor</th><th class="n">Un.</th><th class="n">Custo</th><th class="n">Varejo</th><th>Origem</th><th>Por</th></tr></thead><tbody>${L.map(l=>{const r=romDe[l.lanc];return `<tr><td><b class="mono">${esc(l.ref)}</b></td><td>${esc(l.desc)}<div class="hint">${esc(l.cod||"")}</div></td><td>${esc(l.cat)}${l.sub?`<div class="hint">${esc(l.sub)}</div>`:""}</td><td>${esc(l.cor)}</td><td class="n">${l.q}</td><td class="n">${brl(l.custo)}</td><td class="n">${l.varejo==null?"—":brl(l.varejo)}</td><td>${r?`romaneio ${esc((r.form||{}).H||"")}`:"manual"}</td><td>${esc(l.por||"não informado")}</td></tr>`}).join("")}</tbody></table></div>`)}
-async function romVer(id,de){const r=await idbGet("roms",id);if(!r){toast("Não achei esse romaneio.");return}
+async function romVer(id,de){const r=await bancoLer("roms",id);if(!r){toast("Não achei esse romaneio.");return}
   const st=x=>x.feito?(x.corrigida?"✓ lançada (corrigida)":"✓ lançada"):x.skip?"não lançada (desmarcada)":"pendente";
   repModal(`<div class="rep-h"><div><b class="rep-t">Romaneio · ${esc((r.form||{}).H||"—")}</b><div class="hint">Colado em ${esc(dtbr(r.criado||r.em))} por <b>${esc(r.por||"não informado")}</b> · ${r.rows.length} peças</div></div><div class="rep-ac">${de?`<button type="button" class="btn sm" data-act="tab-ver" data-id="${esc(de)}">‹ Tabela</button>`:`<button type="button" class="btn sm" data-act="rom-lista">‹ Romaneios</button>`}<button type="button" class="btn sm pri" data-act="rom-salvo-abrir" data-id="${esc(r.id)}" title="Abre no lançamento para lançar o que falta ou corrigir quantidades">Abrir para ajustar</button><button type="button" class="btn sm" data-act="rel-fechar">Fechar</button></div></div>
   <div class="rep-rf"><b>Histórico do romaneio</b></div><div class="rep-tb"><table><tbody>${(r.log||[]).map(x=>`<tr><td>${esc(dtbr(x.em))}</td><td>${esc(x.por||"não informado")}</td><td>${esc(x.acao)}</td></tr>`).join("")||`<tr><td class="hint">Sem registros.</td></tr>`}</tbody></table></div>
@@ -4560,30 +4572,30 @@ function definirArq(v){ARQ=v}
 function definirAutor(v){AUTOR=v}
 async function exComLock(fn){if(!navigator.locks){toast("A exclusão segura exige um navegador com bloqueios entre abas. A tabela ou romaneio foi mantido.");return false}return navigator.locks.request("cadpecas-exclusoes",fn)}
 function exSalvarComLock(fn){return navigator.locks?navigator.locks.request("cadpecas-exclusoes",fn):fn()}
-async function exReverter(key){if(!key)return true;const j=await idbGet("pontos",key);if(!j||!(["tabs","roms"].includes(j.loja))||typeof j.id!=="string"||!ehObj(j.rec))return false;
+async function exReverter(key){if(!key)return true;const j=await bancoLer("pontos",key);if(!j||!(["tabs","roms"].includes(j.loja))||typeof j.id!=="string"||!ehObj(j.rec))return false;
   try{if(key!==EX_PREFIXO+j.loja+":"+encodeURIComponent(j.id))return false}catch(e){return false}
   const rec=await exRestaurar(j);if(!rec)return false;
   if(!ehObj(rec)||(rec.id&&rec.id!==j.id))return false;if(!rec.id)rec.id=j.id;
   /* O índice pode já ter sido retirado quando a aba fechou. */
   try{if(!(j.loja==="tabs"?tabIndex(rec):romIndex(rec)))return false}catch(e){return false}
-  return (await idbDel("pontos",key))!==null
+  return (await bancoApagar("pontos",key))!==null
 }
-async function exRecuperarSemLock(){const atuais=await idbOp("pontos","readonly",st=>st.getAllKeys());if(!Array.isArray(atuais))return false;let n=0;
+async function exRecuperarSemLock(){const atuais=await bancoChaves("pontos");if(!Array.isArray(atuais))return false;let n=0;
     for(const k of atuais){if(typeof k!=="string"||!k.startsWith(EX_PREFIXO))continue;if(!await exReverter(k))return false;n++}
     if(n)toast(`Recuperei ${n} exclusão(ões) interrompida(s); confira as tabelas e os romaneios salvos.`);return true
 }
-async function exRecuperar(){if(navigator.locks)return navigator.locks.request("cadpecas-exclusoes",exRecuperarSemLock);const ks=await idbOp("pontos","readonly",st=>st.getAllKeys());return Array.isArray(ks)&&!ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO))}
-async function exMigrarIndicesSemLock(){if(!await tabsMigrar())return false;const ks=await idbOp("roms","readonly",st=>st.getAllKeys());if(!Array.isArray(ks))return false;let n=0;
-  for(const k of ks){if(typeof k!=="string"||ROMS.some(x=>x.id===k)||ROMDEL.has(k))continue;const rec=await idbGet("roms",k);if(rec===null)return false;if(!ehObj(rec)||!Array.isArray(rec.rows)||!rec.rows.every(ehObj))continue;
+async function exRecuperar(){if(navigator.locks)return navigator.locks.request("cadpecas-exclusoes",exRecuperarSemLock);const ks=await bancoChaves("pontos");return Array.isArray(ks)&&!ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO))}
+async function exMigrarIndicesSemLock(){if(!await tabsMigrar())return false;const ks=await bancoChaves("roms");if(!Array.isArray(ks))return false;let n=0;
+  for(const k of ks){if(typeof k!=="string"||ROMS.some(x=>x.id===k)||ROMDEL.has(k))continue;const rec=await bancoLer("roms",k);if(rec===null)return false;if(!ehObj(rec)||!Array.isArray(rec.rows)||!rec.rows.every(ehObj))continue;
     if(!rec.id)rec.id=k;if(!ehNumLike(rec.em))rec.em=Date.now();if(!romIndex(rec))return false;n++}
   if(n)toast(`Encontrei ${n} romaneio(s) salvo(s) que não apareciam na lista.`);return true}
 async function exAbrirIndices(){const abrir=async()=>{try{const r=JSON.parse(dadoLer("cadpecas-roms")||"[]"),t=JSON.parse(dadoLer("cadpecas-tabs")||"[]");if(!Array.isArray(r)||!Array.isArray(t))return false;ROMS=r;TABS=t;arqRef()}catch(e){return false}
-  if(navigator.locks){if(!await exRecuperarSemLock())return false}else{const ks=await idbOp("pontos","readonly",st=>st.getAllKeys());if(!Array.isArray(ks)||ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO)))return false}
+  if(navigator.locks){if(!await exRecuperarSemLock())return false}else{const ks=await bancoChaves("pontos");if(!Array.isArray(ks)||ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO)))return false}
   return exMigrarIndicesSemLock()};const ok=await exSalvarComLock(abrir);if(ok)histSugAgendar();return ok}
 function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,ins:ROM.ins||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
 function romIndex(rec){const m={id:rec.id,em:rec.em,por:rec.por||"",doc:rec.doc||"",hash:rec.hash||"",obs:rec.obs||"",forn:(rec.form||{}).H||"",n:rec.rows.length,feitas:rec.rows.filter(r=>r.lancIds&&r.lancIds.length).length,pend:rec.rows.filter(r=>!r.skip||r.refaz).length},i=ROMS.findIndex(x=>x.id===m.id);
   if(i<0)ROMS.unshift(m);else ROMS[i]=m;ROMDEL.delete(m.id);const ok=gravarIdx("cadpecas-roms",ROMS,ROMDEL);try{romAtualizarListaAberta()}catch(e){console.error("cadastro-pecas: não atualizei a lista de romaneios",e)}return ok}
-let romGravP=null;function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>exSalvarComLock(async()=>{const r=await idbPut("roms",rec.id,rec);if(r===null){avisoIdb("o romaneio");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio; ele pode não aparecer após recarregar");return false}return true}))}
+let romGravP=null;function romGravarBig(){if(!ROM||!ROM.rows.length||romConflito)return;if(!ROM.sid)ROM.sid=uid();if(!ROM.por)ROM.por=AUTOR;if(!ROM.criado)ROM.criado=Date.now();if(!ROM.log)ROM.log=[{em:Date.now(),por:AUTOR,acao:"Romaneio lido: "+ROM.rows.length+" peças"}];const rec=clone(romRec()),anterior=romGravP;romHistUltimo.set(rec.id,clone(rec));romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>exSalvarComLock(async()=>{const r=await bancoGravar("roms",rec.id,rec);if(r===null){avisoIdb("o romaneio");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio; ele pode não aparecer após recarregar");return false}return true}))}
 /* As ações de romaneio registram também o estado dos itens, inclusive os ainda não lançados.
    O histórico é da sessão, como o restante de Desfazer. As gravações do mesmo romaneio são enfileiradas. */
 function romHistAntes(){
@@ -4618,7 +4630,7 @@ function romHistAplicar(snap){
   }
   const anterior=romGravP;
   romGravP=Promise.resolve(anterior).catch(()=>false).then(async()=>{
-    if(rec.rows.length){const ok=await exSalvarComLock(async()=>{const salvo=await idbPut("roms",id,rec);if(salvo===null){avisoIdb("o romaneio desfeito");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio desfeito");return false}return true});if(!ok)return false}
+    if(rec.rows.length){const ok=await exSalvarComLock(async()=>{const salvo=await bancoGravar("roms",id,rec);if(salvo===null){avisoIdb("o romaneio desfeito");return false}if(!romIndex(rec)){avisoIdb("o índice do romaneio desfeito");return false}return true});if(!ok)return false}
     else if(!await romExcluirConfirmado(id))return false
     return true;
   });
@@ -4630,18 +4642,18 @@ async function romExcluirConfirmado(id){
   if(!gravarIdx("cadpecas-roms",nova,ROMDEL)){if(!jaApagado)ROMDEL.delete(id);ROMS=anteriorLista;
     const voltou=await exReverter(prep.key);
     toast(voltou?"Não consegui atualizar a lista; o romaneio foi mantido.":"ATENÇÃO: não consegui atualizar a lista nem restaurar o romaneio excluído. Confira seu backup.");return false}
-  if(prep.key&&await idbDel("pontos",prep.key)===null){if(!jaApagado)ROMDEL.delete(id);ROMS=anteriorLista;const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; o romaneio foi mantido.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar o romaneio e confira seu backup.");return false}
+  if(prep.key&&await bancoApagar("pontos",prep.key)===null){if(!jaApagado)ROMDEL.delete(id);ROMS=anteriorLista;const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; o romaneio foi mantido.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar o romaneio e confira seu backup.");return false}
   ROMS=nova;try{romAtualizarListaAberta()}catch(e){}return true})}
 function romExcluirSalvo(id){const anterior=romGravP;romGravP=Promise.resolve(anterior).catch(()=>false).then(()=>romExcluirConfirmado(id));return romGravP}
 /* mexeu numa peça já lançada: ela passa a ser substituída ao criar (mesma posição e mesma referência; categoria nova = próxima referência da nova sequência). Se ela está numa tabela salva, não dá para substituir aqui. */
 function romMarcar(){if(!ROM)return;if(ROM.removidos&&ROM.removidos.length){const voltar=ROM.removidos.filter(x=>[...(x.row.lancIds||[]),...(x.row.revogados||[])].some(id=>S.lanc.some(l=>l.id===id)));voltar.sort((a,b)=>a.pos-b.pos).forEach(x=>ROM.rows.splice(Math.min(x.pos,ROM.rows.length),0,x.row));ROM.removidos=ROM.removidos.filter(x=>!voltar.includes(x))}ROM.rows.forEach(r=>{if(!(r.lancIds||[]).length&&(r.revogados||[]).some(i=>S.lanc.some(l=>l.id===i))){r.lancIds=r.revogados.filter(i=>S.lanc.some(l=>l.id===i));r.revogados=[];r.feito=true;r.refaz=false;r.skip=true}const vivos=(r.lancIds||[]).filter(i=>S.lanc.some(l=>l.id===i)),arq=(r.lancIds||[]).filter(i=>!vivos.includes(i)&&ARQ[i]),v=vivos.concat(arq);const sumidos=(r.lancIds||[]).filter(i=>!v.includes(i));if(sumidos.length)r.revogados=[...new Set([...(r.revogados||[]),...sumidos])];r.lancIds=v;r.arq=!vivos.length&&arq.length?ARQ[arq[0]]:"";
   if(v.length){r.feito=true;if(!r.refaz||r.arq){r.refaz=false;r.skip=true;r.aviso="· já lançada"}}else if(r.feito){r.feito=false;r.refaz=false;r.skip=false;r.aviso=""}})}
-async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await idbGet("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
+async function romFotosBig(){if(!ROM||!ROM.sid)return;const sid=ROM.sid,rec=await bancoLer("roms",sid);if(!rec||!ROM||ROM.sid!==sid)return;let n=0;
   rec.rows.forEach((r,i)=>{const o=ROM.rows[i];if(o&&r.foto&&!o.foto&&(o.cod||"")===(r.cod||"")){o.foto=r.foto;o.fotoMini=o.fotoMini||r.fotoMini;n++}});if(n)renderRom()}
 async function romAbrirSalvo(id){if(editId){avisoEdicao(()=>romAbrirSalvo(id));return}if(ROM&&romConflito){toast("Resolva o conflito do romaneio antes de abrir outro.");return}
   if(ROM&&ROM.rows.length){const lsOk=romSalvar();const idbOk=await Promise.resolve(romGravP);if(!idbOk){toast("Não consegui guardar o romaneio atual e seu índice; ele continua aberto. Baixe o backup antes de trocar.");return}}
   else if(romGravP)await Promise.resolve(romGravP);
-  const rec=await idbGet("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
+  const rec=await bancoLer("roms",id);if(!rec){toast("Não achei esse romaneio neste navegador.");return}
   const f=S.form;ROM={sid:rec.id,por:rec.por,criado:rec.criado,log:rec.log,tid:rec.tid,texto:rec.texto||"",obs:rec.obs||"",_obsOriginal:rec.obs||"",doc:rec.doc||"",hash:rec.hash||"",conf:rec.conf||"",bulk:rec.bulk||null,ins:rec.ins||null,rows:rec.rows,pdf:null};
   {const A=cfg().catAlias||{};ROM.rows.forEach(r=>{let n=0;while(r.cat&&!catBy(r.cat)&&A[r.cat]&&n++<10)r.cat=A[r.cat]})}   /* categoria renomeada depois de guardar o romaneio */
   if(rec.form){f.v.H=rec.form.H;f.tipo=rec.form.tipo;f.banhista=rec.form.banhista;f.on=rec.form.on||f.on;if(rec.form.onP)f.onP=rec.form.onP;f.mk=rec.form.mk||{};f.vz=rec.form.vz||{};f.desconto=rec.form.desconto??f.desconto;salvar(false)}
@@ -4692,23 +4704,23 @@ function bkUsoIniciar(){if(!navigator.locks)return Promise.resolve();return new 
 async function bkUsoParar(){const fim=estadoArmazenamento.bkUsoPedido;if(estadoArmazenamento.bkUsoLiberar){const f=estadoArmazenamento.bkUsoLiberar;estadoArmazenamento.bkUsoLiberar=null;f()}if(fim)await fim;estadoArmazenamento.bkUsoPedido=null}
 async function bkReverterJournal(j){
   let ok=true;
-  for(const w of j.idb||[]){const r=w.existe?await idbPut(w.s,w.k,w.valor):await idbDel(w.s,w.k);if(r===null)ok=false}
+  for(const w of j.idb||[]){const r=w.existe?await bancoGravar(w.s,w.k,w.valor):await bancoApagar(w.s,w.k);if(r===null)ok=false}
   for(const [k,v] of Object.entries(j.ls||{})){try{if(v===null)dadoRemover(k);else dadoGravar(k,v)}catch(e){ok=false}}
   if(!ok)return false;
-  return (await idbDel("pontos",BK_JOURNAL))!==null;
+  return (await bancoApagar("pontos",BK_JOURNAL))!==null;
 }
 async function bkRecuperarPendenteSemLock(){
-  const j=await idbGet("pontos",BK_JOURNAL);if(j===undefined)return true;
+  const j=await bancoLer("pontos",BK_JOURNAL);if(j===undefined)return true;
   if(!j||j.v!==1||!Array.isArray(j.idb)||!j.ls)return false;
   const ok=await bkReverterJournal(j);if(ok){try{gravarSessao("cadpecas-recuperou-backup","1")}catch(e){}}return ok;
 }
-async function bkRecuperarPendente(){if(!navigator.locks){const j=await idbGet("pontos",BK_JOURNAL);return j===undefined}return navigator.locks.request("cadpecas-restauracao",async()=>{const j=await idbGet("pontos",BK_JOURNAL);if(j===undefined)return true;if(j===null)return false;return navigator.locks.request("cadpecas-uso",{mode:"exclusive"},()=>bkRecuperarPendenteSemLock())})}
+async function bkRecuperarPendente(){if(!navigator.locks){const j=await bancoLer("pontos",BK_JOURNAL);return j===undefined}return navigator.locks.request("cadpecas-restauracao",async()=>{const j=await bancoLer("pontos",BK_JOURNAL);if(j===undefined)return true;if(j===null)return false;return navigator.locks.request("cadpecas-uso",{mode:"exclusive"},()=>bkRecuperarPendenteSemLock())})}
 async function bkPrepararJournal(n){
   const ls={};for(const k of ["cadpecas4","cadpecas-rom","cadpecas-rom-info","cadpecas-rel","cadpecas-roms","cadpecas-tabs"])ls[k]=dadoLer(k);
   const idb=[];for(const [s,obj] of [["roms",n.roms],["fotos",n.fotos],["tabs",n.tabs]])for(const k of Object.keys(obj)){
-    const v=await idbGet(s,k);if(v===null)throw new Error("não consegui verificar os dados anteriores");idb.push({s,k,existe:v!==undefined,valor:v});
+    const v=await bancoLer(s,k);if(v===null)throw new Error("não consegui verificar os dados anteriores");idb.push({s,k,existe:v!==undefined,valor:v});
   }
-  const j={v:1,ls,idb};if(await idbOp("pontos","readwrite",st=>st.add(j,BK_JOURNAL))===null)throw new Error("não consegui preparar a recuperação segura (memória cheia ou outra restauração em andamento)");return j;
+  const j={v:1,ls,idb};if(await bancoAdicionar("pontos",BK_JOURNAL,j)===null)throw new Error("não consegui preparar a recuperação segura (memória cheia ou outra restauração em andamento)");return j;
 }
 function restaurarTotal(file){try{checaTam(file,MAX_BACKUP_BYTES,"O backup")}catch(e){toast("Backup NÃO restaurado — "+e.message+". Nada foi alterado.");return}const fr=new FileReader();fr.onload=async()=>{
   let n;try{n=validarBackup(JSON.parse(fr.result))}catch(e){toast("Backup NÃO restaurado — "+(e instanceof SyntaxError?"o arquivo está danificado ou não é um backup (não consegui ler o texto dele)":e&&e.message?e.message:"arquivo inválido")+". Nada foi alterado.");return}
@@ -4736,7 +4748,7 @@ async function aplicarBackupTotalComLock(n,quieto){
   const falhaReversao=()=>{setStatus("ATENÇÃO: restauração incompleta; não consegui reverter todos os dados.",true);let el=document.getElementById("backupReversaoFalhou");if(!el){el=document.createElement("div");el.id="backupReversaoFalhou";el.setAttribute("role","alert");el.style.cssText="position:fixed;top:0;left:0;right:0;z-index:100000;background:#fff3cd;color:#664d03;border-bottom:2px solid #c9a227;padding:12px;font:14px system-ui,sans-serif";document.body.appendChild(el)}el.textContent=avisoReversao(false)};
   try{
     if(n.rascunho)lsSet(ROMKEY,n.rascunho);if(n.rel)lsSet("cadpecas-rel",n.rel);
-    const grava=async(s,k,v)=>{if(await idbPut(s,k,v)===null)throw new Error("memória do navegador cheia");};
+    const grava=async(s,k,v)=>{if(await bancoGravar(s,k,v)===null)throw new Error("memória do navegador cheia");};
     for(const k of Object.keys(n.roms))await grava("roms",k,n.roms[k]);
     for(const k of Object.keys(n.fotos))await grava("fotos",k,n.fotos[k]);
     for(const k of Object.keys(n.tabs))await grava("tabs",k,n.tabs[k]);
@@ -4754,7 +4766,7 @@ async function aplicarBackupTotalComLock(n,quieto){
     toast("Backup NÃO restaurado — não consegui gravar as peças e os cadastros (memória do navegador cheia ou bloqueada). "+avisoReversao(voltou));if(!voltou)falhaReversao();return}
   let indicesOk=true;try{for(const r of Object.values(n.roms))if(!romIndex(r))indicesOk=false;for(const r of Object.values(n.tabs))if(!tabIndex(r))indicesOk=false}catch(e){indicesOk=false}
   if(!indicesOk){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;ROMS=ant.roms;TABS=ant.tabs;ROMDEL.clear();ant.romdel.forEach(x=>ROMDEL.add(x));TABDEL.clear();ant.tabdel.forEach(x=>TABDEL.add(x));arqRef();const voltou=await reverter();histIni();render();toast("Backup NÃO restaurado — não consegui atualizar as listas de romaneios e tabelas. "+avisoReversao(voltou));if(!voltou)falhaReversao();return false}arqRef();
-  if(await idbDel("pontos",BK_JOURNAL)===null){falhaReversao();return}
+  if(await bancoApagar("pontos",BK_JOURNAL)===null){falhaReversao();return}
   histSugAgendar();if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
   render();
   if(!quieto)toast(`Backup restaurado: ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""} Peças e cadastros podem ser desfeitos; romaneios, tabelas e fotos não.`,{t:"Desfazer peças",fn:desfazer});return true}
@@ -5116,7 +5128,7 @@ async function romFotosEscolhidas(i,files){
   toast(`${ok} foto(s) anexada(s) aos itens do romaneio${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`)}
 function romFotoRemover(i){
   const r=ROM&&ROM.rows[i];if(!r)return;delete r.foto;delete r.fotoMini;
-  if(r.feito&&Array.isArray(r.lancIds))r.lancIds.forEach(id=>{const l=S.lanc.find(x=>x.id===id);if(l){delete l.ft;idbDel("fotos",id);idbDel("fotos","m:"+id);ftSalvas.delete(id)}});
+  if(r.feito&&Array.isArray(r.lancIds))r.lancIds.forEach(id=>{const l=S.lanc.find(x=>x.id===id);if(l){delete l.ft;bancoApagar("fotos",id);bancoApagar("fotos","m:"+id);ftSalvas.delete(id)}});
   salvar(false);renderTopo();romSalvarSoon();renderRom();toast("Foto do item removida.")}
 
 /* ---------- insumos próprios do romaneio ---------- */
@@ -5169,7 +5181,7 @@ function romInsDesatualizados(arquivadas){
 async function romInsConferirArquivos(){
   const rom=ROM,ids=new Set((rom&&rom.rows||[]).filter(r=>!r.lote&&r.feito&&r.skip&&!r.refaz).flatMap(r=>(r.lancIds||[]).filter(id=>!S.lanc.some(l=>l.id===id))));
   const achadas=new Map();if(ids.size){const tabs=TABS.filter(t=>(t.ids||[]).some(id=>ids.has(id)));
-    const recs=await Promise.all(tabs.map(t=>idbGet("tabs",t.id).catch(()=>null)));
+    const recs=await Promise.all(tabs.map(t=>bancoLer("tabs",t.id).catch(()=>null)));
     recs.forEach((rec,i)=>{const add=(id,l)=>{if(!achadas.has(id))achadas.set(id,[]);achadas.get(id).push(l)};
       if(!rec||!Array.isArray(rec.lanc)){(tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>add(id,null));return}
       (tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>{const l=rec.lanc.find(x=>x&&x.id===id);add(id,l||null)})})}
@@ -5301,12 +5313,12 @@ async function diagnosticoDados(){
   ln(`Peças na tabela: ${S.lanc.length} · com foto na tela: ${S.lanc.filter(l=>l.ft).length} · fotos marcadas no armazenamento grande: ${S.lanc.filter(l=>l.ftIdb).length}`);
   ln(`Romaneios salvos no índice: ${ROMS.length} · tabelas salvas: ${TABS.length}`);
   for(const st of ["roms","fotos","tabs","pontos"]){
-    const t=Date.now();let ks=null;try{ks=await idbOp(st,"readonly",s=>s.getAllKeys())}catch(e){}
+    const t=Date.now();let ks=null;try{ks=await bancoChaves(st)}catch(e){}
     ln(`IndexedDB ${st}: ${ks===null?"NÃO RESPONDEU (erro ao abrir o armazenamento)":ks.length+" registro(s)"} (${Date.now()-t} ms)`)}
   /* cada romaneio do índice: o registro existe e abre? */
   let ok=0,falta=[],ruim=[];
   for(const r of ROMS){
-    try{const rec=await idbGet("roms",r.id);if(rec===undefined||rec===null){falta.push((r.doc||r.forn||r.id)+" ("+impData(r)+")");continue}
+    try{const rec=await bancoLer("roms",r.id);if(rec===undefined||rec===null){falta.push((r.doc||r.forn||r.id)+" ("+impData(r)+")");continue}
       if(!Array.isArray(rec.rows)){ruim.push((r.doc||r.id)+": sem lista de peças");continue}
       rec.rows.forEach(x=>{if(x&&typeof x!=="object")throw new Error("peça inválida")});ok++}
     catch(e){ruim.push((r.doc||r.id)+": "+((e&&e.message)||e))}}
@@ -5489,7 +5501,7 @@ async function fotoReduzida(src,max){
   const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.imageSmoothingQuality="high";x.drawImage(im,0,0,c.width,c.height);
   return new Promise(ok=>c.toBlob(ok,"image/jpeg",0.85))}
 async function enviarFoto(l){const key=fotoKey();if(!key)throw new Error("falta a chave do imgbb");
-  const src=await idbGet("fotos",l.id);if(typeof src!=="string"||!/^data:image\//.test(src))throw new Error(l.ft?"a foto original não está mais guardada neste aparelho (só a miniatura); anexe a foto de novo":"a peça não tem foto");
+  const src=await bancoLer("fotos",l.id);if(typeof src!=="string"||!/^data:image\//.test(src))throw new Error(l.ft?"a foto original não está mais guardada neste aparelho (só a miniatura); anexe a foto de novo":"a peça não tem foto");
   const blob=await fotoReduzida(src,1200);if(!blob)throw new Error("não consegui preparar a foto");
   const nome=String(((G&&G.refs[l.id])||[])[0]||l.id).replace(/[^A-Za-z0-9_-]/g,"-"),fd=new FormData();fd.append("image",blob,nome+".jpg");fd.append("name",nome);
   /* a chave vai no corpo do envio (não no endereço da requisição, que fica em históricos e registros); sem resposta em 30 s, desiste */
@@ -5544,7 +5556,7 @@ async function romCriar(){const f=S.form;if(editId){avisoEdicao(()=>romCriar());
   const ids=feitas.map(x=>x.id);
   const meta={forn:snap.v.H||"",banhista:snap.tipo==="bruta"?banhistaBy(snap.banhista).nome:"",tipo:snap.tipo,obs:ROM.obs||"",modelo:(romT()||{}).nome||"",conf:ROM.conf||"",naLista,un};
   {const g2=gerar(),corr=feitas.filter(({r})=>r.refaz).length;
-  feitas.forEach(({r,id})=>{const eraRefaz=!!r.refaz,ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=eraRefaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto&&!eraRefaz)idbPut("fotos",id,r.foto)});
+  feitas.forEach(({r,id})=>{const eraRefaz=!!r.refaz,ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=eraRefaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto&&!eraRefaz)bancoGravar("fotos",id,r.foto)});
   if(feitas.length)ROM.log=(ROM.log||[]).concat([{em:Date.now(),por:AUTOR,acao:`Lançou ${feitas.length-corr} peça(s) nova(s)${corr?` e corrigiu ${corr}`:""} · ${un} unidades`}])}
   /* O rascunho com os vínculos fica disponível até o IndexedDB confirmar a gravação. */
   const lsOk=romSalvar(),gravacao=romGravP,romId=ROM.sid;let rascGravado=null;try{rascGravado=dadoLer(ROMKEY)}catch(e){}
@@ -5576,8 +5588,8 @@ const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd
 async function nfBuscaDup(ch){if(!ch)return null;const ix=nfIdx()[ch];if(ix)return {em:ix.em,n:ix.n,numero:ix.numero};
   if(S.lanc.some(l=>l.nfChave===ch))return {em:Date.now(),n:S.lanc.filter(l=>l.nfChave===ch).length};
   if(ROM&&ROM.rows.some(r=>r.nfChave===ch))return {rascunho:true};
-  try{for(const k of ((await idbOp("tabs","readonly",st=>st.getAllKeys()))||[])){const r=await idbGet("tabs",k);if(r&&(r.lanc||[]).some(l=>l.nfChave===ch))return {em:r.em,tabela:r.nome}}
-    for(const k of ((await idbOp("roms","readonly",st=>st.getAllKeys()))||[])){const r=await idbGet("roms",k);if(r&&(r.rows||[]).some(x=>x.nfChave===ch))return {rascunho:true}}}catch(e){}
+  try{for(const k of ((await bancoChaves("tabs"))||[])){const r=await bancoLer("tabs",k);if(r&&(r.lanc||[]).some(l=>l.nfChave===ch))return {em:r.em,tabela:r.nome}}
+    for(const k of ((await bancoChaves("roms"))||[])){const r=await bancoLer("roms",k);if(r&&(r.rows||[]).some(x=>x.nfChave===ch))return {rascunho:true}}}catch(e){}
   return null}
 function nfOv(html){let el=document.getElementById("nfRev");if(!el){el=document.createElement("div");el.id="nfRev";el.className="rev nfm";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Importar nota fiscal");el.innerHTML='<div class="rev-c"></div>';document.body.appendChild(el)}
   const c=el.querySelector(".rev-c");if(html!=null)c.innerHTML=html;return el}
@@ -5883,7 +5895,7 @@ async function lerFotoArquivo(file){
   const grande=await blobUrl(g),mini=await blobUrl(m);if(!ftOk(mini))throw new Error(`formato de “${file.name}” não suportado`);
   return {mini,grande}}
 async function fotoNaPeca(lid,F){const l=S.lanc.find(x=>x.id===lid);if(!l)return false;
-  const gr=await idbPut("fotos",lid,F.grande);if(gr===null)throw new Error("Não consegui guardar a foto original (memória do navegador cheia ou bloqueada). A foto desta peça não foi trocada.");
+  const gr=await bancoGravar("fotos",lid,F.grande);if(gr===null)throw new Error("Não consegui guardar a foto original (memória do navegador cheia ou bloqueada). A foto desta peça não foi trocada.");
   l.ft=F.mini;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);candFoto.delete(lid);if(editId===lid)S.form.ft=F.mini;return true}
 /* várias fotos de uma vez: o nome do arquivo igual à referência (BR1670.jpg) liga sozinho; as que sobram vão em sequência para as peças sem foto, a partir da peça escolhida */
 async function fotosEmLote(files,lidIni){
@@ -5907,7 +5919,7 @@ async function fotosEmLote(files,lidIni){
 async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){const sj0=formSujo();await fotoNaPeca(editId,F);if(!sj0)estadoLancamento.editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;estadoFotos.grande=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
 function fotoRemover(lid){
   if(!lid){delete S.form.ft;estadoFotos.grande=null;salvar(false);renderForm();return}
-  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);idbDel("fotos",lid);idbDel("fotos","m:"+lid);if(editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)estadoLancamento.editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
+  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;ftSalvas.delete(lid);bancoApagar("fotos",lid);bancoApagar("fotos","m:"+lid);if(editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)estadoLancamento.editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
   inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=estadoFotos.alvo;estadoFotos.alvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
     if(typeof al==="string"&&al.startsWith("rom:")){if(ROM)romFotosEscolhidas(+al.slice(4),fl);return}
@@ -5969,7 +5981,7 @@ function adicionar(limpar,quiet){
     /* criar em lote: N peças separadas, cada uma numerada i/N (1 = desligado) */
     {const N=!quiet?Math.max(1,Math.min(200,Math.trunc(num(f.loteN)||1))):1;if(N>1){const lid=uid();novo.lote={id:lid,i:1,n:N};for(let k=2;k<=N;k++){const c=clone(novo);c.id=uid();c.lote={id:lid,i:k,n:N};if(c.v)delete c.v.E;S.lanc.push(c)}f.loteN=""}else if(!quiet)delete novo.lote}
     undo={tipo:"add",id:novo.id,form:clone(f)};
-    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&estadoFotos.grande){idbPut("fotos",novo.id,estadoFotos.grande).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}estadoFotos.grande=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();else if(!quiet){/* Evita reutilizar medidas e compra em nova peça, salvo preferência explícita em Colunas. */
+    if(!quiet){f.gsel=[];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o.W})}   /* tamanhos e quantidades não passam para a próxima peça */if(novo.ft&&estadoFotos.grande){bancoGravar("fotos",novo.id,estadoFotos.grande).then(r=>{if(r===null)toast("Atenção: não consegui guardar a foto original desta peça (memória do navegador). A miniatura ficou, mas o envio do link pode falhar.");else autoEnviar([novo.id])})}estadoFotos.grande=null;delete f.ft;delete f.v.E;if(!quiet&&continuoCfg().ativo)continuoProxima(f);else if(limpar)limparForm();else if(!quiet){/* Evita reutilizar medidas e compra em nova peça, salvo preferência explícita em Colunas. */
       ["N","P","W"].forEach(L=>{if(!(cfg().colcfg[L]||{}).manter){delete f.v[L];Object.values(f.ov||{}).forEach(o=>{if(o&&typeof o==="object")delete o[L]})}});
       if(!(cfg().colcfg.P||{}).manter)delete f._pAuto;
       if(f.conj&&!(cfg().colcfg.N||{}).manter&&!(cfg().colcfg.P||{}).manter){f.comp=[novaComp(),novaComp()];conjSync(f)}
@@ -6039,7 +6051,7 @@ function romAbrirNovo(){if(!romRetomar()){ROM={tid:abertos.romT&&cfg().romaneios
 function avisoEdicao(seguir){toast("Há uma peça em edição. Termine ou cancele a edição para continuar (cancelar descarta o que foi mudado nessa peça e ainda não foi gravado).",{t:"Cancelar edição e continuar",fn:()=>{cancelar();if(seguir)setTimeout(()=>{try{seguir()}catch(e){try{console.error(e)}catch(x){}}},0)}})}
 function cancelar(){editId=null;if(rascunho)S.form=rascunho;rascunho=null;erro="";salvar(false);renderTopo();renderForm()}
 /* a cópia leva a foto original (qualidade cheia) do banco, não só a miniatura */
-function fotoCopia(de,para){try{idbGet("fotos",de).then(v=>{if(v)idbPut("fotos",para,v)}).catch(()=>{})}catch(e){}}
+function fotoCopia(de,para){try{bancoLer("fotos",de).then(v=>{if(v)bancoGravar("fotos",para,v)}).catch(()=>{})}catch(e){}}
 function duplicar(ids){
   const novos=ids.map(id=>{const c=clone(S.lanc.find(x=>x.id===id));c.id=uid();fotoCopia(id,c.id);delete c.v.E;c.vinc=false;delete c.excl;if(c.ov)Object.values(c.ov).forEach(o=>delete o.E);return c});
   S.lanc.push(...novos);undo={tipo:"dup",ids:novos.map(n=>n.id)};salvar(false);renderTopo();
@@ -6231,7 +6243,7 @@ async function bnExcluirConferido(bh0,bn0){
   if(typeof rascunho!=="undefined"&&rascunho&&comp(rascunho.comp,rascunho.banhista))usas.push("formulário em edição");
   const rom=(r,origem,padrao)=>{if(r&&comp(r.conjComp,r.bh||padrao))usas.push(origem)};
   if(ROM)(ROM.rows||[]).forEach(r=>rom(r,"romaneio aberto",S.form.banhista));
-  const [tabs,roms]=await Promise.all([idbOp("tabs","readonly",st=>st.getAll()),idbOp("roms","readonly",st=>st.getAll())]);
+  const [tabs,roms]=await Promise.all([bancoTodos("tabs"),bancoTodos("roms")]);
   if(!Array.isArray(tabs)||!Array.isArray(roms)){alert("Não consegui conferir tabelas e romaneios salvos. O banho não foi excluído; verifique o armazenamento e tente novamente.");return}
   if(antes!==assinatura()){toast("Os dados mudaram durante a conferência. Tente excluir o banho novamente.");return}
   tabs.forEach(t=>(t.lanc||[]).forEach(l=>lanc(l,"tabela salva")));
@@ -6338,7 +6350,7 @@ registrarAcoes(ACOES,"tabelas",{
   "tab-ver":({t})=>{tabVer(t.dataset.id)},
   "tab-del":({t})=>{if(tabArm!==t.dataset.id){tabArm=t.dataset.id;tabListaAbrir()}else{const id=tabArm;tabArm=null;tabExcluirSalvo(id).then(ok=>{if(ok)toast("Tabela excluída.");const rep=document.querySelector(".rep");if(rep&&rep.querySelector('[data-act="tab-salvar-abrir"]'))tabListaAbrir()}).catch(()=>toast("Não consegui excluir a tabela; confira o armazenamento."))}},
   "tab-restaurar":({t})=>{tabRestaurar(t.dataset.id)},
-  "tab-csv":({t})=>{idbGet("tabs",t.dataset.id).then(rc=>{if(rc)arqSalvar("tabela-"+String(rc.nome).replace(/[^A-Za-z0-9 _-]/g,"-")+".csv",tabCsv(rc))})},
+  "tab-csv":({t})=>{bancoLer("tabs",t.dataset.id).then(rc=>{if(rc)arqSalvar("tabela-"+String(rc.nome).replace(/[^A-Za-z0-9 _-]/g,"-")+".csv",tabCsv(rc))})},
   "rom-ver":({t})=>{romVer(t.dataset.id,t.dataset.de)}
 });
 /* Ações de clique (data-act) da fatia configuracao: catálogo, categorias, subcategorias, banhos, fornecedores, cores, variações, modelos de exportação, modelos de leitura de romaneio (rom-add/dup/del, rom-map-*, rom-ex-*, rom-testar) e fiscal (fisc-aplicar).
@@ -6463,7 +6475,7 @@ registrarAcoes(ACOES,"fotos",{
   "foto-add":({t})=>{estadoFotos.alvo=t.dataset.lid;document.getElementById("ftIn").click();return},
   "foto-form":()=>{estadoFotos.alvo="__form";document.getElementById("ftIn").click();return},
   "foto-rem":()=>{fotoRemover(editId||null);return},
-  "tab-foto":({t})=>{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));return},
+  "tab-foto":({t})=>{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?bancoLer("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));return},
   "rom-foto-add":({t})=>{{romFotoEscolher(+t.dataset.i);return}},
   "rom-foto-del":({t})=>{{romFotoRemover(+t.dataset.i);return}},
   "rom-foto":({t})=>{{const im=t.querySelector("img");if(im)abrirZoom(im.src);return}},
@@ -6648,10 +6660,10 @@ registrarAcoes(ACOES,"lancamento",{
    Convencao: o que era `break` no switch virou `return`; nenhum case pulava o codigo pos-switch (nenhuma destas acoes esta em CFG_UNDO). */
 registrarAcoes(ACOES,"armazenamento",{
   "bk-escolher":()=>{{if(typeof showDirectoryPicker!=="function"){toast("Este navegador não deixa escolher pasta. Use o Chrome ou o Edge.");return}
-      showDirectoryPicker({mode:"readwrite",id:"cadpecas-bk"}).then(async h=>{await idbPut("pontos","pasta",h);const r=await bkAuto(true,true);toast(typeof r==="string"&&r.startsWith("cadastro")?"Backup automático ligado: "+r:"Pasta escolhida, mas não consegui gravar agora ("+r+").");bkStatus()}).catch(e=>{if(e&&e.name!=="AbortError")toast("Não consegui usar essa pasta.")});return}},
+      showDirectoryPicker({mode:"readwrite",id:"cadpecas-bk"}).then(async h=>{await bancoGravar("pontos","pasta",h);const r=await bkAuto(true,true);toast(typeof r==="string"&&r.startsWith("cadastro")?"Backup automático ligado: "+r:"Pasta escolhida, mas não consegui gravar agora ("+r+").");bkStatus()}).catch(e=>{if(e&&e.name!=="AbortError")toast("Não consegui usar essa pasta.")});return}},
   "bk-agora":()=>{{bkAuto(true,true).then(r=>{toast(typeof r==="string"&&r.startsWith("cadastro")?"Backup salvo na pasta: "+r:r===null?"Escolha uma pasta primeiro.":"Não consegui gravar ("+r+").");bkStatus()});return}},
   "bk-perm":()=>{{bkAuto(true,true).then(()=>bkStatus());return}},
-  "bk-desligar":()=>{{idbDel("pontos","pasta").then(()=>{toast("Backup automático desligado.");bkStatus()});return}},
+  "bk-desligar":()=>{{bancoApagar("pontos","pasta").then(()=>{toast("Backup automático desligado.");bkStatus()});return}},
   "ponto-novo":()=>{pontoSalvar("criado por você").then(ok=>{toast(ok?"Ponto de restauração criado.":"Não consegui criar o ponto (armazenamento do navegador).");pontosCarregar()});return;},
   "ponto-voltar":({t})=>{pontoRestaurar(t.dataset.k);return;},
   "diag-dados":()=>{diagnosticoDados();return;},

@@ -49,7 +49,7 @@ function romInsDesatualizados(arquivadas){
 async function romInsConferirArquivos(){
   const rom=ROM,ids=new Set((rom&&rom.rows||[]).filter(r=>!r.lote&&r.feito&&r.skip&&!r.refaz).flatMap(r=>(r.lancIds||[]).filter(id=>!S.lanc.some(l=>l.id===id))));
   const achadas=new Map();if(ids.size){const tabs=TABS.filter(t=>(t.ids||[]).some(id=>ids.has(id)));
-    const recs=await Promise.all(tabs.map(t=>idbGet("tabs",t.id).catch(()=>null)));
+    const recs=await Promise.all(tabs.map(t=>bancoLer("tabs",t.id).catch(()=>null)));
     recs.forEach((rec,i)=>{const add=(id,l)=>{if(!achadas.has(id))achadas.set(id,[]);achadas.get(id).push(l)};
       if(!rec||!Array.isArray(rec.lanc)){(tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>add(id,null));return}
       (tabs[i].ids||[]).filter(id=>ids.has(id)).forEach(id=>{const l=rec.lanc.find(x=>x&&x.id===id);add(id,l||null)})})}

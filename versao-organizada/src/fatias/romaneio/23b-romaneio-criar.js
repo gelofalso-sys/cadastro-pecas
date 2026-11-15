@@ -22,7 +22,7 @@ async function romCriar(){const f=S.form;if(editId){avisoEdicao(()=>romCriar());
   const ids=feitas.map(x=>x.id);
   const meta={forn:snap.v.H||"",banhista:snap.tipo==="bruta"?banhistaBy(snap.banhista).nome:"",tipo:snap.tipo,obs:ROM.obs||"",modelo:(romT()||{}).nome||"",conf:ROM.conf||"",naLista,un};
   {const g2=gerar(),corr=feitas.filter(({r})=>r.refaz).length;
-  feitas.forEach(({r,id})=>{const eraRefaz=!!r.refaz,ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=eraRefaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto&&!eraRefaz)idbPut("fotos",id,r.foto)});
+  feitas.forEach(({r,id})=>{const eraRefaz=!!r.refaz,ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=eraRefaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto&&!eraRefaz)bancoGravar("fotos",id,r.foto)});
   if(feitas.length)ROM.log=(ROM.log||[]).concat([{em:Date.now(),por:AUTOR,acao:`Lançou ${feitas.length-corr} peça(s) nova(s)${corr?` e corrigiu ${corr}`:""} · ${un} unidades`}])}
   /* O rascunho com os vínculos fica disponível até o IndexedDB confirmar a gravação. */
   const lsOk=romSalvar(),gravacao=romGravP,romId=ROM.sid;let rascGravado=null;try{rascGravado=dadoLer(ROMKEY)}catch(e){}

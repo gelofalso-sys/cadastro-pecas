@@ -43,7 +43,7 @@ async function bnExcluirConferido(bh0,bn0){
   if(typeof rascunho!=="undefined"&&rascunho&&comp(rascunho.comp,rascunho.banhista))usas.push("formulário em edição");
   const rom=(r,origem,padrao)=>{if(r&&comp(r.conjComp,r.bh||padrao))usas.push(origem)};
   if(ROM)(ROM.rows||[]).forEach(r=>rom(r,"romaneio aberto",S.form.banhista));
-  const [tabs,roms]=await Promise.all([idbOp("tabs","readonly",st=>st.getAll()),idbOp("roms","readonly",st=>st.getAll())]);
+  const [tabs,roms]=await Promise.all([bancoTodos("tabs"),bancoTodos("roms")]);
   if(!Array.isArray(tabs)||!Array.isArray(roms)){alert("Não consegui conferir tabelas e romaneios salvos. O banho não foi excluído; verifique o armazenamento e tente novamente.");return}
   if(antes!==assinatura()){toast("Os dados mudaram durante a conferência. Tente excluir o banho novamente.");return}
   tabs.forEach(t=>(t.lanc||[]).forEach(l=>lanc(l,"tabela salva")));

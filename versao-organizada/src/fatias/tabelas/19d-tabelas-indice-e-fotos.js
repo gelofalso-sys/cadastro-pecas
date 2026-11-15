@@ -2,7 +2,7 @@
 /* ===== tabelas salvas: histórico de tabelas, quem montou e o que cada romaneio fez ===== */
 /* estado da fatia: sugT/sugSeq = temporizador e geração do histórico de sugestões; semVarredura = o app abriu sem varrer fotos (33 liga) */
 const estadoTabelas={sugT:null,sugSeq:0,semVarredura:false};
-function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await idbGet("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
+function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await bancoLer("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
 function setAutor(v){definirAutor(String(v||"").trim().slice(0,40));try{prefGravar("autor",AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==AUTOR)ai.value=AUTOR}
 function arqRef(){definirArq({});TABS.forEach(t=>(t.ids||[]).forEach(i=>{ARQ[i]=t.nome}))}
 /* índices (romaneios/tabelas) no armazenamento local (src/store): ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
@@ -16,17 +16,17 @@ function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.
 /* fotos órfãs: ao excluir uma peça/tabela, a foto (e a miniatura) some do IndexedDB — mas só quando nenhuma peça atual,
    tabela salva ou passo do "desfazer/refazer" ainda precisa dela */
    /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
-async function pontosIds(){try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await idbGet("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
+async function pontosIds(){try{const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await bancoLer("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
 function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(PONTO_IDS.has(id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
   if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
-function varrerFotos(){if(estadoTabelas.semVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);idbDel("fotos",id);idbDel("fotos","m:"+id);idbDel("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
-async function varrerTudo(){if(estadoTabelas.semVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await idbOp("fotos","readonly",st=>st.getAllKeys()))||[];
-  for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await idbDel("fotos",k)}}
+function varrerFotos(){if(estadoTabelas.semVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);bancoApagar("fotos",id);bancoApagar("fotos","m:"+id);bancoApagar("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
+async function varrerTudo(){if(estadoTabelas.semVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await bancoChaves("fotos"))||[];
+  for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await bancoApagar("fotos",k)}}
 /* tabelas salvas antes desta versão não guardavam cód.+fornecedor no índice: lê do IndexedDB uma vez */
-async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await idbGet("tabs",t.id);if(rec===null)return false;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou&&!gravarIdx("cadpecas-tabs",TABS,TABDEL))return false;
+async function tabsMigrar(){let mudou=false;for(const t of TABS){if(Array.isArray(t.cods))continue;const rec=await bancoLer("tabs",t.id);if(rec===null)return false;t.cods=rec?codsDe(rec):[];mudou=true}if(mudou&&!gravarIdx("cadpecas-tabs",TABS,TABDEL))return false;
   /* se a lista (índice) de tabelas falhou ao ser gravada, as tabelas continuam no IndexedDB: refaz a lista a partir de lá */
-  try{const ks=await idbOp("tabs","readonly",st=>st.getAllKeys());if(!Array.isArray(ks))return false;let n=0;
-    for(const k of ks){if(typeof k!=="string"||TABS.some(t=>t.id===k)||TABDEL.has(k))continue;const rec=await idbGet("tabs",k);
+  try{const ks=await bancoChaves("tabs");if(!Array.isArray(ks))return false;let n=0;
+    for(const k of ks){if(typeof k!=="string"||TABS.some(t=>t.id===k)||TABDEL.has(k))continue;const rec=await bancoLer("tabs",k);
       if(rec===null)return false;
       if(!ehObj(rec)||!Array.isArray(rec.lanc)||!rec.lanc.every(ehObj))continue;if(!rec.id)rec.id=k;if(!ehNumLike(rec.em))rec.em=Date.now();
       if(!tabIndex(rec))return false;n++}
@@ -38,6 +38,6 @@ async function tabExcluirSalvo(id){if(tabExcluindo.has(id))return false;tabExclu
     if(!gravarIdx("cadpecas-tabs",nova,TABDEL)){if(!jaApagado)TABDEL.delete(id);definirTabs(antiga);
       const voltou=await exReverter(prep.key);
       toast(voltou?"Não consegui atualizar a lista; a tabela foi mantida.":"ATENÇÃO: não consegui atualizar a lista nem restaurar a tabela excluída. Confira seu backup.");return false}
-    if(prep.key&&await idbDel("pontos",prep.key)===null){if(!jaApagado)TABDEL.delete(id);definirTabs(antiga);const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; a tabela foi mantida.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar a tabela e confira seu backup.");return false}
+    if(prep.key&&await bancoApagar("pontos",prep.key)===null){if(!jaApagado)TABDEL.delete(id);definirTabs(antiga);const voltou=await exReverter(prep.key);toast(voltou?"Não consegui concluir a exclusão; a tabela foi mantida.":"ATENÇÃO: exclusão incompleta; recarregue para tentar recuperar a tabela e confira seu backup.");return false}
     definirTabs(nova);arqRef();histSugAgendar();if(atual)(atual.ids||[]).forEach(i=>candFoto.add(i));varrerFotos();return true;
   })}finally{tabExcluindo.delete(id)}}

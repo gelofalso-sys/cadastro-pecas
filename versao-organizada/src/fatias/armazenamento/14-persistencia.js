@@ -39,8 +39,8 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState===
 /* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do armazenamento local (dadoLer/dadoGravar) vão sem elas, para não estourar a memória do navegador */
 function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
   return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
-async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await idbPut("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
-    if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await idbPut("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
+async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await bancoGravar("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
+    if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await bancoGravar("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
 async function flush(){   /* devolve true só quando a gravação foi confirmada */
   const d={...dirty};dirty={c:false,l:false};
   if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",erro:true});return false}
@@ -65,12 +65,12 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
   if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{dadoGravar("cadpecas4",jsonLocal(false))}catch(e){}}})}
   return true
 }
-async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
+async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await bancoGravar("pontos","p:"+t,v);if(r===null)return false;const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await bancoApagar("pontos",k);await pontosIds();return true}catch(e){return false}}
 async function pontoAuto(motivo,forcar){const snap={n:S.lanc.length,json:jsonLocal(false)};   /* estado de ANTES da operação, capturado já */
-  try{const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return true;if(!snap.n&&!forcar)return true;return await pontoSalvar(motivo,snap)}catch(e){return false}}
+  try{const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:")).sort(),ult=ks.length?+String(ks[ks.length-1]).slice(2):0;if(!forcar&&Date.now()-ult<PONTO_INTERVALO)return true;if(!snap.n&&!forcar)return true;return await pontoSalvar(motivo,snap)}catch(e){return false}}
 const pontoAviso=p=>p.then(ok=>{if(ok===false)toast("Atenção: NÃO consegui guardar o ponto de restauração (memória do navegador cheia?). Se precisar, use Desfazer agora.",{t:"Desfazer",fn:desfazer})})
 setInterval(()=>{if(S.lanc.length)pontoAuto("automático (a cada 30 min de uso)")},5*60*1000);
-async function bkPasta(){const h=await idbGet("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
+async function bkPasta(){const h=await bancoLer("pontos","pasta");return h&&typeof h==="object"&&h.kind==="directory"?h:null}
 async function bkEscrever(h){const {o,falhas,hoje}=await bkMontar();
   /* Uma cópia incompleta ou que o próprio aplicativo não consegue restaurar não substitui as últimas cópias boas. */
   if(falhas.length)return "incompleto";
@@ -87,23 +87,23 @@ async function bkStatus(){const el=document.getElementById("bkStatus");if(!el)re
   const h=await bkPasta();if(!h){el.textContent="Desligado. Escolha uma pasta para ligar.";return}
   const ok=await bkPerm(h,false);let u=0;try{u=+prefLer("backupUltimo")||0}catch(e){}
   el.innerHTML=`Pasta: <b>${esc(h.name)}</b> · ${ok?"permissão ok":`<span class="warn">o navegador pede permissão de novo</span> <button type="button" class="btn sm" data-act="bk-perm">Permitir</button>`} · último backup: ${u?esc(new Date(u).toLocaleString("pt-BR")):"ainda não"}`}
-async function pontosCarregar(){bkStatus();const el=document.getElementById("pontosLista");if(!el)return;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort().reverse(),out=[];for(const k of ks){const v=await idbGet("pontos",k);if(v&&typeof v==="object")out.push({k,t:v.t,motivo:v.motivo,n:v.n})}
+async function pontosCarregar(){bkStatus();const el=document.getElementById("pontosLista");if(!el)return;const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:")).sort().reverse(),out=[];for(const k of ks){const v=await bancoLer("pontos",k);if(v&&typeof v==="object")out.push({k,t:v.t,motivo:v.motivo,n:v.n})}
   const el2=document.getElementById("pontosLista");if(!el2)return;el2.innerHTML=out.length?out.map(p=>`<div class="pt"><span><b>${esc(new Date(p.t).toLocaleString("pt-BR"))}</b> · ${p.n} peça(s) <small>${esc(p.motivo)}</small></span><button type="button" class="btn sm" data-act="ponto-voltar" data-k="${esc(p.k)}">Voltar para este ponto</button></div>`).join(""):`<span class="hint">Ainda não há pontos. Um é criado ao abrir o app e a cada 30 minutos de uso, e antes de excluir várias linhas.</span>`}
-async function pontoRestaurar(k){const v=await idbGet("pontos",k);if(!v||typeof v!=="object"||!v.json){toast("Esse ponto não pode ser lido.");return}
+async function pontoRestaurar(k){const v=await bancoLer("pontos",k);if(!v||typeof v!=="object"||!v.json){toast("Esse ponto não pode ser lido.");return}
   const q=new Date(v.t).toLocaleString("pt-BR");if(!confirm(`Voltar para ${q} (${v.n} peça(s))?\n\nO que está agora fica guardado como outro ponto, e dá para voltar a ele.\n\nAs fotos não voltam no tempo: ficam as que estão guardadas agora.`))return;
   if(!(await pontoSalvar("antes de voltar no tempo"))&&!confirm("NÃO consegui guardar o que está agora como ponto (memória do navegador cheia ou bloqueada).\n\nSe continuar, o estado atual será perdido. Voltar mesmo assim?"))return;
   try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();editId=null;rascunho=null;sel.clear();estadoPlanilha.selR=null;ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
-async function pedirPersistencia(){try{if(!navigator.storage||!navigator.storage.persist)return;let ja=false;try{ja=await navigator.storage.persisted()}catch(e){}if(ja)return;const ok=await navigator.storage.persist();if(ok)return;let pasta=null;try{pasta=await bkPasta()}catch(e){}if(pasta)return;let av=null;try{av=prefLer("persistAviso")}catch(e){}if(av==="1")return;try{prefGravar("persistAviso","1")}catch(e){}toast("O navegador não garante guardar estes dados para sempre. Ligue o backup em pasta (Importar e backup) para não perder nada.")}catch(e){}} async function carregarMinis(){setTimeout(pedirPersistencia,3000);setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
-  for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await idbGet("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
+async function pedirPersistencia(){try{if(!navigator.storage||!navigator.storage.persist)return;let ja=false;try{ja=await navigator.storage.persisted()}catch(e){}if(ja)return;const ok=await navigator.storage.persist();if(ok)return;let pasta=null;try{pasta=await bkPasta()}catch(e){}if(pasta)return;let av=null;try{av=prefLer("persistAviso")}catch(e){}if(av==="1")return;try{prefGravar("persistAviso","1")}catch(e){}toast("O navegador não garante guardar estes dados para sempre. Ligue o backup em pasta (Importar e backup) para não perder nada.")}catch(e){}} async function carregarMinis(){setTimeout(pedirPersistencia,3000);setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await bancoLer("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
+  for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await bancoLer("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
   if(await migrarFotos())n++;
   if(n){try{renderTopo()}catch(e){}}}
 /* peças lançadas antes da coluna "Foto do romaneio": a foto guardada era a do romaneio (sem original anexado) e passa para a coluna certa; uma vez só */
 async function migrarFotos(){let mexeu=0;
   for(const l of S.lanc){if(l.ftMig||!l.ft||l.ftR)continue;
-    const big=await idbGet("fotos",l.id);l.ftMig=1;
+    const big=await bancoLer("fotos",l.id);l.ftMig=1;
     if(typeof big==="string"&&/^data:image\//.test(big))continue;
     l.ftR=l.ft;ftRSalvas.delete(l.id);
-    if(vazio(l.v&&l.v.B)){delete l.ft;delete l.ftIdb;ftSalvas.delete(l.id);idbDel("fotos","m:"+l.id)}
+    if(vazio(l.v&&l.v.B)){delete l.ft;delete l.ftIdb;ftSalvas.delete(l.id);bancoApagar("fotos","m:"+l.id)}
     mexeu++}
   if(mexeu){salvar(true);toast(`${mexeu} foto(s) de peças antigas foram para a coluna “Foto do romaneio”.`,{t:"Desfazer",fn:desfazer})}
   return mexeu}

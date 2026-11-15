@@ -12,6 +12,7 @@ store/local.js
 store/idb.js
 store/prefs.js
 store/dados.js
+store/banco.js
 store/eventos.js
 store/store-local.js
 js/00-adaptadores-nucleo.js

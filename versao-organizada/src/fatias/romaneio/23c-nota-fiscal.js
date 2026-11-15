@@ -22,8 +22,8 @@ const nfCusto=r=>{if(r.custoMan!=="")return num(r.custoMan);const q=Number(r.qtd
 async function nfBuscaDup(ch){if(!ch)return null;const ix=nfIdx()[ch];if(ix)return {em:ix.em,n:ix.n,numero:ix.numero};
   if(S.lanc.some(l=>l.nfChave===ch))return {em:Date.now(),n:S.lanc.filter(l=>l.nfChave===ch).length};
   if(ROM&&ROM.rows.some(r=>r.nfChave===ch))return {rascunho:true};
-  try{for(const k of ((await idbOp("tabs","readonly",st=>st.getAllKeys()))||[])){const r=await idbGet("tabs",k);if(r&&(r.lanc||[]).some(l=>l.nfChave===ch))return {em:r.em,tabela:r.nome}}
-    for(const k of ((await idbOp("roms","readonly",st=>st.getAllKeys()))||[])){const r=await idbGet("roms",k);if(r&&(r.rows||[]).some(x=>x.nfChave===ch))return {rascunho:true}}}catch(e){}
+  try{for(const k of ((await bancoChaves("tabs"))||[])){const r=await bancoLer("tabs",k);if(r&&(r.lanc||[]).some(l=>l.nfChave===ch))return {em:r.em,tabela:r.nome}}
+    for(const k of ((await bancoChaves("roms"))||[])){const r=await bancoLer("roms",k);if(r&&(r.rows||[]).some(x=>x.nfChave===ch))return {rascunho:true}}}catch(e){}
   return null}
 function nfOv(html){let el=document.getElementById("nfRev");if(!el){el=document.createElement("div");el.id="nfRev";el.className="rev nfm";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Importar nota fiscal");el.innerHTML='<div class="rev-c"></div>';document.body.appendChild(el)}
   const c=el.querySelector(".rev-c");if(html!=null)c.innerHTML=html;return el}

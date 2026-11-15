@@ -7,7 +7,7 @@ registrarAcoes(ACOES,"fotos",{
   "foto-add":({t})=>{estadoFotos.alvo=t.dataset.lid;document.getElementById("ftIn").click();return},
   "foto-form":()=>{estadoFotos.alvo="__form";document.getElementById("ftIn").click();return},
   "foto-rem":()=>{fotoRemover(editId||null);return},
-  "tab-foto":({t})=>{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?idbGet("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));return},
+  "tab-foto":({t})=>{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?bancoLer("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));return},
   "rom-foto-add":({t})=>{{romFotoEscolher(+t.dataset.i);return}},
   "rom-foto-del":({t})=>{{romFotoRemover(+t.dataset.i);return}},
   "rom-foto":({t})=>{{const im=t.querySelector("img");if(im)abrirZoom(im.src);return}},

@@ -5,7 +5,7 @@
 async function conjExcluirCategoria(nome){
   const cfgAntes=cfg(),usa=c=>c&&c.cat&&conjCat(c)===nome,tem=cs=>Array.isArray(cs)&&cs.some(usa),emLanc=l=>l&&tem(l.comp),emRom=r=>r&&tem(r.conjComp);
   if((S.lanc||[]).some(emLanc)||tem((S.form||{}).comp)||(ROM&&ROM.rows||[]).some(emRom)){toast(`Não excluí “${nome}”: há componentes de conjunto usando esta categoria. Altere-os antes.`);return}
-  let tabs,roms;try{[tabs,roms]=await Promise.all([idbOp("tabs","readonly",st=>st.getAll()),idbOp("roms","readonly",st=>st.getAll())])}catch(e){tabs=null}
+  let tabs,roms;try{[tabs,roms]=await Promise.all([bancoTodos("tabs"),bancoTodos("roms")])}catch(e){tabs=null}
   if(!Array.isArray(tabs)||!Array.isArray(roms)){toast("Não excluí a categoria: não consegui verificar os conjuntos salvos. Tente novamente.");return}
   if(tabs.some(t=>(t.lanc||[]).some(emLanc))||roms.some(r=>(r.rows||[]).some(emRom))){toast(`Não excluí “${nome}”: conjuntos em tabelas ou romaneios salvos usam esta categoria.`);return}
   const i=cfgAntes.categorias.findIndex(c=>c.nome===nome);if(cfg()!==cfgAntes||i<0||estadoConfig.delCat!==nome){toast("Os cadastros mudaram durante a verificação. Tente novamente.");return}
