@@ -1,4 +1,5 @@
-// Utilidades compartilhadas pelas ferramentas que leem o código do app (src/core + src/js).
+// Utilidades compartilhadas pelas ferramentas que leem o código do app (src/core, src/store, src/js e src/fatias, na ordem de src/_ordem.txt).
+// Só src/core é módulo ES; src/store e o resto são scripts simples.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

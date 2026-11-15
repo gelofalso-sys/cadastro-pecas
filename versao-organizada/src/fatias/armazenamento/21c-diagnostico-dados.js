@@ -1,13 +1,13 @@
 /* ===== diagnóstico dos dados guardados no navegador (peças, romaneios salvos, fotos) ===== */
 async function diagnosticoDados(){
   const L=[],t0=Date.now();
-  const tam=k=>{try{const v=localStorage.getItem(k);return v==null?null:v.length}catch(e){return -1}};
+  const tam=k=>{try{const v=lerPref(k);return v==null?null:v.length}catch(e){return -1}};
   repModal(`<div class="rep-h"><div><b class="rep-t">Diagnóstico dos dados</b><div class="hint">Verificando o que está guardado neste navegador…</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div><div class="rep-b"><pre id="diagTxt" style="white-space:pre-wrap;font:12px/1.5 ui-monospace,Consolas,monospace">Lendo…</pre></div>`);
   const out=()=>{const el=document.getElementById("diagTxt");if(el)el.textContent=L.join("\n")};
   const ln=s=>{L.push(s);out()};
   ln("Página: "+location.protocol+"//"+(location.pathname||"").split("/").slice(-1)[0]);
   try{if(navigator.storage&&navigator.storage.estimate){const e=await navigator.storage.estimate();ln(`Espaço do navegador: usado ${Math.round((e.usage||0)/1048576)} MB de ${Math.round((e.quota||0)/1048576)} MB`)}}catch(e){ln("Espaço: não consegui consultar")}
-  ["cadpecas4","cadpecas-rom","cadpecas-roms","cadpecas-rom-info","cadpecas-rel","cadpecas-tabs"].forEach(k=>{const n=tam(k);ln(`localStorage ${k}: ${n==null?"vazio":n<0?"erro ao ler":Math.round(n/1024)+" KB"}`)});
+  ["cadpecas4","cadpecas-rom","cadpecas-roms","cadpecas-rom-info","cadpecas-rel","cadpecas-tabs"].forEach(k=>{const n=tam(k);ln(`${AREA_LOCAL_NOME} ${k}: ${n==null?"vazio":n<0?"erro ao ler":Math.round(n/1024)+" KB"}`)});
   ln(`Peças na tabela: ${S.lanc.length} · com foto na tela: ${S.lanc.filter(l=>l.ft).length} · fotos marcadas no armazenamento grande: ${S.lanc.filter(l=>l.ftIdb).length}`);
   ln(`Romaneios salvos no índice: ${ROMS.length} · tabelas salvas: ${TABS.length}`);
   for(const st of ["roms","fotos","tabs","pontos"]){

@@ -8,6 +8,8 @@ core/romaneio.js
 core/backup.js
 core/notafiscal.js
 core/exportacao.js
+store/local.js
+store/idb.js
 js/00-adaptadores-nucleo.js
 js/10-limites-e-colunas.js
 js/11-utilidades.js

@@ -1,7 +1,7 @@
 // Testes de tools/acoplamento.mjs e tools/checar_fronteiras.mjs (funcoes puras), com decls montado a mao.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { arestas, violacoes, globaisPorFatia, fronteiraDoConjunto } from "../../tools/acoplamento.mjs";
+import { arestas, violacoes, globaisPorFatia, fronteiraDoConjunto, donoEfetivo } from "../../tools/acoplamento.mjs";
 import { donoDoArquivo } from "../../tools/fatias.mjs";
 import { novasDuplicadas } from "../../tools/checar_fronteiras.mjs";
 
@@ -63,4 +63,13 @@ test("fronteiraDoConjunto lista o que o conjunto usa de fora e o que dele e usad
   const f = fronteiraDoConjunto(decls, ["x.js"]);
   assert.deepEqual(f.usa, [{ simbolo: "ext", arqs: ["y.js"] }]);
   assert.deepEqual(f.usados, [{ simbolo: "a2", arqs: ["z.js"] }]);
+});
+test("donoEfetivo: fatia do manifesto, core, store (src/store) e legado", () => {
+  const dono = donoEfetivo(fatias);
+  assert.equal(dono("fatias/a/a.js"), "a"); assert.equal(dono("core/x.js"), "core");
+  assert.equal(dono("store/local.js"), "store"); assert.equal(dono("js/10-x.js"), "legado");
+});
+test("uso de simbolo de src/store por fatia nunca e violacao (store nao e fatia)", () => {
+  const decls = new Map([["fa", d("fatias/a/a.js", ["lerPref"], ["x"])], ["lerPref", d("store/local.js")], ["x", d("store/local.js", [], [], true)]]);
+  assert.deepEqual(violacoes(decls, fatias), []);
 });

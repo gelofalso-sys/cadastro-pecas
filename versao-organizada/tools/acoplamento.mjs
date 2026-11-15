@@ -51,8 +51,9 @@ export function globaisPorFatia(decls, dono) {
   return m;
 }
 
-// Dono efetivo: fatia do manifesto, senao "core" (src/core/) ou "legado" (src/js/).
-export const donoEfetivo = fatias => { const m = donoDoArquivo(fatias); return arq => m.get(arq) ?? (arq.startsWith("core/") ? "core" : "legado") };
+// Dono efetivo: fatia do manifesto, senao "core" (src/core/), "store" (src/store/: acesso ao armazenamento; infra publica como o nucleo,
+// nunca alvo de violacao porque nao e fatia) ou "legado" (src/js/).
+export const donoEfetivo = fatias => { const m = donoDoArquivo(fatias); return arq => m.get(arq) ?? (arq.startsWith("core/") ? "core" : arq.startsWith("store/") ? "store" : "legado") };
 
 // Proposta do spec (tabela "Fatias propostas"): prefixo numerico do arquivo -> fatia. Arquivos de "partes de" ficam na primeira fatia citada.
 export const PROPOSTA = {
