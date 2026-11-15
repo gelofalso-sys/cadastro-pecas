@@ -1,6 +1,6 @@
 /* ===== v20: cartões de categoria recolhíveis ===== */
 const CARDX=new Set();
-function cardsModoCompacto(){return abertos.catc==null?true:!!abertos.catc}
+function cardsModoCompacto(){return estadoBase.abertos.catc==null?true:!!estadoBase.abertos.catc}
 function cardsDecorar(){
   const cs=document.querySelector("#cfg .cards");if(!cs||!cs.querySelector(".card[data-cat]"))return;
   const cmp=cardsModoCompacto();cs.classList.toggle("cmp",cmp);
@@ -17,9 +17,9 @@ document.getElementById("cfg").addEventListener("click",e=>{
   const x=e.target.closest(".card .cx");
   if(x){const c=x.closest(".card"),k=c.dataset.cat;
     if(cardsModoCompacto()){if(CARDX.has(k))CARDX.delete(k);else CARDX.add(k)}
-    else{/* tudo aberto: o botão recolhe só esta — as demais continuam abertas */abertos.catc=true;guardarAbertos();CARDX.clear();document.querySelectorAll("#cfg .card[data-cat]").forEach(cc=>{if(cc!==c)CARDX.add(cc.dataset.cat)})}
+    else{/* tudo aberto: o botão recolhe só esta — as demais continuam abertas */estadoBase.abertos.catc=true;guardarAbertos();CARDX.clear();document.querySelectorAll("#cfg .card[data-cat]").forEach(cc=>{if(cc!==c)CARDX.add(cc.dataset.cat)})}
     cardsDecorar();return}
-  if(e.target.closest("#cardsTog")){const cmp=cardsModoCompacto();abertos.catc=!cmp;guardarAbertos();CARDX.clear();cardsDecorar();return}
+  if(e.target.closest("#cardsTog")){const cmp=cardsModoCompacto();estadoBase.abertos.catc=!cmp;guardarAbertos();CARDX.clear();cardsDecorar();return}
   const pd=e.target.closest(".tabp .sb>p.d");if(pd&&celular())pd.classList.toggle("mais")});
 
 /* ===== v20: rótulos nas células das tabelas de cadastro (para virarem cartões no celular) ===== */

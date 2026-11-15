@@ -18,9 +18,9 @@ function checaLinhasPlan(ws){const r=ws&&ws["!ref"]?XLSX.utils.decode_range(ws["
 /* CSV: texto que começa com = + - @ vira fórmula no Excel; recebe um apóstrofo na frente (números ficam como estão) */
 const uid=()=>Math.random().toString(36).slice(2,10);
 const S={config:clone(DEFAULT_CONFIG),lanc:[],form:FORM0()};
-const estadoBase={bancoAberto:false,HIST_SUG:[],lastExport:null};
-let editId=null,rascunho=null,undo=null,erro="",G=null,celEd=null;const sel=new Set();
-let abertos={};try{const ab0=prefLer("abertos");abertos=JSON.parse(ab0||"{}");if(ab0==null)abertos.min=true}catch(e){}   /* primeira abertura: formulário só com o essencial (dá para "Mostrar tudo") */
+const estadoBase={bancoAberto:false,HIST_SUG:[],lastExport:null,editId:null,rascunho:null,undo:null,erro:"",G:null,celEd:null,abertos:{}};
+const sel=new Set();
+try{const ab0=prefLer("abertos");estadoBase.abertos=JSON.parse(ab0||"{}");if(ab0==null)estadoBase.abertos.min=true}catch(e){}   /* primeira abertura: formulário só com o essencial (dá para "Mostrar tudo") */
 /* zoom (acessibilidade): um para a tabela (t) e outro para o formulário (f); só neste navegador */
 try{const z=JSON.parse(prefLer("zoom")||"{}");["t","f"].forEach(k=>{const v=Number(z[k]);if(v>=0.7&&v<=1.6)ZM[k]=Math.round(v*10)/10})}catch(e){}
 function zoomAplicar(grava){

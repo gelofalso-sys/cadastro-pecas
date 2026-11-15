@@ -1,5 +1,5 @@
 function renderTopo(){try{romResync()}catch(e){}
-  const g=G=gerar(),sh=document.getElementById("sheet"),st=sh.scrollTop,sl=sh.scrollLeft,cc=cfg().colcfg;
+  const g=estadoBase.G=gerar(),sh=document.getElementById("sheet"),st=sh.scrollTop,sl=sh.scrollLeft,cc=cfg().colcfg;
   estadoPlanilha.fv=filtroOn()?new Set(g.linhas.map((r,i)=>casa(r)?i:-1).filter(i=>i>=0)):null;renderFiltros(g);
   const ps=[...new Set([...S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))),prefDe(S.form.v.I,S.form.v.J)])];
   {const ms=document.getElementById("modSel");if(ms){const C0=cfg(),tem=r=>C0.modelos.some(x=>r.test(String(x.nome||"")));
@@ -22,7 +22,7 @@ function renderTopo(){try{romResync()}catch(e){}
   const cel=g.linhas.map((row,ri)=>celulas(row,ri+2));   /* uma vez só por desenho (antes eram duas) */
   const trReal=ri=>{const row=g.linhas[ri];let h="";
     const c=cel[ri],id=row.lancId;
-    h+=`<tr data-l="${id}" data-ri="${ri}" class="${editId===id?"edl":sel.has(id)?"on":""}"><td class="k"><div class="in"><input type="checkbox" data-sel ${sel.has(id)?"checked":""} aria-label="Selecionar">
+    h+=`<tr data-l="${id}" data-ri="${ri}" class="${estadoBase.editId===id?"edl":sel.has(id)?"on":""}"><td class="k"><div class="in"><input type="checkbox" data-sel ${sel.has(id)?"checked":""} aria-label="Selecionar">
       <button type="button" data-act="editar" title="Abrir a peça no lançamento (todas as linhas dela)">✎</button><button type="button" data-act="dup" title="Duplicar esta linha (mesmo tipo, nova referência)">⧉</button><button type="button" class="del" data-act="del" title="Excluir só esta linha (as outras linhas da mesma peça ficam)">×</button></div></td><td class="k nm" title="Linha ${ri+1}${row.lote?` · item ${row.lote.i} de ${row.lote.n} do lote`:""}">${ri+1}${row.lote?`<small class="loteN" aria-label="Item ${row.lote.i} de ${row.lote.n} do lote">${row.lote.i}/${row.lote.n}</small>`:""}</td>`+`<td class="tf">${ftRMap[id]?`<button type="button" class="foto-abrir" data-act="tab-foto" aria-label="Ampliar foto do romaneio"><img src="${fs(ftRMap[id])}" alt=""></button>`:""}</td>`+(ftUMap[id]?`<td class="tf"><button type="button" class="foto-abrir" data-act="tab-foto" data-lid="${id}" aria-label="Ampliar imagem enviada"><img src="${fs(ftUMap[id])}" alt=""></button></td>`:`<td class="tf"><button type="button" class="ftadd" data-act="foto-add" data-lid="${id}" title="Adicionar foto a esta peça: clique, arraste uma ou várias fotos para a linha (nome do arquivo = referência liga sozinho) ou cole com Ctrl+V">📷 ＋</button></td>`);
     LET.forEach((L,i)=>{const x=c[i],ov=row.ovs.includes(L)?" ov":"",miss=cc[L].obrig&&!x?" miss":"";
       if(L==="E"){h+=`<td class="ref${row.dup?" dup":""}${ov}" data-c="E" title="${row.dup?"Referência repetida":""}">${esc(row.v.E)}${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}</td>`;return}

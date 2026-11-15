@@ -19,7 +19,7 @@ document.addEventListener("paste",e=>{const cb=e.clipboardData||window.clipboard
   if(e.target.id!=="celIn"&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){
     /* só cola na tabela quando o foco está nela (ou solto na página); em botão, menu ou painel o Ctrl+V não pode criar/alterar peças */
     if(!(e.target===document.body||e.target===document.documentElement||(e.target.closest&&e.target.closest("#sheet"))))return;
-    const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&tx.trim()){e.preventDefault();const b=selBox();colarCel(tx,b?{ri:b.r1,L:LET[b.c1]}:{ri:G.linhas.length,L:"A"})}return}if(e.target.id!=="celIn"||!celEd)return;const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&(tx.includes("\t")||tx.replace(/\n+$/,"").includes("\n"))){e.preventDefault();colarCel(tx)}});
+    const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&tx.trim()){e.preventDefault();const b=selBox();colarCel(tx,b?{ri:b.r1,L:LET[b.c1]}:{ri:estadoBase.G.linhas.length,L:"A"})}return}if(e.target.id!=="celIn"||!estadoBase.celEd)return;const tx=(e.clipboardData||window.clipboardData).getData("text");if(tx&&(tx.includes("\t")||tx.replace(/\n+$/,"").includes("\n"))){e.preventDefault();colarCel(tx)}});
 document.addEventListener("keydown",e=>{
   const t=e.target;
   if(e.altKey&&e.shiftKey&&!e.ctrlKey&&!e.metaKey&&/^Digit[1-9]$/.test(e.code)&&t.closest&&t.closest("#form")){
@@ -34,7 +34,7 @@ document.addEventListener("keydown",e=>{
     if(t.dataset.ncor!==undefined){if(k==="Enter"){e.preventDefault();corNovaOk();return}if(k==="Escape"){e.preventDefault();const cn0=catUI.corNova;catUI.corNova=null;renderCfg();if(cn0)refocar(`[data-bh="${cn0.bi}"] [data-bn="${cn0.j}"] [data-bnf="cor"]`);return}return}
     if(t.dataset.colar!==undefined){if(k==="Escape"){e.preventDefault();catUI.colar=false;renderCfg();refocar('[data-act="colar-abrir"]');return}return}
     if(t.id==="novaCat"&&k==="Enter"){e.preventDefault();const b=document.querySelector('[data-act="cat-add"]');if(b)b.click();return}}
-  if(t.dataset&&t.dataset.act==="ctab"&&(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key==="Home"||e.key==="End")){const bs=[...document.querySelectorAll('#cfg [data-act="ctab"]')],i=bs.indexOf(t);if(i>=0){e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?bs.length-1:(i+(e.key==="ArrowRight"?1:-1)+bs.length)%bs.length,id=bs[j].dataset.id;abertos.tab=id;guardarAbertos();renderCfg();refocar(`#cfg [data-act="ctab"][data-id="${id}"]`);return}}
+  if(t.dataset&&t.dataset.act==="ctab"&&(e.key==="ArrowRight"||e.key==="ArrowLeft"||e.key==="Home"||e.key==="End")){const bs=[...document.querySelectorAll('#cfg [data-act="ctab"]')],i=bs.indexOf(t);if(i>=0){e.preventDefault();const j=e.key==="Home"?0:e.key==="End"?bs.length-1:(i+(e.key==="ArrowRight"?1:-1)+bs.length)%bs.length,id=bs[j].dataset.id;estadoBase.abertos.tab=id;guardarAbertos();renderCfg();refocar(`#cfg [data-act="ctab"][data-id="${id}"]`);return}}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));return}
   if((e.ctrlKey||e.metaKey)&&e.key==="Enter"&&t.closest&&t.closest("#form")){e.preventDefault();if(adicionar())refocar("#f-F");return}
   if(t.id==="celIn"){
@@ -43,7 +43,7 @@ document.addEventListener("keydown",e=>{
     else if(e.key==="Escape"){e.preventDefault();fecharCel(false);document.getElementById("sheet").focus({preventScroll:true})}
     else if(/^Arrow(Up|Down|Left|Right)$/.test(e.key)&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){
       /* setas andam pelas células: sempre para cima/baixo; para os lados enquanto você não digitou nada (clique simples) ou quando o cursor está na ponta do texto */
-      const sa=celEd&&celEd.setas,ini=t.selectionStart===0&&t.selectionEnd===0,fim=t.selectionStart===t.value.length&&t.selectionEnd===t.value.length,dir={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right"}[e.key];
+      const sa=estadoBase.celEd&&estadoBase.celEd.setas,ini=t.selectionStart===0&&t.selectionEnd===0,fim=t.selectionStart===t.value.length&&t.selectionEnd===t.value.length,dir={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right"}[e.key];
       if(e.key==="ArrowUp"||e.key==="ArrowDown"||sa||(e.key==="ArrowLeft"&&ini)||(e.key==="ArrowRight"&&fim)){e.preventDefault();fecharCel(true,dir)}}
     return;
   }
@@ -51,7 +51,7 @@ document.addEventListener("keydown",e=>{
   if(t.dataset&&t.dataset.rp==="faixa"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));return}
   if(t.dataset&&t.dataset.rp&&e.key==="Enter"&&t.tagName==="INPUT"&&t.closest(".rc")){e.preventDefault();let nx=t.closest(".rc").nextElementSibling;while(nx&&nx.classList.contains("sk"))nx=nx.nextElementSibling;
     const n2=nx&&nx.querySelector(`[data-rp="${t.dataset.rp}"]${t.dataset.b?`[data-b="${t.dataset.b}"]`:""}`);if(n2){n2.focus();try{n2.select()}catch(x){}}return}
-  if(t.id==="sheet"&&estadoPlanilha.selR&&!celEd){
+  if(t.id==="sheet"&&estadoPlanilha.selR&&!estadoBase.celEd){
     const k=e.key,mod=e.ctrlKey||e.metaKey,mr=Math.max(maxRi(),0);
     const mover=(dr,dc)=>{const r=dr?passo(estadoPlanilha.selR.fr,dr,mr):estadoPlanilha.selR.fr,c=Math.min(Math.max(estadoPlanilha.selR.fc+dc,0),LET.length-1);if(e.shiftKey&&k!=="Tab")selecionar(estadoPlanilha.selR.ar,estadoPlanilha.selR.ac,r,c);else selecionar(r,c);rolarAte()};
     if(k==="ArrowDown"){e.preventDefault();mover(1,0);return}
@@ -64,7 +64,7 @@ document.addEventListener("keydown",e=>{
     if(k==="Delete"||k==="Backspace"){e.preventDefault();limparSel();return}
     if(mod&&k.toLowerCase()==="c"){e.preventDefault();copiarSel();return}
     if(mod&&k.toLowerCase()==="d"){e.preventDefault();preencherAbaixo();return}
-    if(mod&&k.toLowerCase()==="a"){e.preventDefault();selecionar(0,0,Math.max(Math.min(mr,(G?G.linhas.length:1)-1),0),LET.length-1);return}
+    if(mod&&k.toLowerCase()==="a"){e.preventDefault();selecionar(0,0,Math.max(Math.min(mr,(estadoBase.G?estadoBase.G.linhas.length:1)-1),0),LET.length-1);return}
     if(k==="Escape"){estadoPlanilha.selR=null;pintarSel();renderSelBar();return}
     if(!mod&&!e.altKey&&k.length===1){e.preventDefault();abrirCel(estadoPlanilha.selR.fr,LET[estadoPlanilha.selR.fc]);const i=document.getElementById("celIn");if(i)i.value=k;return}
   }
@@ -72,15 +72,15 @@ document.addEventListener("keydown",e=>{
     const kz=e.key.toLowerCase();
     if(kz==="z"&&!e.shiftKey){e.preventDefault();desfazer();return}
     if(kz==="y"||(kz==="z"&&e.shiftKey)){e.preventDefault();desfazer(true);return}}
-  if(e.key==="Escape"&&celular()&&!editId&&document.body.classList.contains("fopen")&&!/INPUT|TEXTAREA|SELECT/.test(t.tagName)){e.preventDefault();formAbrir(false);return}
-  if(e.key==="Escape"&&editId){e.preventDefault();cancelar();return}
+  if(e.key==="Escape"&&celular()&&!estadoBase.editId&&document.body.classList.contains("fopen")&&!/INPUT|TEXTAREA|SELECT/.test(t.tagName)){e.preventDefault();formAbrir(false);return}
+  if(e.key==="Escape"&&estadoBase.editId){e.preventDefault();cancelar();return}
   if(t.closest&&t.closest(".nf")&&e.key==="Enter"&&t.tagName!=="TEXTAREA"){e.preventDefault();salvarRapido();return}
   if(e.key==="Escape"&&estadoLancamento.quick){e.preventDefault();estadoLancamento.quick=null;renderForm();return}
   if(t.id==="ultInp"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));focarPrimeiro();return}
   if(t.dataset&&t.dataset.enter&&e.key==="Enter"){e.preventDefault();const v=t.value.trim();if(!v)return;const C=cfg(),k=t.dataset.enter;
     const ci=t.closest("[data-cat]")?t.closest("[data-cat]").dataset.cat:null;
     if(k==="cv"){const L=partir(v),c=C.categorias[+ci];c.cores=c.cores||[];const novos=L.filter(n=>!c.cores.some(y=>semAc(y.nome)===semAc(n)));if(!novos.length){toast("Essas cores já estão na lista.");t.value="";return}
-      novos.forEach(n=>c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c,n)}));abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();refocar(`[data-cat="${ci}"] [data-enter="cv"]`);return}
+      novos.forEach(n=>c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c,n)}));estadoBase.abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();refocar(`[data-cat="${ci}"] [data-enter="cv"]`);return}
     if(k==="sub"||k==="cor"||k==="obs"){const L=partir(v);if(!L.length){t.value="";return}
       const alvo=k==="sub"?C.categorias[+ci].subs:k==="cor"?C.cores:C.observacoes,novos=L.filter(x=>!alvo.some(y=>semAc(y)===semAc(x)));
       if(!novos.length){toast(L.length>1?"Esses itens já existem.":"Esse item já existe.");t.value="";return}

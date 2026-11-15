@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {ligar,nucleo}=require('./unit/_contexto.mjs');   /* núcleo importado; só os trechos de src/js seguem recortados e rodando em vm */
 const s=fs.readFileSync('src/fatias/romaneio/21b-romaneio-extras.js','utf8');const a=s.indexOf('const romInsItens='),b=s.indexOf('/* Antes de criar parte do romaneio',a);assert(a>=0&&b>a);

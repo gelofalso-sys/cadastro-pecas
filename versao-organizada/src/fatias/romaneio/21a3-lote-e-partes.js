@@ -1,4 +1,4 @@
-const romLoteKids=r=>ROM.rows.filter(x=>x.loteDe===r.lid);
+const romLoteKids=r=>estadoRomaneio.ROM.rows.filter(x=>x.loteDe===r.lid);
 /* peso "real": o que você pesa sem o insumo que a galvânica pesa junto. O valor do lote não muda; o valor por grama sobe porque o peso caiu */
 function romLoteResumo(r){const kids=romLoteKids(r);let w=0,v=0;kids.forEach(x=>{const p=num(x.peso);if(p>0)w+=p;v+=r2c(num(x.custo)||0)});
   if(r.semPeso){const tt=r.total!=null?r.total:0,ok=kids.length&&Math.round(v*100)===Math.round(tt*100);return {cls:kids.length?(ok?"ok":"warn"):"warn",dif:0,taxa:0,txt:kids.length?`${kids.length} item(ns) numerados 1/${kids.length}${w>0?` · ${g3(w)} g informados · R$ ${brl(w>0?v/w:0)}/g em média`:" · sem pesos ainda: o valor está dividido igualmente"} · valor dos itens R$ ${brl(v)} de R$ ${brl(tt)}${ok?"":" — só um alerta"}`:"Nenhum item ainda: adicione os itens do lote."}}
@@ -31,31 +31,31 @@ function romLoteRecalc(lot){
     else{const taxa=tot/real;kids.forEach((k,i)=>{k.custo=ws[i]>0?virg(r2c(ws[i]*taxa)):""})}}   /* lote ainda aberto: cada item custa peso × valor por grama real */
   else if(lot.semPeso&&W===0&&tot>0&&kids.length){const cents=Math.round(tot*100),b0=Math.floor(cents/kids.length);let rest=cents-b0*kids.length;kids.forEach(k=>{k.custo=virg((b0+(rest-->0?1:0))/100)})}   /* lote sem peso: divide igual até pesar */
   else kids.forEach((k,i)=>{k.custo=ws[i]>0&&lot.precoG!=null?virg(ws[i]*lot.precoG):""});
-  kids.forEach(k=>{const rc=document.querySelector(`#romWrap .rc[data-i="${ROM.rows.indexOf(k)}"]`),ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci&&document.activeElement!==ci)ci.value=k.custo});
+  kids.forEach(k=>{const rc=document.querySelector(`#romWrap .rc[data-i="${estadoRomaneio.ROM.rows.indexOf(k)}"]`),ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci&&document.activeElement!==ci)ci.value=k.custo});
   romLoteAtualiza(lot)}
-function romLotePeso(r,rc){const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);if(lot)romLoteRecalc(lot);else{const w=num(r.peso);r.custo=w>0&&r.precoG!=null?virg(w*r.precoG):"";const ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci)ci.value=r.custo}}
-function romLoteAdd(r,n,peso){let pos=ROM.rows.indexOf(r);ROM.rows.forEach((x,j)=>{if(x.loteDe===r.lid)pos=j});const f=S.form,novos=[],k0=romLoteKids(r).length;
+function romLotePeso(r,rc){const lot=estadoRomaneio.ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);if(lot)romLoteRecalc(lot);else{const w=num(r.peso);r.custo=w>0&&r.precoG!=null?virg(w*r.precoG):"";const ci=rc&&rc.querySelector('[data-rp="custo"]');if(ci)ci.value=r.custo}}
+function romLoteAdd(r,n,peso){let pos=estadoRomaneio.ROM.rows.indexOf(r);estadoRomaneio.ROM.rows.forEach((x,j)=>{if(x.loteDe===r.lid)pos=j});const f=S.form,novos=[],k0=romLoteKids(r).length;
   for(let q=0;q<n;q++){const x={cod:(r.cod||"")+"-"+(k0+q+1),desc:r.desc||"",preco:r.precoG,precod:null,total:null,qtd:1,peso:peso!=null?g3(peso):"",q:{},skip:false,aviso:r.catq?"· categoria não reconhecida: confira":"",catq:!!r.catq,cat:r.cat||f.v.I||"",sub:r.sub||"",loteDe:r.lid,precoG:r.precoG,custo:peso!=null?virg(peso*r.precoG):""};
     x.mk={};x.bo={};x.on={};x.vz={};x.ex={};romNovaCat(x);novos.push(x)}
-  ROM.rows.splice(pos+1,0,...novos);romLoteRecalc(r);romSalvarSoon();renderRom()}
+  estadoRomaneio.ROM.rows.splice(pos+1,0,...novos);romLoteRecalc(r);romSalvarSoon();renderRom()}
 /* ===== partir um item em partes (ex.: um trio em 3 pares): o custo do item é repartido (centavos exatos) e cada parte vira um cartão com cópia dos banhos/quantidades ===== */
-const romPartes=r=>ROM.rows.filter(x=>x.parteG&&x.parteG===r.parteG);
+const romPartes=r=>estadoRomaneio.ROM.rows.filter(x=>x.parteG&&x.parteG===r.parteG);
 function romPartir(r,n){n=Math.trunc(n);if(!(n>=2&&n<=12)){toast("Escolha de 2 a 12 partes.");return}
   if(Array.isArray(r.conjComp)){toast("Para dividir este item, desfaça o conjunto e configure os componentes de cada parte separadamente.");return}
   if(r.lote||r.parteG||r.arq){toast(r.arq?"Restaure a tabela salva antes de dividir esta peça.":"Este item já é uma parte ou um lote: use “juntar” antes de partir de novo.");return}
   if(num(r.peso)>0&&Math.round(num(r.peso)*1000)<n){toast("O peso é pequeno demais para dividir em partes de 0,001 g.");return}
-  const c=num(r.custo),cents=c!=null&&c>=0?Math.round(c*100):null,base=cents!=null?Math.floor(cents/n):null,extra=cents!=null?cents-base*n:0,gid=uid(),pos=ROM.rows.indexOf(r),novos=[];
+  const c=num(r.custo),cents=c!=null&&c>=0?Math.round(c*100):null,base=cents!=null?Math.floor(cents/n):null,extra=cents!=null?cents-base*n:0,gid=uid(),pos=estadoRomaneio.ROM.rows.indexOf(r),novos=[];
   r.parteG=gid;r.parteN=n;r.parteK=1;r.parteCusto0=r.custo;r.parteCod0=r.cod;r.parteDesc0=r.desc;r.partePeso0=r.peso;r.parteRefaz0=!!r.refaz;r.parteSkip0=!!r.skip;if(r.feito){r.refaz=true;r.skip=false}
   for(let k=2;k<=n;k++){const x=clone(r);x.lancIds=undefined;x.feito=false;x.refaz=false;x.sel=false;x.open=false;x.bo={};x.vp="";x.parteK=k;novos.push(x)}
   const mg=num(r.partePeso0)>0?Math.round(num(r.partePeso0)*1000):null;
   [r,...novos].forEach((x,i)=>{const k=i+1;x.parteK=k;x.cod=(r.parteCod0||"")+"-"+k;x.desc=(r.parteDesc0||"")+" ("+k+"/"+n+")";if(mg!=null)x.peso=g3((Math.floor(mg/n)+(i<mg%n?1:0))/1000);if(cents!=null)x.custo=virg((base+(k<=extra?1:0))/100)});
-  ROM.rows.splice(pos+1,0,...novos);romSalvarSoon();renderRom();toast(`Item dividido em ${n} partes: o custo foi repartido (${n} × quantidade da lista).`)}
+  estadoRomaneio.ROM.rows.splice(pos+1,0,...novos);romSalvarSoon();renderRom();toast(`Item dividido em ${n} partes: o custo foi repartido (${n} × quantidade da lista).`)}
 function romJuntar(r){const ps=romPartes(r);if(ps.some(x=>x.feito&&!(x.parteK===1&&x.refaz))){toast("Uma das partes já foi lançada. Revogue as partes novas antes de juntar.");return}
   const p1=ps.find(x=>x.parteK===1)||ps[0];p1.custo=p1.parteCusto0;p1.peso=p1.partePeso0;p1.cod=p1.parteCod0;p1.desc=p1.parteDesc0;if(p1.feito){p1.refaz=!!p1.parteRefaz0;p1.skip=!!p1.parteSkip0;p1.aviso=p1.skip?"· já lançada":""}["parteG","parteN","parteK","parteCusto0","parteCod0","parteDesc0","partePeso0","parteRefaz0","parteSkip0"].forEach(k=>{delete p1[k]});
-  ROM.rows=ROM.rows.filter(x=>!(ps.includes(x)&&x!==p1));romSalvarSoon();renderRom()}
+  estadoRomaneio.ROM.rows=estadoRomaneio.ROM.rows.filter(x=>!(ps.includes(x)&&x!==p1));romSalvarSoon();renderRom()}
 function romParteTag(r){if(!r.parteG)return "";const ps=romPartes(r),s=ps.reduce((t,x)=>t+(num(x.custo)||0),0),o=num(r.parteCusto0);
   return `<span class="rch" title="Item partido: o custo do item foi repartido entre as partes (edite o custo de cada uma se quiser)">Parte ${r.parteK}/${r.parteN} · partes somam R$ ${brl(s)}${o!=null?" de R$ "+brl(o):""} <button type="button" class="x" data-act="rom-juntar" title="Desfazer a divisão e voltar a um só item">juntar</button></span>`}
-function romLoteDecora(){if(!ROM)return;const cs=document.querySelectorAll("#romWrap .rc[data-i]");cs.forEach(c=>{const r=ROM.rows[+c.dataset.i];if(!r||!r.loteDe||c.querySelector(".lote-tag"))return;const lot=ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);
+function romLoteDecora(){if(!estadoRomaneio.ROM)return;const cs=document.querySelectorAll("#romWrap .rc[data-i]");cs.forEach(c=>{const r=estadoRomaneio.ROM.rows[+c.dataset.i];if(!r||!r.loteDe||c.querySelector(".lote-tag"))return;const lot=estadoRomaneio.ROM.rows.find(x=>x.lote&&x.lid===r.loteDe);
   c.insertAdjacentHTML("afterbegin",`<div class="lote-tag"><span class="lote-num" title="Posição deste item no lote">${lot?romLoteKids(lot).indexOf(r)+1:"?"}/${lot?romLoteKids(lot).length:"?"}</span><span>Item do lote ${esc(lot?lot.cod:"")} · ${lot&&lot.ratear!==false?"valor do lote rateado pelo peso":"custo = peso × R$ "+String(Math.round((r.precoG||0)*10000)/10000).replace(".",",")+"/g"}</span><button type="button" class="x" data-act="lote-del" data-i="${c.dataset.i}" aria-label="Remover este item do lote">×</button></div>`)})}
 /* Conserva quantidades compatíveis ao trocar categoria de uma parte; exige confirmação para descartar distribuições incompatíveis. */
 function romTrocarCategoria(r,cat,sub){if(r.cat===cat&&(r.sub||"")===(sub||""))return true;

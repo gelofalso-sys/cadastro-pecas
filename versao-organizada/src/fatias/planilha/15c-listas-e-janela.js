@@ -10,7 +10,7 @@ function janelaHtml(){
   J.a=a;J.b=b;const sp=h=>h>0?`<tr class="sp" aria-hidden="true" style="height:${h}px"><td colspan="${LET.length+4}" style="padding:0;border:0"></td></tr>`:"";
   return sp(J.cum[a])+J.lista.slice(a,b).map(J.row).join("")+sp(J.total-J.cum[b])}
 function janRepintar(forca){
-  const J=estadoPlanilha.jan;if(!J||celEd)return;const sh=document.getElementById("sheet"),tb=sh&&sh.querySelector("tbody");if(!tb)return;
+  const J=estadoPlanilha.jan;if(!J||estadoBase.celEd)return;const sh=document.getElementById("sheet"),tb=sh&&sh.querySelector("tbody");if(!tb)return;
   const y=Math.max(0,sh.scrollTop-J.head),p0=janPos(y),p1=janPos(y+(sh.clientHeight||800));
   const n=J.lista.length;if(!forca&&!((J.a>0&&p0<J.a+8)||(J.b<n&&p1>J.b-8)))return;
   tb.innerHTML=janelaHtml();pintarSel();janMedir()}
@@ -22,4 +22,4 @@ function janMedir(){const J=estadoPlanilha.jan;if(!J||J.medido)return;const t1=d
 /* garante que a linha ri (índice da peça na tabela) esteja desenhada e visível — usado pelo teclado e por "mostrar no fim" */
 function janGarantir(ri){const J=estadoPlanilha.jan;if(!J)return true;const p=J.lista.indexOf(ri);if(p<0)return false;
   if(p>=J.a&&p<J.b)return true;const sh=document.getElementById("sheet");sh.scrollTop=Math.max(0,J.head+J.cum[p]-sh.clientHeight/2);janRepintar(true);return true}
-function guiaHTML(){if(abertos.guiaX)return "";return `<span class="ok vaz guia" role="note"><b>Guia rápido:</b> <button type="button" class="gi tod" data-act="ir" data-sec="cat" title="Categorias, subcategorias, tamanhos e cores">1 · Cadastros</button> <button type="button" class="gi tod" data-act="ir" data-sec="lancar">2 · Lançar peça</button> <span class="hint">3 · conferir a tabela</span> <span class="hint">4 · “Exportar para…” e baixar</span> <button type="button" class="x" data-act="guia-fechar" aria-label="Fechar o guia" title="Fechar o guia">×</button></span> `}
+function guiaHTML(){if(estadoBase.abertos.guiaX)return "";return `<span class="ok vaz guia" role="note"><b>Guia rápido:</b> <button type="button" class="gi tod" data-act="ir" data-sec="cat" title="Categorias, subcategorias, tamanhos e cores">1 · Cadastros</button> <button type="button" class="gi tod" data-act="ir" data-sec="lancar">2 · Lançar peça</button> <span class="hint">3 · conferir a tabela</span> <span class="hint">4 · “Exportar para…” e baixar</span> <button type="button" class="x" data-act="guia-fechar" aria-label="Fechar o guia" title="Fechar o guia">×</button></span> `}

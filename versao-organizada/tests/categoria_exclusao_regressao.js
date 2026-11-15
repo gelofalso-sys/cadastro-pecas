@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {ligar,nucleo}=require('./unit/_contexto.mjs');   /* núcleo importado; só os trechos de src/js seguem recortados e rodando em vm */
 const s=fs.readFileSync('src/fatias/configuracao/18a-conjunto-excluir-categoria.js','utf8');const fn=s.slice(s.indexOf('async function conjExcluirCategoria'));

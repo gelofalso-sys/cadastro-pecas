@@ -4,7 +4,7 @@
 async function bnReservarUso(){
   if(estadoConfig.bnEmExclusao)return false;
   if(estadoConfig.bnReserva)return true;
-  if(estadoConfig.bnReservando||!navigator.locks||conflito||estadoArmazenamento.corrompido)return false;
+  if(estadoConfig.bnReservando||!navigator.locks||estadoArmazenamento.conflito||estadoArmazenamento.corrompido)return false;
   estadoConfig.bnReservando=true;
   try{
     await bkUsoParar();
@@ -26,7 +26,7 @@ async function bnExcluirSeguro(bh0,bn0){
   estadoConfig.bnEmExclusao=true;
   let excluiu=false;
   try{
-    if(conflito||estadoArmazenamento.corrompido){toast("Resolva o conflito ou os dados danificados antes de excluir o banho.");return}
+    if(estadoArmazenamento.conflito||estadoArmazenamento.corrompido){toast("Resolva o conflito ou os dados danificados antes de excluir o banho.");return}
     const antes=cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);
     await bnExcluirConferido(bh0,bn0);
     excluiu=!!antes&&!cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);
@@ -35,14 +35,14 @@ async function bnExcluirSeguro(bh0,bn0){
   }finally{estadoConfig.bnEmExclusao=false;if(!jaReservado&&(!excluiu||CADAUTO))await bnLiberarUso()}
 }
 async function bnExcluirConferido(bh0,bn0){
-  const assinatura=()=>JSON.stringify([S.lanc,S.form,ROM,TABS,ROMS,cfg().banhistas]);
+  const assinatura=()=>JSON.stringify([S.lanc,S.form,estadoRomaneio.ROM,estadoArmazenamento.TABS,estadoArmazenamento.ROMS,cfg().banhistas]);
   const antes=assinatura(),b=bh0.id,id=bn0.id,usas=[];
   const comp=(cs,banhista)=>banhista===b&&Array.isArray(cs)&&cs.some(c=>c&&c.banho===id);
   const lanc=(l,origem)=>{if(l&&comp(l.comp,l.banhista))usas.push(origem)};
   S.lanc.forEach(l=>lanc(l,"tabela atual"));if(S.form&&comp(S.form.comp,S.form.banhista))usas.push("formulário");
-  if(typeof rascunho!=="undefined"&&rascunho&&comp(rascunho.comp,rascunho.banhista))usas.push("formulário em edição");
+  if(typeof estadoBase.rascunho!=="undefined"&&estadoBase.rascunho&&comp(estadoBase.rascunho.comp,estadoBase.rascunho.banhista))usas.push("formulário em edição");
   const rom=(r,origem,padrao)=>{if(r&&comp(r.conjComp,r.bh||padrao))usas.push(origem)};
-  if(ROM)(ROM.rows||[]).forEach(r=>rom(r,"romaneio aberto",S.form.banhista));
+  if(estadoRomaneio.ROM)(estadoRomaneio.ROM.rows||[]).forEach(r=>rom(r,"romaneio aberto",S.form.banhista));
   const [tabs,roms]=await Promise.all([bancoTodos("tabs"),bancoTodos("roms")]);
   if(!Array.isArray(tabs)||!Array.isArray(roms)){alert("Não consegui conferir tabelas e romaneios salvos. O banho não foi excluído; verifique o armazenamento e tente novamente.");return}
   if(antes!==assinatura()){toast("Os dados mudaram durante a conferência. Tente excluir o banho novamente.");return}

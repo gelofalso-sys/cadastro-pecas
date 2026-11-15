@@ -3,5 +3,5 @@ function rolarPane(el){if(!el)return;visPara(el.closest&&el.closest("#cfg")?"cad
 function irPara(id){
   if(id==="lancar"&&celular()){visPara("lancar");formAbrir(true);return}
   if(id==="lancar"){visPara("lancar");document.getElementById("paneBot").scrollTo({top:0,behavior:"smooth"});refocar("#f-F");return}
-  visPara("cad");abertos.tab=id;guardarAbertos();renderCfg();const d=document.querySelector("#cfg .ctabs");if(d)rolarPane(d);
+  visPara("cad");estadoBase.abertos.tab=id;guardarAbertos();renderCfg();const d=document.querySelector("#cfg .ctabs");if(d)rolarPane(d);
 }

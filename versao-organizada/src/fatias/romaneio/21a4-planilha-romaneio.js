@@ -9,8 +9,8 @@ async function romPlanilha0(file){try{checaTam(file,MAX_PLANILHA_BYTES,"A planil
   const dados=aoa.slice(hi+1);   /* só sugere coluna que tem dado: coluna vazia (ex.: ID em branco) não preenche nada */
   Object.entries(ROM_SIN).forEach(([k,rx])=>{const j=head.findIndex((h,q)=>rx.test(h)&&!Object.values(map).includes(q)&&dados.some(r=>String(r[q]==null?"":r[q]).trim()!==""));if(j>=0)map[k]=j});
   const sistema={};head.forEach((h,i)=>{let k=chaveDoCabecalho(h);if(!k){const coluna=(cfg().modelos||[]).flatMap(m=>m.cols||[]).find(c=>c.k&&normH(c.h)===normH(h));if(coluna)k=coluna.k}if(k==="@desc")k="F";if(LET.includes(k)&&sistema[k]===undefined)sistema[k]=i});const ehSistema=["E","F","W"].every(k=>sistema[k]!==undefined)&&["I","P","N","V"].some(k=>sistema[k]!==undefined);
-  ROM.doc=file.name;ROM.hash=IMPH.get(file)||"";ROM.plan={nome:file.name,head,rows:aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=="")),map,...(ehSistema?{sistema}:{})};ROM.msg="";renderRom()}catch(e){ROM.msg=e.message||"Não consegui ler a planilha.";renderRom()}}
-function romPlanHTML(){const P=ROM&&ROM.plan;if(!P)return "";
+  estadoRomaneio.ROM.doc=file.name;estadoRomaneio.ROM.hash=IMPH.get(file)||"";estadoRomaneio.ROM.plan={nome:file.name,head,rows:aoa.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!=="")),map,...(ehSistema?{sistema}:{})};estadoRomaneio.ROM.msg="";renderRom()}catch(e){estadoRomaneio.ROM.msg=e.message||"Não consegui ler a planilha.";renderRom()}}
+function romPlanHTML(){const P=estadoRomaneio.ROM&&estadoRomaneio.ROM.plan;if(!P)return "";
   const sel=(k,n)=>`<label class="fq w-m"><span>${n}</span><select data-rp="planmap" data-k="${k}"><option value="">— não tem —</option>${P.head.map((h,j)=>`<option value="${j}" ${P.map[k]===j?"selected":""}>${letraN(j)} · ${esc(h)}</option>`).join("")}</select></label>`;
   const cel=(r,k)=>P.map[k]==null?"":String(r[P.map[k]]==null?"":r[P.map[k]]);
   const ignoradas=P.sistema?P.head.filter((h,j)=>!Object.values(P.sistema).includes(j)&&P.rows.some(r=>!vazio(r[j]))):[];

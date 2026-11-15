@@ -1,12 +1,6 @@
 {
-  "globaisMutaveisTotal": 19,
-  "globaisMutaveisPorArquivo": {
-    "js/10-limites-e-colunas.js": 9,
-    "fatias/armazenamento/14-persistencia.js": 5,
-    "fatias/armazenamento/20-armazenamento-idb.js": 3,
-    "fatias/romaneio/19c0-romaneio-global.js": 1,
-    "fatias/romaneio/23c-nota-fiscal.js": 1
-  },
+  "globaisMutaveisTotal": 0,
+  "globaisMutaveisPorArquivo": {},
   "duplicadas": [],
-  "violacoes": 51
+  "violacoes": 48
 }

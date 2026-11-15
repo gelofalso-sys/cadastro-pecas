@@ -6,7 +6,7 @@
 /* a variação de cada peça vem só da categoria (e subcategoria) escolhida */
 /* ids das opções para uma faixa digitada: 12-16 (de 12 a 16), 12, 18 (esses), todos */
 /* categoria "sem banho" (ex.: Prata 925): entra como peça pronta, sem galvânica; ao sair dela volta ao tipo anterior */
-function aplicarSemBanho(f){if(editId||f.conj)return;const c=catBy(f.v.I);
+function aplicarSemBanho(f){if(estadoBase.editId||f.conj)return;const c=catBy(f.v.I);
   if(c&&c.semBanho){if(!f._sb){f._tipoAntes=f.tipo;f._sb=true}f.tipo="pronta";f.onP={}}
   else if(f._sb){f._sb=false;f.tipo=f._tipoAntes||"bruta";if(f.tipo==="bruta"&&!Object.values(f.on||{}).some(Boolean)&&typeof marcadosPadrao==="function")marcadosPadrao(f)}}
 /* categoria vendida por grama: Custo de Compra = peso × valor do grama, enquanto o usuário não digitar o custo à mão */
@@ -41,7 +41,7 @@ function bancoHtml(f){const c=catBy(f.v.I);if(!c||f.conj)return "";const sub=f.v
 /* barra fixa "Numeração do sistema": só os prefixos que existem nas categorias; os próprios de subcategorias ficam num grupo à parte */
 function renderNum(){const el=document.getElementById("numbar");if(!el)return;const C=cfg(),{m,sec}=prefixosTodos(),ps=[...m.keys()],ss=[...sec.keys()],sig=ps.join(",")+"|"+ss.join(",");
   const lanc=new Set(S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J")))),atual=new Set([prefDe(S.form.v.I,S.form.v.J)]);
-  if(ROM)ROM.rows.forEach(r=>{if(!r.skip)atual.add(prefDe(r.cat,r.sub))});
+  if(estadoRomaneio.ROM)estadoRomaneio.ROM.rows.forEach(r=>{if(!r.skip)atual.add(prefDe(r.cat,r.sub))});
   const lab=(p,mp)=>`<label class="nb" data-p="${esc(p)}" title="${esc(mp.get(p).join(" · "))}"><span>${esc(p)}</span><input class="n" data-ult="${esc(p)}" inputmode="numeric" aria-label="Última peça ${esc(p)}"><small></small></label>`;
   if(el.dataset.sig!==sig){el.dataset.sig=sig;const aberto=el.querySelector("details.nb-x")&&el.querySelector("details.nb-x").open;
     el.innerHTML=`<b class="nb-t">Numeração do sistema</b><span class="hint nb-h">última peça de cada categoria — vale para o lançamento manual e para o romaneio · com zeros à esquerda (ex.: 0050) as referências mantêm a largura (CL0051)</span><div class="nb-l">${ps.map(p=>lab(p,m)).join("")}</div>${ss.length?`<details class="nb-x" ${aberto?"open":""}><summary>Prefixos só de subcategorias (${ss.length}): ${ss.map(esc).join(", ")}</summary><div class="nb-l">${ss.map(p=>lab(p,sec)).join("")}</div></details>`:""}`}
@@ -50,8 +50,8 @@ function renderNum(){const el=document.getElementById("numbar");if(!el)return;co
     const uso=atual.has(p)||lanc.has(p);lb.classList.toggle("on",atual.has(p));lb.classList.toggle("bad",uso&&!(ultimo(p)>0));
     lb.querySelector("small").textContent="→ "+p+fnum(p,proxDe(p))})}
 /* se a última peça foi digitada com zeros à esquerda (ex.: 0050), as referências novas mantêm a largura (CL0051) */
-function proxDe(p){return Math.max(inicioDe(p),(G&&G.cont&&G.cont[p])||0)+1}
-function inicioDe(p,g){return Math.max(ultimo(p),((g||G||{}).manual||{})[p]||0)}
+function proxDe(p){return Math.max(inicioDe(p),(estadoBase.G&&estadoBase.G.cont&&estadoBase.G.cont[p])||0)+1}
+function inicioDe(p,g){return Math.max(ultimo(p),((g||estadoBase.G||{}).manual||{})[p]||0)}
 /* NCM, CFOP, FCP e Custo de Insumos podem ter valor próprio em cada categoria; sem ele vale o padrão da coluna */
 /* Itens detalhados só alteram Q após escolha explícita de uma regra nos Cadastros. */
 /* banho sem cálculo: modo "Sem cálculo" ou sem coluna de custo (nada vai para R/S/T) */

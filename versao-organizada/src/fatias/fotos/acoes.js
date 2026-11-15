@@ -6,10 +6,10 @@ registrarAcoes(ACOES,"fotos",{
   "foto-testar":()=>{testarChaveImgbb();return},
   "foto-add":({t})=>{estadoFotos.alvo=t.dataset.lid;document.getElementById("ftIn").click();return},
   "foto-form":()=>{estadoFotos.alvo="__form";document.getElementById("ftIn").click();return},
-  "foto-rem":()=>{fotoRemover(editId||null);return},
+  "foto-rem":()=>{fotoRemover(estadoBase.editId||null);return},
   "tab-foto":({t})=>{const lid=t.dataset.lid,src=t.src||(t.querySelector("img")||{}).src;(lid?bancoLer("fotos",lid):Promise.resolve(null)).then(u=>abrirZoom(u||src));return},
   "rom-foto-add":({t})=>{{romFotoEscolher(+t.dataset.i);return}},
   "rom-foto-del":({t})=>{{romFotoRemover(+t.dataset.i);return}},
   "rom-foto":({t})=>{{const im=t.querySelector("img");if(im)abrirZoom(im.src);return}},
-  "foto-rem-rom":()=>{{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");return}}
+  "foto-rem-rom":()=>{{if(estadoBase.editId){const l=S.lanc.find(x=>x.id===estadoBase.editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");return}}
 });

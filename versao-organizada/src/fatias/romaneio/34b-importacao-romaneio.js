@@ -1,30 +1,30 @@
 /* ===== importação de romaneios: vários arquivos, ordem na fila e aviso de arquivo repetido ===== */
 const IMPH=new WeakMap();
 async function impHash(f){try{const b=await f.arrayBuffer();if(window.crypto&&crypto.subtle){const h=await crypto.subtle.digest("SHA-256",b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("")}}catch(e){}return "n:"+f.size+":"+f.lastModified+":"+f.name}
-const impAcha=h=>h?ROMS.find(x=>x.hash===h):null;
+const impAcha=h=>h?estadoArmazenamento.ROMS.find(x=>x.hash===h):null;
 const impData=x=>new Date(x.em).toLocaleString("pt-BR");
 /* confere se este arquivo já foi importado; devolve false se o usuário preferiu abrir o romaneio guardado */
 async function impPrepara(f){let h=IMPH.get(f);if(!h){h=await impHash(f);IMPH.set(f,h)}
   const d=impAcha(h);
   if(d&&confirm("Este arquivo é exatamente o mesmo romaneio importado em "+impData(d)+(d.forn?" ("+d.forn+")":"")+": "+d.n+" peças, "+d.feitas+" já lançadas.\n\nOK = abrir o romaneio que já está guardado\nCancelar = importar de novo mesmo assim")){document.querySelectorAll(".rep").forEach(x=>x.remove());romAbrirSalvo(d.id);return false}
   return true}
-function romGaranteRom(){if(!ROM){if(!romRetomar()){ROM={tid:abertos.romT&&cfg().romaneios.some(x=>x.id===abertos.romT)?abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}}}
+function romGaranteRom(){if(!estadoRomaneio.ROM){if(!romRetomar()){estadoRomaneio.ROM={tid:estadoBase.abertos.romT&&cfg().romaneios.some(x=>x.id===estadoBase.abertos.romT)?estadoBase.abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}}}
 async function impAbrirArq(f){const nome=(f&&f.name)||"";estadoRomaneio.impSt={nome,estado:"lendo"};renderImp();
   try{await impAbrirArq0(f)}catch(e){estadoRomaneio.impSt={nome,estado:"erro",msg:String((e&&e.message)||e)};renderImp();throw e}
-  const n=ROM&&ROM.rows?ROM.rows.length:0;
-  if(n){estadoRomaneio.impSt={nome,estado:"ok",n,msg:ROM.msg||"",conf:ROM.conf||""};toast(`Romaneio importado: ${n} peça${n===1?"":"s"} lida${n===1?"":"s"}. Revise abaixo e clique em “Criar peças”.`)}
-  else if(ROM&&ROM.plan)estadoRomaneio.impSt={nome,estado:"plan"};
+  const n=estadoRomaneio.ROM&&estadoRomaneio.ROM.rows?estadoRomaneio.ROM.rows.length:0;
+  if(n){estadoRomaneio.impSt={nome,estado:"ok",n,msg:estadoRomaneio.ROM.msg||"",conf:estadoRomaneio.ROM.conf||""};toast(`Romaneio importado: ${n} peça${n===1?"":"s"} lida${n===1?"":"s"}. Revise abaixo e clique em “Criar peças”.`)}
+  else if(estadoRomaneio.ROM&&estadoRomaneio.ROM.plan)estadoRomaneio.impSt={nome,estado:"plan"};
   else if(!/[.]pdf$/i.test(nome))estadoRomaneio.impSt=null;   /* PDF termina sozinho: impStatusFim */
   renderImp()}
-function impStatusFim(ok,msg){const nome=(ROM&&ROM.doc)||(estadoRomaneio.impSt&&estadoRomaneio.impSt.nome)||"";
-  if(ok&&ROM&&ROM.rows&&ROM.rows.length){const n=ROM.rows.length;estadoRomaneio.impSt={nome,estado:"ok",n,conf:ROM.conf||""};toast(`Romaneio importado: ${n} peça${n===1?"":"s"} lida${n===1?"":"s"}. Revise abaixo e clique em “Criar peças”.`)}
-  else estadoRomaneio.impSt={nome,estado:"erro",msg:msg||(ROM&&ROM.msg)||"não encontrei peças nesse arquivo"};renderImp()}
+function impStatusFim(ok,msg){const nome=(estadoRomaneio.ROM&&estadoRomaneio.ROM.doc)||(estadoRomaneio.impSt&&estadoRomaneio.impSt.nome)||"";
+  if(ok&&estadoRomaneio.ROM&&estadoRomaneio.ROM.rows&&estadoRomaneio.ROM.rows.length){const n=estadoRomaneio.ROM.rows.length;estadoRomaneio.impSt={nome,estado:"ok",n,conf:estadoRomaneio.ROM.conf||""};toast(`Romaneio importado: ${n} peça${n===1?"":"s"} lida${n===1?"":"s"}. Revise abaixo e clique em “Criar peças”.`)}
+  else estadoRomaneio.impSt={nome,estado:"erro",msg:msg||(estadoRomaneio.ROM&&estadoRomaneio.ROM.msg)||"não encontrei peças nesse arquivo"};renderImp()}
 async function impAbrirArq0(f){
-  if(editId){avisoEdicao(()=>impAbrirArq0(f));return}
-  if(ROM&&ROM.rows&&ROM.rows.length){romSalvar();ROM=null;renderRom()}
+  if(estadoBase.editId){avisoEdicao(()=>impAbrirArq0(f));return}
+  if(estadoRomaneio.ROM&&estadoRomaneio.ROM.rows&&estadoRomaneio.ROM.rows.length){romSalvar();estadoRomaneio.ROM=null;renderRom()}
   const n=f.name||"";
   if(/[.](xlsx?|csv)$/i.test(n)){romGaranteRom();renderRom();rolarPane(document.getElementById("romWrap"));return romPlanilha(f)}
-  if(/[.]txt$/i.test(n)){if(!(await impPrepara(f)))return;romGaranteRom();ROM.doc=n;ROM.hash=IMPH.get(f)||"";ROM.texto=await(async()=>{const b=await f.arrayBuffer();try{return new TextDecoder("utf-8",{fatal:true}).decode(b)}catch(e){return new TextDecoder("windows-1252").decode(b)}})();romLer();renderRom();rolarPane(document.getElementById("romWrap"));return}
+  if(/[.]txt$/i.test(n)){if(!(await impPrepara(f)))return;romGaranteRom();estadoRomaneio.ROM.doc=n;estadoRomaneio.ROM.hash=IMPH.get(f)||"";estadoRomaneio.ROM.texto=await(async()=>{const b=await f.arrayBuffer();try{return new TextDecoder("utf-8",{fatal:true}).decode(b)}catch(e){return new TextDecoder("windows-1252").decode(b)}})();romLer();renderRom();rolarPane(document.getElementById("romWrap"));return}
   return nfRotear(f)}
 async function impAdd(files){const ok=[],ign=[];
   for(const f of files){if(!/[.](pdf|xml|xlsx?|csv|txt)$/i.test(f.name||"")){ign.push(f.name);continue}

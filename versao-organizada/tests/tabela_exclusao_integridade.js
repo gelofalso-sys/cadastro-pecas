@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const s=fs.readFileSync('src/fatias/tabelas/19d-tabelas-indice-e-fotos.js','utf8'),body='const tabExcluindo=new Set();'+s.slice(s.indexOf('async function tabExcluirSalvo'));
 (async()=>{let prep=null,reverted=0,writes=0,removed=0,refresh=0,msg=[];const x=vm.createContext({Promise,Set,TABS:[{id:'t',ids:['p']}],TABDEL:new Set(),candFoto:new Set(),exComLock:fn=>fn(),exPreparar:async()=>prep,exReverter:async()=>{reverted++;return true},bancoApagar:async()=>1,gravarIdx:()=>{writes++;return false},arqRef:()=>{},histSugAgendar:()=>refresh++,varrerFotos:()=>removed++,toast:t=>msg.push(t)});x.definirTabs=v=>{x.TABS=v};   /* setter da fatia armazenamento (dona da declaracao de TABS) */

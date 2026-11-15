@@ -1,6 +1,6 @@
 /* gráfico de rosca (SVG, sem bibliotecas) ao lado do formulário */
 function renderGraf(D){
-  const el=document.getElementById("graf");if(!el)return;const modo=abertos.graf||"custo";
+  const el=document.getElementById("graf");if(!el)return;const modo=estadoBase.abertos.graf||"custo";
   const M={custo:["Custo por componente",D.custo,"R$ "],pecas:["Peças por categoria",Object.entries(D.pecas),""],varejo:["Varejo por categoria",Object.entries(D.varejo),"R$ "],cor:["Peças por cor",Object.entries(D.cor),""],forn:["Custo por fornecedor",Object.entries(D.forn),"R$ "],banho:["Peças por banho",Object.entries(D.banho),""],lucro:["Lucro por categoria",Object.entries(D.lucro),"R$ "]};
   const m=M[modo]||M.custo,arr=m[1].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),tot=arr.reduce((s,x)=>s+x[1],0),pre=m[2],f2=n=>(Math.round(n*100)/100).toFixed(2);
   let svg="";

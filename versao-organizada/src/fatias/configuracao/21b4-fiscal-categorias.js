@@ -1,7 +1,7 @@
 /* ---------- fiscal (NCM, CFOP, FCP) e insumos de todas as categorias numa tabela só ---------- */
 function fiscalTodasHTML(C){
   const pad=k=>esc((C.colcfg[FISC_PAD[k]]||{}).padrao||"");
-  return `<details class="gdet" data-open="fiscall" ${abertos.fiscall?"open":""}><summary><b>Fiscal e insumos de todas as categorias</b><span>edite tudo numa tabela só, ou aplique um valor a todas de uma vez</span></summary><div class="gb">
+  return `<details class="gdet" data-open="fiscall" ${estadoBase.abertos.fiscall?"open":""}><summary><b>Fiscal e insumos de todas as categorias</b><span>edite tudo numa tabela só, ou aplique um valor a todas de uma vez</span></summary><div class="gb">
     <p class="hint">Vazio = usa o padrão da coluna (Cadastros › Padrões das colunas). A linha de cima aplica o valor digitado a todas as categorias.</p>
     <div class="tw"><table class="cfg"><thead><tr><th>Categoria</th>${FISC_COLS.map(c=>`<th class="n" title="${c[2]}">${c[1]}</th>`).join("")}</tr></thead><tbody>
       <tr class="fall"><td><b>Todas as categorias</b></td>${FISC_COLS.map(c=>`<td><input class="n" data-fall="${c[0]}" placeholder="${pad(c[0])||"valor"}" style="width:${c[3]}px" inputmode="${c[0]==="ncm"||c[0]==="cfop"?"numeric":"decimal"}" aria-label="${c[1]} para todas as categorias"></td>`).join("")}</tr>
@@ -19,5 +19,5 @@ function fiscalAplicarTodas(){
   for(const [k] of FISC_COLS){const el=document.querySelector(`[data-fall="${k}"]`),v=el?el.value.trim():"";if(v==="")continue;const m=fiscalErro(k,v);if(m){toast(m);if(el)el.focus();return}vals[k]=v}
   Object.entries(vals).forEach(([k,v])=>{C.categorias.forEach(c=>{c[k]=v;n++})});
   if(!n){toast("Preencha pelo menos um campo na linha “Todas as categorias”.");return}
-  abertos.fiscall=true;guardarAbertos();salvar(true,false);render();toast(`${Object.keys(vals).length} campo(s) aplicado(s) a ${C.categorias.length} categorias.`)}
+  estadoBase.abertos.fiscall=true;guardarAbertos();salvar(true,false);render();toast(`${Object.keys(vals).length} campo(s) aplicado(s) a ${C.categorias.length} categorias.`)}
 

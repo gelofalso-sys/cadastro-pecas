@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const s=fs.readFileSync('src/fatias/romaneio/23c-nota-fiscal.js','utf8');const a=s.indexOf('{const romCriarBase=romCriar;'),b=s.indexOf('\ndocument.addEventListener("change"',a);assert(a>=0&&b>a);
 let liberar,execs=0,idx=null,saves=0;const C={ROM:{rows:[{nfChave:'chave',nfNum:'123',nfForn:'forn',skip:false}]},S:{lanc:[]},romCriar:async()=>{execs++;await new Promise(r=>liberar=r);C.S.lanc.push({id:'novo'})},nfIdxSet:(k,v)=>idx={k,v},salvar:()=>saves++,toast:()=>{},console};vm.createContext(C);vm.runInContext(s.slice(a,b),C);

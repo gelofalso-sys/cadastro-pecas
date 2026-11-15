@@ -1,21 +1,21 @@
-function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan){ROM.plan.map[t.dataset.k]=t.value===""?null:+t.value;renderRom()}return}const k=t.dataset.rp;if(!k)return;const f=S.form;romSalvarSoon();
-  if(k==="texto"){ROM.texto=t.value;return}
-  if(k==="obs"){ROM.obs=t.value;romAtualSoon();return}
+function romCampo(t,fin){if(!estadoRomaneio.ROM)return;if(t.dataset.rp==="planmap"){if(estadoRomaneio.ROM.plan){estadoRomaneio.ROM.plan.map[t.dataset.k]=t.value===""?null:+t.value;renderRom()}return}const k=t.dataset.rp;if(!k)return;const f=S.form;romSalvarSoon();
+  if(k==="texto"){estadoRomaneio.ROM.texto=t.value;return}
+  if(k==="obs"){estadoRomaneio.ROM.obs=t.value;romAtualSoon();return}
   if(k==="rins"){romInsCampo(t,fin);return}
-  if(k==="lotpr"){const rc=t.closest(".rc"),lot=rc&&ROM.rows[+rc.dataset.i];if(lot&&lot.lote){const n=num(t.value);if(!vazio(t.value)&&(n==null||n<=0||n>1e6)){if(fin){toast("O peso real precisa ser um número maior que 0 (ex.: 77).");t.value=lot.pesoReal||""}return}lot.pesoReal=t.value;romLoteRecalc(lot);romAtualSoon()}return}
-  if(k==="lotrat"){const rc=t.closest(".rc"),lot=rc&&ROM.rows[+rc.dataset.i];if(lot&&lot.lote){lot.ratear=t.checked;romLoteRecalc(lot);romAtualSoon()}return}
-  if(k==="qtdx"){const rc=t.closest(".rc"),r=rc&&ROM.rows[+rc.dataset.i];if(r&&r.extra){const n=Math.trunc(num(t.value)||0);r.qtd=Math.max(0,Math.min(1e6,n));romAtualSoon()}return}
-  if(k==="tid"){ROM.tid=t.value;abertos.romT=t.value;guardarAbertos();ROM.msg="Modelo trocado: clique em Ler lista para reler com ele.";const T=romT();if(T&&T.forn&&fornBy(T.forn))romSetForn(T.forn);renderRom();return}
-  if(k==="forn"){const t0=S.form.tipo;romSetForn(t.value);if(S.form.tipo!==t0)ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});renderRom();return}
-  if(k==="bh"){trocarBanhista(f,t.value);salvar(false);renderForm();ROM.rows.forEach(r=>{if(r.feito)return;r.on={};r.bo={};r.vz={};r.mk={}});renderRom();return}
+  if(k==="lotpr"){const rc=t.closest(".rc"),lot=rc&&estadoRomaneio.ROM.rows[+rc.dataset.i];if(lot&&lot.lote){const n=num(t.value);if(!vazio(t.value)&&(n==null||n<=0||n>1e6)){if(fin){toast("O peso real precisa ser um número maior que 0 (ex.: 77).");t.value=lot.pesoReal||""}return}lot.pesoReal=t.value;romLoteRecalc(lot);romAtualSoon()}return}
+  if(k==="lotrat"){const rc=t.closest(".rc"),lot=rc&&estadoRomaneio.ROM.rows[+rc.dataset.i];if(lot&&lot.lote){lot.ratear=t.checked;romLoteRecalc(lot);romAtualSoon()}return}
+  if(k==="qtdx"){const rc=t.closest(".rc"),r=rc&&estadoRomaneio.ROM.rows[+rc.dataset.i];if(r&&r.extra){const n=Math.trunc(num(t.value)||0);r.qtd=Math.max(0,Math.min(1e6,n));romAtualSoon()}return}
+  if(k==="tid"){estadoRomaneio.ROM.tid=t.value;estadoBase.abertos.romT=t.value;guardarAbertos();estadoRomaneio.ROM.msg="Modelo trocado: clique em Ler lista para reler com ele.";const T=romT();if(T&&T.forn&&fornBy(T.forn))romSetForn(T.forn);renderRom();return}
+  if(k==="forn"){const t0=S.form.tipo;romSetForn(t.value);if(S.form.tipo!==t0)estadoRomaneio.ROM.rows.forEach(r=>{if(r.feito)return;r.q={};romNovaCat(r)});renderRom();return}
+  if(k==="bh"){trocarBanhista(f,t.value);salvar(false);renderForm();estadoRomaneio.ROM.rows.forEach(r=>{if(r.feito)return;r.on={};r.bo={};r.vz={};r.mk={}});renderRom();return}
   if(k==="bn"){(f.tipo==="bruta"?f.on:(f.onP=f.onP||{}))[t.dataset.b]=t.checked;salvar(false);renderForm();renderRom();return}
   if(k==="ult"){const pf=t.dataset.p;cfg().seqs[pf]=limpaUlt(t.value);salvar(true,false);renderTopo();document.querySelectorAll(`#romWrap [data-nx="${pf}"] b`).forEach(b=>b.textContent=proxDe(pf));const lb=t.closest("label");if(lb)lb.classList.toggle("bad",!(ultimo(pf)>0));romAtualSoon();return}
-  if(k==="rb"){ROM.bulk=ROM.bulk||{mk:{}};const kk=t.dataset.k;
+  if(k==="rb"){estadoRomaneio.ROM.bulk=estadoRomaneio.ROM.bulk||{mk:{}};const kk=t.dataset.k;
     if(kk==="selmode"){romSelecionar(t.value);t.value="";return}
-    if(kk==="mk"){ROM.bulk.mk=ROM.bulk.mk||{};ROM.bulk.mk[t.dataset.b]=t.value;return}
-    ROM.bulk[kk]=t.value;if(kk==="cat"){ROM.bulk.sub="";const ss=document.querySelector("#romWrap [data-rp=rb][data-k=sub]"),cc=catBy(t.value);if(ss)ss.innerHTML=opts(cc?cc.subs:[],"","(manter)")}return}
-  if(k==="mkg"){f.mk=f.mk||{};const bm=t.dataset.b;if(vazio(t.value))delete f.mk[bm];else f.mk[bm]=t.value;salvar(false);document.querySelectorAll(`#romWrap [data-rp=mk][data-b="${bm}"]`).forEach(e=>{const rr=ROM.rows[+e.closest(".rc").dataset.i];if(rr&&!(rr.mk&&rr.mk[bm]!==undefined))e.value=t.value});romAtualSoon();return}
-  const rc=t.closest(".rc");if(!rc)return;const i=+rc.dataset.i,r=ROM.rows[i];if(!r)return;const estadoAntes={skip:r.skip,refaz:r.refaz,aviso:r.aviso};
+    if(kk==="mk"){estadoRomaneio.ROM.bulk.mk=estadoRomaneio.ROM.bulk.mk||{};estadoRomaneio.ROM.bulk.mk[t.dataset.b]=t.value;return}
+    estadoRomaneio.ROM.bulk[kk]=t.value;if(kk==="cat"){estadoRomaneio.ROM.bulk.sub="";const ss=document.querySelector("#romWrap [data-rp=rb][data-k=sub]"),cc=catBy(t.value);if(ss)ss.innerHTML=opts(cc?cc.subs:[],"","(manter)")}return}
+  if(k==="mkg"){f.mk=f.mk||{};const bm=t.dataset.b;if(vazio(t.value))delete f.mk[bm];else f.mk[bm]=t.value;salvar(false);document.querySelectorAll(`#romWrap [data-rp=mk][data-b="${bm}"]`).forEach(e=>{const rr=estadoRomaneio.ROM.rows[+e.closest(".rc").dataset.i];if(rr&&!(rr.mk&&rr.mk[bm]!==undefined))e.value=t.value});romAtualSoon();return}
+  const rc=t.closest(".rc");if(!rc)return;const i=+rc.dataset.i,r=estadoRomaneio.ROM.rows[i];if(!r)return;const estadoAntes={skip:r.skip,refaz:r.refaz,aviso:r.aviso};
   if(k!=="sel"&&k!=="use"){if(r.feito&&r.arq){if(fin)toast("Esta peça está na tabela salva “"+r.arq+"”. Restaure a tabela para corrigir.");return}
     if(romArma(r)){rc.classList.remove("sk");const u=rc.querySelector('[data-rp="use"]');if(u)u.checked=true;const bd=rc.querySelector(".rfeito");if(bd)bd.outerHTML=romBadge(r);if(fin)toast("Peça já lançada: ao criar ela é substituída, na mesma posição e com a mesma referência.")}}
   if(k==="qall"){const v=t.value;if(!vazio(v)){const n=num(v);if(n==null||n<0||!Number.isInteger(n)){if(fin)toast("Quantidade precisa ser um número inteiro, 0 ou mais.");return}}if(!fin||estadoRomaneio.busy)return;estadoRomaneio.busy=true;try{romKeys(r,[{id:t.dataset.b}]).forEach(kk=>{r.q[kk]=vazio(v)?"":String(num(v))});renderRom()}finally{estadoRomaneio.busy=false}return}
@@ -62,14 +62,14 @@ function romCampo(t,fin){if(!ROM)return;if(t.dataset.rp==="planmap"){if(ROM.plan
   if(fin&&!vazio(t.value)&&(k==="vp"||(k==="bo"&&t.dataset.k==="V"))){const rc2=t.closest(".rc");if(rc2)romFatorDoPreco(r,k==="vp"?"p":t.dataset.b,rc2)}
   romAtualSoon()}
 /* digitou o Preço de Varejo no cartão: o Fator × passa a ser o que dá esse preço (preço ÷ soma dos custos), como no formulário */
-function romFatorDoPreco(r,id,rc){const p=romPreview()[ROM.rows.indexOf(r)];if(!p)return;const x=id==="p"?p.rows[0]:p.rows.find(y=>y.bid===id);
+function romFatorDoPreco(r,id,rc){const p=romPreview()[estadoRomaneio.ROM.rows.indexOf(r)];if(!p)return;const x=id==="p"?p.rows[0]:p.rows.find(y=>y.bid===id);
   if(!x||!(x.custo>0)){toast("Para o fator ser calculado, informe antes o peso e os custos.");return}
   const alvo=num(id==="p"?r.vp:((r.bo||{})[id]||{}).V);if(alvo==null||alvo<0)return;
   const fator=String(Math.round(alvo/x.custo*10000)/10000).replace(".",",");r.mk=r.mk||{};r.mk[id]=fator;
   const inp=rc.querySelector(`[data-rp="mk"][data-b="${CSS.escape(String(id))}"]`);if(inp)inp.value=fator}
-function romLer(){if(ROM&&String(ROM.texto||"").length>MAX_TEXTO_COLADO){ROM.msg=`O texto da lista tem ${String(ROM.texto).length} caracteres e o limite é ${MAX_TEXTO_COLADO}. Cole ou envie a lista por partes.`;renderRom();return}if(ROM&&ROM.pdf&&ROM.texto!==ROM.pdf.texto)ROM.pdf=null;let f=S.form,T=romT(),R=lerRomaneioAuto(ROM.texto,T);
-  {const pts=r=>r.erro?-1e9:romScore(r)+(/✓ valor/.test(r.conf||"")?1000:0);let bp=pts(R);for(const T2 of cfg().romaneios){if(T2.id===T.id)continue;const R2=lerRomaneioAuto(ROM.texto,T2),p2=pts(R2);if(p2>bp){bp=p2;ROM.tid=T2.id;T=T2;R=R2}}}
-  if(R.erro){const tinha=ROM.rows&&ROM.rows.length;ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg=R.erro+(tinha?" Os cartões da leitura anterior foram removidos.":"");romSalvarSoon();renderRom();return}
+function romLer(){if(estadoRomaneio.ROM&&String(estadoRomaneio.ROM.texto||"").length>MAX_TEXTO_COLADO){estadoRomaneio.ROM.msg=`O texto da lista tem ${String(estadoRomaneio.ROM.texto).length} caracteres e o limite é ${MAX_TEXTO_COLADO}. Cole ou envie a lista por partes.`;renderRom();return}if(estadoRomaneio.ROM&&estadoRomaneio.ROM.pdf&&estadoRomaneio.ROM.texto!==estadoRomaneio.ROM.pdf.texto)estadoRomaneio.ROM.pdf=null;let f=S.form,T=romT(),R=lerRomaneioAuto(estadoRomaneio.ROM.texto,T);
+  {const pts=r=>r.erro?-1e9:romScore(r)+(/✓ valor/.test(r.conf||"")?1000:0);let bp=pts(R);for(const T2 of cfg().romaneios){if(T2.id===T.id)continue;const R2=lerRomaneioAuto(estadoRomaneio.ROM.texto,T2),p2=pts(R2);if(p2>bp){bp=p2;estadoRomaneio.ROM.tid=T2.id;T=T2;R=R2}}}
+  if(R.erro){const tinha=estadoRomaneio.ROM.rows&&estadoRomaneio.ROM.rows.length;estadoRomaneio.ROM.rows=[];estadoRomaneio.ROM.pdf=null;estadoRomaneio.ROM.conf="";estadoRomaneio.ROM.msg=R.erro+(tinha?" Os cartões da leitura anterior foram removidos.":"");romSalvarSoon();renderRom();return}
   romAplicaR(R)}
 function romAplicaR(R){const f=S.form,T=romT();
   {const vi=new Set();R.rows.forEach(r=>{if(!r.cod||r._sistema)return;const k=r.cod+"|"+r.qtd;if(vi.has(k)){r.skip=true;r.aviso=(r.aviso?r.aviso+" ":"")+"· linha repetida na lista — desmarcada"}else vi.add(k)})}
@@ -78,9 +78,9 @@ function romAplicaR(R){const f=S.form,T=romT();
     r.mk={};r.bo={};r.on={};r.vz={};r.ex={};romNovaCat(r);
     if(r._sistema){const v=r._sistema;r.cat=String(v.I||f.v.I||"");r.sub=String(v.J||"");r.catq=!v.I;r.aviso=r.catq?"· categoria não informada: confira":"";r.peso=String(v.N??"");r.custo=String(v.P??"");r.tipo="pronta";r.on=Object.fromEntries((romBh(r).banhos||[]).map(b=>[b.id,false]));r.dsc="0";r.semG=true;r.gsel=[];r.csel=[];r.q={p:String(r.qtd)};r.vp=String(v.V??"");r.cor=String(v.L??"");r.obs=String(v.M??"");r.forn=String(v.H??"");r.ex={};["A","B","C","D","E","K","Q","R","S","T","U","X","Y","Z","AA","AB","AC","AD","AE"].forEach(k=>{if(v[k]!==undefined&&v[k]!==null&&String(v[k])!=="")r.ex[k]=String(v[k])});r.planSistema=true;delete r._sistema}
     if(!r.planSistema&&r.cod&&S.lanc.some(l=>String(l.v.G||"")===r.cod&&(l.v.H||"")===(f.v.H||""))){r.skip=true;r.aviso="· já lançada"}
-    else if(!r.planSistema&&r.cod){const tb=TABS.find(t=>(t.cods||[]).includes(chaveCod(f.v.H,r.cod)));if(tb){r.skip=true;r.arq=tb.nome;r.aviso="· já lançada na tabela salva “"+tb.nome+"” — desmarcada"}}});
-  if(ROM.pdf)romFotos(R.rows);
-  {const vel={},n1={},n2={};(ROM.rows||[]).forEach(o=>{if(o.cod){n1[o.cod]=(n1[o.cod]||0)+1;vel[o.cod+"|"+n1[o.cod]]=o}});let mant=0;R.rows.forEach(r=>{if(r.cod)n2[r.cod]=(n2[r.cod]||0)+1;const o=r.cod&&vel[r.cod+"|"+n2[r.cod]];if(!o)return;mant++;["peso","desc","cat","sub","custo","custoAuto","q","gsel","csel","corOn","semG","mk","bo","on","vz","ex","obs","vp","cor","sel","open","catq","tipo","bh","forn","dsc","vinc","conjComp","conjOriginal","conjDesativado","feito","refaz","skip","lancIds","refs","qLanc","lancEm","corrigida","arq","aviso"].forEach(k=>{if(o[k]!==undefined)r[k]=clone(o[k])});if(o.feito)r.qtd=o.qtd});R._mant=mant}
-  {const kids=(ROM.rows||[]).filter(x=>x.loteDe);if(kids.length){const old={};(ROM.rows||[]).forEach(x=>{if(x.lote&&x.cod)old[x.cod]=x});const out=[];R.rows.forEach(x=>{out.push(x);if(x.lote&&old[x.cod]){x.lid=old[x.cod].lid;kids.filter(k=>k.loteDe===x.lid).forEach(k=>out.push(k))}});R.rows=out}}
-  {const ex=(ROM.rows||[]).filter(x=>x.extra);if(ex.length)R.rows=R.rows.concat(ex)}   /* peças criadas à mão no romaneio sobrevivem a uma nova leitura da lista */
-  ROM.rows=R.rows;ROM.rows.forEach(romConjAuto);ROM.obs=R.obs||ROM.obs||"";ROM.conf=R.conf;ROM.msg=`${R.rows.length} peças lidas${R._mant?` · ${R._mant} com as suas edições mantidas`:""}`;romSalvarSoon();renderRom();{const pe=[...document.querySelectorAll('#romWrap [data-rp=peso]')].find(x=>!x.value);if(pe)pe.focus({preventScroll:true})}}
+    else if(!r.planSistema&&r.cod){const tb=estadoArmazenamento.TABS.find(t=>(t.cods||[]).includes(chaveCod(f.v.H,r.cod)));if(tb){r.skip=true;r.arq=tb.nome;r.aviso="· já lançada na tabela salva “"+tb.nome+"” — desmarcada"}}});
+  if(estadoRomaneio.ROM.pdf)romFotos(R.rows);
+  {const vel={},n1={},n2={};(estadoRomaneio.ROM.rows||[]).forEach(o=>{if(o.cod){n1[o.cod]=(n1[o.cod]||0)+1;vel[o.cod+"|"+n1[o.cod]]=o}});let mant=0;R.rows.forEach(r=>{if(r.cod)n2[r.cod]=(n2[r.cod]||0)+1;const o=r.cod&&vel[r.cod+"|"+n2[r.cod]];if(!o)return;mant++;["peso","desc","cat","sub","custo","custoAuto","q","gsel","csel","corOn","semG","mk","bo","on","vz","ex","obs","vp","cor","sel","open","catq","tipo","bh","forn","dsc","vinc","conjComp","conjOriginal","conjDesativado","feito","refaz","skip","lancIds","refs","qLanc","lancEm","corrigida","arq","aviso"].forEach(k=>{if(o[k]!==undefined)r[k]=clone(o[k])});if(o.feito)r.qtd=o.qtd});R._mant=mant}
+  {const kids=(estadoRomaneio.ROM.rows||[]).filter(x=>x.loteDe);if(kids.length){const old={};(estadoRomaneio.ROM.rows||[]).forEach(x=>{if(x.lote&&x.cod)old[x.cod]=x});const out=[];R.rows.forEach(x=>{out.push(x);if(x.lote&&old[x.cod]){x.lid=old[x.cod].lid;kids.filter(k=>k.loteDe===x.lid).forEach(k=>out.push(k))}});R.rows=out}}
+  {const ex=(estadoRomaneio.ROM.rows||[]).filter(x=>x.extra);if(ex.length)R.rows=R.rows.concat(ex)}   /* peças criadas à mão no romaneio sobrevivem a uma nova leitura da lista */
+  estadoRomaneio.ROM.rows=R.rows;estadoRomaneio.ROM.rows.forEach(romConjAuto);estadoRomaneio.ROM.obs=R.obs||estadoRomaneio.ROM.obs||"";estadoRomaneio.ROM.conf=R.conf;estadoRomaneio.ROM.msg=`${R.rows.length} peças lidas${R._mant?` · ${R._mant} com as suas edições mantidas`:""}`;romSalvarSoon();renderRom();{const pe=[...document.querySelectorAll('#romWrap [data-rp=peso]')].find(x=>!x.value);if(pe)pe.focus({preventScroll:true})}}

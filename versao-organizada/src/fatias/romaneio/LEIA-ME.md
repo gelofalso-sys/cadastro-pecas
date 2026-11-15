@@ -43,3 +43,6 @@ criar as pecas (`romCriar`), relatorio da criacao (`relGerar`, `relAbrir`, `relL
 Etapa 4.1: `romCriando`, `romChaveL` (usados por `src/js/15d`) e `relTem` viraram campos de `estadoRomaneio` (19c-colar-romaneio.js).
 
 `expoe` trocou `relTem` por `estadoRomaneio`: `relTem` virou campo dele e outras fatias o leem e escrevem (armazenamento ao abrir e ao restaurar, lancamento ao desenhar o formulario, `src/js/15d` no resync). Escrita direta de outra fatia e problema conhecido, fica para a 4.3.
+
+## Etapa 4.2
+`ROM` e `NF` viraram campos de `estadoRomaneio` (`estadoRomaneio.ROM`, `.NF`); `expoe` troca esses nomes por `estadoRomaneio` (ja exposto). Quase todas as fatias leem `ROM`; escritas de outras fatias seguem como problema conhecido.

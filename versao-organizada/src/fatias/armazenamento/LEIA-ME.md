@@ -44,3 +44,6 @@ Todas as fatias usam `salvar`, entao `armazenamento` nao declara nenhuma em `usa
 AUD-A-001 (backup leve pode passar do limite de restauracao), AUD-A-002 (`migrarGrades` liga grades independentes), AUD-A-003 (reversao da restauracao pode afirmar sucesso sem conferir),
 AUD-A-004 (retorno de `romIndex`/`gravarIdx` ignorado), AUD-A-005 (lembrete conta backup inadequado como recente), AUD-A-006 (fechar a aba durante gravacao pendente pode perder lancamento),
 AUD-A-008 (exclusao segue sem o ponto prometido; `pontoAuto`). Linhas acima de 160 caracteres em quase todo 14 e 20 (minificado a mao): nao reformatadas.
+
+## Etapa 4.2: ultimos globais
+`db`, `dirty`, `conflito`, `TABS`, `ROMS` e `romConflito` viraram campos de `estadoArmazenamento`; `HIST` e `REDO` agora sao `const` (so o conteudo muda). Nao ha mais globais mutaveis (`let`) de nivel superior em `armazenamento`. `expoe` troca esses nomes por `estadoArmazenamento` (ja exposto); as outras fatias leem `estadoArmazenamento.TABS`, `.ROMS`, `.db` e escrevem em alguns (problema conhecido, corte na 4.3).

@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 // Testes isolados das regras de divisão e conferência de lotes.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');

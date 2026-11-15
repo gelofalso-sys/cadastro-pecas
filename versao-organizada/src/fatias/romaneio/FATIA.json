@@ -26,7 +26,6 @@
   "expoe": [
     "renderRom",
     "arqSalvar",
-    "NF",
     "nfFechar",
     "nfRotear",
     "impAdd",
@@ -37,7 +36,6 @@
     "romPdf",
     "romPlanilha",
     "romAbrirNovo",
-    "ROM",
     "estadoRomaneio"
   ],
   "usa": [

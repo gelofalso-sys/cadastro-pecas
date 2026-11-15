@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const idb=fs.readFileSync('src/fatias/armazenamento/20-armazenamento-idb.js','utf8'),persist=fs.readFileSync('src/fatias/armazenamento/14-persistencia.js','utf8');
 const slice=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));

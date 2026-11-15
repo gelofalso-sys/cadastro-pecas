@@ -4,9 +4,9 @@
    Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que a preferência local "cadpecas-cad-estrito"="1" (dadoLer). */
 const CAD={snap:null,pend:false,hL:0,hR:null,sig:null,rt:null};
 const CADAUTO=(()=>{try{return !!navigator.webdriver&&prefLer("cadEstrito")!=="1"}catch(e){return false}})();
-const cadRomSig=()=>ROM&&ROM.rows?JSON.stringify(ROM.rows,(k,v)=>k==="foto"?undefined:v):null;
+const cadRomSig=()=>estadoRomaneio.ROM&&estadoRomaneio.ROM.rows?JSON.stringify(estadoRomaneio.ROM.rows,(k,v)=>k==="foto"?undefined:v):null;
 function cadTirarFoto(){try{flushJa()}catch(e){}
-  CAD.snap={c:JSON.stringify(S.config),l:cadLancSig(),f:JSON.stringify(S.form),r:cadRomSig(),rasc:rascunho?JSON.stringify(rascunho,(k,v)=>k==="ft"?undefined:v):null};
+  CAD.snap={c:JSON.stringify(S.config),l:cadLancSig(),f:JSON.stringify(S.form),r:cadRomSig(),rasc:estadoBase.rascunho?JSON.stringify(estadoBase.rascunho,(k,v)=>k==="ft"?undefined:v):null};
   CAD.hL=HIST.length;CAD.hR=REDO.slice()}
 function cadBarra(){let b=document.getElementById("cadBar");
   if(!CAD.pend){if(b)b.remove();return}
@@ -20,31 +20,31 @@ function cadConferir(){
     if(!mudou){CAD.snap=null;if(estadoConfig.bnReserva&&!estadoConfig.bnEmExclusao)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."))}}
   cadBarra()}
 function cadRomAtualizar(){   /* romaneio aberto acompanha o cadastro (valores da galvânica, banhos, fornecedores…) */
-  if(!ROM||!ROM.rows||!ROM.rows.length)return;
+  if(!estadoRomaneio.ROM||!estadoRomaneio.ROM.rows||!estadoRomaneio.ROM.rows.length)return;
   const s=JSON.stringify(S.config);if(s===CAD.sig)return;CAD.sig=s;
-  clearTimeout(CAD.rt);CAD.rt=setTimeout(()=>{CAD.rt=null;if(!ROM||!ROM.rows||!ROM.rows.length)return;const w=document.getElementById("romWrap"),pos=[];for(let e=w;e;e=e.parentElement)if(e.scrollHeight>e.clientHeight)pos.push([e,e.scrollTop]);
+  clearTimeout(CAD.rt);CAD.rt=setTimeout(()=>{CAD.rt=null;if(!estadoRomaneio.ROM||!estadoRomaneio.ROM.rows||!estadoRomaneio.ROM.rows.length)return;const w=document.getElementById("romWrap"),pos=[];for(let e=w;e;e=e.parentElement)if(e.scrollHeight>e.clientHeight)pos.push([e,e.scrollTop]);
     try{renderRom()}finally{pos.forEach(([e,t])=>{e.scrollTop=t})}},350)}
 async function cadSalvar(){if(!CAD.pend||CAD.salvando)return;
   if(estadoConfig.bnReserva){CAD.salvando=true;document.body.inert=true;CAD.pend=false;
-    try{dirty.c=true;dirty.l=true;try{histNota()}catch(e){}salvarCancelarAgendado();setStatus("Salvando…");if(!await salvarEncadear()){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
-      CAD.snap=null;cadBarra();render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.");await bnLiberarUso();return
+    try{estadoArmazenamento.dirty.c=true;estadoArmazenamento.dirty.l=true;try{histNota()}catch(e){}salvarCancelarAgendado();setStatus("Salvando…");if(!await salvarEncadear()){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
+      CAD.snap=null;cadBarra();render();if(estadoRomaneio.ROM&&estadoRomaneio.ROM.rows&&estadoRomaneio.ROM.rows.length)renderRom();toast("Cadastros salvos.");await bnLiberarUso();return
     }catch(e){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
     finally{CAD.salvando=false;document.body.inert=false}}
   CAD.pend=false;CAD.snap=null;cadBarra();
-  dirty.c=true;dirty.l=true;try{histNota()}catch(e){}salvarCancelarAgendado();setStatus("Salvando…");salvarEncadear();
-  render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.")}
+  estadoArmazenamento.dirty.c=true;estadoArmazenamento.dirty.l=true;try{histNota()}catch(e){}salvarCancelarAgendado();setStatus("Salvando…");salvarEncadear();
+  render();if(estadoRomaneio.ROM&&estadoRomaneio.ROM.rows&&estadoRomaneio.ROM.rows.length)renderRom();toast("Cadastros salvos.")}
 function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
   const lancAtual=new Map(S.lanc.map(l=>[l.id,l]));
   S.config=JSON.parse(s.c);S.form=JSON.parse(s.f);
   S.lanc=JSON.parse(s.l).map(l=>{const a=lancAtual.get(l.id);if(a){if(a.ft!==undefined)l.ft=a.ft;if(a.ftR!==undefined)l.ftR=a.ftR}return l});
-  if(s.r&&ROM&&ROM.rows){const rs=JSON.parse(s.r);rs.forEach((o,i)=>{const r=ROM.rows[i];if(!r)return;Object.keys(r).forEach(k=>{if(k!=="foto"&&!(k in o))delete r[k]});Object.assign(r,o)})}
-  if(s.rasc&&rascunho){const o=JSON.parse(s.rasc);Object.keys(rascunho).forEach(k=>{if(k!=="ft"&&!(k in o))delete rascunho[k]});Object.assign(rascunho,o)}
+  if(s.r&&estadoRomaneio.ROM&&estadoRomaneio.ROM.rows){const rs=JSON.parse(s.r);rs.forEach((o,i)=>{const r=estadoRomaneio.ROM.rows[i];if(!r)return;Object.keys(r).forEach(k=>{if(k!=="foto"&&!(k in o))delete r[k]});Object.assign(r,o)})}
+  if(s.rasc&&estadoBase.rascunho){const o=JSON.parse(s.rasc);Object.keys(estadoBase.rascunho).forEach(k=>{if(k!=="ft"&&!(k in o))delete estadoBase.rascunho[k]});Object.assign(estadoBase.rascunho,o)}
   HIST.length=Math.min(HIST.length,CAD.hL);REDO.length=0;CAD.hR.forEach(x=>REDO.push(x));
   CAD.pend=false;CAD.snap=null;CAD.sig=JSON.stringify(S.config);cadBarra();
   if(estadoConfig.bnReserva)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."));
   try{sincGrade(S.form)}catch(e){}
   try{histIni()}catch(e){}
-  render();if(ROM&&ROM.rows&&ROM.rows.length){renderRom();romSalvarSoon()}setStatus(db?"Salvo na sua conta":"Salvo neste navegador");toast("Alterações dos Cadastros descartadas.")}
+  render();if(estadoRomaneio.ROM&&estadoRomaneio.ROM.rows&&estadoRomaneio.ROM.rows.length){renderRom();romSalvarSoon()}setStatus(estadoArmazenamento.db?"Salvo na sua conta":"Salvo neste navegador");toast("Alterações dos Cadastros descartadas.")}
 /* enquanto há alterações pendentes: grava nada */
 {const flush0=flush;flush=async function(){if(CAD.pend)return true;return flush0()}}
 /* travas */

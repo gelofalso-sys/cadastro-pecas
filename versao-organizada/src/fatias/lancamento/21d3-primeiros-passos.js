@@ -1,7 +1,7 @@
 
 /* ===== primeiros passos (instalação nova) ===== */
 function primeirosHtml(){
-  const C=cfg();if(abertos.primeiros===false||S.lanc.length>=3)return "";
+  const C=cfg();if(estadoBase.abertos.primeiros===false||S.lanc.length>=3)return "";
   const passos=[["banho","Cadastre a galvânica e os banhos",C.banhistas.length>0,"Nome, banhos (ouro, prata…) e valor por grama"],["cat","Confira as categorias",true,"Prefixos, apelidos e fiscal de cada uma"],["forn","Cadastre os fornecedores",C.fornecedores.length>0,"Desconto e tipo (bruta/pronta) de cada um"],["lancar","Lance a primeira peça ou importe um romaneio",S.lanc.length>0,"Pelo formulário abaixo ou em Importar romaneio"]];
   if(passos[0][2]&&passos[2][2]&&S.lanc.length)return "";
   return `<div class="primeiros" role="region" aria-label="Primeiros passos"><b>Primeiros passos</b><span>Já tem uma planilha? Importe a última em Cadastros › Importar e backup para continuar a numeração.</span>${passos.map((p,i)=>`<button type="button" class="prim-p ${p[2]?"ok":""}" data-act="prim-ir" data-p="${p[0]}" title="${esc(p[3])}"><span>${i+1}</span> ${esc(p[1])}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="prim-fechar" title="Não mostrar mais">Dispensar</button></div>`}

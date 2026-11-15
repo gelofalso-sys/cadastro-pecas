@@ -12,7 +12,7 @@ const celular=()=>matchMedia("(max-width:900px)").matches;
 const toque=()=>matchMedia("(pointer:coarse)").matches;   /* dedo, não mouse */
 /* celular: o formulário vira uma gaveta embaixo; a tabela continua aparecendo em cima */
 const ALT_GAVETA=[42,60,80];
-function gavetaAlt(){const i=Math.min(2,Math.max(0,Number(abertos.malt==null?2:abertos.malt)||0));document.documentElement.style.setProperty("--msh",ALT_GAVETA[i]+"dvh");return i}
+function gavetaAlt(){const i=Math.min(2,Math.max(0,Number(estadoBase.abertos.malt==null?2:estadoBase.abertos.malt)||0));document.documentElement.style.setProperty("--msh",ALT_GAVETA[i]+"dvh");return i}
 function formAbrir(abre){
   if(!celular())return;
   /* o formulário mora no painel de baixo: se a visão atual esconde esse painel, troca para "Lançar" (que abre a gaveta) */
@@ -55,7 +55,7 @@ function cartoes(g){
     if(nCat>1&&row.v.I!==prev)h+=`<div class="ccat">${esc(row.v.I||"Sem categoria")}</div>`;prev=row.v.I;
     const c=celulas(row,ri+2),gv=L=>{const x=c[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.v==null&&typeof x.calc==="number"?x.calc:null};
     const pv=gv("V"),cus=["P","Q","R","S","T","U"].map(gv),cu=cus.some(x=>x!=null)?cus.reduce((t,x)=>t+(x||0),0):null,q=gv("W"),pd=pendente(row);
-    h+=`<div class="pc${row.dup?" dup":""}${editId===row.lancId?" edl":sel.has(row.lancId)?" on":""}" data-l="${row.lancId}" data-ri="${ri}">
+    h+=`<div class="pc${row.dup?" dup":""}${estadoBase.editId===row.lancId?" edl":sel.has(row.lancId)?" on":""}" data-l="${row.lancId}" data-ri="${ri}">
       <div class="c1">${(()=>{const lq=S.lanc.find(l=>l.id===row.lancId)||{},ft=lq.ft||lq.ftR;return ft&&ftOk(ft)?`<button type="button" class="foto-abrir" data-act="tab-foto" data-lid="${row.lancId}" aria-label="Ampliar foto de ${esc(row.v.E)}"><img class="pc-ft" src="${fs(ft)}" alt=""></button>`:`<button type="button" class="pc-ftadd" data-act="foto-add" data-lid="${row.lancId}" aria-label="Adicionar foto" title="Adicionar foto">📷</button>`})()}<b class="mono">${esc(row.v.E)}</b>${row.col?`<span class="lt ${row.col}">${esc(BANHO_COLS[row.col]||"")}</span>`:""}${pd?`<span class="pd">${esc(pd)}</span>`:""}<span class="q">${q!=null?fmt(q)+" pç":"sem qtd"}</span></div>
       <div class="c2">${esc(row.v.F||"(sem descrição)")}</div>
       <div class="c3">${[(row.v.I||"")+(row.v.J?" › "+row.v.J:""),row.v.H,row.v.L,row.v.K].filter(x=>!vazio(x)).map(esc).join(" · ")}</div>

@@ -1,13 +1,13 @@
 /* ===== persistência ===== */
-let db=null,dirty={c:false,l:false};
 const setStatus=(t,bad)=>{const s=document.getElementById("saveStatus");s.textContent=t;s.classList.toggle("bad",!!bad)};
 /* histórico de desfazer/refazer (até 30 passos): cada gravação compara o estado com o anterior e guarda o "antes" */
-const HIST=[],REDO=[];let conflito=false;
+const HIST=[],REDO=[];
 /* estado que so a fatia usa (antes globais soltos): fotografia do formulario no historico, dados danificados, avisos de memoria e bloqueio de uso entre abas */
 const estadoArmazenamento={snapF:null,snapE:false,rawCorrompido:"",avisoMem:0,avisoIdbT:0,bkUsoLiberar:null,bkUsoPedido:null,
   sT:null,chain:Promise.resolve(),snapL:null,snapC:null,restaurando:false,corrompido:false,ftSalvas:new Set(),histSep:false,
-  romGravP:null,romST:null,romTem:false,romInfo:"",romArm:null,tabArm:null,AUTOR:"",ARQ:{}};
-function histIni(){estadoArmazenamento.snapL=JSON.stringify(S.lanc);estadoArmazenamento.snapC=JSON.stringify(S.config);estadoArmazenamento.snapF=JSON.stringify(S.form);estadoArmazenamento.snapE=!!editId;undoBtns()}
+  romGravP:null,romST:null,romTem:false,romInfo:"",romArm:null,tabArm:null,AUTOR:"",ARQ:{},
+  db:null,dirty:{c:false,l:false},conflito:false,TABS:[],ROMS:[],romConflito:false};
+function histIni(){estadoArmazenamento.snapL=JSON.stringify(S.lanc);estadoArmazenamento.snapC=JSON.stringify(S.config);estadoArmazenamento.snapF=JSON.stringify(S.form);estadoArmazenamento.snapE=!!estadoBase.editId;undoBtns()}
 function undoBtns(){const u=document.getElementById("btnUndo"),r=document.getElementById("btnRedo");if(u){u.disabled=!HIST.length;u.title=HIST.length?`Desfazer a última alteração (Ctrl+Z) — ${HIST.length} passo(s) guardado(s)`:"Nada para desfazer"}if(r){r.disabled=!REDO.length;r.title=REDO.length?`Refazer (Ctrl+Y) — ${REDO.length} passo(s)`:"Nada para refazer"}}
 function histTam(){return HIST.reduce((t,e)=>t+e.L.length+e.C.length+(e.R?JSON.stringify(e.R).length:0),0)}
 function histNota(){
@@ -23,47 +23,47 @@ function histNota(){
       HIST.push({L:estadoArmazenamento.snapL,C:estadoArmazenamento.snapC,F:F!==estadoArmazenamento.snapF?estadoArmazenamento.snapF:null,E:estadoArmazenamento.snapE,soCfg,t:agora});
       while(HIST.length>60||(HIST.length>1&&histTam()>40e6))HIST.shift()}
     REDO.length=0;estadoArmazenamento.snapL=L;estadoArmazenamento.snapC=C}
-  estadoArmazenamento.snapF=F;estadoArmazenamento.snapE=!!editId;undoBtns();
+  estadoArmazenamento.snapF=F;estadoArmazenamento.snapE=!!estadoBase.editId;undoBtns();
 }
-function salvar(c,l){try{fixarRefs()}catch(e){}if(c){dirty.c=true;try{impactoAgendar()}catch(e){}}if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(estadoArmazenamento.sT);setStatus("Salvando…");estadoArmazenamento.sT=setTimeout(()=>{estadoArmazenamento.sT=null;estadoArmazenamento.chain=estadoArmazenamento.chain.then(flush)},600)}
+function salvar(c,l){try{fixarRefs()}catch(e){}if(c){estadoArmazenamento.dirty.c=true;try{impactoAgendar()}catch(e){}}if(l!==false)estadoArmazenamento.dirty.l=true;try{histNota()}catch(e){}clearTimeout(estadoArmazenamento.sT);setStatus("Salvando…");estadoArmazenamento.sT=setTimeout(()=>{estadoArmazenamento.sT=null;estadoArmazenamento.chain=estadoArmazenamento.chain.then(flush)},600)}
 /* para quem grava ja (cadastros, 36): cancela a gravacao agendada e encadeia um flush; devolve a promessa encadeada */
 function salvarCancelarAgendado(){clearTimeout(estadoArmazenamento.sT);estadoArmazenamento.sT=null}
 function salvarEncadear(){estadoArmazenamento.chain=estadoArmazenamento.chain.then(flush);return estadoArmazenamento.chain}
 /* grava já (ao fechar a aba, trocar de aba ou sair): não deixa a última edição dentro dos 600 ms se perder */
 function flushJa(){if(estadoArmazenamento.romST){clearTimeout(estadoArmazenamento.romST);estadoArmazenamento.romST=null;try{romSalvar()}catch(e){}}   /* romaneio: o salvamento de 800 ms também não pode ficar para trás */
-  if(estadoArmazenamento.sT){clearTimeout(estadoArmazenamento.sT);estadoArmazenamento.sT=null}if(dirty.c||dirty.l){try{flush()}catch(e){}}}
+  if(estadoArmazenamento.sT){clearTimeout(estadoArmazenamento.sT);estadoArmazenamento.sT=null}if(estadoArmazenamento.dirty.c||estadoArmazenamento.dirty.l){try{flush()}catch(e){}}}
 window.addEventListener("pagehide",flushJa);
 window.addEventListener("beforeunload",flushJa);
 /* só avisa quando há uma célula aberta com texto digitado que ainda não foi confirmado (Enter/Tab) */
-window.addEventListener("beforeunload",e=>{try{const i=document.getElementById("celIn");if((celEd&&i&&i.value!==celEd.orig)||dirty.c||dirty.l||conflito||estadoArmazenamento.corrompido){e.preventDefault();e.returnValue="";return ""}   /* dirty só fica ligado quando a gravação falhou (memória cheia, outra aba, dados danificados) */}catch(x){}});
+window.addEventListener("beforeunload",e=>{try{const i=document.getElementById("celIn");if((estadoBase.celEd&&i&&i.value!==estadoBase.celEd.orig)||estadoArmazenamento.dirty.c||estadoArmazenamento.dirty.l||estadoArmazenamento.conflito||estadoArmazenamento.corrompido){e.preventDefault();e.returnValue="";return ""}   /* dirty só fica ligado quando a gravação falhou (memória cheia, outra aba, dados danificados) */}catch(x){}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushJa()});
 /* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do armazenamento local (dadoLer/dadoGravar) vão sem elas, para não estourar a memória do navegador */
-function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&estadoArmazenamento.ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
-  return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
+function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&estadoArmazenamento.ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=estadoBase.editId&&estadoBase.rascunho?(JSON.stringify(estadoBase.rascunho).length>2e5?{...estadoBase.rascunho,ft:undefined}:estadoBase.rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
+  return JSON.stringify({config:S.config,lanc,form:S.form,edit:estadoBase.editId||null,rasc})}
 async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!estadoArmazenamento.ftSalvas.has(l.id)){const v0=l.ft,r=await bancoGravar("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)estadoArmazenamento.ftSalvas.add(l.id);else ok=false}
     if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await bancoGravar("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
 async function flush(){   /* devolve true só quando a gravação foi confirmada */
-  const d={...dirty};dirty={c:false,l:false};
-  if(estadoArmazenamento.corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",erro:true});return false}
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
+  const d={...estadoArmazenamento.dirty};estadoArmazenamento.dirty={c:false,l:false};
+  if(estadoArmazenamento.corrompido){estadoArmazenamento.dirty.c=estadoArmazenamento.dirty.c||d.c;estadoArmazenamento.dirty.l=estadoArmazenamento.dirty.l||d.l;armEmitir("conflito",{texto:"Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",erro:true});return false}
+  if(estadoArmazenamento.conflito){estadoArmazenamento.dirty.c=estadoArmazenamento.dirty.c||d.c;estadoArmazenamento.dirty.l=estadoArmazenamento.dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
   let remoto=true;
   try{
-    if(db){if(d.c)await db.doc("dados/config").set({v:4,config:S.config});if(conflito)throw new Error("conflito");if(d.l)await db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
-  }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("erro",{texto:"Não consegui salvar agora — tento de novo na próxima alteração",erro:true})}
+    if(estadoArmazenamento.db){if(d.c)await estadoArmazenamento.db.doc("dados/config").set({v:4,config:S.config});if(estadoArmazenamento.conflito)throw new Error("conflito");if(d.l)await estadoArmazenamento.db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
+  }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);estadoArmazenamento.dirty.c=estadoArmazenamento.dirty.c||d.c;estadoArmazenamento.dirty.l=estadoArmazenamento.dirty.l||d.l;armEmitir("erro",{texto:"Não consegui salvar agora — tento de novo na próxima alteração",erro:true})}
   if(!remoto)return false;
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
+  if(estadoArmazenamento.conflito){estadoArmazenamento.dirty.c=estadoArmazenamento.dirty.c||d.c;estadoArmazenamento.dirty.l=estadoArmazenamento.dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
   let local=true;
   try{dadoGravar("cadpecas4",jsonLocal(false))}catch(e){
     local=false;
-    try{if(await guardarMinis()&&!conflito){dadoGravar("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
-  if(!local){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;
+    try{if(await guardarMinis()&&!estadoArmazenamento.conflito){dadoGravar("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
+  if(!local){estadoArmazenamento.dirty.c=estadoArmazenamento.dirty.c||d.c;estadoArmazenamento.dirty.l=estadoArmazenamento.dirty.l||d.l;
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
-    let avisar=false;if(!db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();avisar=true}
-    armEmitir("cota",{texto:db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,erro:true,toast:avisar?m:undefined});
+    let avisar=false;if(!estadoArmazenamento.db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();avisar=true}
+    armEmitir("cota",{texto:estadoArmazenamento.db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,erro:true,toast:avisar?m:undefined});
     return false}
-  armEmitir("salvo",{texto:db?"Salvo na sua conta":"Salvo neste navegador",erro:false});
+  armEmitir("salvo",{texto:estadoArmazenamento.db?"Salvo na sua conta":"Salvo neste navegador",erro:false});
   if(candFoto.size)varrerFotos();
-  if(S.lanc.some(l=>(l.ft&&!estadoArmazenamento.ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(estadoArmazenamento.ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{dadoGravar("cadpecas4",jsonLocal(false))}catch(e){}}})}
+  if(S.lanc.some(l=>(l.ft&&!estadoArmazenamento.ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!estadoArmazenamento.conflito&&S.lanc.some(l=>(estadoArmazenamento.ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{dadoGravar("cadpecas4",jsonLocal(false))}catch(e){}}})}
   return true
 }
 async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await bancoGravar("pontos","p:"+t,v);if(r===null)return false;const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await bancoApagar("pontos",k);await pontosIds();return true}catch(e){return false}}
@@ -93,7 +93,7 @@ async function pontosCarregar(){bkStatus();const el=document.getElementById("pon
 async function pontoRestaurar(k){const v=await bancoLer("pontos",k);if(!v||typeof v!=="object"||!v.json){toast("Esse ponto não pode ser lido.");return}
   const q=new Date(v.t).toLocaleString("pt-BR");if(!confirm(`Voltar para ${q} (${v.n} peça(s))?\n\nO que está agora fica guardado como outro ponto, e dá para voltar a ele.\n\nAs fotos não voltam no tempo: ficam as que estão guardadas agora.`))return;
   if(!(await pontoSalvar("antes de voltar no tempo"))&&!confirm("NÃO consegui guardar o que está agora como ponto (memória do navegador cheia ou bloqueada).\n\nSe continuar, o estado atual será perdido. Voltar mesmo assim?"))return;
-  try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();editId=null;rascunho=null;sel.clear();estadoPlanilha.selR=null;estadoArmazenamento.ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
+  try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();estadoBase.editId=null;estadoBase.rascunho=null;sel.clear();estadoPlanilha.selR=null;estadoArmazenamento.ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
 async function pedirPersistencia(){try{if(!navigator.storage||!navigator.storage.persist)return;let ja=false;try{ja=await navigator.storage.persisted()}catch(e){}if(ja)return;const ok=await navigator.storage.persist();if(ok)return;let pasta=null;try{pasta=await bkPasta()}catch(e){}if(pasta)return;let av=null;try{av=prefLer("persistAviso")}catch(e){}if(av==="1")return;try{prefGravar("persistAviso","1")}catch(e){}toast("O navegador não garante guardar estes dados para sempre. Ligue o backup em pasta (Importar e backup) para não perder nada.")}catch(e){}} async function carregarMinis(){setTimeout(pedirPersistencia,3000);setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await bancoLer("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;estadoArmazenamento.ftSalvas.add(l.id);n++}}
   for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await bancoLer("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
   if(await migrarFotos())n++;
@@ -114,7 +114,7 @@ async function migrarFotos(){let mexeu=0;
 /* "Anél" era um erro de português: a categoria passa a se chamar "Anel" (peças, rascunho e romaneios salvos acompanham). A planilha também passa a usar "Anel"; outros nomes de exportação definidos pelo usuário são preservados. */
 function migrarAnel(){const C=cfg(),existente=(C.categorias||[]).find(x=>x.nome==="Anel"&&x.nomeExport==="Anél");if(existente)delete existente.nomeExport;const c=(C.categorias||[]).find(x=>x.nome==="Anél");if(!c||C.categorias.some(x=>x.nome==="Anel"))return !!existente;
   c.nome="Anel";if(c.nomeExport==="Anél")delete c.nomeExport;
-  S.lanc.forEach(l=>{if(l.v&&l.v.I==="Anél")l.v.I="Anel"});if(S.form&&S.form.v&&S.form.v.I==="Anél")S.form.v.I="Anel";if(typeof rascunho!=="undefined"&&rascunho&&rascunho.v&&rascunho.v.I==="Anél")rascunho.v.I="Anel";
+  S.lanc.forEach(l=>{if(l.v&&l.v.I==="Anél")l.v.I="Anel"});if(S.form&&S.form.v&&S.form.v.I==="Anél")S.form.v.I="Anel";if(typeof estadoBase.rascunho!=="undefined"&&estadoBase.rascunho&&estadoBase.rascunho.v&&estadoBase.rascunho.v.I==="Anél")estadoBase.rascunho.v.I="Anel";
   C.catAlias=C.catAlias||{};C.catAlias["Anél"]="Anel";
   (C.insumosItens||[]).forEach(x=>{if(x.cat==="Anél")x.cat="Anel"});(C.categorias||[]).forEach(x=>{if(x.grade&&x.grade.usa==="Anél")x.grade.usa="Anel"});
   (C.romaneios||[]).forEach(T=>{if(T&&typeof T.mapa==="string")T.mapa=T.mapa.replace(/=\s*Anél(?=\s*[;>]|\s*$)/g,"=Anel")});
@@ -148,21 +148,21 @@ async function carregar(){
     const cf=lerConfig(o.config),la=(o.lanc||[]).map(lerLanc).map((l,i,a)=>(l&&a.findIndex(x=>x&&x.id===l.id)<i)?{...l,id:uid()}:l),   /* id repetido no armazenamento: a repetida ganha id novo */
       fo=lerForm(o.form),rc=o.rasc&&ehObj(o.rasc)&&o.rasc.v?lerForm(o.rasc):null;
     S.config=cf;S.lanc=la;S.form=fo;
-    if(o.edit&&la.some(l=>l.id===o.edit)){editId=o.edit;rascunho=rc||FORM0()}   /* recarregou no meio de uma edição: volta o que estava no formulário antes */
+    if(o.edit&&la.some(l=>l.id===o.edit)){estadoBase.editId=o.edit;estadoBase.rascunho=rc||FORM0()}   /* recarregou no meio de uma edição: volta o que estava no formulário antes */
     else if(o.edit&&rc)S.form=rc}}
   catch(e){if(raw)dadosCorrompidos(raw)}
   {const m1=migrarJueri(),m2=migrarGrades();sincGrade(S.form);if(m1||m2)salvar(true)}
   render();histIni();carregarMinis();
   const tm=setTimeout(()=>setStatus("Ainda conectando à sua conta… pode lançar normalmente"),10000);
-  try{db=window.claude&&window.claude.use?await window.claude.use("db"):null}catch(e){db=null}
-  if(!db){clearTimeout(tm);setStatus("Salvando neste navegador");return}
+  try{estadoArmazenamento.db=window.claude&&window.claude.use?await window.claude.use("db"):null}catch(e){estadoArmazenamento.db=null}
+  if(!estadoArmazenamento.db){clearTimeout(tm);setStatus("Salvando neste navegador");return}
   try{
-    const [c,l]=await Promise.all([db.doc("dados/config").get(),db.doc("dados/lancamentos").get()]);clearTimeout(tm);
+    const [c,l]=await Promise.all([estadoArmazenamento.db.doc("dados/config").get(),estadoArmazenamento.db.doc("dados/lancamentos").get()]);clearTimeout(tm);
     if(c.exists)S.config=lerConfig(c.data().config);
     if(l.exists){const d=l.data();S.lanc=(d.lanc||[]).map(lerLanc);if(d.form&&d.form.v)S.form=lerForm(d.form)}
     if(c.exists||l.exists)resolverCorrompido();   /* dados lidos da conta: o bloqueio dos dados locais danificados não vale mais */
     const m1=migrarJueri(),m2=migrarGrades(),mig=m1||m2;sincGrade(S.form);if(mig)salvar(true);
     setStatus(mig?"Cadastros atualizados (variação dentro da categoria)":c.exists?"Cadastros carregados":"Pronto — tudo fica salvo na sua conta");render();histIni();carregarMinis();romSync();
-  }catch(e){clearTimeout(tm);db=null;console.error("cadastro-pecas: falha ao ler a conta",e);setStatus("Sem acesso à conta agora; salvando neste navegador",true)}
+  }catch(e){clearTimeout(tm);estadoArmazenamento.db=null;console.error("cadastro-pecas: falha ao ler a conta",e);setStatus("Sem acesso à conta agora; salvando neste navegador",true)}
 }
 

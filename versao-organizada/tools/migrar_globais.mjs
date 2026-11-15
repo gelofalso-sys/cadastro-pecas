@@ -9,12 +9,12 @@ import * as escope from "eslint-scope";
 import { arquivosDoBloco, lerBloco } from "./_nucleo.mjs";
 
 export const MAPA = {
-  estadoArmazenamento: ["sT", "chain", "snapL", "snapC", "restaurando", "corrompido", "ftSalvas", "histSep", "romGravP", "romST", "romTem", "romInfo", "romArm", "tabArm", "AUTOR", "ARQ"],
-  estadoRomaneio: ["romCriando", "romChaveL", "relTem"],
+  estadoArmazenamento: ["sT", "chain", "snapL", "snapC", "restaurando", "corrompido", "ftSalvas", "histSep", "romGravP", "romST", "romTem", "romInfo", "romArm", "tabArm", "AUTOR", "ARQ",
+    "dirty", "conflito", "db", "TABS", "ROMS", "romConflito"],
+  estadoRomaneio: ["romCriando", "romChaveL", "relTem", "ROM", "NF"],
   estadoConfig: ["romUI", "impT", "impConfigAntes"],
-  estadoExportacao: ["lastExport"],
   estadoPlanilha: ["w"],
-  estadoBase: ["bancoAberto", "HIST_SUG"],
+  estadoBase: ["bancoAberto", "HIST_SUG", "lastExport", "editId", "rascunho", "undo", "erro", "celEd", "G", "abertos"],
 };
 const tem = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 

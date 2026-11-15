@@ -18,7 +18,7 @@ async function lerPdf(file){
   checaTam(file,MAX_PDF_BYTES,"O PDF");const L=await carregarPdfJs(),doc=checaPaginas(await L.getDocument({data:new Uint8Array(await file.arrayBuffer()),isEvalSupported:false}).promise);
   let texto="";const itens=[],fotos=[];
   for(let pg=1;pg<=doc.numPages;pg++){
-    if(ROM){ROM.msg=`Lendo o PDF… página ${pg} de ${doc.numPages}`;const m=document.querySelector("#romWrap .rom-b .hint");if(m)m.textContent=ROM.msg}
+    if(estadoRomaneio.ROM){estadoRomaneio.ROM.msg=`Lendo o PDF… página ${pg} de ${doc.numPages}`;const m=document.querySelector("#romWrap .rom-b .hint");if(m)m.textContent=estadoRomaneio.ROM.msg}
     const page=await doc.getPage(pg),tc=await page.getTextContent();
     tc.items.forEach(it=>{texto+=it.str+(it.hasEOL?"\n":" ");itens.push({pg,y:it.transform[5],x:it.transform[4],s:it.str})});texto+="\n";
     const ops=await page.getOperatorList(),OPS=L.OPS;let ctm=[1,0,0,1,0,0];const st=[],imgs=[];
@@ -30,7 +30,7 @@ async function lerPdf(file){
     for(const g of gr){const o=typeof g.ref==="string"?await objPdf(page,g.ref):g.ref;if(!o||!o.width)continue;
       const c=imgCanvas(o);if(!c)continue;fotos.push({pg,cy:(g.y0+g.y1)/2,h:g.y1-g.y0,url:c.toDataURL("image/jpeg",0.95),mini:miniFoto(c)})}}
   return {texto,itens,fotos}}
-function romFotos(rows){const P=ROM.pdf;if(!P)return;const pares=[],usados=new Set(),feitos=new Set();
+function romFotos(rows){const P=estadoRomaneio.ROM.pdf;if(!P)return;const pares=[],usados=new Set(),feitos=new Set();
   rows.forEach((r,i)=>{if(!r.cod)return;const rc=new RegExp("(^|[^A-Za-z0-9])"+String(r.cod).replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&")+"($|[^A-Za-z0-9])"),candidatos=P.itens.filter(x=>rc.test(x.s));
     /* Um código também pode aparecer no endereço, telefone ou cabeçalho. Só vincule
        fotos a uma ocorrência que esteja numa linha de produto com valor monetário. */
@@ -38,9 +38,9 @@ function romFotos(rows){const P=ROM.pdf;if(!P)return;const pares=[],usados=new S
       P.fotos.forEach((f,j)=>{if(f.pg!==it.pg)return;const d=Math.abs(f.cy-it.y);if(d<=Math.max(f.h*0.8,24))pares.push([d,i,j])})})});
   pares.sort((a,b)=>a[0]-b[0]);pares.forEach(([d,i,j])=>{if(feitos.has(i)||usados.has(j))return;feitos.add(i);usados.add(j);rows[i].foto=P.fotos[j].url;rows[i].fotoMini=P.fotos[j].mini})}
 async function romPdf(file){
-  if(!ROM){ROM={tid:abertos.romT&&cfg().romaneios.some(x=>x.id===abertos.romT)?abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}
-  ROM.doc=file.name;ROM.hash=IMPH.get(file)||"";ROM.msg="Lendo o PDF…";renderRom();rolarPane(document.getElementById("romWrap"));
-  try{const P=await lerPdf(file);ROM.pdf=P;ROM.texto=P.texto;romLer();
-    if(ROM.rows.length){const n=ROM.rows.filter(r=>r.foto).length;ROM.msg=`${ROM.rows.length} peças lidas do PDF · ${n} foto${n===1?"":"s"} encontrada${n===1?"":"s"}`;const h=document.querySelector("#romWrap .rom-b .hint");if(h)h.textContent=ROM.msg;impStatusFim(true)}else impStatusFim(false,"não encontrei peças nesse PDF (confira o modelo de leitura ou cole o texto)")}
+  if(!estadoRomaneio.ROM){estadoRomaneio.ROM={tid:estadoBase.abertos.romT&&cfg().romaneios.some(x=>x.id===estadoBase.abertos.romT)?estadoBase.abertos.romT:cfg().romaneios[0].id,texto:"",rows:[],obs:"",conf:"",msg:""};const T0=romT();if(T0&&T0.forn&&fornBy(T0.forn))romSetForn(T0.forn)}
+  estadoRomaneio.ROM.doc=file.name;estadoRomaneio.ROM.hash=IMPH.get(file)||"";estadoRomaneio.ROM.msg="Lendo o PDF…";renderRom();rolarPane(document.getElementById("romWrap"));
+  try{const P=await lerPdf(file);estadoRomaneio.ROM.pdf=P;estadoRomaneio.ROM.texto=P.texto;romLer();
+    if(estadoRomaneio.ROM.rows.length){const n=estadoRomaneio.ROM.rows.filter(r=>r.foto).length;estadoRomaneio.ROM.msg=`${estadoRomaneio.ROM.rows.length} peças lidas do PDF · ${n} foto${n===1?"":"s"} encontrada${n===1?"":"s"}`;const h=document.querySelector("#romWrap .rom-b .hint");if(h)h.textContent=estadoRomaneio.ROM.msg;impStatusFim(true)}else impStatusFim(false,"não encontrei peças nesse PDF (confira o modelo de leitura ou cole o texto)")}
   catch(e){let m=String(e&&e.message?e.message:"erro").replace(/[.\s]+$/,"");const senha=!!(e&&(e.name==="PasswordException"||/password/i.test(m)));if(senha)m="o PDF tem senha. Abra-o com a senha, salve uma cópia sem senha e envie de novo";else if(/invalid pdf|missing pdf|unexpected server|xref|not a pdf/i.test(m)||(e&&/Invalid|Missing/i.test(e.name||"")))m="o arquivo não é um PDF válido ou está corrompido";
-    ROM.rows=[];ROM.pdf=null;ROM.conf="";ROM.msg="Não consegui ler esse PDF: "+m+". Copie o texto e cole na caixa.";romSalvarSoon();renderRom();impStatusFim(false,m)}}
+    estadoRomaneio.ROM.rows=[];estadoRomaneio.ROM.pdf=null;estadoRomaneio.ROM.conf="";estadoRomaneio.ROM.msg="Não consegui ler esse PDF: "+m+". Copie o texto e cole na caixa.";romSalvarSoon();renderRom();impStatusFim(false,m)}}

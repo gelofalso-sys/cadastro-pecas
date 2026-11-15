@@ -3,7 +3,7 @@
 const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null,galvSel:false,drag:null,bnReserva:null,bnReservando:false,bnEmExclusao:false,romUI:{ex:false,txt:"",nome:""},impConfigAntes:null,impT:null};
 
 function sec(id,titulo,resumo,corpo){estadoConfig.secs.push({id,titulo,resumo,corpo});return ""}
-function abaCfg(){return estadoConfig.secs.some(s=>s.id===abertos.tab)?abertos.tab:estadoConfig.secs[0].id}
+function abaCfg(){return estadoConfig.secs.some(s=>s.id===estadoBase.abertos.tab)?estadoBase.abertos.tab:estadoConfig.secs[0].id}
 /* ===== Catálogo rápido: colar lista, modelos, duplicar seguro, renomear e ordenar ===== */
 const catUI={colar:false,txt:"",dup:null,ren:null,corNova:null};
 /* lê "Anéis: Solitário; Aparador" (uma categoria por linha) e diz o que seria criado, sem mexer em nada */
@@ -18,7 +18,7 @@ function previaInfo(C){const tx=String(catUI.txt||"");
   return{html:h,ok:!!(nc||ns)}}
 function atualizaPrevia(){const p=document.getElementById("colarPrev"),b=document.getElementById("colarOk");if(!p)return;const r=previaInfo(cfg());p.innerHTML=r.html;if(b)b.disabled=!r.ok}
 function catTopo(C){
-  const banner=(!abertos.catBanner&&!C.categorias.some(c=>!JUERI_CATS.some(j=>j.nome===c.nome)))?`<div class="banner" role="note"><b>Primeira vez aqui?</b><span>Monte o seu catálogo de uma vez: cole a lista de categorias e subcategorias ou comece por um modelo pronto.</span><button type="button" class="btn pri sm" data-act="colar-abrir">Montar meu catálogo</button><button type="button" class="x" data-act="banner-fechar" aria-label="Fechar esta faixa" title="Fechar">×</button></div>`:"";
+  const banner=(!estadoBase.abertos.catBanner&&!C.categorias.some(c=>!JUERI_CATS.some(j=>j.nome===c.nome)))?`<div class="banner" role="note"><b>Primeira vez aqui?</b><span>Monte o seu catálogo de uma vez: cole a lista de categorias e subcategorias ou comece por um modelo pronto.</span><button type="button" class="btn pri sm" data-act="colar-abrir">Montar meu catálogo</button><button type="button" class="x" data-act="banner-fechar" aria-label="Fechar esta faixa" title="Fechar">×</button></div>`:"";
   const mod=`<details class="mdl"><summary class="btn sm" title="Cria categorias e subcategorias comuns de joalheria; só entra o que ainda não existe">Começar com um modelo</summary><div class="row">${MODELOS_CAT.map(m=>`<button type="button" class="btn sm" data-act="modelo-add" data-m="${m.id}">${esc(m.nome)}</button>`).join("")}<button type="button" class="btn sm pri" data-act="modelo-add" data-m="todos">Todos</button></div><div class="hint">Só entra o que ainda não existe — nada do que você já cadastrou muda.</div></details>`;
   let painel="";
   if(catUI.colar){const r=previaInfo(C);
@@ -59,7 +59,7 @@ function subRenomear0(ci,j,novo){const C=cfg(),c=C.categorias[ci];catUI.ren=null
   let n=0;S.lanc.forEach(l=>{if(l.v&&l.v.I===c.nome&&l.v.J===old){l.v.J=novo;n++}});
   if(S.form&&S.form.v&&S.form.v.I===c.nome&&S.form.v.J===old)S.form.v.J=novo;
   (C.romaneios||[]).forEach(T=>{if(T&&T.mapa)T.mapa=String(T.mapa).split(";").map(it=>{const q=it.indexOf("=");if(q<0)return it;return it.slice(q+1).trim()===c.nome+">"+old?it.slice(0,q+1)+c.nome+">"+novo:it}).join(";")});
-  if(rascunho&&rascunho.v&&rascunho.v.I===c.nome&&rascunho.v.J===old)rascunho.v.J=novo;
+  if(estadoBase.rascunho&&estadoBase.rascunho.v&&estadoBase.rascunho.v.I===c.nome&&estadoBase.rascunho.v.J===old)estadoBase.rascunho.v.J=novo;
   sincGrade(S.form);salvar(true,n>0);render();
   toast(`Subcategoria “${old}” agora é “${novo}”.${n?` ${n} peça(s) já lançadas foram atualizadas.`:""}`,{t:"Desfazer",fn:desfazer})}
 /* banhos prontos */

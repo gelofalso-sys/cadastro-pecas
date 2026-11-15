@@ -14,7 +14,7 @@ registrarAcoes(ACOES,"configuracao",{
   "insitem-add":({C})=>{C.insumosItens=Array.isArray(C.insumosItens)?C.insumosItens:[];if(C.insumosItens.length>=100){toast("Limite de 100 itens de insumo.");return}C.insumosItens.push({nome:"Novo insumo",cat:"",qtd:"1",valor:"0"});salvar(true,false);renderCfg();renderTopo();renderForm();return},
   "insitem-del":({t,C})=>{const i=+t.dataset.i;if(!Array.isArray(C.insumosItens)||!C.insumosItens[i])return;if(!confirm(`Excluir o insumo “${C.insumosItens[i].nome}”? O custo de insumos será recalculado quando os itens estiverem ativos.`))return;C.insumosItens.splice(i,1);salvar(true,false);renderCfg();renderTopo();renderForm();return},
   "forn-esq":({t,C})=>{const fo=C.fornecedores[+t.closest("[data-forn]").dataset.forn];delete fo.mem;salvar(true,false);renderCfg();toast(`${fo.nome}: lembrança apagada.`);return},
-  "graf":({t})=>{abertos.graf=t.dataset.v;guardarAbertos();renderTopo();return;},
+  "graf":({t})=>{estadoBase.abertos.graf=t.dataset.v;guardarAbertos();renderTopo();return;},
   "mc-add":()=>{modeloAtual().cols.push({k:"",h:"Nova coluna",on:true});salvar(true,false);renderCfg();renderTopo();return},
   "mc-del":({t})=>{modeloAtual().cols.splice(+t.closest("[data-mc]").dataset.mc,1);salvar(true,false);renderCfg();renderTopo();return},
   "mc-up":acaoMcUp,
@@ -22,21 +22,21 @@ registrarAcoes(ACOES,"configuracao",{
   "mod-sel":({t,C})=>{if(!C.modelos.some(x=>x.id===t.dataset.id))return;C.modelo=t.dataset.id;salvar(true,false);renderTopo();renderCfg();return},
   "mod-dup":({C})=>{const mo=JSON.parse(JSON.stringify(modeloAtual()));mo.id=uid();mo.nome+=" (cópia)";C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();return},
   "mod-del":({C})=>{if(C.modelos.length>1){C.modelos=C.modelos.filter(x=>x.id!==C.modelo);C.modelo=C.modelos[0].id;salvar(true,false);render()}return},
-  "mod-av":()=>{abertos.modAv=!abertos.modAv;guardarAbertos();renderCfg();return;},
-  "mod-brancas":()=>{abertos.modTodas=!abertos.modTodas;guardarAbertos();renderCfg();return;},
+  "mod-av":()=>{estadoBase.abertos.modAv=!estadoBase.abertos.modAv;guardarAbertos();renderCfg();return;},
+  "mod-brancas":()=>{estadoBase.abertos.modTodas=!estadoBase.abertos.modTodas;guardarAbertos();renderCfg();return;},
   "mod-bling":({C})=>{const mo=modeloBling();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();toast("Modelo Bling criado. Fornecedor e Categoria saem em branco: o Bling só aceita nomes que já existem nele (depois de cadastrá-los, ligue-os em “Recebe o dado de”). Use o botão Validar do Bling antes de Importar.");return},
   "mod-jueri":({C})=>{const mo=modeloJueri();mo.id=uid();C.modelos.push(mo);C.modelo=mo.id;salvar(true,false);render();return},
   "ordem":({t,C})=>{C.ordem=t.dataset.v;salvar(true,false);renderTopo();return;},
-  "ctab":({t})=>{if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;estadoConfig.resetArm=null;abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);return;},
+  "ctab":({t})=>{if(celular())formAbrir(false);catUI.dup=null;catUI.corNova=null;estadoConfig.resetArm=null;estadoBase.abertos.tab=t.dataset.id;guardarAbertos();renderCfg();if(celular())setTimeout(()=>{const ct=document.querySelector("#cfg .ctabs");if(ct&&ct.nextElementSibling)ct.nextElementSibling.scrollIntoView({block:"start"})},50);return;},
   "cat-add":({C})=>{const inp=document.getElementById("novaCat"),v=inp.value.replace(/\s+/g," ").trim();
       const er=nomeCatErro(C,v,null);if(er){toast(er);inp.focus();return}
       const pf=prefixoNovo(C,v),p=pf.p;
       C.categorias.push({nome:v,prefixo:p,subs:[]});if(!(p in C.seqs))C.seqs[p]="0";salvar(true,false);render();
       toast(`Categoria “${v}” criada com o prefixo ${p}.${pf.rep?` O prefixo ${p} já é de outra categoria: as duas vão dividir a mesma numeração. Troque o prefixo se não quiser.`:""} Agora é só digitar as subcategorias.`,{t:"Desfazer",fn:desfazer});
       refocar(`[data-cat="${C.categorias.length-1}"] [data-enter="sub"]`);return},
-  "colar-abrir":()=>{catUI.colar=true;if(abertos.tab!=="cat"){abertos.tab="cat";guardarAbertos()}renderCfg();refocar("#colarTx");return},
+  "colar-abrir":()=>{catUI.colar=true;if(estadoBase.abertos.tab!=="cat"){estadoBase.abertos.tab="cat";guardarAbertos()}renderCfg();refocar("#colarTx");return},
   "colar-fechar":()=>{catUI.colar=false;renderCfg();return;},
-  "banner-fechar":()=>{abertos.catBanner=true;guardarAbertos();renderCfg();return;},
+  "banner-fechar":()=>{estadoBase.abertos.catBanner=true;guardarAbertos();renderCfg();return;},
   "colar-ok":({C})=>{const pl=planoLista(C,catUI.txt),[nc,ns]=contaPlano(pl);if(!nc&&!ns){toast("Nada novo para criar.");return}
       aplicaPlano(C,pl);catUI.colar=false;catUI.txt="";salvar(true,false);render();
       const rep=pl.novas.filter(n=>n.rep).map(n=>n.nome);
@@ -68,13 +68,13 @@ registrarAcoes(ACOES,"configuracao",{
   "cat-del":({C,ci})=>{catUI.dup=null;estadoConfig.delCat=C.categorias[ci].nome;renderCfg();return;},
   "cat-del-no":()=>{estadoConfig.delCat=null;renderCfg();return;},
   "cat-del-ok":({C,ci})=>{const nome=C.categorias[ci].nome;if((C.insumosItens||[]).some(x=>x.cat===nome)){estadoConfig.delCat=null;toast(`Não excluí “${nome}”: há itens de insumo vinculados. Altere-os antes.`);renderCfg();return}const nUso=S.lanc.filter(l=>val(l,"I")===nome).length;if(nUso){estadoConfig.delCat=null;toast(`Não excluí “${nome}”: ${nUso} peça(s) lançadas usam esta categoria (a referência delas mudaria). Mude a categoria dessas peças antes.`);render();return false}conjExcluirCategoria(nome);return},
-  "lib-grade-add":({C})=>{C.grades=C.grades||[];C.grades.push({id:uid(),nome:"Nova variação",rotulo:" ",col:"",modoRef:"letra",subs:[],itens:[]});abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();return},
-  "lib-grade-pmg":({C})=>{C.grades=C.grades||[];const g={id:uid(),nome:"P M G",rotulo:" tamanho ",col:"K",modoRef:"letra",subs:[],itens:[]};addTamanhos(g,"P M G");C.grades.push(g);abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();return},
+  "lib-grade-add":({C})=>{C.grades=C.grades||[];C.grades.push({id:uid(),nome:"Nova variação",rotulo:" ",col:"",modoRef:"letra",subs:[],itens:[]});estadoBase.abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();return},
+  "lib-grade-pmg":({C})=>{C.grades=C.grades||[];const g={id:uid(),nome:"P M G",rotulo:" tamanho ",col:"K",modoRef:"letra",subs:[],itens:[]};addTamanhos(g,"P M G");C.grades.push(g);estadoBase.abertos["go:"+(C.grades.length-1)]=true;guardarAbertos();salvar(true,false);render();return},
   "go-del":({t,C})=>{C.grades.splice(+t.dataset.k,1);salvar(true,false);renderCfg();return;},
   "sub-del":({t,C,ci})=>{const c=C.categorias[ci],old=c.subs[+t.dataset.j];c.subs.splice(+t.dataset.j,1);[c.bancoPalavras,c.subPalavra,c.subAlias,c.subPref,c.subSoRef].forEach(o=>{if(o)delete o[old]});salvar(true,false);render();return;},
   "forn-add":({C})=>{const nomeLivre=b0=>{let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);return n};C.fornecedores.push({nome:nomeLivre("Novo fornecedor"),desconto:"0",tipo:"bruta",codigo:""});salvar(true,false);render();return},
   "forn-dup":({t,C})=>{const i=+t.closest("[data-forn]").dataset.forn,f=clone(C.fornecedores[i]);{const b0=f.nome+" (cópia)";let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);f.nome=n}C.fornecedores.splice(i+1,0,f);salvar(true,false);render();return},
-  "forn-del":({t,C})=>{const i=+t.closest("[data-forn]").dataset.forn,fo=C.fornecedores[i],n=S.lanc.filter(l=>l.v&&l.v.H===fo.nome).length,abertos=ROM?ROM.rows.filter(r=>r.forn===fo.nome).length:0;if(!confirm(`Remover o fornecedor “${fo.nome}” dos cadastros? ${n} peça(s) na tabela atual e ${abertos} item(ns) do romaneio aberto usam esse nome. Referências em tabelas e romaneios salvos não são alteradas; ele deixará de aparecer nas opções. As alterações de cadastro podem ser descartadas antes de salvar.`))return;C.fornecedores.splice(i,1);salvar(true,false);render();return},
+  "forn-del":({t,C})=>{const i=+t.closest("[data-forn]").dataset.forn,fo=C.fornecedores[i],n=S.lanc.filter(l=>l.v&&l.v.H===fo.nome).length,abertos=estadoRomaneio.ROM?estadoRomaneio.ROM.rows.filter(r=>r.forn===fo.nome).length:0;if(!confirm(`Remover o fornecedor “${fo.nome}” dos cadastros? ${n} peça(s) na tabela atual e ${abertos} item(ns) do romaneio aberto usam esse nome. Referências em tabelas e romaneios salvos não são alteradas; ele deixará de aparecer nas opções. As alterações de cadastro podem ser descartadas antes de salvar.`))return;C.fornecedores.splice(i,1);salvar(true,false);render();return},
   "bh-add":({C})=>{const b={id:uid(),nome:"Nova galvânica",verniz:"",vernizOn:true,banhos:[]};C.banhistas.push(b);if(estadoConfig.galvSel){trocarBanhista(S.form,b.id);estadoConfig.galvSel=false}salvar(true,false);render();return;},
   "bh-dup":({C,bi})=>{const b=clone(C.banhistas[bi]);b.id=uid();b.nome+=" (cópia)";C.banhistas.splice(bi+1,0,b);salvar(true,false);render();return},
   "bh-del":({C,bi})=>{const id=C.banhistas[bi].id;{const n=S.lanc.filter(l=>l.banhista===id).length;if(n&&!confirm(`${n} peça(s) já lançadas usam esta galvânica. Remover mesmo assim? (Ctrl+Z desfaz)`))return}C.banhistas.splice(bi,1);C.fornecedores.forEach(f=>{if(f.banhista===id)f.banhista=""});salvar(true);render();return},
@@ -85,10 +85,10 @@ registrarAcoes(ACOES,"configuracao",{
   "obs-add":acaoCorAdd,
   "cor-del":({t,C})=>{C.cores.splice(+t.dataset.j,1);salvar(true,false);render();return;},
   "obs-del":({t,C})=>{C.observacoes.splice(+t.dataset.j,1);salvar(true,false);render();return;},
-  "cv-del":({t,C,ci})=>{const c=C.categorias[ci],j=+t.closest("[data-cvi]").dataset.cvi;c.cores.splice(j,1);abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
-  "cv-num":({C,ci})=>{const c=C.categorias[ci];(c.cores||[]).forEach(x=>{if(vazio(x.letra))x.letra=proxCorLetra(c,x.nome)});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
-  "cv-todas":({C,ci})=>{const c=C.categorias[ci];c.cores=c.cores||[];C.cores.forEach(n=>{if(!c.cores.some(y=>semAc(y.nome)===semAc(n)))c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c,n)})});abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
-  "gr-add":({C,ci})=>{const c=C.categorias[ci];c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};abertos["g:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
+  "cv-del":({t,C,ci})=>{const c=C.categorias[ci],j=+t.closest("[data-cvi]").dataset.cvi;c.cores.splice(j,1);estadoBase.abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
+  "cv-num":({C,ci})=>{const c=C.categorias[ci];(c.cores||[]).forEach(x=>{if(vazio(x.letra))x.letra=proxCorLetra(c,x.nome)});estadoBase.abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
+  "cv-todas":({C,ci})=>{const c=C.categorias[ci];c.cores=c.cores||[];C.cores.forEach(n=>{if(!c.cores.some(y=>semAc(y.nome)===semAc(n)))c.cores.push({id:uid(),nome:n,texto:"",letra:proxCorLetra(c,n)})});estadoBase.abertos["cv:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
+  "gr-add":({C,ci})=>{const c=C.categorias[ci];c.grade={id:uid(),nome:"Tamanhos",rotulo:" tamanho ",col:"K",subs:[],itens:[]};estadoBase.abertos["g:"+c.nome]=true;guardarAbertos();salvar(true,false);render();return},
   "gr-own":({C,ci})=>{const c=C.categorias[ci],e=effGrade(c),sb=c.grade.subs,id=c.grade.id;c.grade={...clone(e),id,subs:sb};delete c.grade.usa;salvar(true,false);render();return},
   "gr-del":({C,ci})=>{const c=C.categorias[ci];c.grade=null;delete c.grade;sincGrade(S.form);salvar(true);render();return},
   "gi-del":({t})=>{const g=gradeDoEl(t);g.itens.splice(+t.closest("[data-gii]").dataset.gii,1);sincGrade(S.form);salvar(true);render();return},
@@ -105,7 +105,7 @@ registrarAcoes(ACOES,"configuracao",{
   "rom-ex-fechar":()=>{estadoConfig.romUI.ex=false;renderCfg();return;},
   "rom-ex-ok":({C})=>{{const r=romExInfo();if(!r.ok)return;const tx=String(estadoConfig.romUI.txt||"").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"Novo modelo",nome=(String(estadoConfig.romUI.nome||"").trim()||tx).slice(0,50),T=({...clone(ROMS0()[0]),id:uid(),nome,forn:"",mapa:""}),a=parseMapa("");
       C.categorias.forEach(c=>{const add=(w,sub)=>{w=String(w).trim();if(!w||a.some(m=>kSub(m.w)===kSub(w)))return;a.push({w,c:c.nome,s:sub||""})};add(c.nome,"");(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,sb)})});
-      T.mapa=mapaStr(a);C.romaneios.push(T);estadoConfig.romUI={ex:false,txt:"",nome:""};abertos.tab="rom";guardarAbertos();salvar(true,false);renderCfg();toast(`Modelo “${nome}” criado com ${r.R.rows.length} peça(s) de exemplo reconhecidas. Ajuste fornecedor e palavras abaixo, se quiser.`,{t:"Desfazer",fn:desfazer});return}},
+      T.mapa=mapaStr(a);C.romaneios.push(T);estadoConfig.romUI={ex:false,txt:"",nome:""};estadoBase.abertos.tab="rom";guardarAbertos();salvar(true,false);renderCfg();toast(`Modelo “${nome}” criado com ${r.R.rows.length} peça(s) de exemplo reconhecidas. Ajuste fornecedor e palavras abaixo, se quiser.`,{t:"Desfazer",fn:desfazer});return}},
   "rom-map-add":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom];T.mapa=(T.mapa?T.mapa+"; ":"")+"nova palavra=";salvar(true,false);renderCfg();return}},
   "rom-map-del":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);a.splice(+t.closest(".rmr").dataset.rmj,1);T.mapa=mapaStr(a);salvar(true,false);renderCfg();return}},
   "rom-testar":({t,C})=>{{const card=t.closest("[data-rom]"),T=C.romaneios[+card.dataset.rom],R=lerRomaneioAuto(card.querySelector("[data-rtest]").value,T),o=card.querySelector(".rtres");

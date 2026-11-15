@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {ligar,nucleo}=require('./unit/_contexto.mjs');   /* núcleo importado; só os trechos de src/js seguem recortados e rodando em vm */
 function cut(s,a,b){const i=s.indexOf(a),j=b?s.indexOf(b,i):s.length;assert(i>=0&&j>i,a);return s.slice(i,j)}

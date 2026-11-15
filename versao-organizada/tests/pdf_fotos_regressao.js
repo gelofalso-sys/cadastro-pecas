@@ -1,3 +1,4 @@
+require('./lib/estado_vm.js');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');

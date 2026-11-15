@@ -9,7 +9,7 @@ async function lerFotoArquivo(file){
   return {mini,grande}}
 async function fotoNaPeca(lid,F){const l=S.lanc.find(x=>x.id===lid);if(!l)return false;
   const gr=await bancoGravar("fotos",lid,F.grande);if(gr===null)throw new Error("Não consegui guardar a foto original (memória do navegador cheia ou bloqueada). A foto desta peça não foi trocada.");
-  l.ft=F.mini;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;estadoArmazenamento.ftSalvas.delete(lid);candFoto.delete(lid);if(editId===lid)S.form.ft=F.mini;return true}
+  l.ft=F.mini;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;estadoArmazenamento.ftSalvas.delete(lid);candFoto.delete(lid);if(estadoBase.editId===lid)S.form.ft=F.mini;return true}
 /* várias fotos de uma vez: o nome do arquivo igual à referência (BR1670.jpg) liga sozinho; as que sobram vão em sequência para as peças sem foto, a partir da peça escolhida */
 async function fotosEmLote(files,lidIni){
   const arqs=[...files].filter(f=>f&&(/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif)$/i.test(f.name)));
@@ -26,18 +26,18 @@ async function fotosEmLote(files,lidIni){
     while(pos<ordem.length&&(usados.has(ordem[pos])||(arqs.length>1&&((S.lanc.find(l=>l.id===ordem[pos])||{}).ft))))pos++;
     if(pos>=ordem.length){erros.push(`“${f.name}”: não há mais peça sem foto`);continue}
     try{await fotoNaPeca(ordem[pos],await lerFotoArquivo(f));usados.add(ordem[pos]);nSeq++;pos++}catch(e){erros.push(e.message)}}
-  salvar(false);renderTopo();if(editId)renderForm();
+  salvar(false);renderTopo();if(estadoBase.editId)renderForm();
   autoEnviar([...usados]);const tot=nNome+nSeq;toast(`${tot} foto(s) anexada(s)${nNome?` · ${nNome} pelo nome do arquivo`:""}${nSeq?` · ${nSeq} em sequência`:""}${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`);
 }
-async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(editId){const sj0=formSujo();await fotoNaPeca(editId,F);if(!sj0)estadoLancamento.editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([editId])}else{S.form.ft=F.mini;estadoFotos.grande=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
+async function fotoDoFormulario(file){try{const F=await lerFotoArquivo(file);if(estadoBase.editId){const sj0=formSujo();await fotoNaPeca(estadoBase.editId,F);if(!sj0)estadoLancamento.editSnap=JSON.stringify(S.form);salvar(false);renderTopo();autoEnviar([estadoBase.editId])}else{S.form.ft=F.mini;estadoFotos.grande=F.grande;salvar(false)}renderForm();toast("Foto anexada.")}catch(e){toast(e.message)}}
 function fotoRemover(lid){
   if(!lid){delete S.form.ft;estadoFotos.grande=null;salvar(false);renderForm();return}
-  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;estadoArmazenamento.ftSalvas.delete(lid);bancoApagar("fotos",lid);bancoApagar("fotos","m:"+lid);if(editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)estadoLancamento.editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
+  const l=S.lanc.find(x=>x.id===lid);if(!l)return;delete l.ft;if(/^https:\/\/i\.ibb\.co\//.test(String(l.v.B||"")))delete l.v.B;estadoArmazenamento.ftSalvas.delete(lid);bancoApagar("fotos",lid);bancoApagar("fotos","m:"+lid);if(estadoBase.editId===lid){const sj0=formSujo();delete S.form.ft;if(!sj0)estadoLancamento.editSnap=JSON.stringify(S.form)}salvar(false);renderTopo();renderForm();toast("Foto removida.")}
 (function(){const inp=document.createElement("input");inp.type="file";inp.id="ftIn";inp.accept="image/*";inp.multiple=true;inp.hidden=true;document.body.appendChild(inp);
   inp.addEventListener("change",async()=>{const fl=[...inp.files];inp.value="";if(!fl.length)return;const al=estadoFotos.alvo;estadoFotos.alvo=null;toast(fl.length>1?`Lendo ${fl.length} fotos…`:"Lendo a foto…");
-    if(typeof al==="string"&&al.startsWith("rom:")){if(ROM)romFotosEscolhidas(+al.slice(4),fl);return}
-    if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,editId)}
-    if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto anexada.");autoEnviar([al])}catch(e){toast(e.message)}return}
+    if(typeof al==="string"&&al.startsWith("rom:")){if(estadoRomaneio.ROM)romFotosEscolhidas(+al.slice(4),fl);return}
+    if(al==="__form"){if(fl.length===1)return fotoDoFormulario(fl[0]);return fotosEmLote(fl,estadoBase.editId)}
+    if(fl.length===1){try{await fotoNaPeca(al,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(estadoBase.editId)renderForm();toast("Foto anexada.");autoEnviar([al])}catch(e){toast(e.message)}return}
     fotosEmLote(fl,al)});
   const temArq=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files");
   let hl=null;const limpaHl=()=>{if(hl){hl.classList.remove("ftdrop");hl=null}};
@@ -45,11 +45,11 @@ function fotoRemover(lid){
   document.addEventListener("dragleave",e=>{if(!e.relatedTarget)limpaHl()});
   document.addEventListener("drop",e=>{if(!temArq(e))return;const tr=e.target.closest&&e.target.closest("#sheet tr[data-l]"),fm=e.target.closest&&e.target.closest("#form"),rcd=e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");limpaHl();if(!tr&&!fm&&!rcd)return;e.preventDefault();e.stopPropagation();
     const fl=[...e.dataTransfer.files];if(!fl.length)return;
-    if(rcd&&ROM){romFotosEscolhidas(+rcd.dataset.i,fl);return}
-    if(tr)fotosEmLote(fl,tr.dataset.l);else if(fl.length===1)fotoDoFormulario(fl[0]);else fotosEmLote(fl,editId)});
+    if(rcd&&estadoRomaneio.ROM){romFotosEscolhidas(+rcd.dataset.i,fl);return}
+    if(tr)fotosEmLote(fl,tr.dataset.l);else if(fl.length===1)fotoDoFormulario(fl[0]);else fotosEmLote(fl,estadoBase.editId)});
   document.addEventListener("paste",e=>{const fl=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(x=>/^image\//.test(x.type));if(!fl.length)return;
     if(e.target&&e.target.id==="celIn")return;e.preventDefault();
-    const rcp=e.target&&e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");if(rcp&&ROM){romFotosEscolhidas(+rcp.dataset.i,fl.slice(0,1));return}
-    const row=estadoPlanilha.selR&&G&&G.linhas[estadoPlanilha.selR.fr],lid=editId||(row&&row.lancId);
-    if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
+    const rcp=e.target&&e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");if(rcp&&estadoRomaneio.ROM){romFotosEscolhidas(+rcp.dataset.i,fl.slice(0,1));return}
+    const row=estadoPlanilha.selR&&estadoBase.G&&estadoBase.G.linhas[estadoPlanilha.selR.fr],lid=estadoBase.editId||(row&&row.lancId);
+    if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(estadoBase.editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
     else fotoDoFormulario(fl[0])},true)})();
