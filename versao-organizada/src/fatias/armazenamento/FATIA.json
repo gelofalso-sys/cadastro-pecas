@@ -4,7 +4,8 @@
   "arquivos": [
     "14-persistencia.js",
     "20-armazenamento-idb.js",
-    "21c-diagnostico-dados.js"
+    "21c-diagnostico-dados.js",
+    "acoes.js"
   ],
   "expoe": [
     "ARQ",

@@ -89,6 +89,7 @@ fatias/fotos/acoes.js
 fatias/romaneio/acoes.js
 fatias/planilha/acoes.js
 fatias/lancamento/acoes.js
+fatias/armazenamento/acoes.js
 fatias/lancamento/31a-continuo-campos.js
 js/31-eventos-campos-e-grade.js
 fatias/planilha/31b-planilha-regua-e-destaque.js

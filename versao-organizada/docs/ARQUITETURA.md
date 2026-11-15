@@ -8,7 +8,7 @@ Gerado por `npm run mapa` (tools/mapa.mjs). Nao edite a mao; `node tools/mapa.mj
 
 Persistencia dos dados: salvar/flush (localStorage e conta), historico de desfazer/refazer, miniaturas no IndexedDB, pontos de restauracao, backup em pasta, backup completo e restauracao com diario, diario de exclusoes, indice e rascunho de romaneios salvos, bloqueios entre abas e diagnostico dos dados.
 
-- Arquivos: `14-persistencia.js`, `20-armazenamento-idb.js`, `21c-diagnostico-dados.js`
+- Arquivos: `14-persistencia.js`, `20-armazenamento-idb.js`, `21c-diagnostico-dados.js`, `acoes.js`
 - Expoe: `ARQ`, `AUTOR`, `HIST`, `REDO`, `ROMS`, `TABS`, `backupTotal`, `bkUsoIniciar`, `bkUsoParar`, `chain`, `conflito`, `corrompido`, `db`, `definirArq`, `definirAutor`, `definirTabs`, `dirty`, `exComLock`, `exPreparar`, `exReverter`, `exSalvarComLock`, `flush`, `flushJa`, `ftSalvas`, `histIni`, `histNota`, `idbDel`, `idbGet`, `idbOp`, `idbPut`, `migrarGrades`, `pontoAuto`, `pontoAviso`, `pontosCarregar`, `restaurando`, `romAbrirSalvo`, `romBadge`, `romConflito`, `romGravP`, `romHistAntes`, `romHistAplicar`, `romHistPode`, `romHistRegistrar`, `romInfo`, `romLimparRascunho`, `romListaTabela`, `romMarcar`, `romRetomar`, `romSalvar`, `romSalvarSoon`, `romTem`, `sT`, `salvar`, `salvarCancelarAgendado`, `salvarEncadear`, `setStatus`, `snapC`, `snapL`, `tabArm`, `undoBtns`
 - Usa: `core`
 - Usada por: `configuracao`, `exportacao`, `fotos`, `lancamento`, `legado`, `planilha`, `romaneio`, `tabelas`
