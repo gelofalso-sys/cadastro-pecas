@@ -8,13 +8,10 @@ Continue a transição do Cadastro de Peças para SaaS seguindo [docs/PLANO-TRAN
 
 ## Onde paramos (15/11/2026)
 
-Branch `organizacao-fatias` (saiu de `main`; nada enviado ao GitHub). Tag local `v-pre-saas` no estado anterior à transição.
+Branch `main` (tudo mesclado localmente; **nada enviado ao GitHub nem ao Netlify**). Tags locais `v-pre-saas` e `v-pre-etapa3`. O estado de prontidão está em [docs/PRONTIDAO-SAAS.md](PRONTIDAO-SAAS.md): leia primeiro.
 
-- Etapas 0 e 1 concluídas; Etapa 2 quase toda (núcleo puro em `src/core/`, `gerar$` no núcleo, caracterização com o backup real, núcleo sem ciclos).
-- Etapa 3 em parte: `src/store/` (`local.js`, `idb.js`) é o único lugar que toca `localStorage`, `sessionStorage` e IndexedDB (teste `store_unico`), mesmas chaves e formato; ainda síncrono, sem interface assíncrona.
-- **Organização por fatias concluída** (Tarefas 10 a 18 do plano [docs/superpowers/plans/2026-11-14-organizacao-para-ia.md](superpowers/plans/2026-11-14-organizacao-para-ia.md)): o código está em `src/fatias/<nome>/` (`FATIA.json`, `LEIA-ME.md`, `acoes.js`), 9 fatias: `exportacao`, `tabelas`, `configuracao`, `fotos`, `romaneio`, `planilha`, `lancamento`, `armazenamento` e `app` (a casca). `lancamento` e `armazenamento` ficam com fronteira `aponta` (27 e 25 violações, ciclo de redesenho); as outras com `falha` (0).
-- `src/js/` guarda só a base compartilhada (estado `S`/`G`, `toast` e utilidades, `render`, `irPara`/`visPara`, `repModal`, resync do romaneio) e `00-adaptadores-nucleo.js` (gerado). Motivo no [LEIA-ME de app](../src/fatias/app/LEIA-ME.md).
-- Globais mutáveis de nível superior: 103 -> 45. Lint estrito: 0 `no-undef`, 280 avisos (`no-unused-vars`/`no-shadow`) como lista residual.
+- Etapas 0 a 4 concluídas como preparação: núcleo puro em `src/core/` (roda em Node: `tools/exemplo_nucleo_node.mjs`), `src/store/` (funil de dados, preferências, eventos, `storeLocal` com teste de contrato), 9 fatias, **0 globais mutáveis**.
+- Decisão do dono (15/11/2026): deixar o código **preparado**, sem fazer a transição ainda. Etapa 5, `despachar` e desfazer por ações, cortar escritas entre fatias e o servidor (Etapas 6 e 7) ficam para depois.
 
 ## Como trabalhar
 
@@ -33,9 +30,9 @@ CP_BACKUP="C:/Users/mathe/Downloads/cadastro-pecas-backup-completo-2026-11-08.js
 
 ## Próximos passos, em ordem
 
-1. **Etapa 3 — terminar o `store`**: interface assíncrona com adaptador local, preferências separadas dos dados. Testes de quota, conflito, duas abas e restauração (`t58`–`t63`, `t94`) sempre com o backup real.
-2. **Etapa 4 — estado explícito**: os 45 globais restantes (14 na base `src/js/10`, 24 em `armazenamento`) por grupos; desfazer os ciclos de `lancamento`/`armazenamento` com um gancho único de "redesenhar".
-3. **Etapa 5 — interface**: dividir `onField` (`app/31c-on-field.js`) e o keydown de `app/32` por tela; trocar strings HTML longas por funções de template.
+1. Responder as perguntas em aberto (ver `docs/PRONTIDAO-SAAS.md`) e, se possível, validar o app atual com 1 a 3 lojas reais (o pacote Netlify está pronto: `python tools/publicar.py`; gerar não é publicar).
+2. **Etapa 6 — servidor**, só depois: brainstorm e plano; fatia mínima com uma organização por conta, importar backup pelo núcleo, exportar a mesma planilha e adaptador remoto que passe `tests/contrato_store.js`.
+3. Etapa 5 (interface em módulos) e a 4.3 (`despachar`, desfazer por ações, cortar as escritas de `docs/escritas-entre-fatias.md`) quando fizerem falta.
 
 ## Pendências da auditoria (conhecidas, NÃO corrigidas; detalhes em [docs/AUDITORIA-COMPLETA-2026-11-09.md](AUDITORIA-COMPLETA-2026-11-09.md))
 
@@ -51,7 +48,7 @@ CP_BACKUP="C:/Users/mathe/Downloads/cadastro-pecas-backup-completo-2026-11-08.js
 - Testes de caracterização: o de `gerar$` ficou tautológico depois que o app passou a usar o núcleo; `fixarRefs$`/`renumerarRefs$` só têm cobertura ponta a ponta.
 - Ferramentas: `escrita-externa` também conta como `uso-nao-exposto`; o grafo não vê usos em `registrarAcoes` nem em listeners de nível superior.
 - Overflow lateral de 63 px no romaneio aberto a 390 px (anterior à reorganização). Linhas acima de 160 caracteres em quase todos os arquivos (código minificado à mão).
-- Publicar o pacote no Netlify, decidir o `git push`/merge de `organizacao-fatias` e responder as perguntas em aberto do plano antes da Etapa 6.
+- Publicar o pacote no Netlify, decidir o `git push` (tudo já mesclado em `main` localmente) e responder as perguntas em aberto do plano antes da Etapa 6.
 
 ## Armadilhas já encontradas
 
