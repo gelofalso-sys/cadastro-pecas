@@ -3366,7 +3366,7 @@ async function pontosCarregar(){bkStatus();const el=document.getElementById("pon
 async function pontoRestaurar(k){const v=await idbGet("pontos",k);if(!v||typeof v!=="object"||!v.json){toast("Esse ponto não pode ser lido.");return}
   const q=new Date(v.t).toLocaleString("pt-BR");if(!confirm(`Voltar para ${q} (${v.n} peça(s))?\n\nO que está agora fica guardado como outro ponto, e dá para voltar a ele.\n\nAs fotos não voltam no tempo: ficam as que estão guardadas agora.`))return;
   if(!(await pontoSalvar("antes de voltar no tempo"))&&!confirm("NÃO consegui guardar o que está agora como ponto (memória do navegador cheia ou bloqueada).\n\nSe continuar, o estado atual será perdido. Voltar mesmo assim?"))return;
-  try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();editId=null;rascunho=null;sel.clear();selR=null;ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
+  try{const o=JSON.parse(v.json);S.config=lerConfig(o.config);S.lanc=(o.lanc||[]).map(lerLanc);S.form=o.form&&o.form.v?lerForm(o.form):FORM0();editId=null;rascunho=null;sel.clear();estadoPlanilha.selR=null;ftSalvas.clear();ftRSalvas.clear();try{migrarJueri();migrarGrades()}catch(e){}sincGrade(S.form);salvar(true);render();histIni();carregarMinis();toast("Voltei no tempo: "+q)}catch(e){toast("Não consegui voltar para esse ponto.")}}
 async function pedirPersistencia(){try{if(!navigator.storage||!navigator.storage.persist)return;let ja=false;try{ja=await navigator.storage.persisted()}catch(e){}if(ja)return;const ok=await navigator.storage.persist();if(ok)return;let pasta=null;try{pasta=await bkPasta()}catch(e){}if(pasta)return;let av=null;try{av=localStorage.getItem("cadpecas-persist-aviso")}catch(e){}if(av==="1")return;try{localStorage.setItem("cadpecas-persist-aviso","1")}catch(e){}toast("O navegador não garante guardar estes dados para sempre. Ligue o backup em pasta (Importar e backup) para não perder nada.")}catch(e){}} async function carregarMinis(){setTimeout(pedirPersistencia,3000);setTimeout(()=>pontoAuto("ao abrir o app"),5000);setTimeout(()=>bkAuto(false),8000);const ls=S.lanc.filter(l=>l.ftIdb&&!l.ft);let n=0;for(const l of ls){const u=await idbGet("fotos","m:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ft=u;ftSalvas.add(l.id);n++}}
   for(const l of S.lanc.filter(x=>x.ftRIdb&&!x.ftR)){const u=await idbGet("fotos","r:"+l.id);if(typeof u==="string"&&/^data:image\//.test(u)){l.ftR=u;ftRSalvas.add(l.id);n++}}
   if(await migrarFotos())n++;
@@ -3441,14 +3441,13 @@ async function carregar(){
 
 /* ===== planilha ===== */
 const CW0={A:60,B:70,C:120,D:100,E:118,F:260,G:120,H:110,I:100,J:110,K:80,L:80,M:220,N:66,O:84,P:104,Q:92,R:110,S:110,T:110,U:110,V:96,W:84,X:100,Y:104,Z:110,AA:66,AB:56,AC:70,AD:96,AE:78};
-let colW={};try{colW=JSON.parse(localStorage.getItem("cadpecas-colw")||"{}")}catch(e){}
-const cw=L=>colW[L]||CW0[L]||90;
+const estadoPlanilha={colW:{},nfVaz:()=>{},fil:{q:"",cat:"",forn:"",ban:"",sit:""},fv:null,jan:null,janRaf:0,selR:null,arrastando:false,mdTd:null,mdJa:false};
+try{estadoPlanilha.colW=JSON.parse(localStorage.getItem("cadpecas-colw")||"{}")}catch(e){}
+const cw=L=>estadoPlanilha.colW[L]||CW0[L]||90;
 const larguraTabela=()=>252+LET.reduce((s,L)=>s+cw(L),0);
-let nfVazAtualizar=()=>{};
-let FIL={q:"",cat:"",forn:"",ban:"",sit:""},FV=null;
-try{FIL={...FIL,...JSON.parse(localStorage.getItem("cadpecas-filtro")||"{}")}}catch(e){}
-const guardarFil=()=>{try{localStorage.setItem("cadpecas-filtro",JSON.stringify(FIL))}catch(e){}};
-const filtroOn=()=>!!(FIL.q.trim()||FIL.cat||FIL.forn||FIL.ban||FIL.sit);
+try{estadoPlanilha.fil={...estadoPlanilha.fil,...JSON.parse(localStorage.getItem("cadpecas-filtro")||"{}")}}catch(e){}
+const guardarFil=()=>{try{localStorage.setItem("cadpecas-filtro",JSON.stringify(estadoPlanilha.fil))}catch(e){}};
+const filtroOn=()=>!!(estadoPlanilha.fil.q.trim()||estadoPlanilha.fil.cat||estadoPlanilha.fil.forn||estadoPlanilha.fil.ban||estadoPlanilha.fil.sit);
 const low=x=>String(x??"").trim().toLowerCase();
 const celular=()=>matchMedia("(max-width:900px)").matches;
 const toque=()=>matchMedia("(pointer:coarse)").matches;   /* dedo, não mouse */
@@ -3466,12 +3465,12 @@ gavetaAlt();
 function vista(){let v=null;try{v=localStorage.getItem("cadpecas-vista")}catch(e){}return v==="lista"||v==="planilha"?v:(celular()?"lista":"planilha")}
 const banhoDe=r=>r.banho?(BANHO_COLS[r.col]||r.col||"Banho"):"Pronta";
 function casa(r){
-  if(FIL.cat&&(r.v.I||"")!==FIL.cat)return false;
-  if(FIL.forn&&(r.v.H||"")!==FIL.forn)return false;
-  if(FIL.ban&&banhoDe(r)!==FIL.ban)return false;
-  if(FIL.sit==="pend"&&!pendente(r))return false;
-  if(FIL.sit==="mao"&&!(r.ovs&&r.ovs.length))return false;
-  const q=semAc(FIL.q);if(!q)return true;   /* sem acento e sem maiúsculas; também acha Peso e Preço (2,5 ou 2.5) */
+  if(estadoPlanilha.fil.cat&&(r.v.I||"")!==estadoPlanilha.fil.cat)return false;
+  if(estadoPlanilha.fil.forn&&(r.v.H||"")!==estadoPlanilha.fil.forn)return false;
+  if(estadoPlanilha.fil.ban&&banhoDe(r)!==estadoPlanilha.fil.ban)return false;
+  if(estadoPlanilha.fil.sit==="pend"&&!pendente(r))return false;
+  if(estadoPlanilha.fil.sit==="mao"&&!(r.ovs&&r.ovs.length))return false;
+  const q=semAc(estadoPlanilha.fil.q);if(!q)return true;   /* sem acento e sem maiúsculas; também acha Peso e Preço (2,5 ou 2.5) */
   const nums=["N","V"].map(L=>vazio(r.v[L])?"":String(r.v[L])+" "+String(r.v[L]).replace(".",",")+" "+String(r.v[L]).replace(",","."));
   const t=semAc(["E","F","G","H","I","J","K","L","M","C","Z"].map(L=>r.v[L]).concat(nums).join(" "));
   return q.split(/\s+/).every(w=>t.includes(w));
@@ -3480,20 +3479,20 @@ function renderFiltros(g){
   const el=document.getElementById("fil");if(!el)return;
   el.hidden=!g.linhas.length&&!filtroAtivoOuBusca();
   const uni=f=>[...new Set(g.linhas.map(f).filter(x=>!vazio(x)))].sort((a,b)=>a.localeCompare(b,"pt"));
-  const sel=(k,rot,list)=>list.length>1||FIL[k]?`<select data-fil="${k}" aria-label="${rot}" class="${FIL[k]?"on":""}">${opts(list,FIL[k],rot)}</select>`:"";
+  const sel=(k,rot,list)=>list.length>1||estadoPlanilha.fil[k]?`<select data-fil="${k}" aria-label="${rot}" class="${estadoPlanilha.fil[k]?"on":""}">${opts(list,estadoPlanilha.fil[k],rot)}</select>`:"";
   const h=sel("cat","Categoria",uni(r=>r.v.I))+sel("forn","Fornecedor",uni(r=>r.v.H))+sel("ban","Banho",uni(banhoDe))
-    +`<select data-fil="sit" aria-label="Situação" class="${FIL.sit?"on":""}">${opts([["pend","Com pendência"],["mao","Editadas à mão"]],FIL.sit,"Situação")}</select>`
-    +(FIL.q.trim()?`<button type="button" class="btn sm" data-act="fil-busca" title="Há uma busca ativa (salva do último uso) escondendo linhas — clique para limpar">Filtro ativo: “${esc(FIL.q.trim())}” ✕</button>`:"")
+    +`<select data-fil="sit" aria-label="Situação" class="${estadoPlanilha.fil.sit?"on":""}">${opts([["pend","Com pendência"],["mao","Editadas à mão"]],estadoPlanilha.fil.sit,"Situação")}</select>`
+    +(estadoPlanilha.fil.q.trim()?`<button type="button" class="btn sm" data-act="fil-busca" title="Há uma busca ativa (salva do último uso) escondendo linhas — clique para limpar">Filtro ativo: “${esc(estadoPlanilha.fil.q.trim())}” ✕</button>`:"")
     +(filtroOn()?`<button type="button" class="btn ghost sm" data-act="fil-limpar">× Limpar filtro</button>`:"");
   const s=document.getElementById("filSel");if(s.dataset.sig!==h){s.innerHTML=h;s.dataset.sig=h}
-  const b=document.getElementById("fBusca");if(b&&document.activeElement!==b&&b.value!==FIL.q)b.value=FIL.q;
-  document.getElementById("filInfo").textContent=FV?`${FV.size} de ${g.linhas.length} linhas`:"";
+  const b=document.getElementById("fBusca");if(b&&document.activeElement!==b&&b.value!==estadoPlanilha.fil.q)b.value=estadoPlanilha.fil.q;
+  document.getElementById("filInfo").textContent=estadoPlanilha.fv?`${estadoPlanilha.fv.size} de ${g.linhas.length} linhas`:"";
   const v=vista();el.querySelectorAll("[data-act=vista]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.v===v));
 }
 const filtroAtivoOuBusca=()=>filtroOn();
 function cartoes(g){
   const nCat=new Set(g.linhas.map(r=>r.v.I)).size;let h=`<div class="pcards">`,prev=null,n=0;
-  g.linhas.forEach((row,ri)=>{if(FV&&!FV.has(ri))return;n++;
+  g.linhas.forEach((row,ri)=>{if(estadoPlanilha.fv&&!estadoPlanilha.fv.has(ri))return;n++;
     if(nCat>1&&row.v.I!==prev)h+=`<div class="ccat">${esc(row.v.I||"Sem categoria")}</div>`;prev=row.v.I;
     const c=celulas(row,ri+2),gv=L=>{const x=c[LET.indexOf(L)];return x&&typeof x.v==="number"?x.v:x&&x.v==null&&typeof x.calc==="number"?x.calc:null};
     const pv=gv("V"),cus=["P","Q","R","S","T","U"].map(gv),cu=cus.some(x=>x!=null)?cus.reduce((t,x)=>t+(x||0),0):null,q=gv("W"),pd=pendente(row);
@@ -3509,27 +3508,27 @@ function cartoes(g){
 function render(){renderListas();renderTopo();renderForm();renderCfg()}
 function renderListas(){document.getElementById("lists").innerHTML=LET.map(L=>{const l=listaDe(L,S.form.v.I),ex=L==="I"?entradasAtalho():[];return l.length||ex.length?`<datalist id="dl-${L}">${l.map(o=>`<option value="${esc(o)}">`).join("")}${ex.map(([a,cam])=>`<option value="${esc(a)}" label="${esc(cam)}">`).join("")}</datalist>`:""}).join("")}
 /* tabela grande (mais de 300 linhas): só as linhas perto da área visível ficam no DOM; o resto vira espaço em branco da mesma altura.
-   Abaixo disso o desenho é o de sempre. JAN = {lista, row, alt, cum, a, b, ...} */
-let JAN=null,janRaf=0;const JAN_MIN=300,JANM={rh:28,hFt:39,head:34};
-function janAlturas(){const J=JAN;let s=0;J.cum=new Float64Array(J.lista.length+1);J.lista.forEach((ri,p)=>{J.cum[p]=s;s+=(ri<J.nReais&&J.ft[J.ids[ri]])?J.hFt:J.rh});J.cum[J.lista.length]=s;J.total=s}
-function janPos(y){const c=JAN.cum;let lo=0,hi=JAN.lista.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(c[m]<=y)lo=m;else hi=m-1}return lo}
+   Abaixo disso o desenho é o de sempre. estadoPlanilha.jan = {lista, row, alt, cum, a, b, ...} */
+const JAN_MIN=300,JANM={rh:28,hFt:39,head:34};
+function janAlturas(){const J=estadoPlanilha.jan;let s=0;J.cum=new Float64Array(J.lista.length+1);J.lista.forEach((ri,p)=>{J.cum[p]=s;s+=(ri<J.nReais&&J.ft[J.ids[ri]])?J.hFt:J.rh});J.cum[J.lista.length]=s;J.total=s}
+function janPos(y){const c=estadoPlanilha.jan.cum;let lo=0,hi=estadoPlanilha.jan.lista.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(c[m]<=y)lo=m;else hi=m-1}return lo}
 function janelaHtml(){
-  const J=JAN,sh=document.getElementById("sheet"),n=J.lista.length,vh=sh.clientHeight||800,y=Math.max(0,(sh.scrollTop||0)-J.head);
+  const J=estadoPlanilha.jan,sh=document.getElementById("sheet"),n=J.lista.length,vh=sh.clientHeight||800,y=Math.max(0,(sh.scrollTop||0)-J.head);
   let a=Math.max(0,janPos(y)-45),b=Math.min(n,janPos(y+vh)+60);if(a>0&&a%2===0)a--;   /* a ímpar mantém a listra zebrada igual à do desenho completo */
   J.a=a;J.b=b;const sp=h=>h>0?`<tr class="sp" aria-hidden="true" style="height:${h}px"><td colspan="${LET.length+4}" style="padding:0;border:0"></td></tr>`:"";
   return sp(J.cum[a])+J.lista.slice(a,b).map(J.row).join("")+sp(J.total-J.cum[b])}
 function janRepintar(forca){
-  const J=JAN;if(!J||celEd)return;const sh=document.getElementById("sheet"),tb=sh&&sh.querySelector("tbody");if(!tb)return;
+  const J=estadoPlanilha.jan;if(!J||celEd)return;const sh=document.getElementById("sheet"),tb=sh&&sh.querySelector("tbody");if(!tb)return;
   const y=Math.max(0,sh.scrollTop-J.head),p0=janPos(y),p1=janPos(y+(sh.clientHeight||800));
   const n=J.lista.length;if(!forca&&!((J.a>0&&p0<J.a+8)||(J.b<n&&p1>J.b-8)))return;
   tb.innerHTML=janelaHtml();pintarSel();janMedir()}
 /* mede a altura real de uma linha comum e de uma com foto; se diferir do chute, recalcula as alturas uma vez */
-function janMedir(){const J=JAN;if(!J||J.medido)return;const t1=document.querySelector("#sheet tbody tr[data-ri]:not(.blank):not(:has(td.tf img))"),t2=document.querySelector("#sheet tbody tr:has(td.tf img)");
+function janMedir(){const J=estadoPlanilha.jan;if(!J||J.medido)return;const t1=document.querySelector("#sheet tbody tr[data-ri]:not(.blank):not(:has(td.tf img))"),t2=document.querySelector("#sheet tbody tr:has(td.tf img)");
   let mud=false;if(t1&&Math.abs(t1.offsetHeight-J.rh)>0.5){J.rh=t1.offsetHeight;mud=true}if(t2&&Math.abs(t2.offsetHeight-J.hFt)>0.5){J.hFt=t2.offsetHeight;mud=true}
   const th=document.querySelector("#sheet thead");if(th&&th.offsetHeight&&Math.abs(th.offsetHeight-J.head)>0.5){J.head=th.offsetHeight;mud=true}
   J.medido=true;JANM.rh=J.rh;JANM.hFt=J.hFt;JANM.head=J.head;if(mud){janAlturas();const sh=document.getElementById("sheet");sh.querySelector("tbody").innerHTML=janelaHtml();pintarSel()}}
 /* garante que a linha ri (índice da peça na tabela) esteja desenhada e visível — usado pelo teclado e por "mostrar no fim" */
-function janGarantir(ri){const J=JAN;if(!J)return true;const p=J.lista.indexOf(ri);if(p<0)return false;
+function janGarantir(ri){const J=estadoPlanilha.jan;if(!J)return true;const p=J.lista.indexOf(ri);if(p<0)return false;
   if(p>=J.a&&p<J.b)return true;const sh=document.getElementById("sheet");sh.scrollTop=Math.max(0,J.head+J.cum[p]-sh.clientHeight/2);janRepintar(true);return true}
 function guiaHTML(){if(abertos.guiaX)return "";return `<span class="ok vaz guia" role="note"><b>Guia rápido:</b> <button type="button" class="gi tod" data-act="ir" data-sec="cat" title="Categorias, subcategorias, tamanhos e cores">1 · Cadastros</button> <button type="button" class="gi tod" data-act="ir" data-sec="lancar">2 · Lançar peça</button> <span class="hint">3 · conferir a tabela</span> <span class="hint">4 · “Exportar para…” e baixar</span> <button type="button" class="x" data-act="guia-fechar" aria-label="Fechar o guia" title="Fechar o guia">×</button></span> `}
 /* apagou (ou voltou) peças da tabela com o romaneio aberto: as linhas dele que já não existem na tabela deixam de ser "já lançada" */
@@ -3538,7 +3537,7 @@ function romResync(){if(romCriando||!ROM||!ROM.rows||(!ROM.rows.length&&!(ROM.re
   const antes=ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("");romMarcar();if(ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("")!==antes){romSalvarSoon();setTimeout(()=>{if(ROM)renderRom()},0)}}
 function renderTopo(){try{romResync()}catch(e){}
   const g=G=gerar(),sh=document.getElementById("sheet"),st=sh.scrollTop,sl=sh.scrollLeft,cc=cfg().colcfg;
-  FV=filtroOn()?new Set(g.linhas.map((r,i)=>casa(r)?i:-1).filter(i=>i>=0)):null;renderFiltros(g);
+  estadoPlanilha.fv=filtroOn()?new Set(g.linhas.map((r,i)=>casa(r)?i:-1).filter(i=>i>=0)):null;renderFiltros(g);
   const ps=[...new Set([...S.lanc.map(l=>prefDe(val(l,"I"),val(l,"J"))),prefDe(S.form.v.I,S.form.v.J)])];
   {const ms=document.getElementById("modSel");if(ms){const C0=cfg(),tem=r=>C0.modelos.some(x=>r.test(String(x.nome||"")));
     ms.innerHTML=opts([...C0.modelos.map(x=>[x.id,x.nome]),...(tem(/bling/i)?[]:[["@bling","＋ Adicionar Bling"]]),...(tem(/jueri/i)?[]:[["@jueri","＋ Adicionar Jueri"]]),["@novo","＋ Outro sistema…"]],C0.modelo)}
@@ -3570,25 +3569,25 @@ function renderTopo(){try{romResync()}catch(e){}
     h+=`</tr>`;return h};
   const nb=Math.max(4,10-g.linhas.length);   /* poucas linhas em branco: a tabela vazia não precisa ocupar a tela */
   const trBlank=ri=>{const k=ri-g.linhas.length;return `<tr class="blank" data-ri="${ri}"><td class="k"><span class="nb">${k===0?"nova":""}</span></td><td class="k nm"></td><td class="tf"></td><td class="tf"></td>${LET.map((L,x)=>`<td data-c="${L}"${k===0&&x===0?' class="ph"':""}></td>`).join("")}</tr>`};
-  {const lista=[];g.linhas.forEach((row,ri)=>{if(!FV||FV.has(ri))lista.push(ri)});for(let k=0;k<nb;k++)lista.push(g.linhas.length+k);
+  {const lista=[];g.linhas.forEach((row,ri)=>{if(!estadoPlanilha.fv||estadoPlanilha.fv.has(ri))lista.push(ri)});for(let k=0;k<nb;k++)lista.push(g.linhas.length+k);
    const rowHtml=ri=>ri<g.linhas.length?trReal(ri):trBlank(ri);
-   if(vista()!=="lista"&&lista.length>JAN_MIN){JAN={lista,nReais:g.linhas.length,ids:g.linhas.map(r=>r.lancId),ft:ftMap,row:rowHtml,rh:JANM.rh,hFt:JANM.hFt,head:JANM.head,medido:false,a:0,b:0};janAlturas();h+=janelaHtml()}
-   else{JAN=null;h+=lista.map(rowHtml).join("")}}
+   if(vista()!=="lista"&&lista.length>JAN_MIN){estadoPlanilha.jan={lista,nReais:g.linhas.length,ids:g.linhas.map(r=>r.lancId),ft:ftMap,row:rowHtml,rh:JANM.rh,hFt:JANM.hFt,head:JANM.head,medido:false,a:0,b:0};janAlturas();h+=janelaHtml()}
+   else{estadoPlanilha.jan=null;h+=lista.map(rowHtml).join("")}}
   const soma=new Array(LET.length).fill(0),ext={cV:0,qSem:0},nm=x=>x&&typeof x.v==="number"?x.v:(x&&x.v==null&&typeof x.calc==="number"?x.calc:0);   /* fórmula digitada entra pelo valor calculado */
-  cel.forEach((cs,ri)=>{if(FV&&!FV.has(ri))return;cs.forEach((x,j)=>{soma[j]+=nm(x)});const q=nm(cs[LET.indexOf("W")]);ext.W=(ext.W||0)+q;["P","Q","R","S","T","U","V"].forEach(L=>{ext[L]=(ext[L]||0)+nm(cs[LET.indexOf(L)])*q});
+  cel.forEach((cs,ri)=>{if(estadoPlanilha.fv&&!estadoPlanilha.fv.has(ri))return;cs.forEach((x,j)=>{soma[j]+=nm(x)});const q=nm(cs[LET.indexOf("W")]);ext.W=(ext.W||0)+q;["P","Q","R","S","T","U","V"].forEach(L=>{ext[L]=(ext[L]||0)+nm(cs[LET.indexOf(L)])*q});
     /* lucro só das peças que têm preço de venda; as sem preço ficam de fora (e são avisadas) */
     if(nm(cs[LET.indexOf("V")])>0)ext.cV+=["P","Q","R","S","T","U"].reduce((t,L)=>t+nm(cs[LET.indexOf(L)]),0)*q;else ext.qSem+=q});
   const somaCols=new Set(["N","P","Q","R","S","T","U","V","W"]);
   h+=`</tbody><tfoot><tr><td class="k"><span class="nb" title="Soma de cada coluna, como na planilha">Σ colunas</span></td><td class="k nm"></td><td></td><td></td>${LET.map((L,j)=>somaCols.has(L)?`<td class="n tot" title="Soma da coluna ${esc(NOME[L])}">${L==="W"?fmt(soma[j]):L==="N"?fmt(soma[j]):brl(soma[j])}</td>`:`<td></td>`).join("")}</tr></tfoot></table>`;
   {const iW2=LET.indexOf("W"),iV=LET.indexOf("V"),D={custo:[["Compra",ext.P||0],["Insumos",ext.Q||0],["Banhos",(ext.R||0)+(ext.S||0)+(ext.T||0)],["Verniz",ext.U||0]],pecas:{},varejo:{},cor:{},forn:{},banho:{},lucro:{}};
-    g.linhas.forEach((row,ri)=>{if(FV&&!FV.has(ri))return;const cs=cel[ri],q=nm(cs[iW2]),c=row.v.I||"Sem categoria",cor=row.v.L||"Sem cor";D.pecas[c]=(D.pecas[c]||0)+q;D.varejo[c]=(D.varejo[c]||0)+nm(cs[iV])*q;D.cor[cor]=(D.cor[cor]||0)+q;
+    g.linhas.forEach((row,ri)=>{if(estadoPlanilha.fv&&!estadoPlanilha.fv.has(ri))return;const cs=cel[ri],q=nm(cs[iW2]),c=row.v.I||"Sem categoria",cor=row.v.L||"Sem cor";D.pecas[c]=(D.pecas[c]||0)+q;D.varejo[c]=(D.varejo[c]||0)+nm(cs[iV])*q;D.cor[cor]=(D.cor[cor]||0)+q;
       {const fo=row.v.H||"Sem fornecedor",bn=row.banho?(BANHO_COLS[row.col]||"Banho"):"Pronta",cus=["P","Q","R","S","T","U"].reduce((t,L)=>t+nm(cs[LET.indexOf(L)]),0);
        D.forn[fo]=(D.forn[fo]||0)+cus*q;D.banho[bn]=(D.banho[bn]||0)+q;D.lucro[c]=(D.lucro[c]||0)+(nm(cs[iV])>0?(nm(cs[iV])-cus)*q:0)}});renderGraf(D)}
   {const compra=ext.P||0,ins=ext.Q||0,ban=(ext.R||0)+(ext.S||0)+(ext.T||0),vz=ext.U||0,custo=compra+ins+ban+vz,vj=ext.V||0,luc=vj-ext.cV,mg=vj?luc/vj*100:0,ord=cfg().ordem==="ab";
-    const el=document.getElementById("totais");if(el)el.innerHTML=(FV?`<span class="tt tfil" title="Totais só das linhas que o filtro mostra">Filtro: <b>${FV.size} de ${g.linhas.length}</b></span>`:"")+`<span class="tt" title="Quantidade total de peças">Peças <b>${fmt(ext.W||0)}</b></span><span class="tt" title="Custo de Compra × Quantidade">Compra <b>R$ ${brl(compra)}</b></span><span class="tt" title="Custo de Insumos × Quantidade">Insumos <b>R$ ${brl(ins)}</b></span><span class="tt" title="Custo dos banhos de ouro, ródio e prata × Quantidade">Banhos <b>R$ ${brl(ban)}</b></span><span class="tt" title="Custo do verniz × Quantidade">Verniz <b>R$ ${brl(vz)}</b></span><span class="tt tot-c" title="Compra + Insumos + Banhos + Verniz">Custo total <b>R$ ${brl(custo)}</b></span><span class="tt tot-v" title="Preço de Varejo × Quantidade">Varejo <b>R$ ${brl(vj)}</b></span><span class="tt" title="Varejo − custo das peças que têm preço de venda">Lucro <b>${vj?"R$ "+brl(luc):"—"}</b> <small>${vj?fmt(Math.round(mg*10)/10)+"%":"—"}</small></span>${ext.qSem>0&&vj?`<span class="tt" title="Estas peças ainda não têm Preço de Varejo: o custo delas não entra no lucro ao lado">⚠ ${fmt(ext.qSem)} pç sem preço de venda</span>`:""}
+    const el=document.getElementById("totais");if(el)el.innerHTML=(estadoPlanilha.fv?`<span class="tt tfil" title="Totais só das linhas que o filtro mostra">Filtro: <b>${estadoPlanilha.fv.size} de ${g.linhas.length}</b></span>`:"")+`<span class="tt" title="Quantidade total de peças">Peças <b>${fmt(ext.W||0)}</b></span><span class="tt" title="Custo de Compra × Quantidade">Compra <b>R$ ${brl(compra)}</b></span><span class="tt" title="Custo de Insumos × Quantidade">Insumos <b>R$ ${brl(ins)}</b></span><span class="tt" title="Custo dos banhos de ouro, ródio e prata × Quantidade">Banhos <b>R$ ${brl(ban)}</b></span><span class="tt" title="Custo do verniz × Quantidade">Verniz <b>R$ ${brl(vz)}</b></span><span class="tt tot-c" title="Compra + Insumos + Banhos + Verniz">Custo total <b>R$ ${brl(custo)}</b></span><span class="tt tot-v" title="Preço de Varejo × Quantidade">Varejo <b>R$ ${brl(vj)}</b></span><span class="tt" title="Varejo − custo das peças que têm preço de venda">Lucro <b>${vj?"R$ "+brl(luc):"—"}</b> <small>${vj?fmt(Math.round(mg*10)/10)+"%":"—"}</small></span>${ext.qSem>0&&vj?`<span class="tt" title="Estas peças ainda não têm Preço de Varejo: o custo delas não entra no lucro ao lado">⚠ ${fmt(ext.qSem)} pç sem preço de venda</span>`:""}
       <span class="ordsel" role="group" aria-label="Ordem da tabela"><span class="hint">Ordem</span><button type="button" class="${ord?"":"on"}" data-act="ordem" data-v="int" title="Cada peça com seus banhos e tamanhos juntos, na ordem em que foi lançada">Por peça</button><button type="button" class="${ord?"on":""}" data-act="ordem" data-v="ab" title="Todas as A (ouro), depois todas as B (prata), depois as prontas">Por banho</button></span>`}
-  const li=vista()==="lista";sh.classList.toggle("lista",li);document.body.classList.toggle("vlista",li);if(li){selR=null;h=cartoes(g)}
-  sh.innerHTML=h;nfVazAtualizar();sh.scrollTop=st;sh.scrollLeft=sl;sh.style.overflowAnchor=JAN?"none":"";if(JAN)janMedir();pintarSel();renderSelBar();
+  const li=vista()==="lista";sh.classList.toggle("lista",li);document.body.classList.toggle("vlista",li);if(li){estadoPlanilha.selR=null;h=cartoes(g)}
+  sh.innerHTML=h;estadoPlanilha.nfVaz();sh.scrollTop=st;sh.scrollLeft=sl;sh.style.overflowAnchor=estadoPlanilha.jan?"none":"";if(estadoPlanilha.jan)janMedir();pintarSel();renderSelBar();
   renderNum();{const pp=prefDe(S.form.v.I,S.form.v.J),pr=document.getElementById("proxRef");if(pr)pr.textContent=fnum(pp,proxDe(pp));const pb=document.getElementById("proxBig");if(pb)pb.innerHTML=`Próxima referência <b>${esc(pp)}${fnum(pp,proxDe(pp))}</b>`;const mf=document.querySelector("#form .mfp");if(mf)mf.textContent=`próxima ${pp}${fnum(pp,proxDe(pp))}`}
 }
 /* ---- edição de célula ---- */
@@ -3603,7 +3602,7 @@ function abrirCel(ri,L,cursorFim){
   const calc=formulaVazia?calcBanho(row,L,ri+2):null,calcTxt=calc&&typeof calc.v==="number"?r2c(calc.v).toFixed(2).replace(".",","):"";
   const raw=!row?"":formulaVazia?calcTxt:(row.v[L]??"");celEd={ri,L,orig:String(raw),nova:!row,setas:!!cursorFim};
   const ph=formulaVazia?(calc?(calc.f?"="+calc.f:String(calc.v)):"(vazio)"):(!row?"digite ou cole (Ctrl+V)":"");
-  selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=td2.offsetWidth;td2.classList.add("ed");
+  estadoPlanilha.selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=td2.offsetWidth;td2.classList.add("ed");
   td2.innerHTML=`<input id="celIn" value="${esc(raw)}" list="dl-cel" ${NUM.has(L)?'class="n"':""} placeholder="${esc(ph)}" title="${esc(formulaVazia&&calc&&calc.f?"Calculado: ="+calc.f+" — digite um valor para substituir":"")}" aria-label="${esc(NOME[L])}" autocomplete="off">`;
   const i=document.getElementById("celIn");i.style.width=w+"px";i.focus({preventScroll:true});try{td2.scrollIntoView({block:"nearest",inline:"nearest"})}catch(x){}if(cursorFim){const n=i.value.length;try{i.setSelectionRange(n,n)}catch(x){}}else i.select();
 }
@@ -3658,7 +3657,7 @@ function fecharCel(commit,mover){
   if(commit&&L==="E"&&!jaAvisou){const d=[...new Set(G.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(d.length)toast("Referência repetida: "+d.join(", ")+" — outra linha já usa essa referência. Corrija antes de baixar a planilha.")}
   if(mover){let nri=ri,nL=L;
     if(mover==="down")nri=passo(ri,1,maxRi());else if(mover==="up")nri=passo(ri,-1,maxRi());else{const k=LET.indexOf(L)+(mover==="right"?1:-1);if(k<0||k>=LET.length)return;nL=LET[k]}
-    if(JAN)janGarantir(nri);
+    if(estadoPlanilha.jan)janGarantir(nri);
     if(document.querySelector(`#sheet tr[data-ri="${nri}"]`)){selecionar(nri,LET.indexOf(nL));rolarAte()}}
   document.getElementById("sheet").focus({preventScroll:true});
 }
@@ -3691,19 +3690,18 @@ function colarCel(texto,inicio){
 
 
 /* ===== seleção de células, linhas e colunas (como no Excel) ===== */
-let selR=null,arrastando=false;
-const vis=r=>!FV||!G||r>=G.linhas.length||FV.has(r);
+const vis=r=>!estadoPlanilha.fv||!G||r>=G.linhas.length||estadoPlanilha.fv.has(r);
 function passo(r,d,max){let n=r+d;while(n>=0&&n<=max&&!vis(n))n+=d;return n<0||n>max?r:n}
-function maxRi(){if(JAN)return JAN.lista[JAN.lista.length-1];let m=-1;document.querySelectorAll('#sheet tbody tr[data-ri]').forEach(t=>m=Math.max(m,+t.dataset.ri));return m}
-function selBox(){if(!selR)return null;return {r1:Math.min(selR.ar,selR.fr),r2:Math.max(selR.ar,selR.fr),c1:Math.min(selR.ac,selR.fc),c2:Math.max(selR.ac,selR.fc)}}
-function selecionar(ar,ac,fr,fc){selR={ar,ac,fr:fr??ar,fc:fc??ac};pintarSel();renderSelBar()}
+function maxRi(){if(estadoPlanilha.jan)return estadoPlanilha.jan.lista[estadoPlanilha.jan.lista.length-1];let m=-1;document.querySelectorAll('#sheet tbody tr[data-ri]').forEach(t=>m=Math.max(m,+t.dataset.ri));return m}
+function selBox(){if(!estadoPlanilha.selR)return null;return {r1:Math.min(estadoPlanilha.selR.ar,estadoPlanilha.selR.fr),r2:Math.max(estadoPlanilha.selR.ar,estadoPlanilha.selR.fr),c1:Math.min(estadoPlanilha.selR.ac,estadoPlanilha.selR.fc),c2:Math.max(estadoPlanilha.selR.ac,estadoPlanilha.selR.fc)}}
+function selecionar(ar,ac,fr,fc){estadoPlanilha.selR={ar,ac,fr:fr??ar,fc:fc??ac};pintarSel();renderSelBar()}
 function pintarSel(){
   document.querySelectorAll('#sheet .sl,#sheet .sa').forEach(x=>x.classList.remove('sl','sa'));const b=selBox();if(!b)return;
   for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const tr=document.querySelector(`#sheet tr[data-ri="${r}"]`);if(!tr)continue;for(let c=b.c1;c<=b.c2;c++){const td=tr.querySelector(`td[data-c="${LET[c]}"]`);if(td)td.classList.add('sl')}}
-  const a=document.querySelector(`#sheet tr[data-ri="${selR.fr}"] td[data-c="${LET[selR.fc]}"]`);if(a)a.classList.add('sa');
+  const a=document.querySelector(`#sheet tr[data-ri="${estadoPlanilha.selR.fr}"] td[data-c="${LET[estadoPlanilha.selR.fc]}"]`);if(a)a.classList.add('sa');
   for(let c=b.c1;c<=b.c2;c++){const th=document.querySelector(`#sheet th[data-hc="${LET[c]}"]`);if(th)th.classList.add('sl')}
 }
-function rolarAte(){if(JAN&&selR)janGarantir(selR.fr);const a=document.querySelector('#sheet td.sa');if(a)a.scrollIntoView({block:'nearest',inline:'nearest'})}
+function rolarAte(){if(estadoPlanilha.jan&&estadoPlanilha.selR)janGarantir(estadoPlanilha.selR.fr);const a=document.querySelector('#sheet td.sa');if(a)a.scrollIntoView({block:'nearest',inline:'nearest'})}
 function textoCel(ri,ci){const row=G.linhas[ri];if(!row)return "";const x=celulas(row,ri+2)[ci];if(!x)return "";if(typeof x.v==="number")return (DUAS.has(LET[ci])?r2c(x.v).toFixed(2):String(r4(x.v))).replace(".",",");if(x.v==null)return x.txt||("="+x.f);return String(x.v)}
 function idsDaSel(){const b=selBox();if(!b)return [];const s=new Set();for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const row=G.linhas[r];if(row)s.add(row.lancId)}return [...s]}
 function copiarSel(){const b=selBox();if(!b)return;const lin=[];for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const l=[];for(let c=b.c1;c<=b.c2;c++)l.push(textoCel(r,c));lin.push(l.join("\t"))}
@@ -3725,7 +3723,7 @@ function renderSelBar(){
   /* a Soma só vale para uma coluna monetária, de peso ou de quantidade — nunca mistura nem soma códigos (NCM, CFOP…) */
   const kd=L=>MONEY.has(L)?"m":L==="W"?"q":L==="N"?"p":"",ks=new Set();for(let c=b.c1;c<=b.c2;c++)ks.add(kd(LET[c]));const somavel=ks.size===1&&!ks.has("");
   for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const row=G.linhas[r];if(!row)continue;const cs=celulas(row,r+2);for(let c=b.c1;c<=b.c2;c++){const x=cs[c];if(x&&typeof x.v==="number"){if(somavel)soma+=x.v;nn++}}}
-  const row=G.linhas[selR.fr],ids=idsDaSel(),det=n===1?detalheCelulaSelecionada(row,LET[b.c1],b.r1):"";
+  const row=G.linhas[estadoPlanilha.selR.fr],ids=idsDaSel(),det=n===1?detalheCelulaSelecionada(row,LET[b.c1],b.r1):"";
   el.innerHTML=`<span class="si"><b class="mono">${LET[b.c1]}${b.r1+2}${n>1?":"+LET[b.c2]+(b.r2+2):""}</b> ${n} célula${n>1?"s":""}${nn>1?` · Soma <b class="mono"${somavel?"":' title="Soma só para colunas de valor, peso ou quantidade (uma por vez)"'}>${somavel?fmt(soma):"—"}</b>`:""}</span>
     ${det?`<span class="sel-calculo">${esc(det)}</span>`:""}
     ${row?`<button class="btn sm" type="button" data-act="s-edit" title="Abre a peça no lançamento para alterar">✎ Editar ${esc(row.v.E)}</button><button class="btn sm" type="button" data-act="s-nova" title="Copia os dados para o lançamento; ao Adicionar sai com nova referência">＋ Nova referência a partir desta</button><button class="btn sm" type="button" data-act="s-dup">⧉ Duplicar linha</button>`:""}
@@ -4640,7 +4638,7 @@ async function aplicarBackupTotalComLock(n,quieto){
   }catch(e){const voltou=await reverter();toast("Backup NÃO restaurado — "+(e&&e.message?e.message:"erro ao gravar")+". "+avisoReversao(voltou));if(!voltou)falhaReversao();return}
   /* aplicar em bloco */
   try{
-    S.config=n.config;S.lanc=n.lanc;if(n.form)S.form=n.form;editId=null;rascunho=null;sel.clear();selR=null;
+    S.config=n.config;S.lanc=n.lanc;if(n.form)S.form=n.form;editId=null;rascunho=null;sel.clear();estadoPlanilha.selR=null;
     migrarJueri();migrarGrades();sincGrade(S.form);
   }catch(e){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;const voltou=await reverter();toast("Backup NÃO restaurado — erro ao aplicar os cadastros. "+avisoReversao(voltou));if(!voltou)falhaReversao();return}
   /* só diz "restaurado" depois de confirmar a gravação dos dados principais (peças e cadastros); se falhar, desfaz tudo */
@@ -5605,7 +5603,7 @@ window.__nf={parsePdf:nfPdfParse,lerXml:nfLerXml,pdfItens:nfPdfItens,cat:nfCatDe
     bx.hidden=!vz.length;
     if(vz.length){tx.textContent=mostrar?"Mostrando as colunas vazias.":`${vz.length} coluna${vz.length>1?"s":""} vazia${vz.length>1?"s":""} escondida${vz.length>1?"s":""} (${vz.map(L=>NOME[L]).join(", ")}). A planilha baixada continua com todas as colunas.`;bt.textContent=mostrar?"Esconder colunas vazias":"Mostrar colunas vazias"}
   }finally{busy=false}};
-  nfVazAtualizar=run;
+  estadoPlanilha.nfVaz=run;
   if(sh&&bx){new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(run,120)}).observe(sh,{childList:true,subtree:true});
     bt.addEventListener("click",()=>{mostrar=!mostrar;try{localStorage.setItem(KV,mostrar?"1":"0")}catch(e){}run()});run()}}
 /* nf-fim */
@@ -5824,7 +5822,7 @@ function fotoRemover(lid){
   document.addEventListener("paste",e=>{const fl=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(x=>/^image\//.test(x.type));if(!fl.length)return;
     if(e.target&&e.target.id==="celIn")return;e.preventDefault();
     const rcp=e.target&&e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");if(rcp&&ROM){romFotosEscolhidas(+rcp.dataset.i,fl.slice(0,1));return}
-    const row=selR&&G&&G.linhas[selR.fr],lid=editId||(row&&row.lancId);
+    const row=estadoPlanilha.selR&&G&&G.linhas[estadoPlanilha.selR.fr],lid=editId||(row&&row.lancId);
     if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
     else fotoDoFormulario(fl[0])},true)})();
 /* fornecedor e subcategoria digitados à mão passam a existir no cadastro (o fornecedor leva o código, o desconto e o tipo que estão no formulário) */
@@ -5878,7 +5876,7 @@ function adicionar(limpar,quiet){
   focarPrimeiro();return true;
 }
 /* a peça nova aparece sempre no fim da tabela: rola até a última linha dela e dá um destaque */
-function mostrarNoFim(id){if(JAN&&G){let li=-1;G.linhas.forEach((r,i)=>{if(r.lancId===id)li=i});if(li>=0)janGarantir(li)}
+function mostrarNoFim(id){if(estadoPlanilha.jan&&G){let li=-1;G.linhas.forEach((r,i)=>{if(r.lancId===id)li=i});if(li>=0)janGarantir(li)}
   const trs=[...document.querySelectorAll(`#sheet tr[data-l="${CSS.escape(String(id))}"]`)];if(!trs.length)return;const last=trs[trs.length-1],sh=document.getElementById("sheet");
   const a=last.getBoundingClientRect(),b=sh.getBoundingClientRect(),folga=28+30;
   if(a.bottom>b.bottom-folga)sh.scrollTop+=a.bottom-(b.bottom-folga);else if(a.top<b.top+34)sh.scrollTop-=(b.top+34)-a.top;
@@ -5901,7 +5899,7 @@ function desfazer0(refazer){
     {const agora=new Set(S.lanc.map(l=>l.id));idsAntes.forEach(i=>{if(!agora.has(i))candFoto.add(i)})}S.config=JSON.parse(e.C);
     if(e.F&&!editId&&!e.E){S.form=lerForm(JSON.parse(e.F))}
     if(editId&&!S.lanc.some(l=>l.id===editId)){editId=null;if(rascunho)S.form=rascunho;rascunho=null}
-    [...sel].forEach(i=>{if(!S.lanc.some(l=>l.id===i))sel.delete(i)});selR=null;
+    [...sel].forEach(i=>{if(!S.lanc.some(l=>l.id===i))sel.delete(i)});estadoPlanilha.selR=null;
     if(e.R)romHistAplicar(e.R);
     histIni();
   }finally{restaurando=false}
@@ -5966,7 +5964,7 @@ function excluirLinhas(ris){
     if(por[id].length>=total){del.push({idx:S.lanc.indexOf(l),item:l});return}
     l.excl=[...new Set([...(l.excl||[]),...por[id]])];if(editId===id)S.form.excl=l.excl});
   del.forEach(d=>{S.lanc=S.lanc.filter(x=>x!==d.item);sel.delete(d.item.id);if(d.item.id===editId){editId=null;if(rascunho)S.form=rascunho;rascunho=null;renderForm()}});
-  del.forEach(d=>candFoto.add(d.item.id));undo={tipo:"linhas",antes,del};selR=null;salvar(false);renderTopo();toast(`${n} linha(s) excluída(s).`,{t:"Desfazer",fn:desfazer});
+  del.forEach(d=>candFoto.add(d.item.id));undo={tipo:"linhas",antes,del};estadoPlanilha.selR=null;salvar(false);renderTopo();toast(`${n} linha(s) excluída(s).`,{t:"Desfazer",fn:desfazer});
 }
 function excluir(ids){
   if(ids.length>=3){if(!confirm(`Excluir ${ids.length} peças de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAviso(pontoAuto("antes de excluir "+ids.length+" peças",true))}
@@ -6148,33 +6146,32 @@ document.addEventListener("submit",e=>{e.preventDefault();adicionar()});
 /* digitação rápida: ao entrar num campo numérico do lançamento, o conteúdo fica selecionado e o que for digitado substitui */
 document.addEventListener("focusin",e=>{const t=e.target;if(t.tagName==="INPUT"&&t.classList.contains("n")&&t.closest("#form")&&!t.disabled)try{t.select()}catch(x){}});
 document.addEventListener("toggle",e=>{const d=e.target;if(d.dataset&&d.dataset.open){abertos[d.dataset.open]=d.open;guardarAbertos()}},true);
-let mdTd=null,mdJa=false;
 document.addEventListener("mousedown",e=>{
   if(e.target.classList&&e.target.classList.contains("rz")){e.preventDefault();e.stopPropagation();
     const L=e.target.dataset.rz,col=document.querySelector(`#sheet col[data-cw="${L}"]`),tb=document.querySelector("#sheet table"),x0=e.clientX,w0=cw(L),t0=tb.offsetWidth;
     e.target.classList.add("on");document.body.classList.add("resizing");
-    const mv=ev=>{const w=Math.max(36,Math.round(w0+(ev.clientX-x0)/(ZM.t||1)));colW[L]=w;col.style.width=w+"px";tb.style.width=(t0+w-w0)+"px"};
-    const up=()=>{document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);document.body.classList.remove("resizing");try{localStorage.setItem("cadpecas-colw",JSON.stringify(colW))}catch(x){}renderTopo()};
+    const mv=ev=>{const w=Math.max(36,Math.round(w0+(ev.clientX-x0)/(ZM.t||1)));estadoPlanilha.colW[L]=w;col.style.width=w+"px";tb.style.width=(t0+w-w0)+"px"};
+    const up=()=>{document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);document.body.classList.remove("resizing");try{localStorage.setItem("cadpecas-colw",JSON.stringify(estadoPlanilha.colW))}catch(x){}renderTopo()};
     document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up);return}
   if(e.target.closest("td.ed"))return;
   const sh=document.getElementById("sheet");
   const th=e.target.closest("#sheet th[data-hc]");
-  if(th){e.preventDefault();if(celEd)fecharCel(true);const c=LET.indexOf(th.dataset.hc),mr=Math.max(Math.min(maxRi(),(G?G.linhas.length:1)-1),0);if(e.shiftKey&&selR)selecionar(0,selR.ac,mr,c);else selecionar(0,c,mr,c);sh.focus({preventScroll:true});return}
+  if(th){e.preventDefault();if(celEd)fecharCel(true);const c=LET.indexOf(th.dataset.hc),mr=Math.max(Math.min(maxRi(),(G?G.linhas.length:1)-1),0);if(e.shiftKey&&estadoPlanilha.selR)selecionar(0,estadoPlanilha.selR.ac,mr,c);else selecionar(0,c,mr,c);sh.focus({preventScroll:true});return}
   const kc=e.target.closest("#sheet td.k");
-  if(kc&&!e.target.closest("input,button")){const r=+kc.closest("tr").dataset.ri;if(isNaN(r))return;e.preventDefault();if(celEd)fecharCel(true);if(e.shiftKey&&selR)selecionar(selR.ar,0,r,LET.length-1);else selecionar(r,0,r,LET.length-1);sh.focus({preventScroll:true});return}
+  if(kc&&!e.target.closest("input,button")){const r=+kc.closest("tr").dataset.ri;if(isNaN(r))return;e.preventDefault();if(celEd)fecharCel(true);if(e.shiftKey&&estadoPlanilha.selR)selecionar(estadoPlanilha.selR.ar,0,r,LET.length-1);else selecionar(r,0,r,LET.length-1);sh.focus({preventScroll:true});return}
   const td=e.target.closest("#sheet td[data-c]");
-  if(td){e.preventDefault();if(celEd)fecharCel(true);const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);mdTd=td;mdJa=!!selR&&selR.ar===r&&selR.fr===r&&selR.ac===c&&selR.fc===c;if(e.shiftKey&&selR)selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);arrastando=true;sh.focus({preventScroll:true});return}
+  if(td){e.preventDefault();if(celEd)fecharCel(true);const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);estadoPlanilha.mdTd=td;estadoPlanilha.mdJa=!!estadoPlanilha.selR&&estadoPlanilha.selR.ar===r&&estadoPlanilha.selR.fr===r&&estadoPlanilha.selR.ac===c&&estadoPlanilha.selR.fc===c;if(e.shiftKey&&estadoPlanilha.selR)selecionar(estadoPlanilha.selR.ar,estadoPlanilha.selR.ac,r,c);else selecionar(r,c);estadoPlanilha.arrastando=true;sh.focus({preventScroll:true});return}
   if(celEd)fecharCel(true);
 });
-document.addEventListener("mousemove",e=>{if(!arrastando||!selR)return;const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td)return;const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r!==selR.fr||c!==selR.fc){selR.fr=r;selR.fc=c;pintarSel();renderSelBar()}});
-document.addEventListener("mouseup",e=>{const was=arrastando;arrastando=false;
+document.addEventListener("mousemove",e=>{if(!estadoPlanilha.arrastando||!estadoPlanilha.selR)return;const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(!td)return;const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r!==estadoPlanilha.selR.fr||c!==estadoPlanilha.selR.fc){estadoPlanilha.selR.fr=r;estadoPlanilha.selR.fc=c;pintarSel();renderSelBar()}});
+document.addEventListener("mouseup",e=>{const was=estadoPlanilha.arrastando;estadoPlanilha.arrastando=false;
   /* um clique simples numa célula já abre para digitar (sem duplo clique); arrastar ou Shift só seleciona */
-  if(!was||e.shiftKey||e.button||celEd||!selR||selR.ar!==selR.fr||selR.ac!==selR.fc)return;
-  if(toque()&&!mdJa){mdTd=null;return}   /* no celular o primeiro toque só MARCA a célula; tocar de novo na marcada abre para digitar (senão o teclado abre e a tabela pula) */
-  const td=mdTd&&mdTd.isConnected?mdTd:(e.target.closest&&e.target.closest("#sheet td[data-c]"));mdTd=null;if(!td||td.classList.contains("ed"))return;
-  const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r===selR.fr&&c===selR.fc){
+  if(!was||e.shiftKey||e.button||celEd||!estadoPlanilha.selR||estadoPlanilha.selR.ar!==estadoPlanilha.selR.fr||estadoPlanilha.selR.ac!==estadoPlanilha.selR.fc)return;
+  if(toque()&&!estadoPlanilha.mdJa){estadoPlanilha.mdTd=null;return}   /* no celular o primeiro toque só MARCA a célula; tocar de novo na marcada abre para digitar (senão o teclado abre e a tabela pula) */
+  const td=estadoPlanilha.mdTd&&estadoPlanilha.mdTd.isConnected?estadoPlanilha.mdTd:(e.target.closest&&e.target.closest("#sheet td[data-c]"));estadoPlanilha.mdTd=null;if(!td||td.classList.contains("ed"))return;
+  const r=+td.closest("tr").dataset.ri,c=LET.indexOf(td.dataset.c);if(r===estadoPlanilha.selR.fr&&c===estadoPlanilha.selR.fc){
     /* clique numa célula: abre a peça no formulário (se o formulário não tem alterações por salvar) e já deixa a célula pronta para digitar */
-    const row=G&&G.linhas[r];if(row&&row.lancId&&row.lancId!==editId&&!formSujo()&&!celular()){const lid=row.lancId;editar(lid);if(G.linhas[r]&&G.linhas[r].lancId===lid)selR={ar:r,ac:c,fr:r,fc:c}}
+    const row=G&&G.linhas[r];if(row&&row.lancId&&row.lancId!==editId&&!formSujo()&&!celular()){const lid=row.lancId;editar(lid);if(G.linhas[r]&&G.linhas[r].lancId===lid)estadoPlanilha.selR={ar:r,ac:c,fr:r,fc:c}}
     abrirCel(r,td.dataset.c,true)}});
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
 function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=(cfg().banhistas[0]||{}).id||"";conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
@@ -6192,41 +6189,13 @@ document.addEventListener("click",e=>{
   const snapCfg=CFG_UNDO.includes(a)?clone(S.config):null;
   const ctx={t,e,a,C,tr,ci,bi};
   if(ACOES[a]){if(ACOES[a](ctx)===false)return}else switch(a){
-    case "editar":editar(tr.dataset.l);if(celular())formAbrir(true);break;
-    case "form-fechar":formAbrir(false);break;
-    case "form-alt":{abertos.malt=(Number(abertos.malt==null?2:abertos.malt)+1)%3;guardarAbertos();gavetaAlt();break}
-    case "fil-busca":FIL.q="";guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();break;
-    case "fil-limpar":FIL={q:"",cat:"",forn:"",ban:"",sit:""};guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();break;
-    case "vista":try{localStorage.setItem("cadpecas-vista",t.dataset.v)}catch(x){}renderTopo();break;
-    case "ir-form":{if(celular()){formAbrir(true);break}const fm=document.getElementById("form");if(fm)fm.scrollIntoView({block:"start",behavior:"smooth"});setTimeout(focarPrimeiro,350);break}
-    case "ir-lista":document.getElementById("paneTop").scrollIntoView({block:"start",behavior:"smooth"});break;
-    case "dup":duplicarLinha(+tr.dataset.ri);break;
-    case "del":excluirLinhas([+tr.dataset.ri]);break;
 
-    case "b-dup":duplicar([...sel].filter(id=>S.lanc.some(l=>l.id===id)));break;
-    case "b-del":excluir([...sel]);break;
     case "b-copy":copiar(new Set(sel));break;
     case "b-xlsx":baixar(false,new Set(sel));break;
     case "s-xlsx":{const ids=idsDaSel();if(ids.length)baixar(false,new Set(ids));break}
-    case "b-none":sel.clear();renderTopo();break;
-    case "b-set":{const L=document.getElementById("bCol").value,v=document.getElementById("bVal").value;const antes=[];
-      {const ch=checaCel(L,v);if(ch.erro){toast(ch.erro+" (não aplicado)");break}if(vazio(v)&&(L==="F"||L==="I")){toast(NOME[L]+" não pode ficar vazio (não aplicado).");break}}
-      S.lanc.forEach(l=>{if(!sel.has(l.id))return;antes.push({id:l.id,v:clone(l.v),ov:clone(l.ov||{})});
-        if(L==="W"&&temGrade(l)){l.ov=l.ov||{};const ks=l.tipo==="bruta"?banhistaBy(l.banhista).banhos.filter(b=>l.on[b.id]).map(b=>b.id):(bonP(l).length?bonP(l).map(b=>b.id):["p"]);ks.forEach(k=>itensGrade(l).forEach(it=>{(l.ov[k+"~"+it.id]=l.ov[k+"~"+it.id]||{}).W=v}))}
-        else if(l.tipo==="bruta"&&POR_BANHO.has(L)){l.ov=l.ov||{};banhistaBy(l.banhista).banhos.forEach(b=>{if(l.on[b.id])(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
-        else if(l.tipo==="pronta"&&bonP(l).length&&POR_BANHO.has(L)){l.ov=l.ov||{};bonP(l).forEach(b=>{(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
-        else{l.v[L]=v;if(l.ov)Object.values(l.ov).forEach(o=>delete o[L])}});
-      undo={tipo:"bulk",antes};salvar(false);renderTopo();toast(`${NOME[L]} = “${v}” em ${antes.length} peça(s).`,{t:"Desfazer",fn:desfazer});break}
     case "excl-volta":S.form.excl=[];salvar(false);renderForm();toast("As linhas excluídas voltam quando você clicar em Salvar.");break;
     case "cancel":if(editId)cancelar();else{limparForm();salvar(false);renderTopo();renderForm();focarPrimeiro()}break;   /* sem peça em edição, Cancelar esvazia o formulário */
     case "limpar":limparForm();salvar(false);renderTopo();renderForm();focarPrimeiro();break;
-    case "s-edit":{const r=G.linhas[selR.fr];if(r)editar(r.lancId);break}
-    case "s-nova":{const r=G.linhas[selR.fr];if(r)usarModelo(r.lancId);break}
-    case "s-dup":duplicarLinha(selR.fr);break;
-    case "s-copy":copiarSel();break;
-    case "s-clear":limparSel();break;
-    case "s-fill":preencherAbaixo();break;
-    case "s-del":{const b=selBox(),rs=[];if(b)for(let r=b.r1;r<=b.r2;r++)if(G.linhas[r]&&vis(r))rs.push(r);excluirLinhas(rs);break}
     case "repetir":{const l=S.lanc[S.lanc.length-1];if(l)usarModelo(l.id);else toast("Ainda não há peça para repetir.");break}
     case "form-extras":{const f=t.closest("#form"),abriu=f.classList.toggle("fextra-open");t.setAttribute("aria-expanded",String(abriu));t.textContent=abriu?"Menos opções de lançamento":"Mais opções de lançamento";break}
     case "faixa-salvar":{const f=S.form,gr=gradeBy(f.grade);if(gr){gr.faixa=gr.itens.filter(x=>(f.gsel||[]).includes(x.id)).map(x=>x.nome).join(", ");salvar(true,false);renderCfg();toast(gr.faixa?`Tamanhos padrão: ${gr.faixa}`:"Padrão removido: nenhum tamanho vem marcado.")}break}
@@ -6303,7 +6272,7 @@ registrarAcoes(ACOES,"exportacao",{
       toast(`“${mo.nome}” pronto: é só escolher “${mo.nome}” em Exportar para e baixar. Faça um teste pequeno no outro sistema antes de importar tudo.`);return},
   "mod-conferir":()=>{const g=gerar();if(!g.linhas.length){toast("A tabela está vazia: lance ou cole peças antes de conferir.");return}if(!abrirConferencia(g,colunasExport(),null))toast("Tudo certo: a tabela atende às regras do modelo.");return},
   "mod-salvar":()=>{modeloParaJson(modeloAtual())},
-  "exp-ir":({t})=>{const ref=t.dataset.ref,ri=G&&G.linhas.findIndex(r=>String(r.v.E||"")===ref);if(ri==null||ri<0){toast("A peça não está na tabela atual.");return}if(FV&&!FV.has(ri)){toast("Esta peça está fora do filtro atual. Feche esta janela e limpe o filtro para encontrá-la.");return}const o=t.closest(".rep");if(o)o.remove();estadoExportacao.pend=null;visPara(celular()?"planilha":"tudo");const col=LET.findIndex(L=>NOME[L]===t.dataset.colnome);selecionar(ri,col>=0?col:LET.indexOf("F"));rolarAte();setTimeout(()=>{const e=document.querySelector("#sheet td.sa");if(e)e.focus()},100);return},
+  "exp-ir":({t})=>{const ref=t.dataset.ref,ri=G&&G.linhas.findIndex(r=>String(r.v.E||"")===ref);if(ri==null||ri<0){toast("A peça não está na tabela atual.");return}if(estadoPlanilha.fv&&!estadoPlanilha.fv.has(ri)){toast("Esta peça está fora do filtro atual. Feche esta janela e limpe o filtro para encontrá-la.");return}const o=t.closest(".rep");if(o)o.remove();estadoExportacao.pend=null;visPara(celular()?"planilha":"tudo");const col=LET.findIndex(L=>NOME[L]===t.dataset.colnome);selecionar(ri,col>=0?col:LET.indexOf("F"));rolarAte();setTimeout(()=>{const e=document.querySelector("#sheet td.sa");if(e)e.focus()},100);return},
   "exp-assim":()=>{const o=document.querySelector(".rep");if(o)o.remove();const a=estadoExportacao.pend;estadoExportacao.pend=null;if(a&&a.tipo==="copiar")copiar(a.ids,true);else baixar(true,a&&a.ids);return},
   "xlsx":()=>{baixar()},
   "copiar":()=>{copiar()},
@@ -6535,11 +6504,44 @@ registrarAcoes(ACOES,"romaneio",{
       ROM.plan=null;romAplicaR({rows,obs:"",conf:`planilha: ${rows.length} linhas · ${rows.reduce((a,r)=>a+r.qtd,0)} peças${zero.length?` · ${zero.length} linha(s) com quantidade 0 ficaram de fora: ${zero.slice(0,5).join("; ")}${zero.length>5?"…":""}`:""}${semd.length?` · ⚠ ${semd.length} linha(s) SEM DESCRIÇÃO e com quantidade/valor ficaram de fora (pode ser a linha de total): ${semd.slice(0,5).join("; ")}${semd.length>5?"…":""}. Confira a planilha.`:""}`,erro:""});return}},
   "rom-plan-no":()=>{ROM.plan=null;renderRom();return;}
 });
+/* Acoes de clique (data-act) da fatia planilha: filtros, vistas, gaveta do formulario no celular, acoes em lote sobre as pecas marcadas,
+   acoes sobre a celula/linha selecionada e editar/duplicar/excluir a linha. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+   Convencao: o que era `break` no switch virou `return`. b-copy, b-xlsx e s-xlsx ficaram no switch (chamam baixar/copiar da exportacao; mover criaria ciclo). */
+registrarAcoes(ACOES,"planilha",{
+  "editar":({tr})=>{editar(tr.dataset.l);if(celular())formAbrir(true);return;},
+  "form-fechar":()=>{formAbrir(false);return;},
+  "form-alt":()=>{abertos.malt=(Number(abertos.malt==null?2:abertos.malt)+1)%3;guardarAbertos();gavetaAlt();return},
+  "fil-busca":()=>{estadoPlanilha.fil.q="";guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();return;},
+  "fil-limpar":()=>{estadoPlanilha.fil={q:"",cat:"",forn:"",ban:"",sit:""};guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();return;},
+  "vista":({t})=>{try{localStorage.setItem("cadpecas-vista",t.dataset.v)}catch(x){}renderTopo();return;},
+  "ir-form":()=>{if(celular()){formAbrir(true);return}const fm=document.getElementById("form");if(fm)fm.scrollIntoView({block:"start",behavior:"smooth"});setTimeout(focarPrimeiro,350);return},
+  "ir-lista":()=>{document.getElementById("paneTop").scrollIntoView({block:"start",behavior:"smooth"});return;},
+  "dup":({tr})=>{duplicarLinha(+tr.dataset.ri);return;},
+  "del":({tr})=>{excluirLinhas([+tr.dataset.ri]);return;},
+  "b-dup":()=>{duplicar([...sel].filter(id=>S.lanc.some(l=>l.id===id)));return;},
+  "b-del":()=>{excluir([...sel]);return;},
+  "b-none":()=>{sel.clear();renderTopo();return;},
+  "b-set":()=>{const L=document.getElementById("bCol").value,v=document.getElementById("bVal").value;const antes=[];
+      {const ch=checaCel(L,v);if(ch.erro){toast(ch.erro+" (não aplicado)");return}if(vazio(v)&&(L==="F"||L==="I")){toast(NOME[L]+" não pode ficar vazio (não aplicado).");return}}
+      S.lanc.forEach(l=>{if(!sel.has(l.id))return;antes.push({id:l.id,v:clone(l.v),ov:clone(l.ov||{})});
+        if(L==="W"&&temGrade(l)){l.ov=l.ov||{};const ks=l.tipo==="bruta"?banhistaBy(l.banhista).banhos.filter(b=>l.on[b.id]).map(b=>b.id):(bonP(l).length?bonP(l).map(b=>b.id):["p"]);ks.forEach(k=>itensGrade(l).forEach(it=>{(l.ov[k+"~"+it.id]=l.ov[k+"~"+it.id]||{}).W=v}))}
+        else if(l.tipo==="bruta"&&POR_BANHO.has(L)){l.ov=l.ov||{};banhistaBy(l.banhista).banhos.forEach(b=>{if(l.on[b.id])(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
+        else if(l.tipo==="pronta"&&bonP(l).length&&POR_BANHO.has(L)){l.ov=l.ov||{};bonP(l).forEach(b=>{(l.ov[b.id]=l.ov[b.id]||{})[L]=v})}
+        else{l.v[L]=v;if(l.ov)Object.values(l.ov).forEach(o=>delete o[L])}});
+      undo={tipo:"bulk",antes};salvar(false);renderTopo();toast(`${NOME[L]} = “${v}” em ${antes.length} peça(s).`,{t:"Desfazer",fn:desfazer});return},
+  "s-edit":()=>{const r=G.linhas[estadoPlanilha.selR.fr];if(r)editar(r.lancId);return},
+  "s-nova":()=>{const r=G.linhas[estadoPlanilha.selR.fr];if(r)usarModelo(r.lancId);return},
+  "s-dup":()=>{duplicarLinha(estadoPlanilha.selR.fr);return;},
+  "s-copy":()=>{copiarSel();return;},
+  "s-clear":()=>{limparSel();return;},
+  "s-fill":()=>{preencherAbaixo();return;},
+  "s-del":()=>{const b=selBox(),rs=[];if(b)for(let r=b.r1;r<=b.r2;r++)if(G.linhas[r]&&vis(r))rs.push(r);excluirLinhas(rs);return}
+});
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.cont)return;const c=continuoCfg();cfg().continuo={...c,[t.dataset.cont]:!!t.checked};salvar(true,false)});
 document.addEventListener("change",e=>{const t=e.target;if(!t||!t.dataset)return;const palavras=v=>[...new Map(String(v).split(/[;\n]/).map(x=>x.trim().replace(/\s+/g," ")).filter(x=>x&&x.length<=60).map(x=>[semAc(x),x])).values()];if(t.hasAttribute("data-cbank")){const el=t.closest("[data-cat]"),c=el&&cfg().categorias[+el.dataset.cat];if(!c)return;c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[t.dataset.cbank]=palavras(t.value).slice(0,100);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral")){cfg().bancoGeral=palavras(t.value).slice(0,500);salvar(true,false);renderForm()}else if(t.hasAttribute("data-banco-geral-on")){cfg().bancoGeralAtivo=t.checked;salvar(true,false);renderForm()}});
 document.addEventListener("input",e=>{if(!e.target.matches("[data-banco-busca]"))return;const q=semAc(e.target.value);document.querySelectorAll("[data-banco-item]").forEach(b=>{b.hidden=!semAc(b.dataset.w).includes(q)})});
 document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.dataset&&t.dataset.subren!==undefined&&catUI.ren)catUI.ren=null});
-document.addEventListener("dblclick",e=>{if(e.target.classList&&e.target.classList.contains("rz")){delete colW[e.target.dataset.rz];try{localStorage.setItem("cadpecas-colw",JSON.stringify(colW))}catch(x){}renderTopo()}});
+document.addEventListener("dblclick",e=>{if(e.target.classList&&e.target.classList.contains("rz")){delete estadoPlanilha.colW[e.target.dataset.rz];try{localStorage.setItem("cadpecas-colw",JSON.stringify(estadoPlanilha.colW))}catch(x){}renderTopo()}});
 document.addEventListener("mouseover",e=>{const tr=e.target.closest("tr[data-l]");document.querySelectorAll("tr.hl").forEach(x=>{if(!tr||x.dataset.l!==tr.dataset.l)x.classList.remove("hl")});if(tr)document.querySelectorAll(`tr[data-l="${CSS.escape(String(tr.dataset.l))}"]`).forEach(x=>x.classList.add("hl"))});
 /* a variação do elemento (cartão da categoria ou variação sem categoria) */
 function aplicaFaixa(txt){const f=S.form,gr=gradeBy(f.grade);if(!gr)return;f.gsel=selFaixa(gr,txt);erro="";salvar(false);renderTopo();renderForm()}
@@ -6617,8 +6619,8 @@ function onField(t,isChange){
   {const re=t.closest&&t.closest("[data-rom]");
     if(re&&t.dataset.rm){const T=C.romaneios[+re.dataset.rom];if(T){T.mapa=[...re.querySelectorAll(".rmr")].map(r=>{const w=r.querySelector("[data-rm=w]").value.trim(),c=r.querySelector("[data-rm=c]").value,sb=r.querySelector("[data-rm=s]").value;return w?w+"="+c+(c&&sb?">"+sb:""):""}).filter(Boolean).join("; ");salvar(true,false);if(isChange&&t.dataset.rm==="c")renderCfg()}return}
     if(re&&t.dataset.rf){const T=C.romaneios[+re.dataset.rom];if(T){T[t.dataset.rf]=t.type==="checkbox"?t.checked:t.value;salvar(true,false)}return}}
-  if(t.id==="fBusca"){FIL.q=t.value;guardarFil();renderTopo();return}
-  if(t.dataset&&t.dataset.fil){if(!isChange)return;FIL[t.dataset.fil]=t.value;guardarFil();renderTopo();return}
+  if(t.id==="fBusca"){estadoPlanilha.fil.q=t.value;guardarFil();renderTopo();return}
+  if(t.dataset&&t.dataset.fil){if(!isChange)return;estadoPlanilha.fil[t.dataset.fil]=t.value;guardarFil();renderTopo();return}
   if(t.id==="selAll"){G.linhas.forEach((r,ri)=>{if(vis(ri)){if(t.checked)sel.add(r.lancId);else sel.delete(r.lancId)}});renderTopo();return}
   if(t.hasAttribute&&t.hasAttribute("data-sel")){const id=t.closest("tr").dataset.l;if(t.checked)sel.add(id);else sel.delete(id);renderTopo();return}
   if(t.dataset.col){
@@ -6784,22 +6786,22 @@ document.addEventListener("keydown",e=>{
   if(t.dataset&&t.dataset.rp==="faixa"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));return}
   if(t.dataset&&t.dataset.rp&&e.key==="Enter"&&t.tagName==="INPUT"&&t.closest(".rc")){e.preventDefault();let nx=t.closest(".rc").nextElementSibling;while(nx&&nx.classList.contains("sk"))nx=nx.nextElementSibling;
     const n2=nx&&nx.querySelector(`[data-rp="${t.dataset.rp}"]${t.dataset.b?`[data-b="${t.dataset.b}"]`:""}`);if(n2){n2.focus();try{n2.select()}catch(x){}}return}
-  if(t.id==="sheet"&&selR&&!celEd){
+  if(t.id==="sheet"&&estadoPlanilha.selR&&!celEd){
     const k=e.key,mod=e.ctrlKey||e.metaKey,mr=Math.max(maxRi(),0);
-    const mover=(dr,dc)=>{const r=dr?passo(selR.fr,dr,mr):selR.fr,c=Math.min(Math.max(selR.fc+dc,0),LET.length-1);if(e.shiftKey&&k!=="Tab")selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);rolarAte()};
+    const mover=(dr,dc)=>{const r=dr?passo(estadoPlanilha.selR.fr,dr,mr):estadoPlanilha.selR.fr,c=Math.min(Math.max(estadoPlanilha.selR.fc+dc,0),LET.length-1);if(e.shiftKey&&k!=="Tab")selecionar(estadoPlanilha.selR.ar,estadoPlanilha.selR.ac,r,c);else selecionar(r,c);rolarAte()};
     if(k==="ArrowDown"){e.preventDefault();mover(1,0);return}
     if(k==="ArrowUp"){e.preventDefault();mover(-1,0);return}
-    if(k==="Tab"&&!e.shiftKey&&selR.fc>=LET.length-1&&selR.fr>=mr)return;   /* última célula: Tab deixa o foco sair da planilha */
-    if(k==="Tab"&&e.shiftKey&&selR.fc<=0&&selR.fr<=0)return;   /* primeira célula: Shift+Tab também */
+    if(k==="Tab"&&!e.shiftKey&&estadoPlanilha.selR.fc>=LET.length-1&&estadoPlanilha.selR.fr>=mr)return;   /* última célula: Tab deixa o foco sair da planilha */
+    if(k==="Tab"&&e.shiftKey&&estadoPlanilha.selR.fc<=0&&estadoPlanilha.selR.fr<=0)return;   /* primeira célula: Shift+Tab também */
     if(k==="ArrowRight"||(k==="Tab"&&!e.shiftKey)){e.preventDefault();mover(0,1);return}
     if(k==="ArrowLeft"||(k==="Tab"&&e.shiftKey)){e.preventDefault();mover(0,-1);return}
-    if(k==="Enter"||k==="F2"){e.preventDefault();abrirCel(selR.fr,LET[selR.fc]);return}
+    if(k==="Enter"||k==="F2"){e.preventDefault();abrirCel(estadoPlanilha.selR.fr,LET[estadoPlanilha.selR.fc]);return}
     if(k==="Delete"||k==="Backspace"){e.preventDefault();limparSel();return}
     if(mod&&k.toLowerCase()==="c"){e.preventDefault();copiarSel();return}
     if(mod&&k.toLowerCase()==="d"){e.preventDefault();preencherAbaixo();return}
     if(mod&&k.toLowerCase()==="a"){e.preventDefault();selecionar(0,0,Math.max(Math.min(mr,(G?G.linhas.length:1)-1),0),LET.length-1);return}
-    if(k==="Escape"){selR=null;pintarSel();renderSelBar();return}
-    if(!mod&&!e.altKey&&k.length===1){e.preventDefault();abrirCel(selR.fr,LET[selR.fc]);const i=document.getElementById("celIn");if(i)i.value=k;return}
+    if(k==="Escape"){estadoPlanilha.selR=null;pintarSel();renderSelBar();return}
+    if(!mod&&!e.altKey&&k.length===1){e.preventDefault();abrirCel(estadoPlanilha.selR.fr,LET[estadoPlanilha.selR.fc]);const i=document.getElementById("celIn");if(i)i.value=k;return}
   }
   if((e.ctrlKey||e.metaKey)&&!e.altKey&&!/INPUT|TEXTAREA|SELECT/.test(t.tagName)&&!t.isContentEditable){
     const kz=e.key.toLowerCase();
@@ -6865,7 +6867,7 @@ document.addEventListener("input",e=>{if(e.target&&e.target.id==="celIn"&&celEd)
       if(!m.contains(a)||a===m){e.preventDefault();(e.shiftKey?it[it.length-1]:it[0]).focus();return}
       if(e.shiftKey&&i===0){e.preventDefault();it[it.length-1].focus()}else if(!e.shiftKey&&i===it.length-1){e.preventDefault();it[0].focus()}}},true)}
 {const ai=document.getElementById("autorIn");if(ai){ai.value=AUTOR;ai.addEventListener("change",()=>setAutor(ai.value))}}
-{const shj=document.getElementById("sheet");if(shj)shj.addEventListener("scroll",()=>{if(!JAN)return;cancelAnimationFrame(janRaf);janRaf=requestAnimationFrame(()=>janRepintar(false))},{passive:true})}
+{const shj=document.getElementById("sheet");if(shj)shj.addEventListener("scroll",()=>{if(!estadoPlanilha.jan)return;cancelAnimationFrame(estadoPlanilha.janRaf);estadoPlanilha.janRaf=requestAnimationFrame(()=>janRepintar(false))},{passive:true})}
 /* lembrete de backup: os dados ficam só neste navegador; passada uma semana sem backup completo (e com peças lançadas), avisa uma vez por abertura */
 function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!localStorage.getItem(u))localStorage.setItem(u,String(Date.now()));
   const ult=+localStorage.getItem(k)||+localStorage.getItem(u)||Date.now();

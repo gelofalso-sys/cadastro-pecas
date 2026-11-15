@@ -248,3 +248,10 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 - `ROM`/`romT` ficaram em `src/js/19c0-romaneio-global.js` e `ROMS` em `src/js/20`: globais de domínio que irão para `core` com funções de acesso (não movidos agora).
 - Mover/dividir manteve o HTML idêntico (hash `d4fcb6e7…`); a migração das ações mudou a ordem de carga, então a prova passou a ser a suíte.
 - Globais mutáveis: 85 -> 78 (`romRevSeq`, `romT0`, `romBusy`, `pdfLib`, `REL`, `IMPQ`, `IMPST` viraram `estadoRomaneio`). `NF` e `relTem` continuam globais (usados por 17, 20, 32, 33).
+
+### Fatia `planilha` — concluída em 14/11/2026 (Tarefa 15, sexta fatia)
+- `src/fatias/planilha/` com `FATIA.json` (`fronteira: "falha"`, `usa: ["core"]`), `LEIA-ME.md`, o antigo 15 dividido em cinco arquivos, `16-selecao.js`, `24`, `34`, `19a2-grafico-rosca.js` (veio de `configuracao`) e `acoes.js` (21 ações). Listeners inteiros da grade vieram de 30, 31, 32 e 33 (`30b`, `31b`, `32b`, `33b`).
+- Para não criar ciclo: `render` (chama `renderCfg`) e `romResync`/`romCriando` (chamam o romaneio) foram separados em `src/js/15b` e `15d` (legado); `34c` (cartões de `#cfg`) foi para `configuracao`. `exportacao`, `tabelas`, `configuracao`, `fotos` e `romaneio` passaram a listar `planilha` em `usa`. O acoplamento com `lancamento` (22 símbolos, ainda legado) está no LEIA-ME para a Tarefa 16.
+- `b-copy`, `b-xlsx`, `s-xlsx` ficaram no switch (usam `baixar`/`copiar` da exportação; migrar criaria ciclo).
+- Mover/dividir manteve o HTML idêntico (hash `6500f0e9…`); ações e estado mudaram a ordem/nomes, a prova passou a ser a suíte.
+- Globais mutáveis: 78 -> 68 (`colW`, `nfVazAtualizar`, `FIL`, `FV`, `JAN`, `janRaf`, `selR`, `arrastando`, `mdTd`, `mdJa` viraram `estadoPlanilha`; `w` fica global).
