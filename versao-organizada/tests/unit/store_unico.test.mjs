@@ -1,4 +1,4 @@
-// Todo acesso direto a localStorage, sessionStorage e IndexedDB fica em src/store/ (Tarefa 17).
+// Todo acesso direto a localStorage, sessionStorage e IndexedDB, e as funcoes finas que os embrulham, fica em src/store/ (Tarefa 17; Etapa 3, 3.6).
 // Varre os .js de src/ (fora de src/store/) e falha se algum citar esses nomes, mesmo em comentario.
 // Sem lista de excecoes: comentario que cite o nome deve ser reescrito (ex.: "armazenamento local").
 import test from "node:test";
@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const dirSrc = path.join(raiz, "src");
-const PROIBIDO = /\b(localStorage|sessionStorage|indexedDB)\b/;
+const PROIBIDO = /\b(localStorage|sessionStorage|indexedDB|lerPref|gravarPref|removerPref|idbGet|idbPut|idbDel|idbOp|idbAbrir)\b/;   /* inclui as funcoes finas de src/store: chamadores usam prefLer, dadoLer, bancoLer e afins */
 
 function arquivosJs(dir) {
   const out = [];

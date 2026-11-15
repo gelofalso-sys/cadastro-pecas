@@ -23,9 +23,10 @@ App de arquivo unico (HTML) montado a partir de `src/`. Responda e comente em po
 - `src/fatias/<nome>/`: o codigo por funcionalidade (FATIA.json + LEIA-ME.md + acoes.js); `app` e a casca (janelas, menus, listeners globais).
 - `src/js/`: so a base compartilhada (estado global `S`/`G`, utilidades, `render`, navegacao, `repModal`) e `00-adaptadores-nucleo.js` (gerado); motivo em `src/fatias/app/LEIA-ME.md`.
 - `src/store/`: UNICO lugar que toca `localStorage`, `sessionStorage` e IndexedDB (scripts simples, carregados logo depois de `src/core`).
-  Use `lerPref`/`gravarPref`/`removerPref`, `lerSessao`/`gravarSessao`/`removerSessao`, `ehAreaLocal`, `idbOp`/`idbGet`/`idbPut`/`idbDel`.
+  Use: `prefLer`/`prefGravar`/`prefRemover` (preferencias de tela e de controle, `store/prefs.js`), `dadoLer`/`dadoGravar`/`dadoRemover` (chaves de dado, lista fechada em `store/dados.js`),
+  `bancoLer`/`bancoGravar`/`bancoApagar`/`bancoChaves`/`bancoTodos`/`bancoAdicionar` (lojas do IndexedDB, `store/banco.js`), `lerSessao`/`gravarSessao`/`removerSessao`, `ehAreaLocal`, e os eventos `armOuvir`/`armEmitir` (`store/eventos.js`).
   Funcoes finas: lancam como o navegador, o try/catch fica em quem chama. Nao crie chave nem formato novo sem pedido.
-  `tests/unit/store_unico.test.mjs` falha se esses nomes aparecerem em outro `.js` de `src/` (inclusive comentario).
+  `tests/unit/store_unico.test.mjs` falha se `localStorage`, `sessionStorage`, `indexedDB` ou as funcoes finas (`lerPref`, `gravarPref`, `removerPref`, `idbGet`, `idbPut`, `idbDel`, `idbOp`, `idbAbrir`) aparecerem em outro `.js` de `src/` (inclusive comentario).
   Nas ferramentas (`tools/acoplamento.mjs`), `store/` e dono proprio, publico como o nucleo e nunca alvo de violacao.
 - Acoes de clique: `ACOES` e `registrarAcoes` em `src/core/acoes.js`; cada fatia registra no seu `acoes.js`; o despacho (e o switch residual) fica em `src/fatias/app/30c-clique-acoes.js`.
   Ao migrar um `case`: `break` vira `return`; `return` que pulava o pos-switch vira `return false`.
