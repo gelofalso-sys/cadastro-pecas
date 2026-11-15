@@ -16,7 +16,7 @@ test("storeLocal define os 13 metodos da interface", () => {
 
 test("armazenamento liga exportBackup e importBackup as funcoes de backup de sempre", () => {
   const src = ler("src/fatias/armazenamento/20-armazenamento-idb.js");
-  assert.ok(src.includes("storeLocal.ligar({exportBackup:()=>bkMontar(),importBackup:o=>aplicarBackupTotal(validarBackup(o),true)})"));
+  assert.ok(src.includes("storeLocal.ligar({exportBackup:()=>bkMontar(),importBackup:async o=>(await aplicarBackupTotal(validarBackup(o),true))===true})"));
 });
 
 test("store-local.js carrega depois de local.js e idb.js e antes das fatias", () => {
