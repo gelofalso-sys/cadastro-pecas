@@ -12,12 +12,12 @@ criar as pecas (`romCriar`), relatorio da criacao (`relGerar`, `relAbrir`, `relL
 - `21-edicao-em-lote.js` (acoes em massa, revogar, excluir), `21a-revisao-final.js`, `21a2-cartoes-romaneio.js` (cartoes, `romAtual`),
   `21a3-lote-e-partes.js`, `21a4-planilha-romaneio.js`, `21a6-campos-e-leitura.js` (`romCampo`, `romLer`, `romAplicaR`): o antigo 21 dividido por assunto.
 - `21b-peca-nova.js`, `21b-romaneio-extras.js` (insumos, lotear), `21b5-passos-romaneio.js` (1 Importar · 2 Pesos · 3 Revisar · 4 Criar).
+- Testes manuais com PDF real: tests/auditoria_pdf_lote.py (fora do run_all).
 - `22-importar-pdf-romaneio.js` (pdf.js, `miniFoto`, `imgCanvas`), `23b-romaneio-criar.js`, `23c-nota-fiscal.js` (NF fica aqui por decisao), `25-relatorio-romaneio.js`,
   `27b4-romaneio-abrir.js` (`romAbrirNovo`), `34b-importacao-romaneio.js` (fila, `#impBar`). `acoes.js`: 62 cliques (`rom-*`, `rev-*`, `rel-*`, `imp-*`, `lote-*`, `rins-*`).
 - Vindos do legado na Tarefa 18: `32-romaneio-revisar-atalho.js` (Ctrl+Enter no romaneio abre a revisao) e `33c-romaneio-filtro-e-navegacao.js`
   (`romFiltroAplicar`, `romFiltroMontar`, `romCompacto`, `romNav`, teclas `[`/`]`, busca na lista de romaneios lancados).
-- Fora: `ROMS`/`romArm`/`romSalvar*`/lista de salvos em `armazenamento`; `rom-q`/`q-fechar` em `lancamento/acoes.js`; `secRom`, modelo por exemplo, fiscal e `qIrGalvanica`
-  em `configuracao`; fotos dos itens (`romFoto*`) em `fotos`: assim nao ha ciclo (ambas usam `romaneio`). `romResync`/`romCriando` na base `src/js/15d` (planilha chama).
+- Fora: `ROMS`/`romArm`/`romSalvar*`/lista de salvos em `armazenamento`; `rom-q`/`q-fechar` em `lancamento`; `secRom`, modelo por exemplo, fiscal e `qIrGalvanica` em `configuracao`; `romFoto*` em `fotos` (sem ciclo). `romResync`/`romCriando` na base `src/js/15d`.
 
 ## Estado e expoe
 `estadoRomaneio = {revSeq, t0, busy, pdfLib, rel, impQ, impSt, romf}` (`romf` era o global `ROMF` do filtro; globais 85 para 78, depois -1 na Tarefa 18).
@@ -28,6 +28,7 @@ criar as pecas (`romCriar`), relatorio da criacao (`relGerar`, `relAbrir`, `relL
 ## Armadilhas
 - `33c-romaneio-filtro-e-navegacao.js` reatribui `renderRom`, `romAtual` e `romListaAbrir` (embrulha para filtro/compacto/busca) e `23c` reatribui `romCriar` (trava da NF): chame sempre pelo nome global.
 - `ROM` e gravado por acoes (`rom-fechar`, `rom-descartar`), por armazenamento (20) e por 27b4; `romSalvarSoon` depois de mudar `ROM`. Texto gerado: `String.fromCharCode(10)`.
+- Pontos cegos do checador ("falha" com 0 violacoes contadas, mas NAO e verdade): ele so ve declaracoes, nao o corpo de `registrarAcoes({...})`. Usos reais de simbolos PRIVADOS de `armazenamento`: `romRascunho` (`rom-descartar`), `romExcluirSalvo` (`rom-descartar`, `rom-salvo-del`), `romListaAbrir` (`rom-lista`; e `33c` a reatribui), `romArm` (le e escreve em `rom-salvo-del`, `rel-fechar`), `romListaRef` (`rom-salvo-del`), todos em `acoes.js`. Conhecidos, nao corrigidos; `fronteira` segue "falha".
 - Handlers fora (pedacos de listeners de todas as telas, em `app`): `input`/`change` de `[data-rp]`, `data-rins`, `data-lotn` (onField chama `romCampo`/`romAtualSoon`), colar/soltar PDF e planilha (`app/32`);
   `storage` do rascunho do romaneio em `armazenamento/33c-outra-aba.js`.
 

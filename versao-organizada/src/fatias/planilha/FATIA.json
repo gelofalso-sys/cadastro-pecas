@@ -40,7 +40,6 @@
     "armazenamento"
   ],
   "testes": [
-    "^pdf_real2\\.py$",
     "^perf_5000\\.py$",
     "^t10\\.py$",
     "^t108_colagem_salto\\.js$",

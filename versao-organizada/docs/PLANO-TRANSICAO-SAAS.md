@@ -56,7 +56,7 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 **Objetivo:** extrair a regra de negócio para funções que recebem dados e devolvem dados.
 
 **Escopo (arquivos):**
-- `12-motor-linhas.js`, `13-modelo-e-variacoes.js`: geração de linhas, banhos, variações.
+- (originalmente `12-motor-linhas.js`, `13-modelo-e-variacoes.js`; hoje `src/core/dominio.js` e `src/fatias/lancamento`): geração de linhas, banhos, variações.
 - `21b-romaneio-extras.js` (rateio de insumos), partes de cálculo de `21-edicao-em-lote-e-revisao.js`.
 - `28-exportar.js` (montagem da planilha por sistema: Jueri, Bling, outros).
 - `22-importar-pdf-romaneio.js` e leitura de texto de `19c-colar-romaneio.js` (parsing de romaneios, planilhas e XML).
@@ -184,7 +184,7 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 ## Ordem sugerida das primeiras semanas
 
 1. Etapa 0 e 1 (limpeza e ferramentas): poucos dias.
-2. Etapa 2, começando por `12-motor-linhas.js` e `28-exportar.js` (maior valor para o servidor).
+2. Etapa 2, começando pelo motor de linhas (hoje `gerar$` em `src/core/dominio.js`; o arquivo `12-motor-linhas.js` não existe mais) e `28-exportar.js` (maior valor para o servidor).
 3. Em paralelo, responder as perguntas em aberto.
 4. Etapa 3 antes de qualquer protótipo de servidor.
 
@@ -280,7 +280,8 @@ Situação em 15/11/2026: itens 2 e 3 feitos (Tarefas 7 e 8: `gerar$`/`fixarRefs
 ### Organização por fatias — concluída em 15/11/2026
 - Fatias (9): `exportacao`, `tabelas`, `configuracao`, `fotos`, `romaneio`, `planilha`, `lancamento`, `armazenamento`, `app`. Fronteira `falha` (0 violações): `app`, `configuracao`, `exportacao`, `fotos`, `planilha`, `romaneio`, `tabelas`. Fronteira `aponta`: `lancamento` (27 violações) e `armazenamento` (25), ciclos de redesenho sem corte limpo, listados nos LEIA-ME.
 - Globais mutáveis de nível superior: 103 -> 45 (`node tools/checar_fronteiras.mjs --base`; 14 na base legada, 24 em `armazenamento`, 3 em `configuracao`, 3 em `romaneio`, 1 em `planilha`).
-- O que ficou em `src/js/` (base compartilhada, de propósito): `00-adaptadores-nucleo.js` (gerado), `10-limites-e-colunas.js` (`S`, `G`, `sel`, `editId`, `abertos`…: estado mutável de todos; não é puro, então não vai para o núcleo), `11-utilidades.js` (`toast`, `listaDe`, `proxDe`, `bancoAtualizar`…, lê `S`/`ROM`), `15b-render-geral.js` (`render`), `15d-romaneio-resync.js`, `18c-navegacao.js` (`irPara`, `rolarPane`), `19d1-modal-rep.js` (`repModal`), `30-refocar-e-abertos.js`, `35-visoes.js` (`visPara`). Cada um é chamado por fatias e chama fatias: em qualquer fatia (ou em `app`) criaria ciclo.
+- O que ficou em `src/js/` (base compartilhada, de propósito): `00-adaptadores-nucleo.js` (gerado), `10-limites-e-colunas.js` (`S`, `G`, `sel`, `editId`, `abertos`…: estado mutável de todos; não é puro, então não vai para o núcleo), `11-utilidades.js` (`toast`, `listaDe`, `proxDe`, `bancoAtualizar`…, lê `S`/`ROM`), `15b-render-geral.js` (`render`), `15d-romaneio-resync.js`, `18c-navegacao.js` (`irPara`, `rolarPane`), `19d1-modal-rep.js` (`repModal`), `30-refocar-e-abertos.js`, `35-visoes.js` (`visPara`). A maioria é chamada por fatias e chama fatias, então numa fatia (ou em `app`) criaria ciclo. Exceção: `30-refocar-e-abertos.js` só toca o DOM e o store (`guardarAbertos` poderia ir para `armazenamento` sem ciclo); fica em `src/js` por escolha, por ora, não por ciclo.
 - `npm run lint:estrito`: 0 `no-undef`, 216 `no-unused-vars`, 64 `no-shadow` (280; lista residual, não perseguida). Entre os não usados estão adaptadores gerados sem uso (`bhDe`, `descBanho`, `todasGrades`…, em `00`), que saem pelo gerador quando ele for revisto.
-- Flakes conhecidos da suíte em `--paralelo=4`: um teste Playwright diferente por rodada (t19, t62, t63_migracao_legada, t65_*, t69_*, t102_banho_concorrencia); todos passam sozinhos.
-- Limite das ferramentas: o grafo só vê declarações; usos dentro de `registrarAcoes(…)` e em listeners de nível superior não entram na contagem de violações (citado nos LEIA-ME de `lancamento` e `app`).
+- Flakes conhecidos da suíte em `--paralelo=4`: um teste Playwright diferente por rodada (t19, t62, t63_migracao_legada, t65_*, t69_*, t102_banho_concorrencia, perf_5000 que estoura o tempo); todos passam sozinhos.
+- Limite das ferramentas: o grafo só vê declarações; usos dentro de `registrarAcoes(…)` e em listeners de nível superior não entram na contagem de violações (citado nos LEIA-ME de `lancamento`, `romaneio` e `app`). Para `romaneio` ("falha", 0 violações contadas) isso esconde ~6 usos reais de símbolos privados de `armazenamento` (lista no LEIA-ME da fatia).
+- Meta NÃO atingida: a meta da especificação "nenhuma linha acima de 160 caracteres" não foi cumprida. Hoje (script sobre `src/**/*.js`): 1628 linhas com mais de 160 caracteres em 119 de 133 arquivos. É adiamento deliberado: reformatar quebraria a prova de HTML idêntico (hash) e arriscaria mudar comportamento.

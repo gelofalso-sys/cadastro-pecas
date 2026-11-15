@@ -12,7 +12,7 @@ App de arquivo unico (HTML) montado a partir de `src/`. Responda e comente em po
   `CP_BACKUP="C:/Users/mathe/Downloads/cadastro-pecas-backup-completo-2026-11-08.json" python tests/run_all.py --paralelo=4`
   - `--so=<regex>` roda so os testes cujo nome casa.
   - A suite roda numa copia temporaria; nao suja o projeto.
-  - Em `--paralelo` um teste Playwright diferente pode falhar por carga (ja vistos: t19, t62, t63_migracao_legada, t65_*, t69_*, t102);
+  - Em `--paralelo` um teste Playwright diferente pode falhar por carga (ja vistos: t19, t62, t63_migracao_legada, t65_*, t69_*, t102, perf_5000 que estoura o tempo);
     rode sozinho (`--so=`) antes de tratar como falha real.
   - Requer Node >= 22.12 (testes `.js` fazem `require` de modulos ES de `src/core`; ver `engines` no package.json).
 
@@ -34,6 +34,10 @@ App de arquivo unico (HTML) montado a partir de `src/`. Responda e comente em po
 - Em texto gerado use `chr(10)` / `String.fromCharCode(10)`, nunca `\n` literal.
 - CRLF no Windows: use `tools/normalizar_eol.py` e respeite o `.gitattributes`.
 - Nunca dispare `change` a mao em campo; so `input` (ver `src/fatias/configuracao/37-moeda.js`).
+
+- O checador de fronteiras nao ve usos dentro de `registrarAcoes({...})` nem de listeners de nivel superior: ao renomear ou mover um simbolo, procure-o tambem por grep.
+- `src/core` e "puro" estruturalmente, mas `core/dominio.js` ainda usa `prefixoEmUso` (configuracao) e `uid` (legado) via globais do app.
+- Testes manuais com PDF real (fora do run_all): `tests/pdf_real2.py`, `tests/auditoria_pdf_lote.py`.
 
 ## Regras de fatia
 - Mexa so na pasta da fatia. Para usar outra fatia, use o que ela expoe em `FATIA.json`.

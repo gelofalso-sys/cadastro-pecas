@@ -24,7 +24,7 @@ Atalhos: Alt+1/2/3 (visoes), `/` (busca), Ctrl+K (paleta), Alt+B (menu lateral),
 ## Fronteira "falha" (0 violacoes) e o que a ferramenta nao ve
 `usa` lista todas as fatias (app e o topo: nenhuma fatia lista `app`). `expoe`: so `sideMarcar` (lido por `visPara` na base `src/js/35-visoes.js`).
 A ferramenta so enxerga declaracoes: os listeners de nivel superior (30c, 32, 33, 35) chamam funcoes de todas as fatias sem aparecer na contagem; escrevem `tabArm`/`romArm` (33, ao fechar janela).
-Ficam na base `src/js/` (chamados por fatias E por app; numa fatia criariam ciclo): `refocar`/`guardarAbertos` (30-refocar-e-abertos), `visPara` (35-visoes), `irPara`/`rolarPane` (18c-navegacao), `render` (15b), `repModal` (19d1).
+Ficam na base `src/js/` (chamados por fatias E por app; numa fatia criariam ciclo): `visPara` (35-visoes), `irPara`/`rolarPane` (18c-navegacao), `render` (15b), `repModal` (19d1). `refocar`/`guardarAbertos` (30-refocar-e-abertos) so tocam DOM e store: ficam na base por escolha, por ora, nao por ciclo (`guardarAbertos` poderia ir para `armazenamento`).
 
 ## Pendencias
 - `onField` e o keydown de 32 misturam todas as telas (cadastros, formulario, romaneio, exportacao, planilha): dividir exigiria quebrar a funcao, nao so mover.

@@ -96,8 +96,7 @@
     "^t116_romaneio_layout\\.js$",
     "^t120_edicao_romaneio_menu_numeracao\\.py$",
     "^insumos_regressao\\.js$",
-    "^romaneio_total_peso\\.js$",
-    "^auditoria_pdf_lote\\.py$"
+    "^romaneio_total_peso\\.js$"
   ],
   "fronteira": "falha"
 }

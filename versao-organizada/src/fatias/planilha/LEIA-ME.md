@@ -30,6 +30,8 @@ Continuam globais: `w` (largura em `abrirCel`) e os compartilhados `S`, `G`, `se
 - Listeners misturados que ficaram na fatia `app`: `keydown` e `paste` de `app/32` (atalhos da grade junto de outros), `click` de `app/30c` e `resize`/`keydown` de `app/35`.
 - Texto gerado: use `String.fromCharCode(10)`; `renderTopo` monta a tabela inteira em string (por isso as linhas passam de 1000 caracteres).
 
+Testes manuais com PDF real: tests/pdf_real2.py (fora do run_all).
+
 ## Pendencias (conhecidas, NAO corrigidas)
 - AUD-A-007: `sincFormCelula` (15f) descarta o valor nao salvo de outra variacao ao editar a celula de uma peca aberta no formulario.
 - AUD-I-001: foto da linha/cartao e `img[data-act=tab-foto]` sem foco de teclado (15e e `cartoes`); AUD-J-001: `renderTopo` redesenha a tabela inteira (custo com 1.000 pecas).
