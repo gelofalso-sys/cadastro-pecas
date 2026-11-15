@@ -43,5 +43,29 @@ App de arquivo unico (HTML) montado a partir de `src/`. Responda e comente em po
 - Mexa so na pasta da fatia. Para usar outra fatia, use o que ela expoe em `FATIA.json`.
 - `expoe` novo exige justificativa no `LEIA-ME.md` da fatia dona.
 
+## Roteiro de uma tarefa (siga nesta ordem)
+1. Ache a fatia em `docs/ARQUITETURA.md`; leia o `FATIA.json` e o `LEIA-ME.md` dela (fluxos, armadilhas, problemas conhecidos).
+2. Mexa so nessa pasta. Dependencia de outra fatia: so pelo que ela expoe; se faltar, justifique no `LEIA-ME.md` da dona.
+3. Teste rapido: os testes de `testes` do `FATIA.json` com `--so=<regex>`, mais `npm run test:unit` e `npm run lint`.
+4. Fim da tarefa: suite completa uma vez (com `CP_BACKUP`); falha so em `--paralelo` roda sozinha antes de contar.
+5. Pronto = lint sem `no-undef`, `node tools/fatias.mjs --validar` e `npm run mapa` em dia, suite verde, `LEIA-ME.md` atualizado se o contrato mudou e HTML regenerado (`npm run build`).
+
+## Hash do HTML
+- Mover arquivo sem mudar a posicao em `src/_ordem.txt` deixa o hash igual (`python tools/hash_html.py`): essa e a prova de que nada quebrou.
+- Mudar codigo ou a ordem muda o hash; ai a prova e a suite verde.
+
+## Pare e pergunte ao usuario
+- Chave de armazenamento nova, mudanca no formato do backup ou no esquema do IndexedDB.
+- O checador de fronteiras reclama de algo que parece legitimo, ou uma regra do `FATIA.json` conflita com o pedido.
+- A tarefa exige mexer em `lancamento` ou `armazenamento` alem do pedido (ver pendencias).
+
+## Trabalho grande
+- Funcionalidade nova ou refatoracao: use brainstorm -> plano -> execucao por etapas (modelo em `docs/superpowers/specs/` e `docs/superpowers/plans/`), nao edite direto.
+
+## Pendencias conhecidas (nao "conserte" no meio de outra tarefa)
+- `lancamento` e `armazenamento` ficam em `fronteira: "aponta"` (27 e 25 violacoes listadas nos `LEIA-ME`): o formulario e a tabela se redesenham e quase toda fatia usa `salvar`.
+- Linhas acima de 160 caracteres (cerca de 1.600): adiado de proposito; reformatar quebra a prova de hash.
+- Auditoria de 09/11: itens por fatia estao nos `LEIA-ME` como problemas conhecidos, nao corrigidos.
+
 ## Git
 - Nao faca `git push` nem publique nada sem o usuario pedir.
