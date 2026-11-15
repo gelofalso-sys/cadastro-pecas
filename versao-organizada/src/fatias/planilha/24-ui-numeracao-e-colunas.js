@@ -1,15 +1,15 @@
 /* ===== ui: numeração recolhível (lembra a escolha), siglas e acessibilidade da planilha ===== */
-{const NBK="cadpecas-numbar-aberta",tog=document.getElementById("nbTog"),nb=document.getElementById("numbar"),sh=document.getElementById("sheet");
-  const lerAb=()=>{try{return lerPref(NBK)==="1"}catch(e){return false}};
+{const NBK="numbarAberta",tog=document.getElementById("nbTog"),nb=document.getElementById("numbar"),sh=document.getElementById("sheet");
+  const lerAb=()=>{try{return prefLer(NBK)==="1"}catch(e){return false}};
   const legenda=()=>{const h=nb.querySelector(".nb-h");if(!h)return;const t="Última peça lançada de cada categoria. Siglas: "+[...nb.querySelectorAll("label.nb")].map(l=>l.dataset.p+" = "+(l.title||"")).join("  ·  ");if(h.textContent!==t)h.textContent=t};
   const aplica=()=>{const ab=lerAb(),bad=nb.querySelectorAll(".nb.bad").length;nb.classList.toggle("aberta",ab);tog.setAttribute("aria-expanded",String(ab));tog.classList.toggle("warn",!!bad);
     const t="Numeração do sistema "+(ab?"▾":"▸")+(bad?" · ⚠ "+bad+" sem número":"");if(tog.textContent!==t)tog.textContent=t};
-  if(tog&&nb){tog.addEventListener("click",()=>{try{gravarPref(NBK,lerAb()?"0":"1")}catch(e){}aplica()});
+  if(tog&&nb){tog.addEventListener("click",()=>{try{prefGravar(NBK,lerAb()?"0":"1")}catch(e){}aplica()});
     let tm=0;new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(()=>{legenda();aplica()},60)}).observe(nb,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});legenda();aplica()}
   if(sh){let tm=0;new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(()=>{const t=sh.querySelector("table.t");if(t&&t.getAttribute("role")!=="grid"){t.setAttribute("role","grid");t.setAttribute("aria-label","Planilha das peças")}},80)}).observe(sh,{childList:true})}}
 /* ===== ui: esconde as colunas A–D totalmente vazias na visão da tabela (só visual; o arquivo baixado continua com as 31) ===== */
-{const sh=document.getElementById("sheet"),bx=document.getElementById("nfVaz"),tx=document.getElementById("nfVazT"),bt=document.getElementById("nfVazB"),KV="cadpecas-mostrar-vazias",st=document.createElement("style");st.id="nfVazias";document.head.appendChild(st);
-  let mostrar=false,tm=0,busy=false;try{mostrar=lerPref(KV)==="1"}catch(e){}
+{const sh=document.getElementById("sheet"),bx=document.getElementById("nfVaz"),tx=document.getElementById("nfVazT"),bt=document.getElementById("nfVazB"),KV="mostrarVazias",st=document.createElement("style");st.id="nfVazias";document.head.appendChild(st);
+  let mostrar=false,tm=0,busy=false;try{mostrar=prefLer(KV)==="1"}catch(e){}
   const run=()=>{if(busy||!sh)return;busy=true;try{
     const t=sh.querySelector("table.t");let vz=[];
     if(t&&t.querySelectorAll("tbody tr:not(.blank):not(.catsep)").length)vz=["A","B","C","D"].filter(L=>![...t.querySelectorAll(`tbody td[data-c="${L}"]`)].some(c=>c.textContent.trim()||c.querySelector("img")));
@@ -21,5 +21,5 @@
   }finally{busy=false}};
   estadoPlanilha.nfVaz=run;
   if(sh&&bx){new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(run,120)}).observe(sh,{childList:true,subtree:true});
-    bt.addEventListener("click",()=>{mostrar=!mostrar;try{gravarPref(KV,mostrar?"1":"0")}catch(e){}run()});run()}}
+    bt.addEventListener("click",()=>{mostrar=!mostrar;try{prefGravar(KV,mostrar?"1":"0")}catch(e){}run()});run()}}
 /* nf-fim */

@@ -29,7 +29,6 @@ export function chavesNoCodigo(src = path.join(raiz, "src")) {
   const out = new Map();
   for (const f of arquivosJs(src)) {
     const r = rel(src, f);
-    if (r.startsWith("store/")) continue;
     fs.readFileSync(f, "utf8").split(/\r?\n/).forEach((l, i) => {
       for (const m of l.matchAll(/["'`](cadpecas[a-z0-9-]*)["'`]/g)) {
         if (!out.has(m[1])) out.set(m[1], []);
@@ -59,7 +58,7 @@ function lojasIdb(src = path.join(raiz, "src")) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const chaves = chavesNoCodigo();
   const L = ["# Inventario do store (gerado por tools/inventario_store.mjs)", "",
-    "Chaves literais `cadpecas*` fora de `src/store/`. Classe: `dado` (negocio), `tela` (preferencia de tela), `controle` (backup/servicos). Gerado: nao edite a mao.", "",
+    "Chaves literais `cadpecas*` em `src/` (inclui `store/prefs.js`). Classe: `dado` (negocio), `tela` (preferencia de tela), `controle` (backup/servicos). Gerado: nao edite a mao.", "",
     "| chave | classe | ocorrencias | fatias | arquivos |", "|---|---|---|---|---|"];
   for (const [k, v] of [...chaves].sort((a, b) => a[0].localeCompare(b[0]))) {
     const classe = NOMES_DE_LOCK.has(k) ? "(nome de lock/banco, nao e chave)" : classificar(k) ?? "SEM CLASSE";

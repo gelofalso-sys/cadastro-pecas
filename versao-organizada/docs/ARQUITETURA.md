@@ -124,7 +124,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | app -> legado | 41: `G`, `S`, `abertos`, `aplicarMemForn`, `aplicarSemBanho`, `bancoAtualizar`, `banhistaBy`, `banhistaDoFornecedor`, ... |
 | app -> planilha | 6: `celular`, `estadoPlanilha`, `guardarFil`, `renderListas`, `renderTopo`, `vis` |
 | app -> romaneio | 3: `ROM`, `romAtualSoon`, `romCampo` |
-| app -> store | 2: `gravarPref`, `lerPref` |
+| app -> store | 2: `prefGravar`, `prefLer` |
 | armazenamento -> configuracao | 2: `impactoAgendar`, `renderCfg` |
 | armazenamento -> core | 27: `BK_DIAS`, `BK_INTERVALO`, `BK_JOURNAL`, `EX_PREFIXO`, `FORM0`, `MAX_BACKUP_BYTES`, `PONTOS_MAX`, `PONTO_INTERVALO`, ... |
 | armazenamento -> exportacao | 1: `obterDL` |
@@ -132,7 +132,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | armazenamento -> legado | 16: `G`, `S`, `catBy`, `cfg`, `editId`, `fixarRefs`, `migrarGrades0`, `migrarJueri`, ... |
 | armazenamento -> planilha | 2: `estadoPlanilha`, `renderTopo` |
 | armazenamento -> romaneio | 4: `ROM`, `impData`, `relTem`, `renderRom` |
-| armazenamento -> store | 12: `AREA_LOCAL_NOME`, `bkLerBanco`, `exPreparar`, `exRestaurar`, `gravarPref`, `gravarSessao`, `idbDel`, `idbGet`, ... |
+| armazenamento -> store | 14: `AREA_LOCAL_NOME`, `bkLerBanco`, `exPreparar`, `exRestaurar`, `gravarPref`, `gravarSessao`, `idbDel`, `idbGet`, ... |
 | armazenamento -> tabelas | 8: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos` |
 | configuracao -> armazenamento | 23: `HIST`, `REDO`, `ROMS`, `TABS`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `corrompido`, ... |
 | configuracao -> core | 39: `BANHO_COLS`, `DEFAULT_CONFIG`, `EXPL`, `FISC_COLS`, `FISC_PAD`, `FORMULA`, `JUERI_CATS`, `LET`, ... |
@@ -141,7 +141,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | configuracao -> legado | 31: `G`, `S`, `abertos`, `bancoGeralLista`, `bancoLista`, `cadLancSig`, `catBy`, `cfg`, ... |
 | configuracao -> planilha | 3: `celular`, `formAbrir`, `renderTopo` |
 | configuracao -> romaneio | 2: `ROM`, `renderRom` |
-| configuracao -> store | 2: `idbOp`, `lerPref` |
+| configuracao -> store | 2: `idbOp`, `prefLer` |
 | core -> configuracao | 1: `prefixoEmUso` |
 | exportacao -> armazenamento | 2: `migrarGrades`, `salvar` |
 | exportacao -> core | 33: `COLW`, `DUAS`, `LET`, `LIM_EXPORT`, `MAX_BACKUP_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `NOME`, ... |
@@ -153,7 +153,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | fotos -> legado | 6: `G`, `S`, `editId`, `gerar`, `irPara`, `toast` |
 | fotos -> planilha | 3: `casa`, `filtroOn`, `renderTopo` |
 | fotos -> romaneio | 2: `ROM`, `renderRom` |
-| fotos -> store | 4: `idbDel`, `idbGet`, `idbPut`, `lerPref` |
+| fotos -> store | 4: `idbDel`, `idbGet`, `idbPut`, `prefLer` |
 | lancamento -> armazenamento | 9: `AUTOR`, `ROMS`, `desfazer`, `ftSalvas`, `pontoAuto`, `pontoAviso`, `romInfo`, `romTem`, ... |
 | lancamento -> configuracao | 1: `renderCfg` |
 | lancamento -> core | 50: `BANHISTA0`, `BANHO_COLS`, `CJ_NOMES`, `DUAS`, `FORM0`, `FORMULA`, `LET`, `MISTO`, ... |
@@ -172,7 +172,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | planilha -> core | 23: `BANHO_COLS`, `DUAS`, `FORMULA`, `LET`, `MONEY`, `NOME`, `NUM`, `PAL`, ... |
 | planilha -> lancamento | 4: `dobrarOv`, `estadoLancamento`, `formSujo`, `renderForm` |
 | planilha -> legado | 30: `G`, `S`, `abertos`, `avisos`, `catBy`, `celEd`, `cfg`, `chaveDoCabecalho`, ... |
-| planilha -> store | 2: `gravarPref`, `lerPref` |
+| planilha -> store | 2: `prefGravar`, `prefLer` |
 | romaneio -> armazenamento | 22: `ARQ`, `AUTOR`, `ROMS`, `TABS`, `backupLembrarPosCriar`, `desfazer`, `pontoAuto`, `pontoAviso`, ... |
 | romaneio -> core | 61: `LET`, `MAX_PDF_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `MAX_TEXTO_COLADO`, `NFKEY`, `NOME`, `ROMKEY`, ... |
 | romaneio -> exportacao | 1: `obterDL` |
@@ -185,7 +185,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | tabelas -> lancamento | 1: `avisoEdicao` |
 | tabelas -> legado | 15: `HIST_SUG`, `S`, `bancoAtualizar`, `cfg`, `editId`, `fnum`, `gerar`, `lastExport`, ... |
 | tabelas -> planilha | 1: `renderListas` |
-| tabelas -> store | 7: `exPreparar`, `gravarPref`, `idbDel`, `idbGet`, `idbOp`, `idbPut`, `lerPref` |
+| tabelas -> store | 8: `exPreparar`, `gravarPref`, `idbDel`, `idbGet`, `idbOp`, `idbPut`, `lerPref`, `prefGravar` |
 
 ## Globais mutaveis por dono
 

@@ -21,7 +21,7 @@ document.addEventListener("click",e=>{
 
     case "historico":historicoAbrir();break
     case "hist-voltar":{const n=+t.dataset.n;document.querySelectorAll(".rep").forEach(x=>x.remove());let feitas=0;while(feitas<n&&HIST.length){if(desfazer()!==true)break;feitas++}if(feitas===n)toast(`Voltou ${feitas} alteração(ões).`);else toast(`Voltou ${feitas} de ${n} alteração(ões). A operação parou para preservar os dados; confira conflitos ou alterações posteriores no romaneio.`);break}
-    case "origem-ok":{try{gravarPref("cadpecas-origem-ok","1")}catch(e){}document.querySelectorAll(".origem-aviso").forEach(x=>x.remove());break}
+    case "origem-ok":{try{prefGravar("origemOk","1")}catch(e){}document.querySelectorAll(".origem-aviso").forEach(x=>x.remove());break}
     case "prim-ir":{primeirosIr(t.dataset.p);primeirosAtualizar();break}
     case "prim-fechar":{abertos.primeiros=false;guardarAbertos();primeirosAtualizar();break}
     case "novidades":novidadesAbrir();break

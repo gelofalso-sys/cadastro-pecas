@@ -7,7 +7,7 @@ registrarAcoes(ACOES,"planilha",{
   "form-alt":()=>{abertos.malt=(Number(abertos.malt==null?2:abertos.malt)+1)%3;guardarAbertos();gavetaAlt();return},
   "fil-busca":()=>{estadoPlanilha.fil.q="";guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();return;},
   "fil-limpar":()=>{estadoPlanilha.fil={q:"",cat:"",forn:"",ban:"",sit:""};guardarFil();{const b=document.getElementById("fBusca");if(b)b.value=""}renderTopo();return;},
-  "vista":({t})=>{try{gravarPref("cadpecas-vista",t.dataset.v)}catch(x){}renderTopo();return;},
+  "vista":({t})=>{try{prefGravar("vista",t.dataset.v)}catch(x){}renderTopo();return;},
   "ir-form":()=>{if(celular()){formAbrir(true);return}const fm=document.getElementById("form");if(fm)fm.scrollIntoView({block:"start",behavior:"smooth"});setTimeout(focarPrimeiro,350);return},
   "ir-lista":()=>{document.getElementById("paneTop").scrollIntoView({block:"start",behavior:"smooth"});return;},
   "dup":({tr})=>{duplicarLinha(+tr.dataset.ri);return;},

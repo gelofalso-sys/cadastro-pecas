@@ -10,6 +10,7 @@ core/notafiscal.js
 core/exportacao.js
 store/local.js
 store/idb.js
+store/prefs.js
 js/00-adaptadores-nucleo.js
 js/10-limites-e-colunas.js
 js/11-utilidades.js

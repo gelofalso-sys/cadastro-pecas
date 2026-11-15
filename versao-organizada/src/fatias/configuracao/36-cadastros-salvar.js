@@ -3,7 +3,7 @@
    romaneio ficam travadas, e a barra "Salvar / Descartar" fica na tela. Descartar devolve cadastros, peças e romaneio ao que eram.
    Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que a preferência local "cadpecas-cad-estrito"="1" (lerPref). */
 const CAD={snap:null,pend:false,hL:0,hR:null,sig:null,rt:null};
-const CADAUTO=(()=>{try{return !!navigator.webdriver&&lerPref("cadpecas-cad-estrito")!=="1"}catch(e){return false}})();
+const CADAUTO=(()=>{try{return !!navigator.webdriver&&prefLer("cadEstrito")!=="1"}catch(e){return false}})();
 const cadRomSig=()=>ROM&&ROM.rows?JSON.stringify(ROM.rows,(k,v)=>k==="foto"?undefined:v):null;
 function cadTirarFoto(){try{flushJa()}catch(e){}
   CAD.snap={c:JSON.stringify(S.config),l:cadLancSig(),f:JSON.stringify(S.form),r:cadRomSig(),rasc:rascunho?JSON.stringify(rascunho,(k,v)=>k==="ft"?undefined:v):null};

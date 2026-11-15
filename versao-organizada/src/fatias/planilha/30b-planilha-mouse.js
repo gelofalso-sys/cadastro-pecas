@@ -3,7 +3,7 @@ document.addEventListener("mousedown",e=>{
     const L=e.target.dataset.rz,col=document.querySelector(`#sheet col[data-cw="${L}"]`),tb=document.querySelector("#sheet table"),x0=e.clientX,w0=cw(L),t0=tb.offsetWidth;
     e.target.classList.add("on");document.body.classList.add("resizing");
     const mv=ev=>{const w=Math.max(36,Math.round(w0+(ev.clientX-x0)/(ZM.t||1)));estadoPlanilha.colW[L]=w;col.style.width=w+"px";tb.style.width=(t0+w-w0)+"px"};
-    const up=()=>{document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);document.body.classList.remove("resizing");try{gravarPref("cadpecas-colw",JSON.stringify(estadoPlanilha.colW))}catch(x){}renderTopo()};
+    const up=()=>{document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);document.body.classList.remove("resizing");try{prefGravar("colw",JSON.stringify(estadoPlanilha.colW))}catch(x){}renderTopo()};
     document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up);return}
   if(e.target.closest("td.ed"))return;
   const sh=document.getElementById("sheet");

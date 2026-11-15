@@ -1,11 +1,11 @@
 /* ===== planilha ===== */
 const CW0={A:60,B:70,C:120,D:100,E:118,F:260,G:120,H:110,I:100,J:110,K:80,L:80,M:220,N:66,O:84,P:104,Q:92,R:110,S:110,T:110,U:110,V:96,W:84,X:100,Y:104,Z:110,AA:66,AB:56,AC:70,AD:96,AE:78};
 const estadoPlanilha={colW:{},nfVaz:()=>{},fil:{q:"",cat:"",forn:"",ban:"",sit:""},fv:null,jan:null,janRaf:0,selR:null,arrastando:false,mdTd:null,mdJa:false};
-try{estadoPlanilha.colW=JSON.parse(lerPref("cadpecas-colw")||"{}")}catch(e){}
+try{estadoPlanilha.colW=JSON.parse(prefLer("colw")||"{}")}catch(e){}
 const cw=L=>estadoPlanilha.colW[L]||CW0[L]||90;
 const larguraTabela=()=>252+LET.reduce((s,L)=>s+cw(L),0);
-try{estadoPlanilha.fil={...estadoPlanilha.fil,...JSON.parse(lerPref("cadpecas-filtro")||"{}")}}catch(e){}
-const guardarFil=()=>{try{gravarPref("cadpecas-filtro",JSON.stringify(estadoPlanilha.fil))}catch(e){}};
+try{estadoPlanilha.fil={...estadoPlanilha.fil,...JSON.parse(prefLer("filtro")||"{}")}}catch(e){}
+const guardarFil=()=>{try{prefGravar("filtro",JSON.stringify(estadoPlanilha.fil))}catch(e){}};
 const filtroOn=()=>!!(estadoPlanilha.fil.q.trim()||estadoPlanilha.fil.cat||estadoPlanilha.fil.forn||estadoPlanilha.fil.ban||estadoPlanilha.fil.sit);
 const low=x=>String(x??"").trim().toLowerCase();
 const celular=()=>matchMedia("(max-width:900px)").matches;
@@ -21,7 +21,7 @@ function formAbrir(abre){
   if(abre)requestAnimationFrame(()=>{const sh=document.getElementById("sheet");if(sh)window.scrollTo({top:Math.max(0,sh.getBoundingClientRect().top+window.scrollY-8),behavior:"smooth"})});
 }
 gavetaAlt();
-function vista(){let v=null;try{v=lerPref("cadpecas-vista")}catch(e){}return v==="lista"||v==="planilha"?v:(celular()?"lista":"planilha")}
+function vista(){let v=null;try{v=prefLer("vista")}catch(e){}return v==="lista"||v==="planilha"?v:(celular()?"lista":"planilha")}
 const banhoDe=r=>r.banho?(BANHO_COLS[r.col]||r.col||"Banho"):"Pronta";
 function casa(r){
   if(estadoPlanilha.fil.cat&&(r.v.I||"")!==estadoPlanilha.fil.cat)return false;
