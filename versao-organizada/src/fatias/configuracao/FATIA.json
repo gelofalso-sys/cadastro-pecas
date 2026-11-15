@@ -7,13 +7,20 @@
     "19a-secao-categorias.js",
     "19a3-secao-exportar-para.js",
     "21a5-modelo-por-exemplo.js",
+    "21b3-ir-galvanica.js",
     "21b4-fiscal-categorias.js",
+    "21d2-impacto-cadastro.js",
+    "21d4-arrastar-ordem.js",
     "25a-secao-romaneios.js",
     "25b-cadastros-render.js",
+    "30-banho-exclusao-segura.js",
+    "acoes.js",
+    "31-banco-palavras.js",
+    "31-subren-sair.js",
+    "31c-trocar-prefixo.js",
     "34c-cartoes-categoria.js",
     "36-cadastros-salvar.js",
-    "37-moeda.js",
-    "acoes.js"
+    "37-moeda.js"
   ],
   "expoe": [
     "renderCfg",

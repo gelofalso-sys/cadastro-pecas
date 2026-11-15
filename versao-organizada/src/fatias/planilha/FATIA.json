@@ -13,11 +13,11 @@
     "24-ui-numeracao-e-colunas.js",
     "27b1-mostrar-no-fim.js",
     "30b-planilha-mouse.js",
+    "acoes.js",
     "31b-planilha-regua-e-destaque.js",
     "32b-planilha-digitacao-celula.js",
     "33b-planilha-rolagem-janela.js",
-    "34-filtros-e-pilula.js",
-    "acoes.js"
+    "34-filtros-e-pilula.js"
   ],
   "expoe": [
     "casa",

@@ -1,6 +1,3 @@
-/* ===== eventos ===== */
-const refocar=s=>{const el=document.querySelector(s);if(el)el.focus()};
-const guardarAbertos=()=>{try{gravarPref("cadpecas-abertos",JSON.stringify(abertos))}catch(x){}};
 /* Um banho pode ser usado em componentes guardados fora da tabela aberta. */
 let bnReserva=null,bnReservando=false,bnEmExclusao=false;
 /* A reserva fica até salvar ou descartar os cadastros: conferir apenas no clique

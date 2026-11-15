@@ -95,12 +95,3 @@ document.addEventListener("keydown",e=>{
 
 /* trava de segurança: no computador a página em si nunca rola (só a planilha e o painel de baixo) */
 document.addEventListener("scroll",()=>{if(!celular()){const se=document.scrollingElement;if(se&&se.scrollTop)se.scrollTop=0;if(document.body.scrollTop)document.body.scrollTop=0}},true);
-try{romTem=!!lerPref(ROMKEY);romInfo=lerPref("cadpecas-rom-info")||"";relTem=!!lerPref("cadpecas-rel");ROMS=JSON.parse(lerPref("cadpecas-roms")||"[]");TABS=JSON.parse(lerPref("cadpecas-tabs")||"[]");AUTOR=lerPref("cadpecas-autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
-document.addEventListener("dragover",e=>{if(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files"))e.preventDefault()});
-document.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&document.querySelector(".rep [data-novo]")&&/[.](csv|xlsx?)$/i.test(f.name)){e.preventDefault();lerNovo(f);return}if(f&&/pdf|xml/i.test(f.type+f.name)){e.preventDefault();if(editId){avisoEdicao();return}nfRotear(f)}});
-document.addEventListener("keydown",e=>{if(ROM&&ROM.rows.length&&(e.ctrlKey||e.metaKey)&&e.key==="Enter"&&e.target.closest&&e.target.closest("#romWrap")){e.preventDefault();romRevisar();return}},true);
-/* abas que rolam para o lado: a seta "›" some quando chega ao fim */
-{const at=el=>{if(el.scrollWidth<=el.clientWidth+2||el.scrollLeft+el.clientWidth>=el.scrollWidth-4)el.classList.add("fim");else el.classList.remove("fim")};
-  document.addEventListener("scroll",e=>{const el=e.target;if(el&&el.matches&&el.matches("nav.ir,.ctabs"))at(el)},true);
-  let raf=0;new MutationObserver(()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;document.querySelectorAll("nav.ir,.ctabs").forEach(at)})}).observe(document.body,{childList:true,subtree:true});
-  window.addEventListener("resize",()=>document.querySelectorAll("nav.ir,.ctabs").forEach(at));document.querySelectorAll("nav.ir,.ctabs").forEach(at)}

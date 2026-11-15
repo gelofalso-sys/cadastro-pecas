@@ -5,7 +5,12 @@
     "14-persistencia.js",
     "20-armazenamento-idb.js",
     "21c-diagnostico-dados.js",
-    "acoes.js"
+    "21d6-lembrete-backup.js",
+    "27b2-desfazer.js",
+    "acoes.js",
+    "32-ler-indices.js",
+    "33c-lembrete-backup.js",
+    "33c-outra-aba.js"
   ],
   "expoe": [
     "ARQ",

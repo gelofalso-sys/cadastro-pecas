@@ -2,6 +2,7 @@
   "nome": "romaneio",
   "descricao": "Romaneio do fornecedor: colar/ler lista, PDF, foto, planilha e XML/DANFE (nota fiscal), cartoes dos itens, lote por peso, partir/juntar, insumos rateados, revisao final, criar as pecas, relatorio da criacao e fila de importacao.",
   "arquivos": [
+    "19c0-romaneio-global.js",
     "19c-colar-romaneio.js",
     "21-edicao-em-lote.js",
     "21a-revisao-final.js",
@@ -17,8 +18,10 @@
     "23c-nota-fiscal.js",
     "25-relatorio-romaneio.js",
     "27b4-romaneio-abrir.js",
-    "34b-importacao-romaneio.js",
-    "acoes.js"
+    "acoes.js",
+    "32-romaneio-revisar-atalho.js",
+    "33c-romaneio-filtro-e-navegacao.js",
+    "34b-importacao-romaneio.js"
   ],
   "expoe": [
     "renderRom",

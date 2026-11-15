@@ -25,7 +25,7 @@ src="\n".join([grab("11-utilidades.js","function num("),grab("11-utilidades.js",
  grab("fatias/planilha/12-celula-recusada.js","const FORM_SEGURA"),grab("fatias/planilha/12-celula-recusada.js","const QTD_MAX"),grab("fatias/planilha/12-celula-recusada.js","function qtdPos"),grab("fatias/planilha/12-celula-recusada.js","function lerValor"),
  grab("fatias/planilha/12-celula-recusada.js","function calcExpr"),grab("fatias/planilha/12-celula-recusada.js","function avalF"),grab("fatias/planilha/12-celula-recusada.js","function sintaxeF"),
  grab("fatias/planilha/12-celula-recusada.js","function numRaw"),grab("fatias/planilha/12-celula-recusada.js","const pesoLinha"),grab("fatias/planilha/12-celula-recusada.js","function calcBanho"),
- grab("13-modelo-e-variacoes.js","const r2c"),grab("13-modelo-e-variacoes.js","const kDesc"),grab("13-modelo-e-variacoes.js","function valorCol"),"const valorCol=(...a)=>valorCol$(null,...a);"])
+ grab("fatias/exportacao/13-modelo-e-variacoes.js","const r2c"),grab("fatias/exportacao/13-modelo-e-variacoes.js","const kDesc"),grab("fatias/exportacao/13-modelo-e-variacoes.js","function valorCol"),"const valorCol=(...a)=>valorCol$(null,...a);"])
 teste='''
 const out={};
 const rw={desconto:50,v:{P:"10",N:"=P2*2"},banho:{coluna:"R",mult:1.5,modo:"peso"}};

@@ -1,0 +1,26 @@
+{
+  "nome": "app",
+  "descricao": "",
+  "arquivos": [
+    "18c-divisoria.js",
+    "21d-novidades.js",
+    "21d5-historico.js",
+    "21d7-origem-aviso.js",
+    "30a2-eventos-toggle.js",
+    "30c-clique-acoes.js",
+    "31c-on-field.js",
+    "32-eventos-entrada-e-teclado.js",
+    "32-soltar-arquivo.js",
+    "32-abas-rolagem.js",
+    "33-janelas-busca-e-paleta.js",
+    "33c-abertura.js",
+    "33c-paleta-comandos.js",
+    "35-menu-e-final.js"
+  ],
+  "expoe": [],
+  "usa": [
+    "core"
+  ],
+  "testes": [],
+  "fronteira": "aponta"
+}

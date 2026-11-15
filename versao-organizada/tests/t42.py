@@ -24,7 +24,7 @@ src="\n".join([
  grab("../fatias/planilha/12-celula-recusada.js","const FORM_SEGURA"),grab("../fatias/planilha/12-celula-recusada.js","const QTD_MAX"),grab("../fatias/planilha/12-celula-recusada.js","function qtdPos"),
  grab("../fatias/planilha/12-celula-recusada.js","function lerValor"),grab("../fatias/planilha/12-celula-recusada.js","function calcExpr"),
  grab("../fatias/planilha/12-celula-recusada.js","function avalF"),grab("../fatias/planilha/12-celula-recusada.js","function sintaxeF"),grab("../fatias/planilha/12-celula-recusada.js","function numRaw"),
- grab("13-modelo-e-variacoes.js","const r2c"),grab("13-modelo-e-variacoes.js","const kDesc"),grab("13-modelo-e-variacoes.js","const fLinha"),grab("../fatias/romaneio/19c-colar-romaneio.js","const rxPerigo"),
+ grab("../fatias/exportacao/13-modelo-e-variacoes.js","const r2c"),grab("../fatias/exportacao/13-modelo-e-variacoes.js","const kDesc"),grab("../fatias/exportacao/13-modelo-e-variacoes.js","const fLinha"),grab("../fatias/romaneio/19c-colar-romaneio.js","const rxPerigo"),
 
 ])
 teste='''

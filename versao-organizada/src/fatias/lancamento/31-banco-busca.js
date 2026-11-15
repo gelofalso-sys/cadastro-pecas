@@ -1,0 +1,1 @@
+document.addEventListener("input",e=>{if(!e.target.matches("[data-banco-busca]"))return;const q=semAc(e.target.value);document.querySelectorAll("[data-banco-item]").forEach(b=>{b.hidden=!semAc(b.dataset.w).includes(q)})});

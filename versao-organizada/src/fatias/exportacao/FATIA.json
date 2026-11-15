@@ -2,6 +2,7 @@
   "nome": "exportacao",
   "descricao": "Exportar a tabela (xlsx/csv/copiar) com conferencia previa, assistente de outro sistema, modelos em .json, importar planilha de referencia e copia/restauracao dos cadastros.",
   "arquivos": [
+    "13-modelo-e-variacoes.js",
     "19b-assistente-outro-sistema.js",
     "28-exportar.js",
     "29-importar-e-copia.js",

@@ -1,0 +1,1 @@
+try{romTem=!!lerPref(ROMKEY);romInfo=lerPref("cadpecas-rom-info")||"";relTem=!!lerPref("cadpecas-rel");ROMS=JSON.parse(lerPref("cadpecas-roms")||"[]");TABS=JSON.parse(lerPref("cadpecas-tabs")||"[]");AUTOR=lerPref("cadpecas-autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
