@@ -2,7 +2,7 @@ const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-m
 /* Despacho dos cliques (data-act): primeiro o registro ACOES (src/core/acoes.js), preenchido pelos acoes.js das fatias; o que sobra cai no switch residual abaixo.
    Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
 document.addEventListener("click",e=>{
-  const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
+  const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;estadoArmazenamento.histSep=true;setTimeout(()=>{estadoArmazenamento.histSep=false},0);
   if(t.dataset.tipo){tipoClique(t.dataset.tipo);return}
   const a=t.dataset.act,C=cfg(),tr=t.closest("tr[data-l],.pc[data-l]");
   const ci=t.closest("[data-cat]")?+t.closest("[data-cat]").dataset.cat:-1,bi=t.closest("[data-bh]")?+t.closest("[data-bh]").dataset.bh:-1;

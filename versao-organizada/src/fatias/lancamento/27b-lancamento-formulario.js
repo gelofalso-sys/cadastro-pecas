@@ -23,7 +23,7 @@ function adicionar(limpar,quiet){
   {const d2=o=>{if(!o||typeof o!=="object")return;DUAS.forEach(L=>{const t=o[L];if(vazio(t)||String(t).trim()[0]==="=")return;const n=num(t);if(n!=null)o[L]=(L==="P"&&f.compra4?String(Math.round(n*10000)/10000):r2c(n).toFixed(2)).replace(".",",")});const p=o.N;if(!vazio(p)&&String(p).trim()[0]!=="="){const n=num(p);if(n!=null)o.N=String(Math.round(n*1000)/1000).replace(".",",")}};d2(f.v);Object.values(f.ov||{}).forEach(d2)}
   if(!quiet){const refs=[f.v.E,...Object.values(f.ov||{}).map(o=>o&&o.E)].filter(x=>!vazio(x));for(const ref of refs){const m=String(ref).trim().toUpperCase().match(/^([A-Z]+)(\d+)/);if(!m)continue;const atual=Math.max(inicioDe(m[1]),(G&&G.cont&&G.cont[m[1]])||0);if(+m[2]>atual+50&&!confirm("A referência "+ref+" salta mais de 50 números em relação à numeração atual. Isso pode alterar as próximas referências automáticas. Continuar?"))return}}
   if(!quiet&&!editId){const chave=x=>String(x||"").trim().replace(/\s+/g," ").toLocaleLowerCase("pt-BR");const igual=S.lanc.find(l=>chave(val(l,"F"))===chave(f.v.F)&&chave(val(l,"H"))===chave(f.v.H));if(igual&&!confirm("Já existe uma peça com a mesma descrição e fornecedor. Lançar mesmo assim?"))return}
-  const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);if(ant&&ant.rf&&prefDe(val(novo,"I")||"",val(novo,"J"))!==prefDe(val(ant,"I")||"",val(ant,"J"))){delete novo.v.E;delete novo.rf}novo.por=(ant&&ant.por)||AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
+  const novo={...clone(f),id:editId||uid()};{const ant=editId&&S.lanc.find(l=>l.id===editId);if(ant&&ant.rf&&prefDe(val(novo,"I")||"",val(novo,"J"))!==prefDe(val(ant,"I")||"",val(ant,"J"))){delete novo.v.E;delete novo.rf}novo.por=(ant&&ant.por)||estadoArmazenamento.AUTOR;if(!novo.por)delete novo.por;novo.em=(ant&&ant.em)||Date.now()}lembrarForn(novo);registrarLivres(novo);
   if(!gradeBy(novo.grade)){novo.grade="";novo.gsel=[]}
   if(!novo.conj){delete novo.comp;delete novo.fConj}
   if(novo.tipo==="pronta"){const bp=bonP(novo);
@@ -34,7 +34,7 @@ function adicionar(limpar,quiet){
   if(!editId&&!quiet&&(novo.tipo=="bruta"||bonP(novo).length))delete novo.v.V;
   if(!quiet)estadoLancamento.addTrava=Date.now()+500;
   if(quiet)delete novo.ft;
-  if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
+  if(editId){const i=S.lanc.findIndex(l=>l.id===editId);if(S.lanc[i]&&S.lanc[i].ft!==novo.ft)estadoArmazenamento.ftSalvas.delete(novo.id);S.lanc[i]=novo;editId=null;S.form=rascunho||S.form;rascunho=null;renderTopo();toast("Alteração salva.")}
   else{S.lanc.push(novo);
     /* criar em lote: N peças separadas, cada uma numerada i/N (1 = desligado) */
     {const N=!quiet?Math.max(1,Math.min(200,Math.trunc(num(f.loteN)||1))):1;if(N>1){const lid=uid();novo.lote={id:lid,i:1,n:N};for(let k=2;k<=N;k++){const c=clone(novo);c.id=uid();c.lote={id:lid,i:k,n:N};if(c.v)delete c.v.E;S.lanc.push(c)}f.loteN=""}else if(!quiet)delete novo.lote}

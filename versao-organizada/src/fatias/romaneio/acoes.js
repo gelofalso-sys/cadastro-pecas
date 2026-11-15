@@ -30,13 +30,13 @@ registrarAcoes(ACOES,"romaneio",{
   "rins-del":({t})=>{{if(!ROM||!ROM.ins)return;ROM.ins.itens.splice(+t.dataset.i,1);romSalvarSoon();renderRom();return}},
   "rom-cor-on":({t})=>{{const r=ROM.rows[+t.closest(".rc").dataset.i];romArma(r);r.corOn=true;renderRom();return}},
   "rom-abrir":()=>{{if(editId){avisoEdicao(romAbrirNovo);return}romAbrirNovo();return}},
-  "rom-fechar":()=>{{const lsOk=romSalvar(),pr=romGravP;ROM=null;renderRom();renderForm();
+  "rom-fechar":()=>{{const lsOk=romSalvar(),pr=estadoArmazenamento.romGravP;ROM=null;renderRom();renderForm();
       Promise.resolve(pr).then(idbOk=>toast(lsOk?"Romaneio guardado — use “Retomar romaneio” quando quiser continuar.":idbOk?"O rascunho rápido não gravou, mas o romaneio ficou em “Romaneios salvos” (Cadastros): abra por lá para continuar.":"ATENÇÃO: não consegui guardar o romaneio (memória do navegador cheia, bloqueada ou outra aba alterou). Baixe o backup antes de sair."));return}},
   "rom-descartar":({t})=>{{if(romConflito){const b=document.getElementById("outraAbaRom");if(b)b.remove();romConflito=false;ROM=null;renderRom();renderForm();toast("Fechei este romaneio sem apagar nada: outra aba alterou o rascunho e a versão dela foi mantida.");return}
       if(t.disabled)return;t.disabled=true;const atual=ROM;romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito),antes=ROM?JSON.stringify({...ROM,pdf:null}):null;
       (async()=>{try{if(sid0&&!jaFeito&&!(await romExcluirSalvo(sid0))){toast("Não consegui descartar o romaneio salvo. Ele continua aberto; confira o armazenamento.");return}
         if(ROM!==atual)return;if(ROM&&JSON.stringify({...ROM,pdf:null})!==antes){romSalvar();toast("O romaneio mudou durante a exclusão e foi mantido aberto.");return}
-        romLimparRascunho();ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{dadoGravar(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null)
+        romLimparRascunho();ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{dadoGravar(ROMKEY,JSON.stringify(d));estadoArmazenamento.romTem=true}catch(x){}renderForm()}}:null)
       }catch(err){console.error("cadastro-pecas: não foi possível descartar o romaneio",err);toast("Não consegui descartar o romaneio. Ele continua aberto.")}finally{t.disabled=false}})();return}},
   "rom-lote":()=>{romLote();return;},
   "rom-excluir-selecionadas":()=>{romExcluirSelecionadas();return;},
@@ -45,9 +45,9 @@ registrarAcoes(ACOES,"romaneio",{
   "rom-lista":()=>{romListaAbrir();return;},
   "rom-refazer-todas":()=>{{if(!ROM)return;let n=0;ROM.rows.forEach(r=>{if(r.feito&&!r.arq){r.refaz=true;r.skip=false;r.aviso="";n++}});ROM.msg=n?`${n} peça(s) já lançadas liberadas para edição. Mude o que quiser e clique em Criar peças: elas substituem as antigas.`:"Nenhuma peça já lançada para editar.";renderRom();return}},
   "rom-salvo-abrir":({t})=>{{document.querySelectorAll(".rep").forEach(x=>x.remove());Promise.resolve(romAbrirSalvo(t.dataset.id)).catch(e=>{try{console.error("romaneio salvo",e)}catch(x){}toast("Não consegui abrir esse romaneio: "+((e&&e.message)||e)+". Abra “Diagnóstico dos dados” na lista de romaneios salvos.")});return}},
-  "rom-salvo-del":({t})=>{{if(romArm!==t.dataset.id){romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(romArm);romArm=null;romListaRef();renderForm()}return}},
+  "rom-salvo-del":({t})=>{{if(estadoArmazenamento.romArm!==t.dataset.id){estadoArmazenamento.romArm=t.dataset.id;romListaRef()}else{romExcluirSalvo(estadoArmazenamento.romArm);estadoArmazenamento.romArm=null;romListaRef();renderForm()}return}},
   "rel-abrir":()=>{relAbrir();return;},
-  "rel-fechar":()=>{{tabArm=null;romArm=null;const o=document.querySelector(".rep");if(o)o.remove();renderForm();return}},
+  "rel-fechar":()=>{{estadoArmazenamento.tabArm=null;estadoArmazenamento.romArm=null;const o=document.querySelector(".rep");if(o)o.remove();renderForm();return}},
   "rel-print":()=>{window.print();return;},
   "rel-copy":()=>{{const R=relLer();if(R)navigator.clipboard.writeText(relTexto(R)).then(()=>toast("Resumo copiado.")).catch(()=>toast("O navegador não liberou a cópia."));return}},
   "rel-csv":()=>{{const R=relLer();if(R)arqSalvar("Relatorio romaneio "+new Date(R.em).toISOString().slice(0,10)+".csv",relCsv(R));return}},

@@ -14,7 +14,7 @@ function romSelecionar(m){ROM.rows.forEach(r=>{r.sel=m==="todas"?true:m==="nenhu
   document.querySelectorAll("#romWrap .rc").forEach((rc,i)=>{const c=rc.querySelector("[data-rp=sel]");if(c)c.checked=!!ROM.rows[i].sel});romSelN()}
 function romSelN(){const e=document.getElementById("romSelN");if(e)e.textContent=`${ROM.rows.filter(r=>r.sel).length} selecionada(s) — sem seleção, aplicar vale para todas`}
 /* Revogar retira apenas os lançamentos da tabela atual; o item permanece para novo lançamento. */
-function romRevogar(rows){if(!ROM||romConflito){toast("Resolva o conflito do romaneio antes de alterar.");return}const ids=[...new Set(rows.flatMap(r=>r.lancIds||[]))],arquivados=ids.filter(id=>ARQ[id]&&!S.lanc.some(l=>l.id===id)),vivos=ids.filter(id=>S.lanc.some(l=>l.id===id));
+function romRevogar(rows){if(!ROM||romConflito){toast("Resolva o conflito do romaneio antes de alterar.");return}const ids=[...new Set(rows.flatMap(r=>r.lancIds||[]))],arquivados=ids.filter(id=>estadoArmazenamento.ARQ[id]&&!S.lanc.some(l=>l.id===id)),vivos=ids.filter(id=>S.lanc.some(l=>l.id===id));
   if(arquivados.length){toast("Há peças em tabela salva. Restaure essa tabela antes de revogar.");return}if(!vivos.length){toast("Nenhum lançamento na tabela atual para revogar.");return}
   if(!confirm(`Revogar ${vivos.length} lançamento(s) da tabela atual? Os itens permanecem no romaneio para novo lançamento.`))return;
   const antes=romHistAntes();if(!antes){toast("Não foi possível registrar o histórico do romaneio.");return}
@@ -23,7 +23,7 @@ function romRevogar(rows){if(!ROM||romConflito){toast("Resolva o conflito do rom
 /* Exclusão em lote só age sobre seleção explícita, inclusive quando todas estão selecionadas. */
 function romExcluirSelecionadas(){if(!ROM||romConflito){toast("Resolva o conflito do romaneio antes de alterar.");return}const escolhidas=ROM.rows.filter(r=>r.sel);if(!escolhidas.length){toast("Selecione ao menos um item para excluir.");return}
   const lotes=escolhidas.filter(r=>r.lote);if(lotes.some(l=>ROM.rows.some(r=>r.loteDe===l.lid&&!r.sel))){toast("Selecione também todos os itens do lote antes de excluí-lo.");return}
-  const ids=[...new Set(escolhidas.flatMap(r=>r.lancIds||[]))];if(ids.some(id=>ARQ[id]&&!S.lanc.some(l=>l.id===id))){toast("Há peças em tabela salva. Restaure essa tabela antes de excluir os itens.");return}const vivos=ids.filter(id=>S.lanc.some(l=>l.id===id));
+  const ids=[...new Set(escolhidas.flatMap(r=>r.lancIds||[]))];if(ids.some(id=>estadoArmazenamento.ARQ[id]&&!S.lanc.some(l=>l.id===id))){toast("Há peças em tabela salva. Restaure essa tabela antes de excluir os itens.");return}const vivos=ids.filter(id=>S.lanc.some(l=>l.id===id));
   if(!confirm(`Excluir ${escolhidas.length} item(ns) do romaneio${vivos.length?` e ${vivos.length} lançamento(s) vinculado(s) da tabela atual`:""}? Esta exclusão remove os itens do romaneio.`))return;
   const antes=romHistAntes();if(!antes){toast("Não foi possível registrar o histórico do romaneio.");return}
   if(vivos.length){pontoAviso(pontoAuto("antes de excluir itens do romaneio",true));fixarRefs();S.lanc=S.lanc.filter(l=>!vivos.includes(l.id));vivos.forEach(id=>{sel.delete(id);candFoto.add(id)});if(vivos.includes(editId)){editId=null;if(rascunho)S.form=rascunho;rascunho=null;renderForm()}}

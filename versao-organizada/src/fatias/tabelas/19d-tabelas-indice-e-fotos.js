@@ -3,8 +3,8 @@
 /* estado da fatia: sugT/sugSeq = temporizador e geração do histórico de sugestões; semVarredura = o app abriu sem varrer fotos (33 liga) */
 const estadoTabelas={sugT:null,sugSeq:0,semVarredura:false};
 function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await bancoLer("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
-function setAutor(v){definirAutor(String(v||"").trim().slice(0,40));try{prefGravar("autor",AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==AUTOR)ai.value=AUTOR}
-function arqRef(){definirArq({});TABS.forEach(t=>(t.ids||[]).forEach(i=>{ARQ[i]=t.nome}))}
+function setAutor(v){definirAutor(String(v||"").trim().slice(0,40));try{prefGravar("autor",estadoArmazenamento.AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==estadoArmazenamento.AUTOR)ai.value=estadoArmazenamento.AUTOR}
+function arqRef(){definirArq({});TABS.forEach(t=>(t.ids||[]).forEach(i=>{estadoArmazenamento.ARQ[i]=t.nome}))}
 /* índices (romaneios/tabelas) no armazenamento local (src/store): ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
 function gravarIdx(key,arr,apagados){
   try{let cur=[];try{cur=JSON.parse(dadoLer(key)||"[]")}catch(e){}
@@ -18,8 +18,8 @@ function tabIndex(rec){const L=rec.linhas||[],m={id:rec.id,nome:rec.nome,em:rec.
    /* peças que ainda existem em algum ponto de restauração: a foto delas não pode ser apagada */
 async function pontosIds(){try{const ks=((await bancoChaves("pontos"))||[]).filter(k=>String(k).startsWith("p:"));const n=new Set();for(const k of ks){const r=await bancoLer("pontos",k);try{(JSON.parse(r&&r.json||"{}").lanc||[]).forEach(l=>l&&l.id&&n.add(l.id))}catch(e){}}PONTO_IDS.clear();n.forEach(x=>PONTO_IDS.add(x))}catch(e){}}
 function fotoViva(id,hist){if(S.lanc.some(l=>l.id===id))return true;if(PONTO_IDS.has(id))return true;if(TABS.some(t=>(t.ids||[]).includes(id)))return true;
-  if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(snapL&&snapL.includes(id))))return true;return false}
-function varrerFotos(){if(estadoTabelas.semVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);bancoApagar("fotos",id);bancoApagar("fotos","m:"+id);bancoApagar("fotos","r:"+id);ftSalvas.delete(id);ftRSalvas.delete(id)})}
+  if(hist&&(HIST.some(e=>e.L.includes(id))||REDO.some(e=>e.L.includes(id))||(estadoArmazenamento.snapL&&estadoArmazenamento.snapL.includes(id))))return true;return false}
+function varrerFotos(){if(estadoTabelas.semVarredura)return;[...candFoto].forEach(id=>{if(fotoViva(id,true))return;candFoto.delete(id);bancoApagar("fotos",id);bancoApagar("fotos","m:"+id);bancoApagar("fotos","r:"+id);estadoArmazenamento.ftSalvas.delete(id);ftRSalvas.delete(id)})}
 async function varrerTudo(){if(estadoTabelas.semVarredura||(!S.lanc.length&&!TABS.length))return;await pontosIds();const ks=(await bancoChaves("fotos"))||[];
   for(const k of ks){const id=String(k).replace(/^[mr]:/,"");if(!fotoViva(id,false))await bancoApagar("fotos",k)}}
 /* tabelas salvas antes desta versão não guardavam cód.+fornecedor no índice: lê do IndexedDB uma vez */

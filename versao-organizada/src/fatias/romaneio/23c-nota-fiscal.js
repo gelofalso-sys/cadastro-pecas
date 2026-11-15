@@ -104,7 +104,7 @@ function nfConfirmar(){if(!NF)return;const N=NF.nota;
   {const original=nfR2(NF.rows.filter(r=>r.inc&&r.gmode!=="ignorar").reduce((t,r)=>t+(nfCusto(r)||0)*(Number(r.qtd)||0),0)),calculado=nfR2(lin.reduce((t,r)=>t+(num(r.custo)||0)*r.qtd,0));if(original!==calculado&&!confirm(`A conversão de quantidade e custo altera o total dos itens de R$ ${brl(original)} para R$ ${brl(calculado)} (diferença de R$ ${brl(Math.abs(original-calculado))}). Confira e ajuste os itens.
 
 OK = importar com essa diferença; Cancelar = voltar e corrigir.`))return}
-  if(((ROM&&ROM.rows&&ROM.rows.some(r=>!r.skip))||romTem)&&!confirm("Já existe um romaneio aberto ou guardado. Importar a nota vai trocar a lista dele. Continuar?"))return;
+  if(((ROM&&ROM.rows&&ROM.rows.some(r=>!r.skip))||estadoArmazenamento.romTem)&&!confirm("Já existe um romaneio aberto ou guardado. Importar a nota vai trocar a lista dele. Continuar?"))return;
   const C=cfg();let nome=NF.forn;
   if(nome==="__novo"){nome=(NF.novoNome||"").trim()||("Fornecedor da nota "+N.numero);if(!fornBy(nome))C.fornecedores.push({nome,desconto:"0",tipo:"pronta",banhista:"",codigo:"",cnpj:N.emit.cnpj});else{const f0=fornBy(nome);if(!f0.cnpj&&N.emit.cnpj)f0.cnpj=N.emit.cnpj}salvar(true,false)}
   else{const fo=fornBy(nome);if(fo&&!fo.cnpj&&N.emit.cnpj){fo.cnpj=N.emit.cnpj;salvar(true,false)}}

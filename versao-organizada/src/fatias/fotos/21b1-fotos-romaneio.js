@@ -18,5 +18,5 @@ async function romFotosEscolhidas(i,files){
   toast(`${ok} foto(s) anexada(s) aos itens do romaneio${erros.length?` · ${erros.length} com problema: ${erros[0]}`:""}.`)}
 function romFotoRemover(i){
   const r=ROM&&ROM.rows[i];if(!r)return;delete r.foto;delete r.fotoMini;
-  if(r.feito&&Array.isArray(r.lancIds))r.lancIds.forEach(id=>{const l=S.lanc.find(x=>x.id===id);if(l){delete l.ft;bancoApagar("fotos",id);bancoApagar("fotos","m:"+id);ftSalvas.delete(id)}});
+  if(r.feito&&Array.isArray(r.lancIds))r.lancIds.forEach(id=>{const l=S.lanc.find(x=>x.id===id);if(l){delete l.ft;bancoApagar("fotos",id);bancoApagar("fotos","m:"+id);estadoArmazenamento.ftSalvas.delete(id)}});
   salvar(false);renderTopo();romSalvarSoon();renderRom();toast("Foto do item removida.")}

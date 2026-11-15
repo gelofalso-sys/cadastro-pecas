@@ -4,7 +4,7 @@
 async function bnReservarUso(){
   if(estadoConfig.bnEmExclusao)return false;
   if(estadoConfig.bnReserva)return true;
-  if(estadoConfig.bnReservando||!navigator.locks||conflito||corrompido)return false;
+  if(estadoConfig.bnReservando||!navigator.locks||conflito||estadoArmazenamento.corrompido)return false;
   estadoConfig.bnReservando=true;
   try{
     await bkUsoParar();
@@ -26,7 +26,7 @@ async function bnExcluirSeguro(bh0,bn0){
   estadoConfig.bnEmExclusao=true;
   let excluiu=false;
   try{
-    if(conflito||corrompido){toast("Resolva o conflito ou os dados danificados antes de excluir o banho.");return}
+    if(conflito||estadoArmazenamento.corrompido){toast("Resolva o conflito ou os dados danificados antes de excluir o banho.");return}
     const antes=cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);
     await bnExcluirConferido(bh0,bn0);
     excluiu=!!antes&&!cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);

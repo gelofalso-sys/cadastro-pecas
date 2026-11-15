@@ -8,7 +8,7 @@
     return [...m.querySelectorAll("input,textarea,select")].some(x=>{if(x.type==="file"||x.type==="button"||x.type==="search")return false;
       if(x.tagName==="SELECT")return [...x.options].some(o=>o.selected!==o.defaultSelected);
       if(x.type==="checkbox"||x.type==="radio")return x.checked!==x.defaultChecked;return x.value!==x.defaultValue})};
-  const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep){tabArm=null;romArm=null;renderForm()}};
+  const fechar=m=>{if(m.id==="nfRev"){nfFechar();return}const rep=m.classList.contains("rep");m.remove();if(rep){estadoArmazenamento.tabArm=null;estadoArmazenamento.romArm=null;renderForm()}};
   window.__modais={topo,sujo,fechar};
   new MutationObserver(ms=>{let herdado=null,novos=[],saiu=false;
     ms.forEach(m=>{m.removedNodes.forEach(n=>{if(!eM(n))return;const i=pilha.findIndex(p=>p.el===n);if(i>=0){herdado=pilha[i].opener||herdado;pilha.splice(i,1);saiu=true}});m.addedNodes.forEach(n=>{if(eM(n)&&n.isConnected)novos.push(n)})});
@@ -24,4 +24,4 @@
     if(e.key==="Tab"){const it=focaveis(m);if(!it.length){e.preventDefault();m.focus();return}const a=document.activeElement,i=it.indexOf(a);
       if(!m.contains(a)||a===m){e.preventDefault();(e.shiftKey?it[it.length-1]:it[0]).focus();return}
       if(e.shiftKey&&i===0){e.preventDefault();it[it.length-1].focus()}else if(!e.shiftKey&&i===it.length-1){e.preventDefault();it[0].focus()}}},true)}
-{const ai=document.getElementById("autorIn");if(ai){ai.value=AUTOR;ai.addEventListener("change",()=>setAutor(ai.value))}}
+{const ai=document.getElementById("autorIn");if(ai){ai.value=estadoArmazenamento.AUTOR;ai.addEventListener("change",()=>setAutor(ai.value))}}

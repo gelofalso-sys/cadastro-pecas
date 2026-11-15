@@ -21,11 +21,11 @@ Casca do aplicativo: janelas (foco preso, Esc), paleta de comandos (Ctrl+K), men
 Persistencia dos dados: salvar/flush (localStorage e conta), historico de desfazer/refazer, miniaturas no IndexedDB, pontos de restauracao, backup em pasta, backup completo e restauracao com diario, diario de exclusoes, indice e rascunho de romaneios salvos, bloqueios entre abas e diagnostico dos dados.
 
 - Arquivos: `14-persistencia.js`, `20-armazenamento-idb.js`, `21c-diagnostico-dados.js`, `21d6-lembrete-backup.js`, `27b2-desfazer.js`, `32-ler-indices.js`, `33c-lembrete-backup.js`, `33c-outra-aba.js`, `acoes.js`
-- Expoe: `ARQ`, `AUTOR`, `HIST`, `REDO`, `ROMS`, `TABS`, `backupLembrarPosCriar`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `corrompido`, `db`, `definirArq`, `definirAutor`, `definirTabs`, `desfazer`, `dirty`, `exComLock`, `exReverter`, `exSalvarComLock`, `flush`, `flushJa`, `ftSalvas`, `histIni`, `histNota`, `lembreteBackup`, `migrarGrades`, `pontoAuto`, `pontoAviso`, `pontosCarregar`, `restaurando`, `romAbrirSalvo`, `romBadge`, `romConflito`, `romGravP`, `romHistAntes`, `romHistAplicar`, `romHistRegistrar`, `romInfo`, `romLimparRascunho`, `romListaTabela`, `romMarcar`, `romRetomar`, `romSalvar`, `romSalvarSoon`, `romTem`, `salvar`, `salvarCancelarAgendado`, `salvarEncadear`, `setStatus`, `snapC`, `snapL`, `tabArm`
+- Expoe: `HIST`, `REDO`, `ROMS`, `TABS`, `backupLembrarPosCriar`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `db`, `definirArq`, `definirAutor`, `definirTabs`, `desfazer`, `dirty`, `estadoArmazenamento`, `exComLock`, `exReverter`, `exSalvarComLock`, `flush`, `flushJa`, `histIni`, `histNota`, `lembreteBackup`, `migrarGrades`, `pontoAuto`, `pontoAviso`, `pontosCarregar`, `romAbrirSalvo`, `romBadge`, `romConflito`, `romHistAntes`, `romHistAplicar`, `romHistRegistrar`, `romLimparRascunho`, `romListaTabela`, `romMarcar`, `romRetomar`, `romSalvar`, `romSalvarSoon`, `salvar`, `salvarCancelarAgendado`, `salvarEncadear`, `setStatus`
 - Usa: `core`
 - Usada por: `app`, `configuracao`, `exportacao`, `fotos`, `lancamento`, `legado`, `planilha`, `romaneio`, `tabelas`
 - Testes: `^backup_auditoria_integridade\.js$`, `^backup_exclusao_pendente\.js$`, `^backup_falha_regressao\.js$`, `^exclusao_falha_sincrona\.js$`, `^interrupcao_exclusao\.js$`, `^interrupcao_exclusao_real\.js$`, `^t101_tabela_exclusao\.py$`, `^t102_banho_concorrencia\.py$`, `^t110_romaneio_preservacao\.js$`, `^t121_store_contrato\.py$`, `^t18\.py$`, `^t57_rom_historico\.py$`, `^t58\.py$`, `^t58_backup_integridade\.py$`, `^t59_conflito_quota\.py$`, `^t60_crash_restauracao\.py$`, `^t61_journal_quota\.py$`, `^t62_backup_duas_abas\.py$`, `^t63_migracao_legada\.py$`, `^t67_rom_acesso\.py$`, `^t70_conta_tabela\.py$`, `^t80_abrir_sem_idb\.py$`, `^t94_backup_real\.py$`, `^tabela_exclusao_integridade\.js$`
-- Globais mutaveis: 24
+- Globais mutaveis: 8
 - Fronteira: aponta
 
 ### configuracao
@@ -134,7 +134,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | armazenamento -> romaneio | 4: `ROM`, `impData`, `relTem`, `renderRom` |
 | armazenamento -> store | 16: `AREA_LOCAL_NOME`, `armEmitir`, `bancoAdicionar`, `bancoApagar`, `bancoChaves`, `bancoGravar`, `bancoLer`, `bkLerBanco`, ... |
 | armazenamento -> tabelas | 8: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos` |
-| configuracao -> armazenamento | 23: `HIST`, `REDO`, `ROMS`, `TABS`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `corrompido`, ... |
+| configuracao -> armazenamento | 21: `HIST`, `REDO`, `ROMS`, `TABS`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `db`, ... |
 | configuracao -> core | 39: `BANHO_COLS`, `DEFAULT_CONFIG`, `EXPL`, `FISC_COLS`, `FISC_PAD`, `FORMULA`, `JUERI_CATS`, `LET`, ... |
 | configuracao -> fotos | 2: `fotoAuto`, `fotoKey` |
 | configuracao -> lancamento | 1: `renderForm` |
@@ -147,14 +147,14 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | exportacao -> core | 33: `COLW`, `DUAS`, `LET`, `LIM_EXPORT`, `MAX_BACKUP_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `NOME`, ... |
 | exportacao -> legado | 25: `S`, `cfg`, `chaveDoCabecalho`, `checaLinhasPlan`, `colunasExport`, `conferirExport`, `faixaRefs`, `fnum`, ... |
 | exportacao -> planilha | 3: `casa`, `filtroOn`, `renderTopo` |
-| fotos -> armazenamento | 3: `ftSalvas`, `romSalvarSoon`, `salvar` |
+| fotos -> armazenamento | 3: `estadoArmazenamento`, `romSalvarSoon`, `salvar` |
 | fotos -> core | 8: `MAX_FOTO_BYTES`, `candFoto`, `checaTam`, `esc`, `fs`, `ftOk`, `refBase`, `vazio` |
 | fotos -> lancamento | 3: `estadoLancamento`, `formSujo`, `renderForm` |
 | fotos -> legado | 6: `G`, `S`, `editId`, `gerar`, `irPara`, `toast` |
 | fotos -> planilha | 3: `casa`, `filtroOn`, `renderTopo` |
 | fotos -> romaneio | 2: `ROM`, `renderRom` |
 | fotos -> store | 4: `bancoApagar`, `bancoGravar`, `bancoLer`, `prefLer` |
-| lancamento -> armazenamento | 9: `AUTOR`, `ROMS`, `desfazer`, `ftSalvas`, `pontoAuto`, `pontoAviso`, `romInfo`, `romTem`, ... |
+| lancamento -> armazenamento | 6: `ROMS`, `desfazer`, `estadoArmazenamento`, `pontoAuto`, `pontoAviso`, `salvar` |
 | lancamento -> configuracao | 1: `renderCfg` |
 | lancamento -> core | 50: `BANHISTA0`, `BANHO_COLS`, `CJ_NOMES`, `DUAS`, `FORM0`, `FORMULA`, `LET`, `MISTO`, ... |
 | lancamento -> fotos | 3: `autoEnviar`, `estadoFotos`, `fotoCopia` |
@@ -173,14 +173,14 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | planilha -> lancamento | 4: `dobrarOv`, `estadoLancamento`, `formSujo`, `renderForm` |
 | planilha -> legado | 30: `G`, `S`, `abertos`, `avisos`, `catBy`, `celEd`, `cfg`, `chaveDoCabecalho`, ... |
 | planilha -> store | 2: `prefGravar`, `prefLer` |
-| romaneio -> armazenamento | 22: `ARQ`, `AUTOR`, `ROMS`, `TABS`, `backupLembrarPosCriar`, `desfazer`, `pontoAuto`, `pontoAviso`, ... |
+| romaneio -> armazenamento | 19: `ROMS`, `TABS`, `backupLembrarPosCriar`, `desfazer`, `estadoArmazenamento`, `pontoAuto`, `pontoAviso`, `romAbrirSalvo`, ... |
 | romaneio -> core | 61: `LET`, `MAX_PDF_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `MAX_TEXTO_COLADO`, `NFKEY`, `NOME`, `ROMKEY`, ... |
 | romaneio -> exportacao | 1: `obterDL` |
 | romaneio -> lancamento | 6: `adicionar`, `avisoEdicao`, `campoMsg`, `conjSync`, `limpaUlt`, `renderForm` |
 | romaneio -> legado | 61: `G`, `S`, `abertos`, `aplicarMemForn`, `banhistaBy`, `banhistaDoFornecedor`, `catBy`, `catDaDescricao`, ... |
 | romaneio -> planilha | 2: `mostrarNoFim`, `renderTopo` |
 | romaneio -> store | 5: `bancoChaves`, `bancoGravar`, `bancoLer`, `dadoGravar`, `dadoLer` |
-| tabelas -> armazenamento | 16: `ARQ`, `AUTOR`, `HIST`, `REDO`, `TABS`, `definirArq`, `definirAutor`, `definirTabs`, ... |
+| tabelas -> armazenamento | 12: `HIST`, `REDO`, `TABS`, `definirArq`, `definirAutor`, `definirTabs`, `estadoArmazenamento`, `exComLock`, ... |
 | tabelas -> core | 19: `LET`, `PONTO_IDS`, `TABDEL`, `brl`, `candFoto`, `celulas`, `clone`, `codsDe`, ... |
 | tabelas -> lancamento | 1: `avisoEdicao` |
 | tabelas -> legado | 15: `HIST_SUG`, `S`, `bancoAtualizar`, `cfg`, `editId`, `fnum`, `gerar`, `lastExport`, ... |
@@ -191,7 +191,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 
 | dono | globais |
 |---|---|
-| armazenamento | 24 |
+| armazenamento | 8 |
 | configuracao | 3 |
 | legado | 14 |
 | planilha | 1 |

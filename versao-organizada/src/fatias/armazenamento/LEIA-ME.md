@@ -25,6 +25,9 @@ Ficam fora do store (aceito): `navigator.storage` (persistencia/estimativa), `sh
 `estadoArmazenamento = {snapF, snapE, rawCorrompido, avisoMem, avisoIdbT, bkUsoLiberar, bkUsoPedido}`. Seguem globais (outras fatias e a base leem ou gravam): `db`, `dirty`, `sT`, `chain`,
 `HIST`, `REDO`, `snapL`, `snapC`, `restaurando`, `conflito`, `corrompido`, `ftSalvas`, `ROMS`, `TABS`, `ARQ`, `AUTOR`, `tabArm`, `romArm`, `romTem`, `romST`, `romInfo`, `romConflito`, `romGravP`, `histSep`.
 
+## Etapa 4.1: estadoArmazenamento agrupa 16 globais
+`sT`, `chain`, `snapL`, `snapC`, `restaurando`, `corrompido`, `ftSalvas`, `histSep`, `romGravP`, `romST`, `romTem`, `romInfo`, `romArm`, `tabArm`, `AUTOR` e `ARQ` viraram campos de `estadoArmazenamento` (14-persistencia.js). Seguem globais: `db`, `dirty`, `conflito`, `HIST`, `REDO`, `ROMS`, `TABS`, `romConflito`. `expoe` trocou esses nomes por `estadoArmazenamento`: outras fatias leem e, em alguns casos, ESCREVEM campos dele (`histSep` na casca; `tabArm`/`romArm` em romaneio e tabelas; `ARQ` em tabelas; `ftSalvas` em fotos e lancamento). Escrita direta de outra fatia e problema conhecido, nao corrigido aqui; o corte e funcao da dona (4.3).
+
 ## expoe (quem usa de fora)
 `salvar` (quase todas), `flush`/`flushJa`/`dirty`/`setStatus`/`histNota`/`histIni`/`salvarCancelarAgendado`/`salvarEncadear` (configuracao grava ja), `definirTabs`/`definirArq`/`definirAutor` (tabelas),
 `exComLock`/`exReverter`/`exSalvarComLock`/`ftSalvas`/`TABS`/`ARQ`/`AUTOR`/`HIST`/`REDO`/`snapL` (tabelas, fotos, app), `rom*`/`ROMS` (romaneio, configuracao, lancamento), `pontoAuto`/`pontoAviso`/`pontosCarregar`,

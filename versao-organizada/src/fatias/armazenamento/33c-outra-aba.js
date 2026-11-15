@@ -1,7 +1,7 @@
 /* duas abas abertas: se a outra gravou, esta avisa (e para de gravar) em vez de sobrescrever */
 window.addEventListener("storage",e=>{
   if(e.key!=="cadpecas4"||e.newValue==null||!ehAreaLocal(e.storageArea))return;
-  conflito=true;clearTimeout(sT);sT=null;
+  conflito=true;clearTimeout(estadoArmazenamento.sT);estadoArmazenamento.sT=null;
   if(document.getElementById("outraAba"))return;
   const b=document.createElement("div");b.id="outraAba";b.setAttribute("role","alert");
   b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff3cd;color:#664d03;border-bottom:2px solid #c9a227;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:14px system-ui,sans-serif";
@@ -14,7 +14,7 @@ window.addEventListener("storage",e=>{
 /* o rascunho do romaneio tem chave própria: se outra aba o regravou, esta para de gravar o romaneio em vez de sobrescrever */
 window.addEventListener("storage",e=>{
   if(e.key!==ROMKEY||!ehAreaLocal(e.storageArea)||!ROM||!ROM.rows.length||romConflito)return;
-  romConflito=true;clearTimeout(romST);romST=null;
+  romConflito=true;clearTimeout(estadoArmazenamento.romST);estadoArmazenamento.romST=null;
   if(document.getElementById("outraAbaRom"))return;
   const b=document.createElement("div");b.id="outraAbaRom";b.setAttribute("role","alert");
   b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff3cd;color:#664d03;border-bottom:2px solid #c9a227;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:14px system-ui,sans-serif";

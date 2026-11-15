@@ -4,8 +4,8 @@ let impConfigAntes=null,impT=null;
 /* Compara a MESMA lista de peças com os cadastros anterior e atual. Uma edição de
    peça ocorrida antes do cadastro não pode ser atribuída à alteração do cadastro. */
 function custoPorLanc(config,pecas){const anterior=S.config;try{S.config=config;const g=gerar(clone(pecas)),m={};g.linhas.forEach(r=>{const q=num(r.v.W);m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*(q==null?1:q)});return m}finally{S.config=anterior}}
-function impactoAgendar(){if(typeof restaurando!=="undefined"&&restaurando)return;
-  if(!impT){try{impConfigAntes=snapC?JSON.parse(snapC):null}catch(e){impConfigAntes=null}}
+function impactoAgendar(){if(typeof estadoArmazenamento.restaurando!=="undefined"&&estadoArmazenamento.restaurando)return;
+  if(!impT){try{impConfigAntes=estadoArmazenamento.snapC?JSON.parse(estadoArmazenamento.snapC):null}catch(e){impConfigAntes=null}}
   clearTimeout(impT);impT=setTimeout(impactoConferir,1500)}
 function impactoConferir(){const anterior=impConfigAntes;impConfigAntes=null;impT=null;if(!anterior)return;
   let antes,depois;try{const pecas=clone(S.lanc);antes=custoPorLanc(anterior,pecas);depois=custoPorLanc(S.config,pecas)}catch(e){return}
