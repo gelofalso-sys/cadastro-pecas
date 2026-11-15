@@ -43,24 +43,24 @@ async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSal
     if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await idbPut("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
 async function flush(){   /* devolve true só quando a gravação foi confirmada */
   const d={...dirty};dirty={c:false,l:false};
-  if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",true);return false}
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return false}
+  if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",erro:true});return false}
+  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
   let remoto=true;
   try{
     if(db){if(d.c)await db.doc("dados/config").set({v:4,config:S.config});if(conflito)throw new Error("conflito");if(d.l)await db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
-  }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Não consegui salvar agora — tento de novo na próxima alteração",true)}
+  }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("erro",{texto:"Não consegui salvar agora — tento de novo na próxima alteração",erro:true})}
   if(!remoto)return false;
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return false}
+  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
   let local=true;
   try{gravarPref("cadpecas4",jsonLocal(false))}catch(e){
     local=false;
     try{if(await guardarMinis()&&!conflito){gravarPref("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
   if(!local){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
-    setStatus(db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,true);
-    if(!db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();toast(m)}
+    let avisar=false;if(!db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();avisar=true}
+    armEmitir("cota",{texto:db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,erro:true,toast:avisar?m:undefined});
     return false}
-  setStatus(db?"Salvo na sua conta":"Salvo neste navegador");
+  armEmitir("salvo",{texto:db?"Salvo na sua conta":"Salvo neste navegador",erro:false});
   if(candFoto.size)varrerFotos();
   if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{gravarPref("cadpecas4",jsonLocal(false))}catch(e){}}})}
   return true

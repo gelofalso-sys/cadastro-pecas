@@ -16,6 +16,7 @@ backup completo e restauracao, rascunho do romaneio), `21c-diagnostico-dados.js`
 ## src/store (acesso direto ao armazenamento)
 Nenhum arquivo fora de `src/store/` toca o armazenamento do navegador (teste `tests/unit/store_unico.test.mjs`). `store/local.js`: `lerPref`, `gravarPref`, `removerPref`,
 `lerSessao`/`gravarSessao`/`removerSessao`, `ehAreaLocal`. `store/idb.js`: `idbAbrir`, `idbOp`, `idbPut/Get/Del`, `exPreparar`, `exRestaurar`, `bkLerBanco`. Funcoes finas: o try/catch fica em quem chama.
+`store/prefs.js`: preferencias de tela e de controle por nome (`prefLer`/`prefGravar`/`prefRemover`, tabela `PREFS`; mesmas chaves `cadpecas-*`); chaves de dado de negocio nao entram ali. `store/eventos.js`: `armOuvir`/`armEmitir` com os eventos `salvo`, `erro`, `conflito` e `cota`; o `flush` emite (texto e `erro`, e `toast` em `cota`) e a casca `app` (`33d-avisos-armazenamento.js`) chama `setStatus`/`toast`. Emissao sincrona, mesmos textos. O `salvar()` em si nunca mostrou toast nem redesenhou. Inventario das chaves: `docs/inventario-store.md` (`node tools/inventario_store.mjs`).
 Ficam fora do store (aceito): `navigator.storage` (persistencia/estimativa), `showDirectoryPicker` (backup em pasta) e os metodos de object store usados dentro dos callbacks de `idbOp`.
 
 ## Estado (globais 58 para 51)

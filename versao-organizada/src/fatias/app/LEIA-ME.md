@@ -30,3 +30,6 @@ Ficam na base `src/js/` (chamados por fatias E por app; numa fatia criariam cicl
 - `onField` e o keydown de 32 misturam todas as telas (cadastros, formulario, romaneio, exportacao, planilha): dividir exigiria quebrar a funcao, nao so mover.
 - AUD-F-001 (padrao de leitura personalizado pode travar a aba): o formato e salvo em `onField` (`data-rf`), o regex esta em `core/romaneio.js`. Conhecido, NAO corrigido.
 - 136 linhas acima de 160 caracteres (64 em `31c-on-field.js`, 24 em `32-eventos-entrada-e-teclado.js`): nao reformatadas.
+
+## Avisos do armazenamento
+`33d-avisos-armazenamento.js` ouve `salvo`/`erro`/`conflito`/`cota` (src/store/eventos.js) e mostra `setStatus` e `toast`; carrega antes de `33c-abertura.js` para nenhuma gravacao da abertura ficar sem ouvinte.

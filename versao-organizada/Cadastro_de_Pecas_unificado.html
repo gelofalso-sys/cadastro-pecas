@@ -3112,6 +3112,14 @@ function prefChave(nome){if(!Object.prototype.hasOwnProperty.call(PREFS,nome))th
 function prefLer(nome){return lerPref(prefChave(nome))}
 function prefGravar(nome,valor){gravarPref(prefChave(nome),valor)}
 function prefRemover(nome){removerPref(prefChave(nome))}
+/* ===== src/store/eventos.js: o armazenamento avisa, a casca decide o que mostrar =====
+   Script simples, carregado depois de store/prefs.js (src/_ordem.txt). Eventos: "salvo", "erro", "conflito", "cota".
+   Carga (info): {texto, erro} e, em "cota", opcionalmente {toast}. Emissao SINCRONA, na ordem de registro, para o aviso
+   aparecer no mesmo instante de antes; sem ouvinte nao faz nada; ouvinte que lanca nao interrompe quem emitiu. */
+const ARM_OUVINTES={salvo:[],erro:[],conflito:[],cota:[]};
+function armLista(nome){if(!Object.prototype.hasOwnProperty.call(ARM_OUVINTES,nome))throw new Error("evento de armazenamento desconhecido: "+nome);return ARM_OUVINTES[nome]}
+function armOuvir(nome,fn){armLista(nome).push(fn)}
+function armEmitir(nome,info){for(const fn of armLista(nome).slice()){try{fn(info)}catch(e){console.error("cadastro-pecas: ouvinte de armazenamento falhou",e)}}}
 /* ===== adaptadores: o app chama f(...); o núcleo recebe o estado: f$(S, ...). Gerado por tools/injetar_estado.mjs ===== */
 function cfg(...a){return cfg$(S,...a)}
 function catBy(...a){return catBy$(S,...a)}
@@ -3397,24 +3405,24 @@ async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSal
     if(l.ftR&&!ftRSalvas.has(l.id)){const v0=l.ftR,r=await idbPut("fotos","r:"+l.id,v0);if(r!==null&&l.ftR===v0)ftRSalvas.add(l.id);else ok=false}}return ok}
 async function flush(){   /* devolve true só quando a gravação foi confirmada */
   const d={...dirty};dirty={c:false,l:false};
-  if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",true);return false}
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return false}
+  if(corrompido){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Os dados salvos estavam danificados — NADA está sendo salvo até você escolher uma opção no aviso.",erro:true});return false}
+  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
   let remoto=true;
   try{
     if(db){if(d.c)await db.doc("dados/config").set({v:4,config:S.config});if(conflito)throw new Error("conflito");if(d.l)await db.doc("dados/lancamentos").set({v:4,lanc:S.lanc,form:S.form})}
-  }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Não consegui salvar agora — tento de novo na próxima alteração",true)}
+  }catch(e){remoto=false;console.error("cadastro-pecas: falha ao gravar na conta",e);dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("erro",{texto:"Não consegui salvar agora — tento de novo na próxima alteração",erro:true})}
   if(!remoto)return false;
-  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;setStatus("Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",true);return false}
+  if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
   let local=true;
   try{gravarPref("cadpecas4",jsonLocal(false))}catch(e){
     local=false;
     try{if(await guardarMinis()&&!conflito){gravarPref("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
   if(!local){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
-    setStatus(db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,true);
-    if(!db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();toast(m)}
+    let avisar=false;if(!db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();avisar=true}
+    armEmitir("cota",{texto:db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,erro:true,toast:avisar?m:undefined});
     return false}
-  setStatus(db?"Salvo na sua conta":"Salvo neste navegador");
+  armEmitir("salvo",{texto:db?"Salvo na sua conta":"Salvo neste navegador",erro:false});
   if(candFoto.size)varrerFotos();
   if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{gravarPref("cadpecas4",jsonLocal(false))}catch(e){}}})}
   return true
@@ -6931,6 +6939,9 @@ document.addEventListener("input",e=>{if(e.target&&e.target.id==="celIn"&&celEd)
 function lembreteBackup(){try{const k="backupEm",u="usoEm";if(!prefLer(u))prefGravar(u,String(Date.now()));
   const ult=+prefLer(k)||+prefLer(u)||Date.now();
   if(S.lanc.length>=5&&Date.now()-ult>7*864e5)setTimeout(()=>toast("Faz mais de uma semana que você não baixa um backup completo. Seus dados ficam só neste navegador.",{t:"Fazer backup",fn:backupTotal}),2500)}catch(e){}}
+/* Casca: mostra os avisos que o armazenamento emite (src/store/eventos.js). Mesmos textos e mesmos momentos de antes:
+   o armazenamento so diz o que aconteceu, quem decide como aparece (barra de status e toast) e a casca. */
+["salvo","erro","conflito","cota"].forEach(nome=>armOuvir(nome,info=>{setStatus(info.texto,info.erro);if(info.toast)toast(info.toast)}));
 /* Aguarda eventual recuperação de backup antes de expor os dados para edição. */
 {const tela=document.createElement("div");tela.setAttribute("role","alert");tela.style.cssText="position:fixed;inset:0;z-index:100001;background:#fff;display:grid;place-content:center;padding:24px;font:16px system-ui;text-align:center";tela.textContent="Verificando a recuperação dos dados…";document.documentElement.appendChild(tela);document.body.inert=true;
   let etapa="verificar a recuperação";

@@ -8,7 +8,7 @@ Gerado por `npm run mapa` (tools/mapa.mjs). Nao edite a mao; `node tools/mapa.mj
 
 Casca do aplicativo: janelas (foco preso, Esc), paleta de comandos (Ctrl+K), menu lateral e menu do celular, divisoria, abertura dos dados, novidades, historico, aviso de origem, o despacho dos cliques (ACOES e o switch residual) e os listeners globais de entrada, teclado, colar e soltar arquivo (onField).
 
-- Arquivos: `18c-divisoria.js`, `21d-novidades.js`, `21d5-historico.js`, `21d7-origem-aviso.js`, `30a2-eventos-toggle.js`, `30c-clique-acoes.js`, `31c-on-field.js`, `32-abas-rolagem.js`, `32-eventos-entrada-e-teclado.js`, `32-soltar-arquivo.js`, `33-janelas-busca-e-paleta.js`, `33c-abertura.js`, `33c-paleta-comandos.js`, `35-menu-e-final.js`
+- Arquivos: `18c-divisoria.js`, `21d-novidades.js`, `21d5-historico.js`, `21d7-origem-aviso.js`, `30a2-eventos-toggle.js`, `30c-clique-acoes.js`, `31c-on-field.js`, `32-abas-rolagem.js`, `32-eventos-entrada-e-teclado.js`, `32-soltar-arquivo.js`, `33-janelas-busca-e-paleta.js`, `33c-abertura.js`, `33c-paleta-comandos.js`, `33d-avisos-armazenamento.js`, `35-menu-e-final.js`
 - Expoe: `sideMarcar`
 - Usa: `armazenamento`, `configuracao`, `core`, `exportacao`, `lancamento`, `planilha`, `romaneio`, `tabelas`
 - Usada por: `legado`
@@ -132,7 +132,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | armazenamento -> legado | 16: `G`, `S`, `catBy`, `cfg`, `editId`, `fixarRefs`, `migrarGrades0`, `migrarJueri`, ... |
 | armazenamento -> planilha | 2: `estadoPlanilha`, `renderTopo` |
 | armazenamento -> romaneio | 4: `ROM`, `impData`, `relTem`, `renderRom` |
-| armazenamento -> store | 14: `AREA_LOCAL_NOME`, `bkLerBanco`, `exPreparar`, `exRestaurar`, `gravarPref`, `gravarSessao`, `idbDel`, `idbGet`, ... |
+| armazenamento -> store | 15: `AREA_LOCAL_NOME`, `armEmitir`, `bkLerBanco`, `exPreparar`, `exRestaurar`, `gravarPref`, `gravarSessao`, `idbDel`, ... |
 | armazenamento -> tabelas | 8: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos` |
 | configuracao -> armazenamento | 23: `HIST`, `REDO`, `ROMS`, `TABS`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `corrompido`, ... |
 | configuracao -> core | 39: `BANHO_COLS`, `DEFAULT_CONFIG`, `EXPL`, `FISC_COLS`, `FISC_PAD`, `FORMULA`, `JUERI_CATS`, `LET`, ... |

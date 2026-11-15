@@ -11,6 +11,7 @@ core/exportacao.js
 store/local.js
 store/idb.js
 store/prefs.js
+store/eventos.js
 js/00-adaptadores-nucleo.js
 js/10-limites-e-colunas.js
 js/11-utilidades.js
@@ -121,6 +122,7 @@ fatias/planilha/32b-planilha-digitacao-celula.js
 fatias/app/33-janelas-busca-e-paleta.js
 fatias/planilha/33b-planilha-rolagem-janela.js
 fatias/armazenamento/33c-lembrete-backup.js
+fatias/app/33d-avisos-armazenamento.js
 fatias/app/33c-abertura.js
 fatias/armazenamento/33c-outra-aba.js
 fatias/romaneio/33c-romaneio-filtro-e-navegacao.js
