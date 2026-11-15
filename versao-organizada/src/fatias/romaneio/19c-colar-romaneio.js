@@ -1,5 +1,5 @@
 /* Estado da fatia romaneio (antes globais soltos): revSeq (romRevSeq, 21a), t0 (romT0, 21a2), busy (romBusy, 21a6), pdfLib (22),
-   rel (REL, 25), impQ/impSt (IMPQ/IMPST, fila e aviso da importacao, 34b). ROM, ROMS, NF e relTem continuam globais (usados fora da fatia). */
+   rel (REL, 25), impQ/impSt (IMPQ/IMPST, fila e aviso da importacao, 34b). ROM, NF e relTem sao campos de estadoRomaneio (Etapa 4); ROMS esta em estadoArmazenamento. */
 const estadoRomaneio={revSeq:0,t0:null,busy:false,pdfLib:null,rel:null,impQ:[],impSt:null,romf:{q:"",m:"todas"},romChaveL:"",romCriando:false,relTem:false,ROM:null,NF:null};
 /* reconhece sozinho o formato da lista: testa o modelo e variações comuns e fica com o que lê mais linhas */
 

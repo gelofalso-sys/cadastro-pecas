@@ -328,3 +328,8 @@ Situação em 15/11/2026: itens 2 e 3 feitos (Tarefas 7 e 8: `gerar$`/`fixarRefs
 
 ### Preparação concluída — 15/11/2026
 - Decisão do dono: deixar o app **preparado** para a transição SaaS, sem fazê-la. Estado e contratos em [PRONTIDAO-SAAS.md](PRONTIDAO-SAAS.md); `PROMPT-CONTINUACAO-SAAS.md` reescrito para o estado atual. Novo `tools/exemplo_nucleo_node.mjs` (núcleo sozinho em Node lê o backup real: 86 peças, 155 linhas) com teste `exemplo_nucleo.test.mjs`.
+
+### Limpeza dos Menores adiados — 15/11/2026 (branch `limpeza-menores`)
+- Corrigidos: comentários desatualizados (`36-cadastros-salvar.js`, `store/prefs.js`, `19c-colar-romaneio.js`, `romaneio/acoes.js`, `tabelas/acoes.js`, LEIA-ME de `exportacao`), `typeof` sem sentido em `21d2-impacto-cadastro.js`, stub `relTem` morto em `calculos_auditoria_regressao.js`, lista do CLAUDE.md (`exPreparar`, `exRestaurar`, `bkLerBanco`, `storeLocal`).
+- Novos testes: `flush_eventos.test.mjs` (o `flush` de ponta a ponta no Node: textos, ordem e regra de 20 s dos avisos), `estado_vm_mapa.test.mjs` (a lista de `tests/lib/estado_vm.js` precisa ser igual ao `MAPA` do codemod), e dois casos em `store_local_erros.test.mjs` (`putFoto` só aceita tipo `m` ou `r`; `putRomaneio` recusa índice de outro id), cada um falhando antes do ajuste.
+- Ainda adiados (sem efeito no app hoje, só importam a quem adotar `storeLocal`): `cadpecas3` (legado) ignorado em `listPecas`; `putPeca` sem a regra das miniaturas do `jsonLocal`; `bkReverterJournal` lança com loja inválida (journal adulterado); `tools/demo.py` já quebrado na base; `tools/grafo_puro.mjs` trata `S` como puro; codemod sem idempotência e sem desestruturação com valor padrão abreviada.

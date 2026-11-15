@@ -3098,8 +3098,8 @@ function bkLerBanco(idsAtuais){return new Promise(resolve=>{let encerrado=false;
 }catch(e){fim(null)}})}
 /* ===== src/store/prefs.js: preferencias de tela e de controle por nome logico =====
    Script simples, carregado depois de store/local.js (src/_ordem.txt). Mesmas chaves e mesmo formato (texto) de sempre; so
-   o nome usado pelo codigo mudou. Chaves de dado de negocio (cadpecas4, roms, tabs, rel...) NAO entram aqui: seguem em
-   lerPref/gravarPref ate a interface do store (Etapa 3, passos 3.4 e 3.5). Funcoes finas: lancam como o navegador. */
+   o nome usado pelo codigo mudou. Chaves de dado de negocio (cadpecas4, roms, tabs, rel...) NAO entram aqui: passam por
+   store/dados.js (dadoLer, dadoGravar, dadoRemover). Funcoes finas: lancam como o navegador. */
 const PREFS={
   /* tela */
   zoom:"cadpecas-zoom",vista:"cadpecas-vista",colw:"cadpecas-colw",split:"cadpecas-split",filtro:"cadpecas-filtro",
@@ -3173,8 +3173,8 @@ const storeLocal=(()=>{
     async deletePeca(id){const o=blobParaGravar();if(!o)return false;const a=pecasDe(o),b=a.filter(x=>!(x&&x.id===id));if(b.length===a.length)return false;o.lanc=b;gravarBlob(o);return true},
     async listRomaneios(){return lerIdx(CH_ROMS)},
     async getRomaneio(id){return idbLer("roms",id)},
-    async putRomaneio(rec,indice){await idbOk("roms",rec.id,rec);mesclarIdx(CH_ROMS,indice)},
-    async putFoto(id,tipo,dado){await idbOk("fotos",chaveFoto(id,tipo),dado)},
+    async putRomaneio(rec,indice){if(!indice||indice.id!==rec.id)throw new Error("indice nao bate com o registro do romaneio");await idbOk("roms",rec.id,rec);mesclarIdx(CH_ROMS,indice)},
+    async putFoto(id,tipo,dado){if(tipo!=="m"&&tipo!=="r")throw new Error("tipo de foto invalido: "+tipo);await idbOk("fotos",chaveFoto(id,tipo),dado)},
     async getFoto(id,tipo){return idbLer("fotos",chaveFoto(id,tipo))},
     async listTabelas(){return lerIdx(CH_TABS)},
     /* backup: montar e restaurar dependem de estado e regras de armazenamento; o store nao conhece fatia, entao quem conhece liga os ganchos */
@@ -4381,7 +4381,7 @@ function modeloDeJson(file){const fr=new FileReader();fr.onload=()=>{try{
 const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(estadoRomaneio.ROM&&estadoRomaneio.ROM.tid))||C.romaneios[0]};
    /* preço com 3-4 casas não é arredondado */
 /* Estado da fatia romaneio (antes globais soltos): revSeq (romRevSeq, 21a), t0 (romT0, 21a2), busy (romBusy, 21a6), pdfLib (22),
-   rel (REL, 25), impQ/impSt (IMPQ/IMPST, fila e aviso da importacao, 34b). ROM, ROMS, NF e relTem continuam globais (usados fora da fatia). */
+   rel (REL, 25), impQ/impSt (IMPQ/IMPST, fila e aviso da importacao, 34b). ROM, NF e relTem sao campos de estadoRomaneio (Etapa 4); ROMS esta em estadoArmazenamento. */
 const estadoRomaneio={revSeq:0,t0:null,busy:false,pdfLib:null,rel:null,impQ:[],impSt:null,romf:{q:"",m:"todas"},romChaveL:"",romCriando:false,relTem:false,ROM:null,NF:null};
 /* reconhece sozinho o formato da lista: testa o modelo e variações comuns e fica com o que lê mais linhas */
 
@@ -5352,7 +5352,7 @@ function simuladorFator(){
 /* Compara a MESMA lista de peças com os cadastros anterior e atual. Uma edição de
    peça ocorrida antes do cadastro não pode ser atribuída à alteração do cadastro. */
 function custoPorLanc(config,pecas){const anterior=S.config;try{S.config=config;const g=gerar(clone(pecas)),m={};g.linhas.forEach(r=>{const q=num(r.v.W);m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*(q==null?1:q)});return m}finally{S.config=anterior}}
-function impactoAgendar(){if(typeof estadoArmazenamento.restaurando!=="undefined"&&estadoArmazenamento.restaurando)return;
+function impactoAgendar(){if(estadoArmazenamento.restaurando)return;
   if(!estadoConfig.impT){try{estadoConfig.impConfigAntes=estadoArmazenamento.snapC?JSON.parse(estadoArmazenamento.snapC):null}catch(e){estadoConfig.impConfigAntes=null}}
   clearTimeout(estadoConfig.impT);estadoConfig.impT=setTimeout(impactoConferir,1500)}
 function impactoConferir(){const anterior=estadoConfig.impConfigAntes;estadoConfig.impConfigAntes=null;estadoConfig.impT=null;if(!anterior)return;
@@ -6333,7 +6333,7 @@ registrarAcoes(ACOES,"exportacao",{
   "backup":()=>{backup()}
 });
 /* Ações de clique (data-act) da fatia tabelas. Registradas em ACOES (src/core/acoes.js).
-   Convenção: o que era `break` no switch virou `return`. `tabArm` (tabela "armada" para excluir) continua global em fatias/armazenamento (20-armazenamento-idb.js). */
+   Convenção: o que era `break` no switch virou `return`. `tabArm` (tabela "armada" para excluir) e o campo estadoArmazenamento.tabArm (fatias/armazenamento). */
 registrarAcoes(ACOES,"tabelas",{
   "tab-lista":()=>{tabListaAbrir()},
   "tab-salvar-abrir":()=>{tabSalvarAbrir()},
@@ -6475,7 +6475,7 @@ registrarAcoes(ACOES,"fotos",{
 /* Ações de clique (data-act) da fatia romaneio: leitura/importação, cartões dos itens, lote por peso, partir/juntar, revisão final, criar,
    romaneios salvos, relatório da criação e planilha do fornecedor. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return` (nenhum case daqui tinha `return` que pulasse o pós-switch).
-   ROM (fatias/romaneio) e ROMS, romArm, tabArm e romConflito (fatias/armazenamento) são globais: continuam sendo lidos/escritos daqui. */
+   ROM (estadoRomaneio) e ROMS, romArm, tabArm e romConflito (estadoArmazenamento) sao campos de estado: continuam sendo lidos e escritos daqui (ver docs/escritas-entre-fatias.md). */
 registrarAcoes(ACOES,"romaneio",{
   "lote-add":({t})=>{{const r=estadoRomaneio.ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));return}},
   "rom-partir":({t})=>{{const rc=t.closest(".rc"),r=estadoRomaneio.ROM.rows[+rc.dataset.i];if(!r)return;const bx=rc.querySelector(".partbox");if(bx){bx.remove();return}
@@ -7262,7 +7262,7 @@ try{const io=new IntersectionObserver(es=>{document.body.classList.toggle("formv
 /* ===== Cadastros: alterações só valem depois de SALVAR; romaneio aberto acompanha o cadastro =====
    Enquanto há alterações pendentes nos Cadastros: nada é gravado (nem no navegador nem na conta), as ações da tabela, do formulário e do
    romaneio ficam travadas, e a barra "Salvar / Descartar" fica na tela. Descartar devolve cadastros, peças e romaneio ao que eram.
-   Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que a preferência local "cadpecas-cad-estrito"="1" (dadoLer). */
+   Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que a preferência local "cadpecas-cad-estrito"="1" (prefLer("cadEstrito")). */
 const CAD={snap:null,pend:false,hL:0,hR:null,sig:null,rt:null};
 const CADAUTO=(()=>{try{return !!navigator.webdriver&&prefLer("cadEstrito")!=="1"}catch(e){return false}})();
 const cadRomSig=()=>estadoRomaneio.ROM&&estadoRomaneio.ROM.rows?JSON.stringify(estadoRomaneio.ROM.rows,(k,v)=>k==="foto"?undefined:v):null;

@@ -1,7 +1,7 @@
 /* ===== src/store/prefs.js: preferencias de tela e de controle por nome logico =====
    Script simples, carregado depois de store/local.js (src/_ordem.txt). Mesmas chaves e mesmo formato (texto) de sempre; so
-   o nome usado pelo codigo mudou. Chaves de dado de negocio (cadpecas4, roms, tabs, rel...) NAO entram aqui: seguem em
-   lerPref/gravarPref ate a interface do store (Etapa 3, passos 3.4 e 3.5). Funcoes finas: lancam como o navegador. */
+   o nome usado pelo codigo mudou. Chaves de dado de negocio (cadpecas4, roms, tabs, rel...) NAO entram aqui: passam por
+   store/dados.js (dadoLer, dadoGravar, dadoRemover). Funcoes finas: lancam como o navegador. */
 const PREFS={
   /* tela */
   zoom:"cadpecas-zoom",vista:"cadpecas-vista",colw:"cadpecas-colw",split:"cadpecas-split",filtro:"cadpecas-filtro",

@@ -3,7 +3,7 @@
 /* Compara a MESMA lista de peças com os cadastros anterior e atual. Uma edição de
    peça ocorrida antes do cadastro não pode ser atribuída à alteração do cadastro. */
 function custoPorLanc(config,pecas){const anterior=S.config;try{S.config=config;const g=gerar(clone(pecas)),m={};g.linhas.forEach(r=>{const q=num(r.v.W);m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*(q==null?1:q)});return m}finally{S.config=anterior}}
-function impactoAgendar(){if(typeof estadoArmazenamento.restaurando!=="undefined"&&estadoArmazenamento.restaurando)return;
+function impactoAgendar(){if(estadoArmazenamento.restaurando)return;
   if(!estadoConfig.impT){try{estadoConfig.impConfigAntes=estadoArmazenamento.snapC?JSON.parse(estadoArmazenamento.snapC):null}catch(e){estadoConfig.impConfigAntes=null}}
   clearTimeout(estadoConfig.impT);estadoConfig.impT=setTimeout(impactoConferir,1500)}
 function impactoConferir(){const anterior=estadoConfig.impConfigAntes;estadoConfig.impConfigAntes=null;estadoConfig.impT=null;if(!anterior)return;

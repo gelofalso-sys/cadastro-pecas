@@ -17,7 +17,7 @@ Tudo o que leva a tabela para fora do app, ou traz algo de fora para os cadastro
 ## Fluxos principais
 1. Botao Baixar/Copiar -> `gerarExport` -> `abrirConferencia`; se houver pendencia abre a janela e "Exportar assim"
    (`exp-assim`) continua com `forcar`; senao gera, divide em lotes e grava via `obterDL` (downloads do Claude ou `<a download>`).
-2. Depois de exportar, `lastExport` (declarado em `src/js/10`) guarda a numeracao; `gravarExport` a aplica ("Limpar tabela" ou so numeracao).
+2. Depois de exportar, `estadoBase.lastExport` (declarado em `src/js/10`) guarda a numeracao; `gravarExport` a aplica ("Limpar tabela" ou so numeracao).
 3. Importar: `importar` le o arquivo e guarda em `estadoExportacao.imp`; `imp-ok` (`aplicarImp`) grava nos cadastros.
 
 ## O que a fatia expoe e por que

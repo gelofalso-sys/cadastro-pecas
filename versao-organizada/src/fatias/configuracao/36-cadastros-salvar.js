@@ -1,7 +1,7 @@
 /* ===== Cadastros: alterações só valem depois de SALVAR; romaneio aberto acompanha o cadastro =====
    Enquanto há alterações pendentes nos Cadastros: nada é gravado (nem no navegador nem na conta), as ações da tabela, do formulário e do
    romaneio ficam travadas, e a barra "Salvar / Descartar" fica na tela. Descartar devolve cadastros, peças e romaneio ao que eram.
-   Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que a preferência local "cadpecas-cad-estrito"="1" (dadoLer). */
+   Em teste automatizado (navigator.webdriver) o modo é o antigo (grava na hora), a não ser que a preferência local "cadpecas-cad-estrito"="1" (prefLer("cadEstrito")). */
 const CAD={snap:null,pend:false,hL:0,hR:null,sig:null,rt:null};
 const CADAUTO=(()=>{try{return !!navigator.webdriver&&prefLer("cadEstrito")!=="1"}catch(e){return false}})();
 const cadRomSig=()=>estadoRomaneio.ROM&&estadoRomaneio.ROM.rows?JSON.stringify(estadoRomaneio.ROM.rows,(k,v)=>k==="foto"?undefined:v):null;

@@ -30,8 +30,8 @@ const storeLocal=(()=>{
     async deletePeca(id){const o=blobParaGravar();if(!o)return false;const a=pecasDe(o),b=a.filter(x=>!(x&&x.id===id));if(b.length===a.length)return false;o.lanc=b;gravarBlob(o);return true},
     async listRomaneios(){return lerIdx(CH_ROMS)},
     async getRomaneio(id){return idbLer("roms",id)},
-    async putRomaneio(rec,indice){await idbOk("roms",rec.id,rec);mesclarIdx(CH_ROMS,indice)},
-    async putFoto(id,tipo,dado){await idbOk("fotos",chaveFoto(id,tipo),dado)},
+    async putRomaneio(rec,indice){if(!indice||indice.id!==rec.id)throw new Error("indice nao bate com o registro do romaneio");await idbOk("roms",rec.id,rec);mesclarIdx(CH_ROMS,indice)},
+    async putFoto(id,tipo,dado){if(tipo!=="m"&&tipo!=="r")throw new Error("tipo de foto invalido: "+tipo);await idbOk("fotos",chaveFoto(id,tipo),dado)},
     async getFoto(id,tipo){return idbLer("fotos",chaveFoto(id,tipo))},
     async listTabelas(){return lerIdx(CH_TABS)},
     /* backup: montar e restaurar dependem de estado e regras de armazenamento; o store nao conhece fatia, entao quem conhece liga os ganchos */

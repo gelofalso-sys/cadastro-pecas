@@ -1,7 +1,7 @@
 /* Ações de clique (data-act) da fatia romaneio: leitura/importação, cartões dos itens, lote por peso, partir/juntar, revisão final, criar,
    romaneios salvos, relatório da criação e planilha do fornecedor. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return` (nenhum case daqui tinha `return` que pulasse o pós-switch).
-   ROM (fatias/romaneio) e ROMS, romArm, tabArm e romConflito (fatias/armazenamento) são globais: continuam sendo lidos/escritos daqui. */
+   ROM (estadoRomaneio) e ROMS, romArm, tabArm e romConflito (estadoArmazenamento) sao campos de estado: continuam sendo lidos e escritos daqui (ver docs/escritas-entre-fatias.md). */
 registrarAcoes(ACOES,"romaneio",{
   "lote-add":({t})=>{{const r=estadoRomaneio.ROM.rows[+t.dataset.i],inp=t.closest(".rc").querySelector("[data-lotn]");if(r)romLoteAdd(r,Math.max(1,Math.min(60,Math.trunc(num(inp&&inp.value)||1))));return}},
   "rom-partir":({t})=>{{const rc=t.closest(".rc"),r=estadoRomaneio.ROM.rows[+rc.dataset.i];if(!r)return;const bx=rc.querySelector(".partbox");if(bx){bx.remove();return}

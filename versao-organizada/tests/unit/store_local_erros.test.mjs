@@ -8,16 +8,16 @@ import { fileURLToPath } from "node:url";
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 function carregar({ ls = {}, lerFalha = false, idbGet = async () => undefined } = {}) {
-  const gravou = [];
+  const gravou = [], puts = [];
   const ctx = {
     Error, JSON, Array, Promise, Date,
     lerPref: k => { if (lerFalha) throw new Error("bloqueado"); return k in ls ? ls[k] : null; },
     gravarPref: (k, v) => { gravou.push(k); ls[k] = v; },
-    idbGet, idbPut: async () => true,
+    idbGet, idbPut: async (...a) => { puts.push(a); return true; },
   };
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(raiz, "src", "store", "store-local.js"), "utf8") + ";globalThis.s=storeLocal", ctx);
-  return { s: ctx.s, gravou, ls };
+  return { s: ctx.s, gravou, ls, puts };
 }
 
 test("blob danificado nao e sobrescrito por putPeca, saveConfig nem deletePeca", async () => {
@@ -51,4 +51,20 @@ test("blob ausente continua valido: primeiro putPeca cria o blob", async () => {
   const { s, ls } = carregar();
   await s.putPeca({ id: "a" });
   assert.deepEqual(JSON.parse(ls.cadpecas4).lanc, [{ id: "a" }]);
+});
+
+test("putFoto so aceita tipo m ou r e nao grava com tipo invalido", async () => {
+  const { s, puts } = carregar();
+  for (const tipo of [undefined, "o", "x", ""]) await assert.rejects(() => s.putFoto("a", tipo, "d"), /tipo de foto invalido/);
+  assert.deepEqual(puts, []);
+  await s.putFoto("a", "m", "d"); await s.putFoto("a", "r", "d");
+  assert.deepEqual(puts.map(p => p[1]), ["m:a", "r:a"]);
+});
+
+test("putRomaneio recusa indice de outro id ou ausente, sem gravar nada", async () => {
+  const { s, puts, gravou } = carregar();
+  await assert.rejects(() => s.putRomaneio({ id: "r1" }, { id: "r2", em: 1 }), /indice nao bate/);
+  await assert.rejects(() => s.putRomaneio({ id: "r1" }, undefined), /indice nao bate/);
+  assert.deepEqual(puts, []);
+  assert.deepEqual(gravou, []);
 });
