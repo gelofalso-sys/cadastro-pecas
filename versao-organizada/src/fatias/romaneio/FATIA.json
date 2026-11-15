@@ -31,14 +31,14 @@
     "nfRotear",
     "impAdd",
     "impData",
-    "relTem",
     "romAtual",
     "romAtualSoon",
     "romCampo",
     "romPdf",
     "romPlanilha",
     "romAbrirNovo",
-    "ROM"
+    "ROM",
+    "estadoRomaneio"
   ],
   "usa": [
     "core",
