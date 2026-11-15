@@ -2,6 +2,7 @@
   "nome": "planilha",
   "descricao": "Tela principal: tabela (planilha) das pecas lancadas com filtros, vistas (planilha/lista/cartoes), janela de linhas, selecao de celulas e linhas, edicao e colagem na grade, acoes em lote, totais e grafico de rosca, gaveta do formulario no celular e pilula de recolher.",
   "arquivos": [
+    "12-celula-recusada.js",
     "15-planilha.js",
     "15c-listas-e-janela.js",
     "15e-renderizar-planilha.js",
@@ -10,6 +11,7 @@
     "16-selecao.js",
     "19a2-grafico-rosca.js",
     "24-ui-numeracao-e-colunas.js",
+    "27b1-mostrar-no-fim.js",
     "30b-planilha-mouse.js",
     "31b-planilha-regua-e-destaque.js",
     "32b-planilha-digitacao-celula.js",
@@ -25,6 +27,7 @@
     "formAbrir",
     "guardarFil",
     "janGarantir",
+    "mostrarNoFim",
     "pilulaAtualiza",
     "renderListas",
     "renderTopo",
@@ -33,7 +36,8 @@
     "vis"
   ],
   "usa": [
-    "core"
+    "core",
+    "lancamento"
   ],
   "testes": [
     "^pdf_real2\\.py$",

@@ -40,9 +40,3 @@ function renderSelBar(){
     ${ids.length?`<button class="btn sm" type="button" data-act="s-xlsx" title="Baixa um .xlsx só com as peças da seleção">Baixar .xlsx só estas</button>`:""}
     ${ids.length?`<button class="btn sm danger" type="button" data-act="s-del">Excluir ${(()=>{const q=Math.min(b.r2,G.linhas.length-1)-b.r1+1;return q>1?q+" linhas":"a linha"})()}</button>`:""}`;
 }
-function usarModelo(id){
-  const l=S.lanc.find(x=>x.id===id);if(!l)return;if(editId)cancelar();
-  const c=clone(l);delete c.id;delete c.v.E;c.vinc=false;delete c.excl;delete c.ft;delete c.ftR;if(c.ov)Object.values(c.ov).forEach(o=>{delete o.E;delete o.W});
-  S.form={...FORM0(),...c};salvar(false);renderTopo();renderForm();document.getElementById("paneBot").scrollTo({top:0});
-  const d=document.getElementById("f-F");if(d){d.focus();d.select()}toast("Dados copiados para o lançamento. Ajuste e aperte Adicionar para criar a nova referência.");
-}

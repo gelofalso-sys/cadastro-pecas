@@ -16,6 +16,7 @@
     "23b-romaneio-criar.js",
     "23c-nota-fiscal.js",
     "25-relatorio-romaneio.js",
+    "27b4-romaneio-abrir.js",
     "34b-importacao-romaneio.js",
     "acoes.js"
   ],
@@ -34,12 +35,14 @@
     "romPdf",
     "romPlanilha",
     "romRevisar",
-    "romSetForn"
+    "romSetForn",
+    "romAbrirNovo"
   ],
   "usa": [
     "core",
     "exportacao",
-    "planilha"
+    "planilha",
+    "lancamento"
   ],
   "testes": [
     "^auditoria_regressoes.js$",

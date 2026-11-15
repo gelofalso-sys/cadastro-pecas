@@ -1,13 +1,13 @@
 // Regressão de cálculo: valores efetivos de categorias em conjunto com quantidades e banhos múltiplos.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const s=fs.readFileSync('src/js/18-conjunto.js','utf8');
+const s=fs.readFileSync('src/fatias/lancamento/18-conjunto.js','utf8');
 const {ligar}=require('./unit/_contexto.mjs');
 const code=s.slice(s.indexOf('function conjSync('),s.indexOf('function conjPainel('));
 const mult='';
 const banho=[{id:'ouro',nome:'Ouro',coluna:'R',modo:'peso',mult:'9',multCat:{Brincos:'2',Colares:'5'}},{id:'prata',nome:'Prata',coluna:'T',modo:'peso',mult:'9',multCat:{Brincos:'3',Colares:'6'}}];
 const C={catAlias:{},categorias:[{nome:'Brincos'},{nome:'Colares'},{nome:'Conjuntos'}],banhistas:[{id:'h',banhos:banho,verniz:'0,42'}]};
 const ctx={S:{config:C,lanc:[]},document:{getElementById:()=>null,addEventListener(){}}};
-Object.assign(ctx,ligar(()=>ctx.S));   /* o núcleo ligado ao S do contexto; só o trecho de src/js/18-conjunto.js roda em vm */
+Object.assign(ctx,ligar(()=>ctx.S));   /* o núcleo ligado ao S do contexto; só o trecho de src/fatias/lancamento/18-conjunto.js roda em vm */
 vm.createContext(ctx);vm.runInContext(code,ctx);
 const f={tipo:'pronta',v:{I:'Conjuntos'},onP:{ouro:true,prata:true},ov:{},conj:true,comp:[{desc:'Brinco',cat:'Brincos',qtd:'3',peso:'1',custo:'2'},{desc:'Colar',cat:'Colares',qtd:'2',peso:'2',custo:'3'}]};
 ctx.conjSync(f);assert.equal(f.v.N,'7');assert.equal(f.v.P,'12');assert.equal(f.ov.ouro.R,'26');assert.equal(f.ov.prata.T,'33');assert.equal(f.ov.ouro.U,'2,94');

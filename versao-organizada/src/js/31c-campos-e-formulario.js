@@ -1,5 +1,3 @@
-/* a variação do elemento (cartão da categoria ou variação sem categoria) */
-function aplicaFaixa(txt){const f=S.form,gr=gradeBy(f.grade);if(!gr)return;f.gsel=selFaixa(gr,txt);erro="";salvar(false);renderTopo();renderForm()}
 /* campos do banho/banhista: devolve a mensagem de erro ("" = válido). Letra opcional (vazia = a referência sai sem letra), única quando preenchida; milésimos, multiplicador e verniz >= 0 */
 /* "Última peça": só dígitos, até 9; avisa quando tira sinal/letras ou corta */
 function limpaUlt(raw){raw=String(raw==null?"":raw);const so=raw.replace(/[^0-9]/g,""),ign=raw.replace(/\s/g,"").length;
@@ -21,7 +19,7 @@ function onField(t,isChange){
   if(t.dataset&&t.dataset.insmodo!==undefined){if(!isChange)return;const v=t.value;if(!["off","somar","substituir"].includes(v))return;cfg().insumosModo=v;salvar(true,false);renderTopo();renderForm();renderCfg();return}
   if(t.dataset&&t.dataset.inscampo!==undefined){if(!isChange)return;const row=t.closest("[data-insrow]"),it=cfg().insumosItens||[],x=row&&it[+row.dataset.insrow],k=t.dataset.inscampo;if(!x)return;let v=String(t.value||"").trim();if(k==="nome"){if(!v){t.value=x.nome||"";toast("Informe o nome do insumo.");return}v=v.slice(0,80)}else if(k==="cat"){if(v&&!catBy(v)){t.value=x.cat||"";toast("Escolha uma categoria cadastrada.");return}}else if(k==="qtd"||k==="valor"){const n=num(v);if(n==null||n<0||(k==="qtd"&&n===0)||n>1000000){t.value=x[k]||"";toast(k==="qtd"?"Quantidade deve ser maior que zero.":"Preço precisa ser zero ou maior.");return}}else return;x[k]=v;salvar(true,false);renderTopo();renderForm();renderCfg();return}
 
-  if(t.dataset&&t.dataset.mf!==undefined){const tr=t.closest("[data-mi]"),m=tr&&MULTI[+tr.dataset.mi];if(m)m[t.dataset.mf]=t.value;return}
+  if(t.dataset&&t.dataset.mf!==undefined){const tr=t.closest("[data-mi]"),m=tr&&estadoLancamento.multi[+tr.dataset.mi];if(m)m[t.dataset.mf]=t.value;return}
   if(t.dataset&&t.dataset.lcf!==undefined){if(!isChange)return;const C=cfg(),tr=t.closest("[data-lc]"),j=+tr.dataset.lc,n=C.cores[j],k=corKey(n),M=C.coresMeta=C.coresMeta||{},fl=t.dataset.lcf;
     if(fl==="nome"){const nv=t.value.trim();if(!nv||nv===n){t.value=n;return}if(C.cores.some((y,q)=>q!==j&&corKey(y)===corKey(nv))){toast("Já existe uma cor com esse nome.");t.value=n;return}
       /* Preserva o ID antigo em vez de reescrever chaves compostas: isso mantém quantidades e referências também em romaneios/tabelas salvos. */
@@ -86,7 +84,7 @@ function onField(t,isChange){
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){const rs=resolverCatSub(t.value,t.dataset.prev||"");if(rs){const dig=t.value.trim();f.v.I=rs.cat;t.value=rs.cat;if(rs.sub)f.v.J=rs.sub;else delete f.v.J;toast(`“${dig}” entendido como ${rs.cat}${rs.sub?" › "+rs.sub:""} · referência ${prefDe(rs.cat,rs.sub)}`)}}
     if(L==="I"&&isChange&&!vazio(t.value)&&!catBy(t.value)){   /* categoria digitada que não existe: volta à anterior e abre o cadastro rápido já com o nome (precisa do prefixo) */
       const nome=t.value.replace(/\s+/g," ").trim(),ant=t.dataset.prev!=null?t.dataset.prev:"";if(ant&&catBy(ant))f.v.I=ant;else delete f.v.I;
-      quickPre=nome;quick="cat";quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
+      estadoLancamento.quickPre=nome;estadoLancamento.quick="cat";estadoLancamento.quickB=null;renderForm();renderListas();toast("Essa categoria não existe ainda: informe o prefixo para cadastrá-la.");setTimeout(()=>{const e2=document.getElementById("q2");if(e2)e2.focus()},60);return}
     if(L==="I"&&isChange){f.csel=editId?(f.csel||[]).filter(id=>coresDaCat(t.value).some(x=>x.id===id)):[];setTimeout(()=>{if(!f.csel.length&&!editId){f.csel=coresPadrao(f.v.I,f.v.J);renderForm();renderTopo()}},0);const c=catBy(t.value);if(c&&!c.subs.includes(f.v.J))delete f.v.J;sincGrade(f);aplicarSemBanho(f);compraGramaAuto(f);descAuto(f);if(!editId&&!f.conj&&/^conjuntos?$/.test(semAc(t.value))){ativarConjunto();return}renderListas();renderForm();refocar("#f-I");renderTopo();salvar(false);return}
     if(L==="J"&&isChange){let atalho=false;if(!vazio(t.value)){const c0=catBy(f.v.I);if(!(c0&&c0.subs.includes(t.value))){const rs=resolverCatSub(t.value,f.v.I);if(rs&&rs.sub){const dig=t.value.trim();if(rs.cat!==f.v.I){f.v.I=rs.cat;f.csel=editId?[]:coresPadrao(rs.cat,rs.sub)}f.v.J=rs.sub;atalho=true;toast(`“${dig}” entendido como ${rs.cat} › ${rs.sub} · referência ${prefDe(rs.cat,rs.sub)}`)}}}sincGrade(f);descAuto(f);renderForm();if(!atalho)refocar("#f-J");renderTopo();salvar(false);return}   /* com apelido a subcategoria já foi trocada: o foco segue o Tab */
     if(L==="V"&&isChange)fatorDoPreco("p");
@@ -185,6 +183,3 @@ function onField(t,isChange){
     if(k==="opcoes")renderListas();renderTopo();if(isChange||t.type==="checkbox")renderForm();else atualizarGera();return}
 }
 
-/* campos mistos (categoria, subcategoria, fornecedor): ao focar, a lista mostra TODAS as opções (o navegador filtra pelo texto atual); se sair sem escolher nada, o valor volta */
-document.addEventListener("focusin",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("misto")&&t.dataset.col&&t.getAttribute("list")&&!t.disabled&&!t.readOnly){t.dataset.prev=t.value;t.dataset.ph0=t.placeholder;if(t.value){t.placeholder=t.value;t.value=""}}});
-document.addEventListener("focusout",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("misto")&&t.dataset.prev!==undefined){if(t.value===""&&t.dataset.prev){t.value=t.dataset.prev}t.placeholder=t.dataset.ph0||t.placeholder;delete t.dataset.prev}});

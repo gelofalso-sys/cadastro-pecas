@@ -75,7 +75,7 @@ document.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&celular()&&!editId&&document.body.classList.contains("fopen")&&!/INPUT|TEXTAREA|SELECT/.test(t.tagName)){e.preventDefault();formAbrir(false);return}
   if(e.key==="Escape"&&editId){e.preventDefault();cancelar();return}
   if(t.closest&&t.closest(".nf")&&e.key==="Enter"&&t.tagName!=="TEXTAREA"){e.preventDefault();salvarRapido();return}
-  if(e.key==="Escape"&&quick){e.preventDefault();quick=null;renderForm();return}
+  if(e.key==="Escape"&&estadoLancamento.quick){e.preventDefault();estadoLancamento.quick=null;renderForm();return}
   if(t.id==="ultInp"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));focarPrimeiro();return}
   if(t.dataset&&t.dataset.enter&&e.key==="Enter"){e.preventDefault();const v=t.value.trim();if(!v)return;const C=cfg(),k=t.dataset.enter;
     const ci=t.closest("[data-cat]")?t.closest("[data-cat]").dataset.cat:null;

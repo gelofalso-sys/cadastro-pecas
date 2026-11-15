@@ -1,18 +1,3 @@
-/* ===== conjunto: soma de peças individuais (brincos + colar…). Cada peça tem peso, compra e banho (o do conjunto, ou só dela).
-   Marcando banhos no conjunto (Ouro, Prata, Ródio…) sai UMA linha de conjunto por banho, igual às peças individuais; sem marcar, sai uma linha só. ===== */
-/* Cada componente informa valores por unidade; registros antigos sem qtd valem uma unidade. */
-/* Componentes antigos sem categoria continuam usando a categoria do conjunto. */
-async function conjExcluirCategoria(nome){
-  const cfgAntes=cfg(),usa=c=>c&&c.cat&&conjCat(c)===nome,tem=cs=>Array.isArray(cs)&&cs.some(usa),emLanc=l=>l&&tem(l.comp),emRom=r=>r&&tem(r.conjComp);
-  if((S.lanc||[]).some(emLanc)||tem((S.form||{}).comp)||(ROM&&ROM.rows||[]).some(emRom)){toast(`Não excluí “${nome}”: há componentes de conjunto usando esta categoria. Altere-os antes.`);return}
-  let tabs,roms;try{[tabs,roms]=await Promise.all([idbOp("tabs","readonly",st=>st.getAll()),idbOp("roms","readonly",st=>st.getAll())])}catch(e){tabs=null}
-  if(!Array.isArray(tabs)||!Array.isArray(roms)){toast("Não excluí a categoria: não consegui verificar os conjuntos salvos. Tente novamente.");return}
-  if(tabs.some(t=>(t.lanc||[]).some(emLanc))||roms.some(r=>(r.rows||[]).some(emRom))){toast(`Não excluí “${nome}”: conjuntos em tabelas ou romaneios salvos usam esta categoria.`);return}
-  const i=cfgAntes.categorias.findIndex(c=>c.nome===nome);if(cfg()!==cfgAntes||i<0||estadoConfig.delCat!==nome){toast("Os cadastros mudaram durante a verificação. Tente novamente.");return}
-  if((S.lanc||[]).some(l=>val(l,"I")===nome||emLanc(l))||tem((S.form||{}).comp)||(ROM&&ROM.rows||[]).some(emRom)){toast("Não excluí a categoria: ela passou a estar em uso.");return}
-  if(!CADAUTO&&!CAD.snap)cadTirarFoto();
-  cfgAntes.categorias.splice(i,1);estadoConfig.delCat=null;if(S.form.v.I===nome){S.form.v.I=cfgAntes.categorias.length?cfgAntes.categorias[0].nome:"";delete S.form.v.J;sincGrade(S.form)}salvar(true);if(!CADAUTO)cadConferir();render();toast(`Categoria “${nome}” excluída.`)
-}
 /* banho que vale para uma peça do conjunto: "" = o banho da linha do conjunto · "-" = sem banho · id = sempre esse banho */
 /* ao sair de Conjunto (ou limpar): tira da peça as somas e a descrição automática; as peças ficam guardadas para quando voltar */
 /* conjunto na tela: calcula e grava as somas na peça (conjCalcular, no núcleo) e, com dom, atualiza os campos e quadros do formulário */
@@ -93,19 +78,3 @@ function renderFormSoon(){clearTimeout(renderFormSoon.t);renderFormSoon.t=setTim
 function ajustarAltura(){const f=document.getElementById("form");if(!f||f.classList.contains("auto-mini"))return;const h=Math.ceil(f.getBoundingClientRect().height);document.documentElement.style.setProperty("--fh",h+"px")}
 window.addEventListener("resize",ajustarAltura);
 const roForm=typeof ResizeObserver!=="undefined"?new ResizeObserver(()=>ajustarAltura()):null;
-let foraDaPlanilha=false;
-(function(){const sp=document.getElementById("splitter"),app=document.getElementById("app");
-  try{const v=localStorage.getItem("cadpecas-split");if(v)document.documentElement.style.setProperty("--split",v)}catch(e){}
-  sp.addEventListener("mousedown",e=>{e.preventDefault();sp.classList.add("on");document.body.classList.add("splitting");const top=app.getBoundingClientRect().top,H=app.clientHeight;
-    const mv=ev=>{const y=Math.min(Math.max(ev.clientY-top,120),H-130);document.documentElement.style.setProperty("--split",y+"px")};
-    const up=()=>{document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);sp.classList.remove("on");document.body.classList.remove("splitting");try{localStorage.setItem("cadpecas-split",getComputedStyle(document.documentElement).getPropertyValue("--split").trim())}catch(x){}};
-    document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up)});
-  sp.addEventListener("dblclick",()=>{document.documentElement.style.setProperty("--split","48%");try{localStorage.removeItem("cadpecas-split")}catch(x){}});
-})();
-function rolarPane(el){if(!el)return;visPara(el.closest&&el.closest("#cfg")?"cad":"lancar",true);if(celular()&&el.id==="romWrap")formAbrir(false);if(celular()){el.scrollIntoView({block:"start",behavior:"smooth"});return}
-  const pb=document.getElementById("paneBot");if(pb)pb.scrollTo({top:pb.scrollTop+el.getBoundingClientRect().top-pb.getBoundingClientRect().top-6,behavior:"smooth"})}
-function irPara(id){
-  if(id==="lancar"&&celular()){visPara("lancar");formAbrir(true);return}
-  if(id==="lancar"){visPara("lancar");document.getElementById("paneBot").scrollTo({top:0,behavior:"smooth"});refocar("#f-F");return}
-  visPara("cad");abertos.tab=id;guardarAbertos();renderCfg();const d=document.querySelector("#cfg .ctabs");if(d)rolarPane(d);
-}

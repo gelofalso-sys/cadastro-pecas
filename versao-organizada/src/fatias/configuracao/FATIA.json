@@ -2,6 +2,7 @@
   "nome": "configuracao",
   "descricao": "Tela Cadastros e personalizacao (categorias, banhos, fornecedores, insumos, cores, variacoes, modelos de exportacao, modelos de leitura de romaneio, fiscal das categorias), catalogo rapido, salvar/descartar cadastros e campos em reais.",
   "arquivos": [
+    "18a-conjunto-excluir-categoria.js",
     "19-catalogo-rapido.js",
     "19a-secao-categorias.js",
     "19a3-secao-exportar-para.js",
@@ -36,7 +37,8 @@
     "core",
     "fotos",
     "romaneio",
-    "planilha"
+    "planilha",
+    "lancamento"
   ],
   "testes": [
     "^categoria_exclusao_regressao.js$",

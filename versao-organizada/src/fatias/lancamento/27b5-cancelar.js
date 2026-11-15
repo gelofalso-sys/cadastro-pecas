@@ -1,0 +1,3 @@
+/* há uma peça em edição e o usuário pediu outra coisa (abrir romaneio, importar, salvar tabela…): o aviso traz o botão que cancela a edição na hora e segue com o pedido, sem trocar de página */
+function avisoEdicao(seguir){toast("Há uma peça em edição. Termine ou cancele a edição para continuar (cancelar descarta o que foi mudado nessa peça e ainda não foi gravado).",{t:"Cancelar edição e continuar",fn:()=>{cancelar();if(seguir)setTimeout(()=>{try{seguir()}catch(e){try{console.error(e)}catch(x){}}},0)}})}
+function cancelar(){editId=null;if(rascunho)S.form=rascunho;rascunho=null;erro="";salvar(false);renderTopo();renderForm()}

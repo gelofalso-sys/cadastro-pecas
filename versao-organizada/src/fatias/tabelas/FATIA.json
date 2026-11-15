@@ -21,7 +21,8 @@
   "usa": [
     "core",
     "romaneio",
-    "planilha"
+    "planilha",
+    "lancamento"
   ],
   "testes": [
     "^t44\\.py$",

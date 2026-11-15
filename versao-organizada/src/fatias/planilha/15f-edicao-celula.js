@@ -59,7 +59,7 @@ function fecharCel(commit,mover){
     if(nova){if(!vazio(v)){const l=novaLivre({[L]:v});S.lanc.push(l);undo={tipo:"cola",antes:{},ids:[l.id]};salvar(false)}}
     else{const l=S.lanc.find(x=>x.id===G.linhas[ri].lancId);undo={tipo:"multi",antes:{[l.id]:clone(l.ov||{})}};antesPeca=G.linhas.filter(r=>r.lancId===l.id||L==="E").map(r=>({lid:r.lancId,key:r.key,ref:r.v.E,v:r.v[L]}));gravarCel(ri,L,v);salvar(false)}
   }
-  const sj0=formSujo();renderTopo();if(editId&&lid===editId&&commit&&v!==orig&&!rej)sincFormCelula(lid,L,chaveCel);if(editId)renderForm();if(editId&&!sj0)editSnap=JSON.stringify(S.form);
+  const sj0=formSujo();renderTopo();if(editId&&lid===editId&&commit&&v!==orig&&!rej)sincFormCelula(lid,L,chaveCel);if(editId)renderForm();if(editId&&!sj0)estadoLancamento.editSnap=JSON.stringify(S.form);
   if(rej){toast(rej+" (valor não gravado)");marcaRuim(ri,L)}
   let jaAvisou=false;if(commit&&antesPeca&&!rej){let msg=efeitoCel(antesPeca,lid,L,orig,v,chaveCel);if(msg){if(L==="E"){const d=[...new Set(G.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(d.length)msg+=` ATENÇÃO: outra linha já usa a referência ${d.join(", ")} (aparece em vermelho): corrija antes de baixar a planilha.`}toast(msg);jaAvisou=true}}
   if(commit&&L==="E"&&!jaAvisou){const d=[...new Set(G.linhas.filter(r=>r.dup).map(r=>r.v.E))];if(d.length)toast("Referência repetida: "+d.join(", ")+" — outra linha já usa essa referência. Corrija antes de baixar a planilha.")}

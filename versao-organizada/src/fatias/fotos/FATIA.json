@@ -19,7 +19,8 @@
   "usa": [
     "core",
     "romaneio",
-    "planilha"
+    "planilha",
+    "lancamento"
   ],
   "testes": [
     "^calculos_precisao_regressao.js$",
