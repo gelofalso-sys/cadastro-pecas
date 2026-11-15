@@ -1,5 +1,5 @@
 /* Ações de clique (data-act) da fatia tabelas. Registradas em ACOES (src/core/acoes.js).
-   Convenção: o que era `break` no switch virou `return`. `tabArm` (tabela "armada" para excluir) continua global em src/js/20. */
+   Convenção: o que era `break` no switch virou `return`. `tabArm` (tabela "armada" para excluir) continua global em fatias/armazenamento (20-armazenamento-idb.js). */
 registrarAcoes(ACOES,"tabelas",{
   "tab-lista":()=>{tabListaAbrir()},
   "tab-salvar-abrir":()=>{tabSalvarAbrir()},

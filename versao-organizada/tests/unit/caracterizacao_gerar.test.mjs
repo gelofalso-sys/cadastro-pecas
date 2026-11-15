@@ -1,4 +1,6 @@
 // Caracterização: compara o NÚCLEO (src/core) com o que o app gerou com o backup real.
+// Atenção: desde a Tarefa 8 o `gerar` do app chama `gerar$`, então o golden compara o núcleo consigo mesmo: só prova que o estado serializado basta e que o adaptador está ligado.
+// A equivalência com o `gerar` anterior à extração foi provada por diff textual e por uma execução manual contra o golden do HEAD anterior.
 // O golden vem de tests/t_caracterizacao_gerar.py (CP_GOLDEN); sem CP_GOLDEN ou CP_BACKUP o teste pula.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -39,7 +41,7 @@ test("caracterização: saidaLinhas do núcleo = app (normal e agrupando pai/fil
   console.log(`# saidaLinhas: ${normal.length} linhas (normal) e ${pai.length} (pai/filho) comparadas`);
 });
 
-// `gerar` foi para o núcleo (src/core/dominio.js) na Tarefa 8: gerar$(S, S.lanc) deve reproduzir o que o app gerou.
+// (Auto-comparação: ver o aviso no cabeçalho.) `gerar` foi para o núcleo (src/core/dominio.js) na Tarefa 8: gerar$(S, S.lanc) deve reproduzir o que o app gerou.
 // O estado é copiado: gerar$ sincroniza os conjuntos lançados (conjCalcular$) e pode escrever em S.lanc.
 test("caracterização: gerar$(S, S.lanc) do núcleo = linhas do app, peça a peça", { skip: pular || false }, () => {
   const S2 = json(S), g = gerar$(S2, S2.lanc), por = {};
