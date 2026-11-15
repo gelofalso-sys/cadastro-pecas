@@ -9,7 +9,7 @@ acoes em lote (`b-set`, `b-dup`, `b-del`), acoes sobre a selecao (`s-*`), gaveta
 - `12-celula-recusada.js` (`marcaRuim`, veio do antigo 12), `15-planilha.js` (`estadoPlanilha`, larguras, filtros `casa`/`filtroOn`, `formAbrir`, `renderFiltros`, `cartoes`), `15c-listas-e-janela.js` (`renderListas`, janela, `guiaHTML`),
   `15e-renderizar-planilha.js` (`renderTopo`), `15f-edicao-celula.js`, `15g-planilha-colar.js`, `16-selecao.js` (sem `usarModelo`, que foi para `lancamento`), `19a2-grafico-rosca.js` (`renderGraf`, veio de `configuracao`: so `renderTopo` o chama),
   `24-ui-numeracao-e-colunas.js`, `27b1-mostrar-no-fim.js` (`mostrarNoFim`, rolar ate a peca nova; veio do 27b), `34-filtros-e-pilula.js`, `acoes.js` (21 cliques), e listeners inteiros: `30b` (mousedown/mousemove/mouseup/dblclick da grade), `31b` (dblclick da regua de coluna e destaque da linha), `32b` (digitar na celula), `33b` (rolagem da janela).
-- Ficaram em `src/js/` (cortes feitos para nao criar ciclo): `15b-render-geral.js` (`render`, chama `renderCfg` da configuracao) e `15d-romaneio-resync.js` (`romResync`, `romCriando`, chamam o romaneio).
+- Ficaram na base `src/js/` (cortes feitos para nao criar ciclo): `15b-render-geral.js` (`render`, chama `renderCfg` da configuracao) e `15d-romaneio-resync.js` (`romResync`, `romCriando`, chamam o romaneio).
 - `34c-cartoes-categoria.js` (cartoes recolhiveis de `#cfg`) foi para `configuracao`, nao e da tela da planilha.
 
 ## Estado
@@ -18,16 +18,16 @@ Continuam globais: `w` (largura em `abrirCel`) e os compartilhados `S`, `G`, `se
 
 ## expoe (o que de fora usa)
 `renderTopo`/`renderListas` (tabelas, configuracao, exportacao, fotos, romaneio e legado: redesenhar a tela), `casa`/`filtroOn` (exportacao e fotos baixam/escolhem so o que o filtro mostra),
-`estadoPlanilha` (exportacao le `fv`; fotos le `selR`; legado 14/20/27b/27d/31c), `celular` e `formAbrir` (configuracao, legado), `selecionar`/`rolarAte` (acao de exportacao), `guardarFil`, `janGarantir`, `vis`, `pilulaAtualiza` (31c, 27b, 35), `mostrarNoFim` (romaneio 23b, `adicionar` e `multi-ok` do lancamento). `usa`: `core`, `lancamento`.
+`estadoPlanilha` (exportacao le `fv`; fotos le `selR`; legado 14/20/27b/27d/31c), `celular` e `formAbrir` (configuracao, legado), `selecionar`/`rolarAte` (acao de exportacao, teclado de app/32), `guardarFil`, `vis`, `pilulaAtualiza` (31c, 27b, 35), `mostrarNoFim` (romaneio 23b, `adicionar` e `multi-ok` do lancamento). `usa`: `core`, `lancamento`.
 
 ## Acoplamento com `lancamento` (Tarefa 16)
 - `planilha` usa `lancamento` (declarado): `renderForm`, `editar`, `dobrarOv`, `formSujo`, `estadoLancamento.editSnap` (15f/16/30b: celula da peca aberta no formulario), `usarModelo`, `focarPrimeiro` (acoes).
 - O caminho inverso (`lancamento` chama `renderTopo`, `renderListas`, `celular`, `mostrarNoFim`) fica como violacao pendente na fatia `lancamento` (`fronteira: "aponta"`); ver o LEIA-ME de la.
-- `desfazer` (src/js/27b2), `duplicar`/`excluir*` (src/js/27d), `salvar` e `editId` seguem no legado (isentos).
+- `desfazer` e `salvar` sao da fatia `armazenamento` (declarada); `duplicar`/`excluir*` da `lancamento` (chamados nas acoes); `editId` segue na base `src/js/10`.
 
 ## Armadilhas
 - `render` e `romResync` ficam fora de proposito: `planilha` nao pode usar `configuracao`/`romaneio` (elas usam `renderTopo`). Nao mova de volta.
-- Listeners misturados que ficaram: `keydown` e `paste` de 32 (atalhos da grade junto de outros), `click` de 30c e `resize`/`keydown` de 35.
+- Listeners misturados que ficaram na fatia `app`: `keydown` e `paste` de `app/32` (atalhos da grade junto de outros), `click` de `app/30c` e `resize`/`keydown` de `app/35`.
 - Texto gerado: use `String.fromCharCode(10)`; `renderTopo` monta a tabela inteira em string (por isso as linhas passam de 1000 caracteres).
 
 ## Pendencias (conhecidas, NAO corrigidas)

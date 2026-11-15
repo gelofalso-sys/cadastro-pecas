@@ -1,6 +1,9 @@
 // Registro de ações de clique: cada fatia registra suas ações (data-act) sem tocar no switch central.
 const ORIGEM = Symbol.for("cp.acoes.origem");
 
+// Registro unico do app (sem prototipo): os acoes.js das fatias registram nele e o despacho do clique (src/fatias/app/30c-clique-acoes.js) consulta.
+export const ACOES = Object.create(null);
+
 export function registrarAcoes(registro, fatia, mapa) {
   if (!Object.prototype.hasOwnProperty.call(registro, ORIGEM)) {
     Object.defineProperty(registro, ORIGEM, { value: new Map(), enumerable: false });

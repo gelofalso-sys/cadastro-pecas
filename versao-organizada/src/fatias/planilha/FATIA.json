@@ -26,7 +26,6 @@
     "filtroOn",
     "formAbrir",
     "guardarFil",
-    "janGarantir",
     "mostrarNoFim",
     "pilulaAtualiza",
     "renderListas",
@@ -61,7 +60,8 @@
     "^t66_clique_celula\\.py$",
     "^t74_romaneio_extras\\.py$",
     "^t85_lote_numerado\\.py$",
-    "^t93_revisao_agil\\.js$"
+    "^t93_revisao_agil\\.js$",
+    "^t106_salto_planilha\\.js$"
   ],
   "fronteira": "falha"
 }

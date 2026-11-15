@@ -2483,6 +2483,9 @@ function gerar$(S,list){
 // Registro de ações de clique: cada fatia registra suas ações (data-act) sem tocar no switch central.
 const ORIGEM = Symbol.for("cp.acoes.origem");
 
+// Registro unico do app (sem prototipo): os acoes.js das fatias registram nele e o despacho do clique (src/fatias/app/30c-clique-acoes.js) consulta.
+const ACOES = Object.create(null);
+
 function registrarAcoes(registro, fatia, mapa) {
   if (!Object.prototype.hasOwnProperty.call(registro, ORIGEM)) {
     Object.defineProperty(registro, ORIGEM, { value: new Map(), enumerable: false });
@@ -4083,7 +4086,7 @@ function irPara(id){
 }
 /* ===== configurações ===== */
 /* cadastros em abas na horizontal: o nome de cada um fica sempre à vista e o conteúdo abre embaixo */
-const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null};
+const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null,galvSel:false,drag:null,bnReserva:null,bnReservando:false,bnEmExclusao:false};
 
 function sec(id,titulo,resumo,corpo){estadoConfig.secs.push({id,titulo,resumo,corpo});return ""}
 function abaCfg(){return estadoConfig.secs.some(s=>s.id===abertos.tab)?abertos.tab:estadoConfig.secs[0].id}
@@ -4294,7 +4297,7 @@ const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(ROM&&ROM.tid))|
 let ROM=null;
 /* Estado da fatia romaneio (antes globais soltos): revSeq (romRevSeq, 21a), t0 (romT0, 21a2), busy (romBusy, 21a6), pdfLib (22),
    rel (REL, 25), impQ/impSt (IMPQ/IMPST, fila e aviso da importacao, 34b). ROM, ROMS, NF e relTem continuam globais (usados fora da fatia). */
-const estadoRomaneio={revSeq:0,t0:null,busy:false,pdfLib:null,rel:null,impQ:[],impSt:null};
+const estadoRomaneio={revSeq:0,t0:null,busy:false,pdfLib:null,rel:null,impQ:[],impSt:null,romf:{q:"",m:"todas"}};
 /* reconhece sozinho o formato da lista: testa o modelo e variações comuns e fica com o que lê mais linhas */
 
 /* lista copiada do Excel (colunas separadas por tabulação): lê por coluna, pelo cabeçalho ou deduzindo a ordem (qtd × unitário = total) */
@@ -5156,11 +5159,10 @@ function romLoteOff(i){
   romSalvarSoon();renderRom();toast("Lote desativado: o item voltou a ser um cartão comum.")}
 
 /* ＋ Galvânica / ＋ Banho dentro do lançamento ou do romaneio levam à página completa de Galvânicas e banhos (letra, cor, cálculo, coluna, milésimos…), em vez de um mini-cadastro limitado */
-let qGalvanicaSelecionar=false;
 function qIrGalvanica(q){
   const C=cfg();
   if(celular())formAbrir(false);irPara("banho");
-  if(q==="bh"){qGalvanicaSelecionar=true;const botao=document.querySelector('#cfg [data-act="bh-add"]');if(botao){botao.click();setTimeout(()=>cadConferir(),0)}else qGalvanicaSelecionar=false}
+  if(q==="bh"){estadoConfig.galvSel=true;const botao=document.querySelector('#cfg [data-act="bh-add"]');if(botao){botao.click();setTimeout(()=>cadConferir(),0)}else estadoConfig.galvSel=false}
   setTimeout(()=>{const bi=q==="bh"?C.banhistas.length-1:Math.max(0,C.banhistas.findIndex(b=>b.id===S.form.banhista)),el=document.querySelector(`[data-bh="${bi}"]`);
     if(el){el.scrollIntoView({block:"start",behavior:"smooth"});const f=el.querySelector(q==="bh"?'[data-bhf="nome"]':'[data-act="bn-pronto"]');if(f)f.focus({preventScroll:true})}},150);
   toast(q==="bh"?"Galvânica nova criada na página de Galvânicas e banhos: dê um nome, ajuste os banhos e use no lançamento.":"Escolha o banho (+ Ouro, + Ródio, + Prata, + Outro…) acima da tabela de milésimos; ele já aparece no lançamento.")}
@@ -5293,13 +5295,12 @@ function primeirosIr(p){
   irPara(p==="banho"?"banho":p==="cat"?"cat":"forn")}
 
 /* ===== arrastar e soltar para reordenar categorias e banhos (as setas continuam valendo) ===== */
-let DRAG=null;
-document.addEventListener("dragstart",e=>{const h=e.target.closest&&e.target.closest("[data-dk]");if(!h)return;DRAG={k:h.dataset.dk,i:+h.dataset.di,bi:h.dataset.bi!=null?+h.dataset.bi:null};try{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","reordenar")}catch(x){}});
-document.addEventListener("dragover",e=>{if(!DRAG)return;const alvo=DRAG.k==="cat"?e.target.closest(".card[data-cat]"):e.target.closest("tr[data-bn]");if(alvo){e.preventDefault();alvo.classList.add("dh-alvo")}});
+document.addEventListener("dragstart",e=>{const h=e.target.closest&&e.target.closest("[data-dk]");if(!h)return;estadoConfig.drag={k:h.dataset.dk,i:+h.dataset.di,bi:h.dataset.bi!=null?+h.dataset.bi:null};try{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","reordenar")}catch(x){}});
+document.addEventListener("dragover",e=>{if(!estadoConfig.drag)return;const alvo=estadoConfig.drag.k==="cat"?e.target.closest(".card[data-cat]"):e.target.closest("tr[data-bn]");if(alvo){e.preventDefault();alvo.classList.add("dh-alvo")}});
 document.addEventListener("dragleave",e=>{const a=e.target.closest&&e.target.closest(".dh-alvo");if(a)a.classList.remove("dh-alvo")});
-document.addEventListener("dragend",()=>{DRAG=null;document.querySelectorAll(".dh-alvo").forEach(x=>x.classList.remove("dh-alvo"))});
+document.addEventListener("dragend",()=>{estadoConfig.drag=null;document.querySelectorAll(".dh-alvo").forEach(x=>x.classList.remove("dh-alvo"))});
 document.addEventListener("drop",e=>{
-  if(!DRAG)return;const C=cfg(),d=DRAG;DRAG=null;document.querySelectorAll(".dh-alvo").forEach(x=>x.classList.remove("dh-alvo"));
+  if(!estadoConfig.drag)return;const C=cfg(),d=estadoConfig.drag;estadoConfig.drag=null;document.querySelectorAll(".dh-alvo").forEach(x=>x.classList.remove("dh-alvo"));
   if(d.k==="cat"){const a=e.target.closest(".card[data-cat]");if(!a)return;e.preventDefault();const para=+a.dataset.cat;if(para===d.i||isNaN(para))return;const [c]=C.categorias.splice(d.i,1);C.categorias.splice(para,0,c);salvar(true,false);render();toast(`“${c.nome}” movida para a posição ${para+1}.`)}
   else if(d.k==="bn"){const tr=e.target.closest("tr[data-bn]"),bl=tr&&tr.closest("[data-bh]");if(!tr||!bl||+bl.dataset.bh!==d.bi)return;e.preventDefault();const para=+tr.dataset.bn,b=C.banhistas[d.bi];if(!b||para===d.i)return;const [x]=b.banhos.splice(d.i,1);b.banhos.splice(para,0,x);salvar(true,false);render();toast(`Banho “${x.nome}” movido para a posição ${para+1}.`)}
 });
@@ -6109,32 +6110,31 @@ function abrirExemploVisual(){repModal(`<div class="rep-h"><div><b class="rep-t"
 const refocar=s=>{const el=document.querySelector(s);if(el)el.focus()};
 const guardarAbertos=()=>{try{gravarPref("cadpecas-abertos",JSON.stringify(abertos))}catch(x){}};
 /* Um banho pode ser usado em componentes guardados fora da tabela aberta. */
-let bnReserva=null,bnReservando=false,bnEmExclusao=false;
 /* A reserva fica até salvar ou descartar os cadastros: conferir apenas no clique
    deixaria outra aba criar um conjunto antes da confirmação. */
 async function bnReservarUso(){
-  if(bnEmExclusao)return false;
-  if(bnReserva)return true;
-  if(bnReservando||!navigator.locks||conflito||corrompido)return false;
-  bnReservando=true;
+  if(estadoConfig.bnEmExclusao)return false;
+  if(estadoConfig.bnReserva)return true;
+  if(estadoConfig.bnReservando||!navigator.locks||conflito||corrompido)return false;
+  estadoConfig.bnReservando=true;
   try{
     await bkUsoParar();
     let anunciar;const pronto=new Promise(r=>{anunciar=r});
     const pedido=navigator.locks.request("cadpecas-uso",{mode:"exclusive",ifAvailable:true},lock=>{
       if(!lock){anunciar(false);return}
-      return new Promise(liberar=>{bnReserva={liberar};anunciar(true)})
+      return new Promise(liberar=>{estadoConfig.bnReserva={liberar};anunciar(true)})
     });
     pedido.catch(()=>anunciar(false));
     const ok=await pronto;
-    if(ok)bnReserva.pedido=pedido;else{await pedido.catch(()=>{});await bkUsoIniciar()}
+    if(ok)estadoConfig.bnReserva.pedido=pedido;else{await pedido.catch(()=>{});await bkUsoIniciar()}
     return ok
-  }finally{bnReservando=false}
+  }finally{estadoConfig.bnReservando=false}
 }
-async function bnLiberarUso(){if(!bnReserva)return;const r=bnReserva;bnReserva=null;r.liberar();await r.pedido;await bkUsoIniciar()}
+async function bnLiberarUso(){if(!estadoConfig.bnReserva)return;const r=estadoConfig.bnReserva;estadoConfig.bnReserva=null;r.liberar();await r.pedido;await bkUsoIniciar()}
 async function bnExcluirSeguro(bh0,bn0){
-  const jaReservado=!!bnReserva;
+  const jaReservado=!!estadoConfig.bnReserva;
   if(!await bnReservarUso()){alert("Não foi possível reservar o uso exclusivo. Feche as outras abas do aplicativo e tente novamente; neste navegador a exclusão exige suporte a bloqueios.");return}
-  bnEmExclusao=true;
+  estadoConfig.bnEmExclusao=true;
   let excluiu=false;
   try{
     if(conflito||corrompido){toast("Resolva o conflito ou os dados danificados antes de excluir o banho.");return}
@@ -6142,8 +6142,8 @@ async function bnExcluirSeguro(bh0,bn0){
     await bnExcluirConferido(bh0,bn0);
     excluiu=!!antes&&!cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);
     if(excluiu&&!CADAUTO){cadConferir();if(!CAD.pend)throw new Error("A exclusão não ficou pendente")}
-    if(excluiu&&CADAUTO){clearTimeout(sT);sT=null;chain=chain.then(flush);if(!await chain)toast("A exclusão não foi gravada. Confira o aviso de armazenamento.")}
-  }finally{bnEmExclusao=false;if(!jaReservado&&(!excluiu||CADAUTO))await bnLiberarUso()}
+    if(excluiu&&CADAUTO){salvarCancelarAgendado();if(!await salvarEncadear())toast("A exclusão não foi gravada. Confira o aviso de armazenamento.")}
+  }finally{estadoConfig.bnEmExclusao=false;if(!jaReservado&&(!excluiu||CADAUTO))await bnLiberarUso()}
 }
 async function bnExcluirConferido(bh0,bn0){
   const assinatura=()=>JSON.stringify([S.lanc,S.form,ROM,TABS,ROMS,cfg().banhistas]);
@@ -6200,8 +6200,8 @@ document.addEventListener("mouseup",e=>{const was=estadoPlanilha.arrastando;esta
 document.addEventListener("dblclick",e=>{const td=e.target.closest&&e.target.closest("#sheet td[data-c]");if(td&&!td.classList.contains("ed"))abrirCel(+td.closest("tr").dataset.ri,td.dataset.c)});
 function ativarConjunto(){const f=S.form;f.tipo="pronta";f.conj=true;if(!Array.isArray(f.comp)||!f.comp.length)f.comp=[novaComp(),novaComp()];if(!f.banhista)f.banhista=(cfg().banhistas[0]||{}).id||"";conjSync(f);salvar(false);renderListas();renderTopo();renderForm();refocar('#conj [data-cp="desc"]')}
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del","cv-del","cv-todas","cv-num"];
-/* Registro de ações de clique (data-act). Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
-const ACOES=Object.create(null);
+/* Despacho dos cliques (data-act): primeiro o registro ACOES (src/core/acoes.js), preenchido pelos acoes.js das fatias; o que sobra cai no switch residual abaixo.
+   Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo){tipoClique(t.dataset.tipo);return}
@@ -6231,7 +6231,7 @@ document.addEventListener("click",e=>{
   }
   if(snapCfg&&JSON.stringify(S.config)!==JSON.stringify(snapCfg))toast("Cadastro alterado.",{t:"Desfazer",fn:()=>{S.config=snapCfg;salvar(true);render()}});
 });
-/* Ações de clique (data-act) da fatia exportacao. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+/* Ações de clique (data-act) da fatia exportacao. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return`. O estado de exportar/importar fica em estadoExportacao (19b-assistente-outro-sistema.js). */
 registrarAcoes(ACOES,"exportacao",{
   "mod-novo":()=>{abrirNovoSistema()},
@@ -6252,7 +6252,7 @@ registrarAcoes(ACOES,"exportacao",{
   "imp-ok":()=>{aplicarImp()},
   "backup":()=>{backup()}
 });
-/* Ações de clique (data-act) da fatia tabelas. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+/* Ações de clique (data-act) da fatia tabelas. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return`. `tabArm` (tabela "armada" para excluir) continua global em src/js/20. */
 registrarAcoes(ACOES,"tabelas",{
   "tab-lista":()=>{tabListaAbrir()},
@@ -6265,8 +6265,8 @@ registrarAcoes(ACOES,"tabelas",{
   "rom-ver":({t})=>{romVer(t.dataset.id,t.dataset.de)}
 });
 /* Ações de clique (data-act) da fatia configuracao: catálogo, categorias, subcategorias, banhos, fornecedores, cores, variações, modelos de exportação, modelos de leitura de romaneio (rom-add/dup/del, rom-map-*, rom-ex-*, rom-testar) e fiscal (fisc-aplicar).
-   Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo). Convenção: o que era `break` no switch virou `return`; `return` que pulava o
-   código pós-switch (desfazer de CFG_UNDO) virou `return false`. snapCfg/CFG_UNDO continuam no listener de 30, calculados antes do despacho. */
+   Registradas em ACOES (src/core/acoes.js). Convenção: o que era `break` no switch virou `return`; `return` que pulava o
+   código pós-switch (desfazer de CFG_UNDO) virou `return false`. snapCfg/CFG_UNDO continuam no despacho do clique (app/30c), calculados antes do despacho. */
 const acaoMcUp=({t,a})=>{const cs=modeloAtual().cols,i=+t.closest("[data-mc]").dataset.mc,j=a==="mc-up"?i-1:i+1;if(j>=0&&j<cs.length){[cs[i],cs[j]]=[cs[j],cs[i]];salvar(true,false);renderCfg()}return};
 const acaoCatAz=({a,C,ci})=>{catUI.dup=null;
       if(a==="cat-az")C.categorias.sort((x,y)=>semAc(x.nome).localeCompare(semAc(y.nome),"pt"));
@@ -6341,7 +6341,7 @@ registrarAcoes(ACOES,"configuracao",{
   "forn-add":({C})=>{const nomeLivre=b0=>{let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);return n};C.fornecedores.push({nome:nomeLivre("Novo fornecedor"),desconto:"0",tipo:"bruta",codigo:""});salvar(true,false);render();return},
   "forn-dup":({t,C})=>{const i=+t.closest("[data-forn]").dataset.forn,f=clone(C.fornecedores[i]);{const b0=f.nome+" (cópia)";let n=b0,k=2;while(C.fornecedores.some(x=>semAc(x.nome)===semAc(n)))n=b0+" "+(k++);f.nome=n}C.fornecedores.splice(i+1,0,f);salvar(true,false);render();return},
   "forn-del":({t,C})=>{const i=+t.closest("[data-forn]").dataset.forn,fo=C.fornecedores[i],n=S.lanc.filter(l=>l.v&&l.v.H===fo.nome).length,abertos=ROM?ROM.rows.filter(r=>r.forn===fo.nome).length:0;if(!confirm(`Remover o fornecedor “${fo.nome}” dos cadastros? ${n} peça(s) na tabela atual e ${abertos} item(ns) do romaneio aberto usam esse nome. Referências em tabelas e romaneios salvos não são alteradas; ele deixará de aparecer nas opções. As alterações de cadastro podem ser descartadas antes de salvar.`))return;C.fornecedores.splice(i,1);salvar(true,false);render();return},
-  "bh-add":({C})=>{const b={id:uid(),nome:"Nova galvânica",verniz:"",vernizOn:true,banhos:[]};C.banhistas.push(b);if(qGalvanicaSelecionar){trocarBanhista(S.form,b.id);qGalvanicaSelecionar=false}salvar(true,false);render();return;},
+  "bh-add":({C})=>{const b={id:uid(),nome:"Nova galvânica",verniz:"",vernizOn:true,banhos:[]};C.banhistas.push(b);if(estadoConfig.galvSel){trocarBanhista(S.form,b.id);estadoConfig.galvSel=false}salvar(true,false);render();return;},
   "bh-dup":({C,bi})=>{const b=clone(C.banhistas[bi]);b.id=uid();b.nome+=" (cópia)";C.banhistas.splice(bi+1,0,b);salvar(true,false);render();return},
   "bh-del":({C,bi})=>{const id=C.banhistas[bi].id;{const n=S.lanc.filter(l=>l.banhista===id).length;if(n&&!confirm(`${n} peça(s) já lançadas usam esta galvânica. Remover mesmo assim? (Ctrl+Z desfaz)`))return}C.banhistas.splice(bi,1);C.fornecedores.forEach(f=>{if(f.banhista===id)f.banhista=""});salvar(true);render();return},
   "bn-add":({C,bi})=>{const b=C.banhistas[bi],usadas=b.banhos.map(x=>x.letra);let L="A";while(usadas.some(u=>String(u).toUpperCase()===L)&&L<"Z")L=String.fromCharCode(L.charCodeAt(0)+1);if(usadas.some(u=>String(u).toUpperCase()===L)){toast("Já existem banhos de A a Z neste galvânica — não cabe mais um.");return}b.banhos.push({id:uid(),nome:"Ródio",letra:L,cor:"Ródio",mil:"",modo:"peso",mult:"",coluna:"S",sufixo:" banho ródio",marcado:false,vz:true});salvar(true,false);render();return},
@@ -6378,7 +6378,7 @@ registrarAcoes(ACOES,"configuracao",{
       o.textContent=R.erro||`${R.rows.length} peças lidas${R.conf?" · "+R.conf:""} · 1ª: ${R.rows[0].desc} (${R.rows[0].cod||"sem código"}) ${R.rows[0].qtd} un.`;return}}
 });
 /* Ações de clique (data-act) da fatia fotos: enviar fotos ao imgbb, testar a chave, escolher/remover a foto da peça e ampliar (zoom).
-   Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo). Convenção: o que era `break` no switch virou `return`.
+   Registradas em ACOES (src/core/acoes.js). Convenção: o que era `break` no switch virou `return`.
    Desde a Tarefa 14 tambem as fotos dos itens do romaneio: rom-foto (zoom), rom-foto-add, rom-foto-del e foto-rem-rom. */
 registrarAcoes(ACOES,"fotos",{
   "fotos-enviar":()=>{enviarFotos();return},
@@ -6393,7 +6393,7 @@ registrarAcoes(ACOES,"fotos",{
   "foto-rem-rom":()=>{{if(editId){const l=S.lanc.find(x=>x.id===editId);if(l)delete l.ftR}delete S.form.ftR;salvar(false);renderTopo();renderForm();toast("Foto do romaneio removida desta peça.");return}}
 });
 /* Ações de clique (data-act) da fatia romaneio: leitura/importação, cartões dos itens, lote por peso, partir/juntar, revisão final, criar,
-   romaneios salvos, relatório da criação e planilha do fornecedor. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes).
+   romaneios salvos, relatório da criação e planilha do fornecedor. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return` (nenhum case daqui tinha `return` que pulasse o pós-switch).
    ROM, ROMS, romArm, tabArm e romConflito são globais legados (src/js/19c0 e src/js/20): continuam sendo lidos/escritos daqui. */
 registrarAcoes(ACOES,"romaneio",{
@@ -6474,7 +6474,7 @@ registrarAcoes(ACOES,"romaneio",{
   "rom-plan-no":()=>{ROM.plan=null;renderRom();return;}
 });
 /* Acoes de clique (data-act) da fatia planilha: filtros, vistas, gaveta do formulario no celular, acoes em lote sobre as pecas marcadas,
-   acoes sobre a celula/linha selecionada e editar/duplicar/excluir a linha. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+   acoes sobre a celula/linha selecionada e editar/duplicar/excluir a linha. Registradas em ACOES (src/core/acoes.js).
    Convencao: o que era `break` no switch virou `return`. b-copy, b-xlsx e s-xlsx ficaram no switch (chamam baixar/copiar da exportacao; mover criaria ciclo). */
 registrarAcoes(ACOES,"planilha",{
   "editar":({tr})=>{editar(tr.dataset.l);if(celular())formAbrir(true);return;},
@@ -6509,7 +6509,7 @@ registrarAcoes(ACOES,"planilha",{
 /* Acoes de clique (data-act) da fatia lancamento: formulario (cancelar, limpar, repetir, adicionar e limpar, detalhes, so o essencial),
    painel rapido (q, q-salvar, q-fechar, rom-q), varias pecas (multi-*), lancamento continuo e combinacoes (trabalho-toggle, preset-*),
    banco de palavras (banco-*, desc-palavra), cores e tamanhos do formulario (cor-*, cs-*, gi-*, gr-novo-pmg, faixa-salvar), conjunto (comp-*),
-   simulador de fator (simular-fator, sim-usar) e exemplo. Registradas em ACOES (src/js/30c-clique-acoes.js; carrega antes deste arquivo).
+   simulador de fator (simular-fator, sim-usar) e exemplo. Registradas em ACOES (src/core/acoes.js).
    Convencao: o que era `break` no switch virou `return`; nenhum case pulava o codigo pos-switch.
    O clique em [data-tipo] (Bruta/Pronta/Conjunto) nao e data-act: o listener de 30c chama tipoClique. */
 function tipoClique(tipo){
@@ -6567,7 +6567,7 @@ registrarAcoes(ACOES,"lancamento",{
   "comp-del":({t})=>{{const f=S.form;f.comp.splice(+t.dataset.ci,1);conjSync(f);salvar(false);renderTopo();renderForm();return}}
 });
 /* Acoes de clique (data-act) da fatia armazenamento: backup em pasta (bk-*), pontos de restauracao (ponto-*), diagnostico dos dados e backup completo.
-   Registradas em ACOES (src/js/30c-clique-acoes.js; carrega antes deste arquivo).
+   Registradas em ACOES (src/core/acoes.js).
    Convencao: o que era `break` no switch virou `return`; nenhum case pulava o codigo pos-switch (nenhuma destas acoes esta em CFG_UNDO). */
 registrarAcoes(ACOES,"armazenamento",{
   "bk-escolher":()=>{{if(typeof showDirectoryPicker!=="function"){toast("Este navegador não deixa escolher pasta. Use o Chrome ou o Edge.");return}
@@ -6953,10 +6953,9 @@ window.addEventListener("storage",e=>{
 });
 
 /* ===== v19: romaneio — busca e filtro por situação (só esconde os cartões; nada é remontado) ===== */
-let ROMF={q:"",m:"todas"};
 function romFiltroAplicar(){
   const w=document.getElementById("romWrap");if(!w||!ROM)return;
-  const q=semAc(ROMF.q),m=ROMF.m;let n=0;
+  const q=semAc(estadoRomaneio.romf.q),m=estadoRomaneio.romf.m;let n=0;
   ROM.rows.forEach((r,i)=>{const c=w.querySelector('.rc[data-i="'+i+'"]');if(!c)return;
     const okM=m==="todas"||romSit(r)===m||(m==="pendentes"&&false),okQ=!q||semAc((r.cod||"")+" "+(r.desc||"")+" "+(r.cat||"")+" "+(r.sub||"")).includes(q);
     const mostra=okM&&okQ;c.style.display=mostra?"":"none";if(mostra)n++});
@@ -6969,12 +6968,12 @@ function romFiltroMontar(){
   const d=document.createElement("div");d.className="romf";
   d.innerHTML='<input type="search" id="romfQ" placeholder="Buscar peça por código ou descrição…" aria-label="Buscar peça neste romaneio" autocomplete="off"><span class="seg" role="group" aria-label="Filtrar por situação">'+
     [["todas","Todas"],["pendentes","Pendentes"],["prontas","Prontas"],["lancadas","Lançadas"],["ignoradas","Ignoradas"]].map(a=>'<button type="button" data-romf="'+a[0]+'" aria-pressed="false">'+a[1]+'</button>').join("")+'</span><button type="button" class="btn sm" id="romfC" aria-pressed="false" title="Mostra cada peça numa linha só; clique na peça para abrir os detalhes ([ e ] vão para a anterior e a próxima)">▤ Compactar</button><span class="hint" id="romfN"></span>';
-  sum.after(d);d.querySelector("#romfQ").value=ROMF.q;romCompacto(romCompactoOn());romFiltroAplicar();
+  sum.after(d);d.querySelector("#romfQ").value=estadoRomaneio.romf.q;romCompacto(romCompactoOn());romFiltroAplicar();
 }
 {const _rr=renderRom;renderRom=function(){const r=_rr.apply(this,arguments);try{romFiltroMontar();document.body.classList.toggle("rom-ativo",!!ROM)}catch(e){}return r}}
 {const _ra=romAtual;romAtual=function(){const r=_ra.apply(this,arguments);try{romFiltroAplicar()}catch(e){}return r}}
-document.getElementById("romWrap").addEventListener("input",e=>{if(e.target.id==="romfQ"){ROMF.q=e.target.value;romFiltroAplicar()}});
-document.getElementById("romWrap").addEventListener("click",e=>{const b=e.target.closest("[data-romf]");if(b){ROMF.m=b.dataset.romf;romFiltroAplicar()}});
+document.getElementById("romWrap").addEventListener("input",e=>{if(e.target.id==="romfQ"){estadoRomaneio.romf.q=e.target.value;romFiltroAplicar()}});
+document.getElementById("romWrap").addEventListener("click",e=>{const b=e.target.closest("[data-romf]");if(b){estadoRomaneio.romf.m=b.dataset.romf;romFiltroAplicar()}});
 /* cartões compactos por padrão em romaneios com 4 ou mais peças (a escolha do usuário vale depois) */
 const romCompactoOn=()=>abertos.romc==null?!!(ROM&&ROM.rows.filter(r=>!r.lote).length>=4):!!abertos.romc;
 function romCompacto(on){const rs=document.querySelector("#romWrap .rcs");if(rs)rs.classList.toggle("compacto",on);const b=document.getElementById("romfC");if(b){b.setAttribute("aria-pressed",String(on));b.textContent=on?"▥ Expandir":"▤ Compactar"}}
@@ -7196,7 +7195,7 @@ function cadConferir(){
   if(CAD.snap){const mudou=JSON.stringify(S.config)!==CAD.snap.c||cadLancSig()!==CAD.snap.l;
     if(mudou&&!CAD.pend){CAD.pend=true;setStatus("Cadastros: alterações NÃO salvas",true)}
     if(!mudou&&CAD.pend){CAD.pend=false;setStatus("Salvo neste navegador")}
-    if(!mudou){CAD.snap=null;if(bnReserva&&!bnEmExclusao)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."))}}
+    if(!mudou){CAD.snap=null;if(estadoConfig.bnReserva&&!estadoConfig.bnEmExclusao)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."))}}
   cadBarra()}
 function cadRomAtualizar(){   /* romaneio aberto acompanha o cadastro (valores da galvânica, banhos, fornecedores…) */
   if(!ROM||!ROM.rows||!ROM.rows.length)return;
@@ -7204,7 +7203,7 @@ function cadRomAtualizar(){   /* romaneio aberto acompanha o cadastro (valores d
   clearTimeout(CAD.rt);CAD.rt=setTimeout(()=>{CAD.rt=null;if(!ROM||!ROM.rows||!ROM.rows.length)return;const w=document.getElementById("romWrap"),pos=[];for(let e=w;e;e=e.parentElement)if(e.scrollHeight>e.clientHeight)pos.push([e,e.scrollTop]);
     try{renderRom()}finally{pos.forEach(([e,t])=>{e.scrollTop=t})}},350)}
 async function cadSalvar(){if(!CAD.pend||CAD.salvando)return;
-  if(bnReserva){CAD.salvando=true;document.body.inert=true;CAD.pend=false;
+  if(estadoConfig.bnReserva){CAD.salvando=true;document.body.inert=true;CAD.pend=false;
     try{dirty.c=true;dirty.l=true;try{histNota()}catch(e){}salvarCancelarAgendado();setStatus("Salvando…");if(!await salvarEncadear()){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
       CAD.snap=null;cadBarra();render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.");await bnLiberarUso();return
     }catch(e){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
@@ -7220,7 +7219,7 @@ function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
   if(s.rasc&&rascunho){const o=JSON.parse(s.rasc);Object.keys(rascunho).forEach(k=>{if(k!=="ft"&&!(k in o))delete rascunho[k]});Object.assign(rascunho,o)}
   HIST.length=Math.min(HIST.length,CAD.hL);REDO.length=0;CAD.hR.forEach(x=>REDO.push(x));
   CAD.pend=false;CAD.snap=null;CAD.sig=JSON.stringify(S.config);cadBarra();
-  if(bnReserva)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."));
+  if(estadoConfig.bnReserva)bnLiberarUso().catch(()=>toast("Não consegui liberar a reserva. Recarregue o aplicativo."));
   try{sincGrade(S.form)}catch(e){}
   try{histIni()}catch(e){}
   render();if(ROM&&ROM.rows&&ROM.rows.length){renderRom();romSalvarSoon()}setStatus(db?"Salvo na sua conta":"Salvo neste navegador");toast("Alterações dos Cadastros descartadas.")}

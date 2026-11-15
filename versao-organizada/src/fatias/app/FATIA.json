@@ -1,6 +1,6 @@
 {
   "nome": "app",
-  "descricao": "",
+  "descricao": "Casca do aplicativo: janelas (foco preso, Esc), paleta de comandos (Ctrl+K), menu lateral e menu do celular, divisoria, abertura dos dados, novidades, historico, aviso de origem, o despacho dos cliques (ACOES e o switch residual) e os listeners globais de entrada, teclado, colar e soltar arquivo (onField).",
   "arquivos": [
     "18c-divisoria.js",
     "21d-novidades.js",
@@ -17,10 +17,33 @@
     "33c-paleta-comandos.js",
     "35-menu-e-final.js"
   ],
-  "expoe": [],
-  "usa": [
-    "core"
+  "expoe": [
+    "sideMarcar"
   ],
-  "testes": [],
-  "fronteira": "aponta"
+  "usa": [
+    "core",
+    "armazenamento",
+    "lancamento",
+    "planilha",
+    "exportacao",
+    "romaneio",
+    "fotos",
+    "configuracao",
+    "tabelas"
+  ],
+  "testes": [
+    "^t21\\.py$",
+    "^t30\\.py$",
+    "^t44\\.py$",
+    "^t55\\.py$",
+    "^t56\\.py$",
+    "^t78_baixar_selecionadas\\.py$",
+    "^t95_lapidacao\\.py$",
+    "^t120_edicao_romaneio_menu_numeracao\\.py$",
+    "^historico_voltar_regressao\\.js$",
+    "^t103_mobile_fluxos\\.js$",
+    "^t119_nota_sidebar\\.js$",
+    "^t92_mobile_agil\\.js$"
+  ],
+  "fronteira": "falha"
 }

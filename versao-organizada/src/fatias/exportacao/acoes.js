@@ -1,4 +1,4 @@
-/* Ações de clique (data-act) da fatia exportacao. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+/* Ações de clique (data-act) da fatia exportacao. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return`. O estado de exportar/importar fica em estadoExportacao (19b-assistente-outro-sistema.js). */
 registrarAcoes(ACOES,"exportacao",{
   "mod-novo":()=>{abrirNovoSistema()},

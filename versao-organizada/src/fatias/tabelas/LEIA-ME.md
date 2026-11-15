@@ -12,7 +12,7 @@ O historico de tabelas montadas ("Tabelas salvas") e tudo o que fica em volta de
 - `19d-tabelas-indice-e-fotos.js`: `estadoTabelas`, sugestoes, autor, indice, varredura de fotos, migracao e exclusao.
 - `19d2-tabelas-salvar-e-ver.js`: janelas e acoes de salvar, listar, restaurar, ver tabela e ver romaneio.
 - `acoes.js`: cliques `tab-lista`, `tab-salvar-abrir`, `tab-salvar-ok`, `tab-ver`, `tab-del`, `tab-restaurar`, `tab-csv`, `rom-ver`.
-- `repModal` (janela generica `.rep`) estava no meio de 19d e e usada por outras areas: ficou em `src/js/19d1-modal-rep.js`.
+- `repModal` (janela generica `.rep`) estava no meio de 19d e e usada por outras areas: ficou na base `src/js/19d1-modal-rep.js` (usada por exportacao, tabelas, armazenamento, lancamento e app; numa fatia criaria ciclo).
 
 ## Fluxos principais
 1. Salvar: `tab-salvar-abrir` -> `tab-salvar-ok` -> `tabSalvar` (foto consistente do estado, grava em `tabs`, anota no indice; se o indice falha NAO limpa a tabela).
@@ -21,7 +21,7 @@ O historico de tabelas montadas ("Tabelas salvas") e tudo o que fica em volta de
 
 ## O que a fatia expoe e por que
 `gravarIdx`, `tabIndex`, `tabsMigrar`, `arqRef`, `histSugAgendar`, `setAutor`: o armazenamento (20) e a persistencia (14) os usam.
-`pontosIds`, `varrerFotos`: 14 (persistencia). `varrerTudo`, `estadoTabelas`: 33 (abertura do app liga `estadoTabelas.semVarredura`).
+`pontosIds`, `varrerFotos`: 14 (persistencia). `varrerTudo`, `estadoTabelas`: `app/33c-abertura.js` (abertura do app liga `estadoTabelas.semVarredura`).
 
 ## Armadilhas
 - `tabArm`, `TABS`, `AUTOR`, `ARQ` sao declarados na fatia `armazenamento` (20): esta fatia grava `TABS`/`ARQ`/`AUTOR` por `definirTabs`/`definirArq`/`definirAutor`.

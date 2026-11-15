@@ -1,30 +1,29 @@
 /* Um banho pode ser usado em componentes guardados fora da tabela aberta. */
-let bnReserva=null,bnReservando=false,bnEmExclusao=false;
 /* A reserva fica até salvar ou descartar os cadastros: conferir apenas no clique
    deixaria outra aba criar um conjunto antes da confirmação. */
 async function bnReservarUso(){
-  if(bnEmExclusao)return false;
-  if(bnReserva)return true;
-  if(bnReservando||!navigator.locks||conflito||corrompido)return false;
-  bnReservando=true;
+  if(estadoConfig.bnEmExclusao)return false;
+  if(estadoConfig.bnReserva)return true;
+  if(estadoConfig.bnReservando||!navigator.locks||conflito||corrompido)return false;
+  estadoConfig.bnReservando=true;
   try{
     await bkUsoParar();
     let anunciar;const pronto=new Promise(r=>{anunciar=r});
     const pedido=navigator.locks.request("cadpecas-uso",{mode:"exclusive",ifAvailable:true},lock=>{
       if(!lock){anunciar(false);return}
-      return new Promise(liberar=>{bnReserva={liberar};anunciar(true)})
+      return new Promise(liberar=>{estadoConfig.bnReserva={liberar};anunciar(true)})
     });
     pedido.catch(()=>anunciar(false));
     const ok=await pronto;
-    if(ok)bnReserva.pedido=pedido;else{await pedido.catch(()=>{});await bkUsoIniciar()}
+    if(ok)estadoConfig.bnReserva.pedido=pedido;else{await pedido.catch(()=>{});await bkUsoIniciar()}
     return ok
-  }finally{bnReservando=false}
+  }finally{estadoConfig.bnReservando=false}
 }
-async function bnLiberarUso(){if(!bnReserva)return;const r=bnReserva;bnReserva=null;r.liberar();await r.pedido;await bkUsoIniciar()}
+async function bnLiberarUso(){if(!estadoConfig.bnReserva)return;const r=estadoConfig.bnReserva;estadoConfig.bnReserva=null;r.liberar();await r.pedido;await bkUsoIniciar()}
 async function bnExcluirSeguro(bh0,bn0){
-  const jaReservado=!!bnReserva;
+  const jaReservado=!!estadoConfig.bnReserva;
   if(!await bnReservarUso()){alert("Não foi possível reservar o uso exclusivo. Feche as outras abas do aplicativo e tente novamente; neste navegador a exclusão exige suporte a bloqueios.");return}
-  bnEmExclusao=true;
+  estadoConfig.bnEmExclusao=true;
   let excluiu=false;
   try{
     if(conflito||corrompido){toast("Resolva o conflito ou os dados danificados antes de excluir o banho.");return}
@@ -32,8 +31,8 @@ async function bnExcluirSeguro(bh0,bn0){
     await bnExcluirConferido(bh0,bn0);
     excluiu=!!antes&&!cfg().banhistas.find(b=>b.id===bh0.id)?.banhos.some(b=>b.id===bn0.id);
     if(excluiu&&!CADAUTO){cadConferir();if(!CAD.pend)throw new Error("A exclusão não ficou pendente")}
-    if(excluiu&&CADAUTO){clearTimeout(sT);sT=null;chain=chain.then(flush);if(!await chain)toast("A exclusão não foi gravada. Confira o aviso de armazenamento.")}
-  }finally{bnEmExclusao=false;if(!jaReservado&&(!excluiu||CADAUTO))await bnLiberarUso()}
+    if(excluiu&&CADAUTO){salvarCancelarAgendado();if(!await salvarEncadear())toast("A exclusão não foi gravada. Confira o aviso de armazenamento.")}
+  }finally{estadoConfig.bnEmExclusao=false;if(!jaReservado&&(!excluiu||CADAUTO))await bnLiberarUso()}
 }
 async function bnExcluirConferido(bh0,bn0){
   const assinatura=()=>JSON.stringify([S.lanc,S.form,ROM,TABS,ROMS,cfg().banhistas]);

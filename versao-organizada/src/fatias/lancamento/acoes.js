@@ -1,7 +1,7 @@
 /* Acoes de clique (data-act) da fatia lancamento: formulario (cancelar, limpar, repetir, adicionar e limpar, detalhes, so o essencial),
    painel rapido (q, q-salvar, q-fechar, rom-q), varias pecas (multi-*), lancamento continuo e combinacoes (trabalho-toggle, preset-*),
    banco de palavras (banco-*, desc-palavra), cores e tamanhos do formulario (cor-*, cs-*, gi-*, gr-novo-pmg, faixa-salvar), conjunto (comp-*),
-   simulador de fator (simular-fator, sim-usar) e exemplo. Registradas em ACOES (src/js/30c-clique-acoes.js; carrega antes deste arquivo).
+   simulador de fator (simular-fator, sim-usar) e exemplo. Registradas em ACOES (src/core/acoes.js).
    Convencao: o que era `break` no switch virou `return`; nenhum case pulava o codigo pos-switch.
    O clique em [data-tipo] (Bruta/Pronta/Conjunto) nao e data-act: o listener de 30c chama tipoClique. */
 function tipoClique(tipo){

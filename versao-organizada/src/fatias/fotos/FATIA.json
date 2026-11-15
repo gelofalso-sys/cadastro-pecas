@@ -24,14 +24,14 @@
     "armazenamento"
   ],
   "testes": [
-    "^calculos_precisao_regressao.js$",
-    "^pdf_fotos_regressao.js$",
-    "^seguranca_compat_regressao.js$",
-    "^t103_mobile_fluxos.js$",
-    "^t110_romaneio_preservacao.js$",
-    "^t64_acessibilidade.py$",
-    "^t7.py$",
-    "^t74_romaneio_extras.py$"
+    "^calculos_precisao_regressao\\.js$",
+    "^pdf_fotos_regressao\\.js$",
+    "^seguranca_compat_regressao\\.js$",
+    "^t103_mobile_fluxos\\.js$",
+    "^t110_romaneio_preservacao\\.js$",
+    "^t64_acessibilidade\\.py$",
+    "^t7\\.py$",
+    "^t74_romaneio_extras\\.py$"
   ],
   "fronteira": "falha"
 }

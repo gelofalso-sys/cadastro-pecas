@@ -1,5 +1,5 @@
 /* Ações de clique (data-act) da fatia fotos: enviar fotos ao imgbb, testar a chave, escolher/remover a foto da peça e ampliar (zoom).
-   Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo). Convenção: o que era `break` no switch virou `return`.
+   Registradas em ACOES (src/core/acoes.js). Convenção: o que era `break` no switch virou `return`.
    Desde a Tarefa 14 tambem as fotos dos itens do romaneio: rom-foto (zoom), rom-foto-add, rom-foto-del e foto-rem-rom. */
 registrarAcoes(ACOES,"fotos",{
   "fotos-enviar":()=>{enviarFotos();return},

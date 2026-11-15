@@ -1,5 +1,5 @@
 /* Acoes de clique (data-act) da fatia planilha: filtros, vistas, gaveta do formulario no celular, acoes em lote sobre as pecas marcadas,
-   acoes sobre a celula/linha selecionada e editar/duplicar/excluir a linha. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+   acoes sobre a celula/linha selecionada e editar/duplicar/excluir a linha. Registradas em ACOES (src/core/acoes.js).
    Convencao: o que era `break` no switch virou `return`. b-copy, b-xlsx e s-xlsx ficaram no switch (chamam baixar/copiar da exportacao; mover criaria ciclo). */
 registrarAcoes(ACOES,"planilha",{
   "editar":({tr})=>{editar(tr.dataset.l);if(celular())formAbrir(true);return;},

@@ -1,5 +1,5 @@
 /* Ações de clique (data-act) da fatia romaneio: leitura/importação, cartões dos itens, lote por peso, partir/juntar, revisão final, criar,
-   romaneios salvos, relatório da criação e planilha do fornecedor. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes).
+   romaneios salvos, relatório da criação e planilha do fornecedor. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return` (nenhum case daqui tinha `return` que pulasse o pós-switch).
    ROM, ROMS, romArm, tabArm e romConflito são globais legados (src/js/19c0 e src/js/20): continuam sendo lidos/escritos daqui. */
 registrarAcoes(ACOES,"romaneio",{

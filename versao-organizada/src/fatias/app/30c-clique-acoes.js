@@ -1,6 +1,6 @@
 const CFG_UNDO=["forn-del","bh-del","bn-del","mod-del","mc-del","rom-del","rom-map-del","gr-del","gi-del","cc-reset","cat-del-ok","sub-del","cor-del","obs-del","go-del","cv-del","cv-todas","cv-num"];
-/* Registro de ações de clique (data-act). Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
-const ACOES=Object.create(null);
+/* Despacho dos cliques (data-act): primeiro o registro ACOES (src/core/acoes.js), preenchido pelos acoes.js das fatias; o que sobra cai no switch residual abaixo.
+   Ao migrar um case para uma fatia: break vira return; return que pulava o código pós-switch vira return false. */
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act],[data-tipo]");if(!t)return;histSep=true;setTimeout(()=>{histSep=false},0);
   if(t.dataset.tipo){tipoClique(t.dataset.tipo);return}

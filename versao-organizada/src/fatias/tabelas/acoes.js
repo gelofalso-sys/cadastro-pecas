@@ -1,4 +1,4 @@
-/* Ações de clique (data-act) da fatia tabelas. Registradas em ACOES (src/js/30-eventos-mouse-e-clique.js; carrega antes deste arquivo).
+/* Ações de clique (data-act) da fatia tabelas. Registradas em ACOES (src/core/acoes.js).
    Convenção: o que era `break` no switch virou `return`. `tabArm` (tabela "armada" para excluir) continua global em src/js/20. */
 registrarAcoes(ACOES,"tabelas",{
   "tab-lista":()=>{tabListaAbrir()},

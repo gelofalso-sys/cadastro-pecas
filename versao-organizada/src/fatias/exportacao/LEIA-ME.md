@@ -8,6 +8,7 @@ Tudo o que leva a tabela para fora do app, ou traz algo de fora para os cadastro
 - importar uma planilha de referencia (ultima peca, fornecedores, categorias, cores) e copia/restauracao dos cadastros.
 
 ## Arquivos
+- `13-modelo-e-variacoes.js`: so comentarios (regras do modelo do arquivo e variacoes; o codigo esta em `core/exportacao.js` e `core/colunas.js`). Veio do legado na Tarefa 18.
 - `19b-assistente-outro-sistema.js`: `estadoExportacao`, assistente de outro sistema, modelo <-> .json.
 - `28-exportar.js`: conferencia, `gerarExport`, `baixar`, `montarXlsx`, `copiar`, `gravarExport`.
 - `29-importar-e-copia.js`: `importar`/`aplicarImp`, `backup`, `restaurar` (so cadastros).
@@ -21,9 +22,9 @@ Tudo o que leva a tabela para fora do app, ou traz algo de fora para os cadastro
 
 ## O que a fatia expoe e por que
 `baixar`, `copiar`: chamados por selecao (`b-xlsx`, `b-copy`), romaneio e relatorio (`rom-xlsx`, `rel-xlsx`).
-`importar`, `restaurar`, `lerNovo`, `modeloDeJson`: ligados ao `change`/`drop` em `src/js/32`.
+`importar`, `restaurar`, `lerNovo`, `modeloDeJson`: ligados ao `change`/`drop` em `app/32-eventos-entrada-e-teclado.js` e `app/32-soltar-arquivo.js`.
 `obterDL`: download tambem usado pelo armazenamento (20) e pelo relatorio (25). `abrirNovoSistema`, `estadoExportacao`:
-o seletor de modelo (31) abre o assistente e edita `estadoExportacao.novo`. `gerarExport` nao e usado de fora (so `baixar`/`copiar`).
+o seletor de modelo (onField, `app/31c-on-field.js`) abre o assistente e edita `estadoExportacao.novo`. `gerarExport` nao e usado de fora (so `baixar`/`copiar`).
 
 ## Armadilhas
 - O nucleo calcula as linhas (`gerar$` em `src/core`); aqui so se monta o arquivo. Texto com quebra de linha: `String.fromCharCode(10)`.
@@ -33,6 +34,6 @@ o seletor de modelo (31) abre o assistente e edita `estadoExportacao.novo`. `ger
 
 ## Pendencias conhecidas (auditoria)
 - AUD-D-001: corrida de clipboard em `copiar` (duas copias seguidas / `writeText` assincrono vs. toast e estado). **Nao corrigido.**
-- Cliques e eventos fora de `acoes.js`: o tratamento de `change`/`input` do assistente (31, 32) segue nos arquivos legados.
+- Cliques e eventos fora de `acoes.js`: o tratamento de `change`/`input` do assistente segue em `app` (onField e listeners de 32).
 - Linhas acima de 160 caracteres em 28/29/19b e `acoes.js` (codigo minificado a mao): reformatar antes de mexer a fundo.
 - Usa `planilha`: `casa`/`filtroOn` (exportar so o filtro), `renderTopo`, `celular`, `selecionar`/`rolarAte`, `estadoPlanilha.fv` (acoes).

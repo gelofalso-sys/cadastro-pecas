@@ -1,5 +1,5 @@
 /* Acoes de clique (data-act) da fatia armazenamento: backup em pasta (bk-*), pontos de restauracao (ponto-*), diagnostico dos dados e backup completo.
-   Registradas em ACOES (src/js/30c-clique-acoes.js; carrega antes deste arquivo).
+   Registradas em ACOES (src/core/acoes.js).
    Convencao: o que era `break` no switch virou `return`; nenhum case pulava o codigo pos-switch (nenhuma destas acoes esta em CFG_UNDO). */
 registrarAcoes(ACOES,"armazenamento",{
   "bk-escolher":()=>{{if(typeof showDirectoryPicker!=="function"){toast("Este navegador não deixa escolher pasta. Use o Chrome ou o Edge.");return}

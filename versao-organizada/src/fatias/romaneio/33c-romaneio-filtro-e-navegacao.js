@@ -1,8 +1,7 @@
 /* ===== v19: romaneio — busca e filtro por situação (só esconde os cartões; nada é remontado) ===== */
-let ROMF={q:"",m:"todas"};
 function romFiltroAplicar(){
   const w=document.getElementById("romWrap");if(!w||!ROM)return;
-  const q=semAc(ROMF.q),m=ROMF.m;let n=0;
+  const q=semAc(estadoRomaneio.romf.q),m=estadoRomaneio.romf.m;let n=0;
   ROM.rows.forEach((r,i)=>{const c=w.querySelector('.rc[data-i="'+i+'"]');if(!c)return;
     const okM=m==="todas"||romSit(r)===m||(m==="pendentes"&&false),okQ=!q||semAc((r.cod||"")+" "+(r.desc||"")+" "+(r.cat||"")+" "+(r.sub||"")).includes(q);
     const mostra=okM&&okQ;c.style.display=mostra?"":"none";if(mostra)n++});
@@ -15,12 +14,12 @@ function romFiltroMontar(){
   const d=document.createElement("div");d.className="romf";
   d.innerHTML='<input type="search" id="romfQ" placeholder="Buscar peça por código ou descrição…" aria-label="Buscar peça neste romaneio" autocomplete="off"><span class="seg" role="group" aria-label="Filtrar por situação">'+
     [["todas","Todas"],["pendentes","Pendentes"],["prontas","Prontas"],["lancadas","Lançadas"],["ignoradas","Ignoradas"]].map(a=>'<button type="button" data-romf="'+a[0]+'" aria-pressed="false">'+a[1]+'</button>').join("")+'</span><button type="button" class="btn sm" id="romfC" aria-pressed="false" title="Mostra cada peça numa linha só; clique na peça para abrir os detalhes ([ e ] vão para a anterior e a próxima)">▤ Compactar</button><span class="hint" id="romfN"></span>';
-  sum.after(d);d.querySelector("#romfQ").value=ROMF.q;romCompacto(romCompactoOn());romFiltroAplicar();
+  sum.after(d);d.querySelector("#romfQ").value=estadoRomaneio.romf.q;romCompacto(romCompactoOn());romFiltroAplicar();
 }
 {const _rr=renderRom;renderRom=function(){const r=_rr.apply(this,arguments);try{romFiltroMontar();document.body.classList.toggle("rom-ativo",!!ROM)}catch(e){}return r}}
 {const _ra=romAtual;romAtual=function(){const r=_ra.apply(this,arguments);try{romFiltroAplicar()}catch(e){}return r}}
-document.getElementById("romWrap").addEventListener("input",e=>{if(e.target.id==="romfQ"){ROMF.q=e.target.value;romFiltroAplicar()}});
-document.getElementById("romWrap").addEventListener("click",e=>{const b=e.target.closest("[data-romf]");if(b){ROMF.m=b.dataset.romf;romFiltroAplicar()}});
+document.getElementById("romWrap").addEventListener("input",e=>{if(e.target.id==="romfQ"){estadoRomaneio.romf.q=e.target.value;romFiltroAplicar()}});
+document.getElementById("romWrap").addEventListener("click",e=>{const b=e.target.closest("[data-romf]");if(b){estadoRomaneio.romf.m=b.dataset.romf;romFiltroAplicar()}});
 /* cartões compactos por padrão em romaneios com 4 ou mais peças (a escolha do usuário vale depois) */
 const romCompactoOn=()=>abertos.romc==null?!!(ROM&&ROM.rows.filter(r=>!r.lote).length>=4):!!abertos.romc;
 function romCompacto(on){const rs=document.querySelector("#romWrap .rcs");if(rs)rs.classList.toggle("compacto",on);const b=document.getElementById("romfC");if(b){b.setAttribute("aria-pressed",String(on));b.textContent=on?"▥ Expandir":"▤ Compactar"}}

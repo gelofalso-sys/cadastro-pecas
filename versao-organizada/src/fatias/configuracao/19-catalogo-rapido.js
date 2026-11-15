@@ -1,6 +1,6 @@
 /* ===== configurações ===== */
 /* cadastros em abas na horizontal: o nome de cada um fica sempre à vista e o conteúdo abre embaixo */
-const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null};
+const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null,galvSel:false,drag:null,bnReserva:null,bnReservando:false,bnEmExclusao:false};
 
 function sec(id,titulo,resumo,corpo){estadoConfig.secs.push({id,titulo,resumo,corpo});return ""}
 function abaCfg(){return estadoConfig.secs.some(s=>s.id===abertos.tab)?abertos.tab:estadoConfig.secs[0].id}
