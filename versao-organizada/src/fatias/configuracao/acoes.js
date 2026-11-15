@@ -101,11 +101,11 @@ registrarAcoes(ACOES,"configuracao",{
   "rom-map-auto":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);let n=0;const add=(w,cat,sub)=>{w=String(w).trim();if(!w||a.some(m=>kSub(m.w)===kSub(w)))return;a.push({w,c:cat,s:sub||""});n++};
       C.categorias.forEach(c=>add(c.nome,c.nome,""));C.categorias.forEach(c=>(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,c.nome,sb)}));
       T.mapa=mapaStr(a);salvar(true,false);renderCfg();toast(n?`${n} palavra(s) criadas a partir das suas categorias.`:"Todas as suas categorias já estão no mapa.",{t:"Desfazer",fn:desfazer});return}},
-  "rom-ex-abrir":()=>{romUI.ex=true;renderCfg();refocar("#romExTx");return;},
-  "rom-ex-fechar":()=>{romUI.ex=false;renderCfg();return;},
-  "rom-ex-ok":({C})=>{{const r=romExInfo();if(!r.ok)return;const tx=String(romUI.txt||"").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"Novo modelo",nome=(String(romUI.nome||"").trim()||tx).slice(0,50),T=({...clone(ROMS0()[0]),id:uid(),nome,forn:"",mapa:""}),a=parseMapa("");
+  "rom-ex-abrir":()=>{estadoConfig.romUI.ex=true;renderCfg();refocar("#romExTx");return;},
+  "rom-ex-fechar":()=>{estadoConfig.romUI.ex=false;renderCfg();return;},
+  "rom-ex-ok":({C})=>{{const r=romExInfo();if(!r.ok)return;const tx=String(estadoConfig.romUI.txt||"").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"Novo modelo",nome=(String(estadoConfig.romUI.nome||"").trim()||tx).slice(0,50),T=({...clone(ROMS0()[0]),id:uid(),nome,forn:"",mapa:""}),a=parseMapa("");
       C.categorias.forEach(c=>{const add=(w,sub)=>{w=String(w).trim();if(!w||a.some(m=>kSub(m.w)===kSub(w)))return;a.push({w,c:c.nome,s:sub||""})};add(c.nome,"");(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,sb)})});
-      T.mapa=mapaStr(a);C.romaneios.push(T);romUI={ex:false,txt:"",nome:""};abertos.tab="rom";guardarAbertos();salvar(true,false);renderCfg();toast(`Modelo “${nome}” criado com ${r.R.rows.length} peça(s) de exemplo reconhecidas. Ajuste fornecedor e palavras abaixo, se quiser.`,{t:"Desfazer",fn:desfazer});return}},
+      T.mapa=mapaStr(a);C.romaneios.push(T);estadoConfig.romUI={ex:false,txt:"",nome:""};abertos.tab="rom";guardarAbertos();salvar(true,false);renderCfg();toast(`Modelo “${nome}” criado com ${r.R.rows.length} peça(s) de exemplo reconhecidas. Ajuste fornecedor e palavras abaixo, se quiser.`,{t:"Desfazer",fn:desfazer});return}},
   "rom-map-add":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom];T.mapa=(T.mapa?T.mapa+"; ":"")+"nova palavra=";salvar(true,false);renderCfg();return}},
   "rom-map-del":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);a.splice(+t.closest(".rmr").dataset.rmj,1);T.mapa=mapaStr(a);salvar(true,false);renderCfg();return}},
   "rom-testar":({t,C})=>{{const card=t.closest("[data-rom]"),T=C.romaneios[+card.dataset.rom],R=lerRomaneioAuto(card.querySelector("[data-rtest]").value,T),o=card.querySelector(".rtres");

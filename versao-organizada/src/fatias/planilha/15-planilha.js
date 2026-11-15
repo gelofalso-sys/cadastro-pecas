@@ -1,6 +1,6 @@
 /* ===== planilha ===== */
 const CW0={A:60,B:70,C:120,D:100,E:118,F:260,G:120,H:110,I:100,J:110,K:80,L:80,M:220,N:66,O:84,P:104,Q:92,R:110,S:110,T:110,U:110,V:96,W:84,X:100,Y:104,Z:110,AA:66,AB:56,AC:70,AD:96,AE:78};
-const estadoPlanilha={colW:{},nfVaz:()=>{},fil:{q:"",cat:"",forn:"",ban:"",sit:""},fv:null,jan:null,janRaf:0,selR:null,arrastando:false,mdTd:null,mdJa:false};
+const estadoPlanilha={colW:{},nfVaz:()=>{},fil:{q:"",cat:"",forn:"",ban:"",sit:""},fv:null,jan:null,janRaf:0,selR:null,arrastando:false,mdTd:null,mdJa:false,w:150};
 try{estadoPlanilha.colW=JSON.parse(prefLer("colw")||"{}")}catch(e){}
 const cw=L=>estadoPlanilha.colW[L]||CW0[L]||90;
 const larguraTabela=()=>252+LET.reduce((s,L)=>s+cw(L),0);

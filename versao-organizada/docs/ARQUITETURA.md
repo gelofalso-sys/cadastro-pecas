@@ -37,7 +37,7 @@ Tela Cadastros e personalizacao (categorias, banhos, fornecedores, insumos, core
 - Usa: `armazenamento`, `core`, `fotos`, `lancamento`, `planilha`, `romaneio`
 - Usada por: `app`, `armazenamento`, `core`, `lancamento`, `legado`
 - Testes: `^categoria_exclusao_regressao\.js$`, `^t102_banho_concorrencia\.py$`, `^t10\.py$`, `^t115_auditoria_layout\.js$`, `^t13\.py$`, `^t17\.py$`, `^t18\.py$`, `^t19\.py$`, `^t1\.py$`, `^t20\.py$`, `^t21\.py$`, `^t24\.py$`, `^t25\.py$`, `^t28\.py$`, `^t29\.py$`, `^t2\.py$`, `^t30\.py$`, `^t3\.py$`, `^t49\.py$`, `^t51\.py$`, `^t54\.py$`, `^t58\.py$`, `^t69_insumos\.py$`, `^t6\.py$`, `^t7\.py$`, `^t87_ajustes_cadastros\.py$`, `^t88_fluxo_cadastro\.js$`, `^t91_fluxo_agil\.js$`, `^t98_banho_componente\.py$`
-- Globais mutaveis: 3
+- Globais mutaveis: 0
 - Fronteira: falha
 
 ### exportacao
@@ -85,7 +85,7 @@ Tela principal: tabela (planilha) das pecas lancadas com filtros, vistas (planil
 - Usa: `armazenamento`, `core`, `lancamento`
 - Usada por: `app`, `armazenamento`, `configuracao`, `exportacao`, `fotos`, `lancamento`, `legado`, `romaneio`, `tabelas`
 - Testes: `^perf_5000\.py$`, `^t106_salto_planilha\.js$`, `^t108_colagem_salto\.js$`, `^t10\.py$`, `^t110_romaneio_preservacao\.js$`, `^t32\.py$`, `^t33\.py$`, `^t34\.py$`, `^t35\.py$`, `^t37\.py$`, `^t39\.py$`, `^t40\.py$`, `^t41\.py$`, `^t44\.py$`, `^t46\.py$`, `^t53\.py$`, `^t63_migracao_legada\.py$`, `^t66_clique_celula\.py$`, `^t74_romaneio_extras\.py$`, `^t85_lote_numerado\.py$`, `^t93_revisao_agil\.js$`
-- Globais mutaveis: 1
+- Globais mutaveis: 0
 - Fronteira: falha
 
 ### romaneio
@@ -97,7 +97,7 @@ Romaneio do fornecedor: colar/ler lista, PDF, foto, planilha e XML/DANFE (nota f
 - Usa: `armazenamento`, `core`, `exportacao`, `lancamento`, `planilha`
 - Usada por: `app`, `armazenamento`, `configuracao`, `fotos`, `lancamento`, `legado`
 - Testes: `^auditoria_regressoes\.js$`, `^auditoria_xml_importacao\.py$`, `^calculos_auditoria_regressao\.js$`, `^calculos_precisao_regressao\.js$`, `^insumos_exclusoes_regressao\.js$`, `^insumos_regressao\.js$`, `^nf_criacao_async_regressao\.js$`, `^pdf_fotos_regressao\.js$`, `^romaneio_categoria\.js$`, `^romaneio_total_peso\.js$`, `^t100_xml_precisao\.py$`, `^t101_rom_descartar\.py$`, `^t103_insumos_frete\.py$`, `^t110_romaneio_preservacao\.js$`, `^t113_romaneio_banhos_fixos\.js$`, `^t116_romaneio_layout\.js$`, `^t117_planilha_sistema_romaneio\.js$`, `^t120_edicao_romaneio_menu_numeracao\.py$`, `^t22\.py$`, `^t24\.py$`, `^t26\.py$`, `^t27\.py$`, `^t42\.py$`, `^t43\.py$`, `^t45\.py$`, `^t52\.py$`, `^t53\.py$`, `^t56_rom_acoes\.py$`, `^t57_rom_historico\.py$`, `^t58\.py$`, `^t65_div_categoria\.py$`, `^t67_conjunto_quantidade\.py$`, `^t67_rom_acesso\.py$`, `^t69_banho_divisoes_exportacao\.py$`, `^t69_lote_por_grama_categorias\.py$`, `^t71_romaneios_reais\.py$`, `^t72_romaneio_peso_e_trios\.py$`, `^t74_romaneio_extras\.py$`, `^t75_romaneio_frete_e_pendencias\.py$`, `^t77_lote_sem_bloqueio\.py$`, `^t82_lote_peso_real\.py$`, `^t83_lote_valor_fluido\.py$`, `^t85_lote_numerado\.py$`, `^t86_lote_qualquer_item\.py$`, `^t95_lapidacao\.py$`, `^t96_auditoria_calculos\.py$`, `^t96_fluxos\.py$`, `^t97_xml_criacao\.py$`, `^t99_rateio_exato\.py$`
-- Globais mutaveis: 3
+- Globais mutaveis: 2
 - Fronteira: falha
 
 ### tabelas
@@ -117,7 +117,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | de -> para | simbolos |
 |---|---|
 | app -> armazenamento | 3: `HIST`, `desfazer`, `salvar` |
-| app -> configuracao | 10: `atualizaPrevia`, `catUI`, `dupCampo`, `estadoConfig`, `fiscalCampo`, `renderCfg`, `romExAtualiza`, `romUI`, ... |
+| app -> configuracao | 9: `atualizaPrevia`, `catUI`, `dupCampo`, `estadoConfig`, `fiscalCampo`, `renderCfg`, `romExAtualiza`, `subRenomear`, ... |
 | app -> core | 19: `NOME`, `NOVIDADES`, `NUM`, `TIPO_PAD`, `VALIDA_NUM`, `checaCel`, `corKey`, `descAuto`, ... |
 | app -> exportacao | 2: `abrirNovoSistema`, `estadoExportacao` |
 | app -> lancamento | 10: `aplicaFaixa`, `ativarConjunto`, `atualizarGera`, `campoMsg`, `conjSync`, `estadoLancamento`, `fatorDoPreco`, `limpaUlt`, ... |
@@ -131,7 +131,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | armazenamento -> lancamento | 3: `avisoEdicao`, `editar`, `renderForm` |
 | armazenamento -> legado | 16: `G`, `S`, `catBy`, `cfg`, `editId`, `fixarRefs`, `migrarGrades0`, `migrarJueri`, ... |
 | armazenamento -> planilha | 2: `estadoPlanilha`, `renderTopo` |
-| armazenamento -> romaneio | 4: `ROM`, `impData`, `relTem`, `renderRom` |
+| armazenamento -> romaneio | 4: `ROM`, `estadoRomaneio`, `impData`, `renderRom` |
 | armazenamento -> store | 16: `AREA_LOCAL_NOME`, `armEmitir`, `bancoAdicionar`, `bancoApagar`, `bancoChaves`, `bancoGravar`, `bancoLer`, `bkLerBanco`, ... |
 | armazenamento -> tabelas | 8: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos` |
 | configuracao -> armazenamento | 21: `HIST`, `REDO`, `ROMS`, `TABS`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `db`, ... |
@@ -145,7 +145,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | core -> configuracao | 1: `prefixoEmUso` |
 | exportacao -> armazenamento | 2: `migrarGrades`, `salvar` |
 | exportacao -> core | 33: `COLW`, `DUAS`, `LET`, `LIM_EXPORT`, `MAX_BACKUP_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `NOME`, ... |
-| exportacao -> legado | 25: `S`, `cfg`, `chaveDoCabecalho`, `checaLinhasPlan`, `colunasExport`, `conferirExport`, `faixaRefs`, `fnum`, ... |
+| exportacao -> legado | 25: `S`, `cfg`, `chaveDoCabecalho`, `checaLinhasPlan`, `colunasExport`, `conferirExport`, `estadoBase`, `faixaRefs`, ... |
 | exportacao -> planilha | 3: `casa`, `filtroOn`, `renderTopo` |
 | fotos -> armazenamento | 3: `estadoArmazenamento`, `romSalvarSoon`, `salvar` |
 | fotos -> core | 8: `MAX_FOTO_BYTES`, `candFoto`, `checaTam`, `esc`, `fs`, `ftOk`, `refBase`, `vazio` |
@@ -160,14 +160,14 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | lancamento -> fotos | 3: `autoEnviar`, `estadoFotos`, `fotoCopia` |
 | lancamento -> legado | 58: `G`, `S`, `abertos`, `aplicarSemBanho`, `bancoHtml`, `banhistaBy`, `banhistaDoFornecedor`, `bonP`, ... |
 | lancamento -> planilha | 6: `celular`, `estadoPlanilha`, `formAbrir`, `mostrarNoFim`, `renderListas`, `renderTopo` |
-| lancamento -> romaneio | 3: `ROM`, `relTem`, `renderRom` |
+| lancamento -> romaneio | 3: `ROM`, `estadoRomaneio`, `renderRom` |
 | lancamento -> store | 1: `bancoGravar` |
 | legado -> app | 1: `sideMarcar` |
 | legado -> armazenamento | 2: `romMarcar`, `romSalvarSoon` |
 | legado -> configuracao | 1: `renderCfg` |
 | legado -> lancamento | 1: `renderForm` |
 | legado -> planilha | 5: `celular`, `formAbrir`, `pilulaAtualiza`, `renderListas`, `renderTopo` |
-| legado -> romaneio | 2: `ROM`, `renderRom` |
+| legado -> romaneio | 3: `ROM`, `estadoRomaneio`, `renderRom` |
 | planilha -> armazenamento | 3: `desfazer`, `pontoAuto`, `salvar` |
 | planilha -> core | 23: `BANHO_COLS`, `DUAS`, `FORMULA`, `LET`, `MONEY`, `NOME`, `NUM`, `PAL`, ... |
 | planilha -> lancamento | 4: `dobrarOv`, `estadoLancamento`, `formSujo`, `renderForm` |
@@ -177,13 +177,13 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | romaneio -> core | 61: `LET`, `MAX_PDF_BYTES`, `MAX_PLANILHA_BYTES`, `MAX_PLANILHA_LINHAS`, `MAX_TEXTO_COLADO`, `NFKEY`, `NOME`, `ROMKEY`, ... |
 | romaneio -> exportacao | 1: `obterDL` |
 | romaneio -> lancamento | 6: `adicionar`, `avisoEdicao`, `campoMsg`, `conjSync`, `limpaUlt`, `renderForm` |
-| romaneio -> legado | 61: `G`, `S`, `abertos`, `aplicarMemForn`, `banhistaBy`, `banhistaDoFornecedor`, `catBy`, `catDaDescricao`, ... |
+| romaneio -> legado | 60: `G`, `S`, `abertos`, `aplicarMemForn`, `banhistaBy`, `banhistaDoFornecedor`, `catBy`, `catDaDescricao`, ... |
 | romaneio -> planilha | 2: `mostrarNoFim`, `renderTopo` |
 | romaneio -> store | 5: `bancoChaves`, `bancoGravar`, `bancoLer`, `dadoGravar`, `dadoLer` |
 | tabelas -> armazenamento | 12: `HIST`, `REDO`, `TABS`, `definirArq`, `definirAutor`, `definirTabs`, `estadoArmazenamento`, `exComLock`, ... |
 | tabelas -> core | 19: `LET`, `PONTO_IDS`, `TABDEL`, `brl`, `candFoto`, `celulas`, `clone`, `codsDe`, ... |
 | tabelas -> lancamento | 1: `avisoEdicao` |
-| tabelas -> legado | 15: `HIST_SUG`, `S`, `bancoAtualizar`, `cfg`, `editId`, `fnum`, `gerar`, `lastExport`, ... |
+| tabelas -> legado | 14: `S`, `bancoAtualizar`, `cfg`, `editId`, `estadoBase`, `fnum`, `gerar`, `render`, ... |
 | tabelas -> planilha | 1: `renderListas` |
 | tabelas -> store | 8: `bancoApagar`, `bancoChaves`, `bancoGravar`, `bancoLer`, `dadoGravar`, `dadoLer`, `exPreparar`, `prefGravar` |
 
@@ -192,7 +192,5 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | dono | globais |
 |---|---|
 | armazenamento | 8 |
-| configuracao | 3 |
-| legado | 14 |
-| planilha | 1 |
-| romaneio | 3 |
+| legado | 9 |
+| romaneio | 2 |

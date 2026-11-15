@@ -15,8 +15,8 @@ function onField(t,isChange){
     salvar(true,false);render();return}
   if(t.dataset&&t.dataset.gusar!==undefined){const c=catBy(S.form.v.I),v=t.value;if(c&&v&&!c.grade){if(v.startsWith("o:")){const og=(cfg().grades||[]).find(x=>x.id===v.slice(2));if(og)c.grade={id:uid(),nome:og.nome,subs:[],usaId:og.id,itens:[]}}else{const src=catBy(v.slice(2));if(src&&src.grade){const o=src.grade.usa?(catBy(src.grade.usa)||src):src;c.grade={id:uid(),nome:o.grade.nome,subs:[],usa:o.nome,itens:[]}}}sincGrade(S.form);salvar(true);render()}return}
   if(t.dataset){
-    if(t.dataset.rex!==undefined){romUI.txt=t.value;romExAtualiza();return}
-    if(t.dataset.rexn!==undefined){romUI.nome=t.value;return}
+    if(t.dataset.rex!==undefined){estadoConfig.romUI.txt=t.value;romExAtualiza();return}
+    if(t.dataset.rexn!==undefined){estadoConfig.romUI.nome=t.value;return}
     if(t.dataset.colar!==undefined){catUI.txt=t.value;atualizaPrevia();return}
     if(t.dataset.ncor!==undefined)return;
     if(t.dataset.subren!==undefined){if(isChange&&!estadoConfig.renBusy){const ce2=t.closest("[data-cat]");if(ce2){const ci2=+ce2.dataset.cat,j2=+t.dataset.subren,c2=cfg().categorias[ci2],velho=c2&&c2.subs[j2],novo=t.value;let feito=false;const go=()=>{if(feito)return;feito=true;document.removeEventListener("click",go,true);setTimeout(()=>{const c3=cfg().categorias[ci2],jj=c3?c3.subs.indexOf(velho):-1;if(jj>=0)subRenomear(ci2,jj,novo)},0)};document.addEventListener("click",go,true);setTimeout(go,700)}}return}

@@ -1,12 +1,11 @@
 /* ===== relatório do romaneio lançado ===== */
-let relTem=false;
 function relGerar(feitas,ign,meta,romId){
   const itens=feitas.map(({r,id})=>{let custo=0,vr=0,un=0;
     const linhas=G.linhas.map((x,ri)=>({x,ri})).filter(o=>o.x.lancId===id).map(({x,ri})=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:null},q=num(x.v.W)||0,cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0);
       custo+=cu*q;vr+=(n("V")||0)*q;un+=q;return {ref:x.v.E,q,cor:x.v.L||"",cu,v:n("V")}});
     return {cod:r.cod,desc:r.desc,cat:r.cat,sub:r.sub||"",peso:r.peso,compra:r.custo,linhas,un,custo,vr,foto:r.foto||null}});
   estadoRomaneio.rel={em:Date.now(),meta,itens,ign,romId:romId||"",lids:feitas.map(x=>x.id)};try{backupLembrarPosCriar()}catch(e){}
-  try{dadoGravar("cadpecas-rel",JSON.stringify({...estadoRomaneio.rel,itens:itens.map(i=>({...i,foto:null}))}));relTem=true}catch(e){}
+  try{dadoGravar("cadpecas-rel",JSON.stringify({...estadoRomaneio.rel,itens:itens.map(i=>({...i,foto:null}))}));estadoRomaneio.relTem=true}catch(e){}
   relAbrir()}
 async function arqSalvar(nome,txt){const dl=await obterDL();
   try{await dl.save({filename:nome,data:new Blob([txt],{type:"text/csv;charset=utf-8"})})}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o arquivo.")}}

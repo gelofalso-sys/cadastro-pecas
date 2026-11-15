@@ -201,7 +201,7 @@ async function aplicarBackupTotalComLock(n,quieto){
   let indicesOk=true;try{for(const r of Object.values(n.roms))if(!romIndex(r))indicesOk=false;for(const r of Object.values(n.tabs))if(!tabIndex(r))indicesOk=false}catch(e){indicesOk=false}
   if(!indicesOk){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;ROMS=ant.roms;TABS=ant.tabs;ROMDEL.clear();ant.romdel.forEach(x=>ROMDEL.add(x));TABDEL.clear();ant.tabdel.forEach(x=>TABDEL.add(x));arqRef();const voltou=await reverter();histIni();render();toast("Backup NÃO restaurado — não consegui atualizar as listas de romaneios e tabelas. "+avisoReversao(voltou));if(!voltou)falhaReversao();return false}arqRef();
   if(await bancoApagar("pontos",BK_JOURNAL)===null){falhaReversao();return}
-  histSugAgendar();if(n.rascunho)estadoArmazenamento.romTem=true;if(n.rel)relTem=true;if(n.autor&&!estadoArmazenamento.AUTOR)setAutor(n.autor);
+  histSugAgendar();if(n.rascunho)estadoArmazenamento.romTem=true;if(n.rel)estadoRomaneio.relTem=true;if(n.autor&&!estadoArmazenamento.AUTOR)setAutor(n.autor);
   render();
   if(!quieto)toast(`Backup restaurado: ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""} Peças e cadastros podem ser desfeitos; romaneios, tabelas e fotos não.`,{t:"Desfazer peças",fn:desfazer});return true}
 /* interface do store (src/store/store-local.js): exportar e importar o backup completo continuam sendo as funcoes de sempre */

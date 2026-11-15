@@ -36,3 +36,6 @@ A tela "Cadastros e personalizacao" (`#cfg`) e tudo o que a sustenta:
 - Handlers de `change`/`input`/`keydown` dos cadastros (`data-cf`, `data-bnf`, `data-ff`, `data-mod`, `data-dup`...) estao em `app/31c-on-field.js` e `app/32-eventos-entrada-e-teclado.js`:
   pedacos de listeners que atendem todas as telas; nao da para dividir com `dividir_arquivo`.
 - `modPrev`/`secModelo` (19a3) misturam configuracao com exportacao. Linhas acima de 160 caracteres em todos os arquivos (minificado a mao): reformatar antes de mexer a fundo.
+
+## Estado agrupado
+Etapa 4.1: `romUI`, `impT` e `impConfigAntes` viraram campos de `estadoConfig` (19-catalogo-rapido.js).

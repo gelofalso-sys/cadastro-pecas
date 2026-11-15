@@ -3316,7 +3316,8 @@ function checaLinhasPlan(ws){const r=ws&&ws["!ref"]?XLSX.utils.decode_range(ws["
 /* CSV: texto que começa com = + - @ vira fórmula no Excel; recebe um apóstrofo na frente (números ficam como estão) */
 const uid=()=>Math.random().toString(36).slice(2,10);
 let S={config:clone(DEFAULT_CONFIG),lanc:[],form:FORM0()};
-let editId=null,rascunho=null,lastExport=null,undo=null,erro="",sel=new Set(),G=null,celEd=null;
+const estadoBase={bancoAberto:false,HIST_SUG:[],lastExport:null};
+let editId=null,rascunho=null,undo=null,erro="",sel=new Set(),G=null,celEd=null;
 let abertos={};try{const ab0=prefLer("abertos");abertos=JSON.parse(ab0||"{}");if(ab0==null)abertos.min=true}catch(e){}   /* primeira abertura: formulário só com o essencial (dá para "Mostrar tudo") */
 /* zoom (acessibilidade): um para a tabela (t) e outro para o formulário (f); só neste navegador */
 try{const z=JSON.parse(prefLer("zoom")||"{}");["t","f"].forEach(k=>{const v=Number(z[k]);if(v>=0.7&&v<=1.6)ZM[k]=Math.round(v*10)/10})}catch(e){}
@@ -3349,15 +3350,14 @@ function compraGramaAuto(f){const c=catBy(f.v.I),r=c&&num(c.compraGrama);
 /* descrição do fornecedor ("argolinhas lisas") → categoria e subcategoria pelos nomes e apelidos cadastrados */
 /* palavras que o usuário escreveria no começo da descrição: "Brinco" (categoria Brincos) e "Argola" (subcategoria Argolas). Cadastradas em Categorias; sem cadastro, deduz do nome (singular). */
 /* Vocabulário inicial: termos observados no estoque, editáveis por categoria e subcategoria. */
-let bancoAberto=false;
 /* Cache descartável: histórico em IndexedDB + tabela atual, sem contar a mesma peça duas vezes. */
-let HIST_SUG=[];function usoSugPecas(){const vistos=new Set(),out=[];for(const l of [...(S.lanc||[]),...HIST_SUG]){if(!l||!l.v)continue;if(l.id&&vistos.has(l.id))continue;if(l.id)vistos.add(l.id);out.push(l)}return out}
+function usoSugPecas(){const vistos=new Set(),out=[];for(const l of [...(S.lanc||[]),...estadoBase.HIST_SUG]){if(!l||!l.v)continue;if(l.id&&vistos.has(l.id))continue;if(l.id)vistos.add(l.id);out.push(l)}return out}
    /* sem lista própria vale o vocabulário inicial */
 
 /* Só esconde sugestões redundantes; o banco personalizado continua intacto. */
 function bancoEditarAbrir(){const d=document.querySelector(".banco-painel details");if(d)d.open=true}
 function bancoAtualizar(){const el=document.querySelector("#form .banco-palavras");if(!el)return;const busca=el.querySelector("[data-banco-busca]"),texto=busca?busca.value:"",aberto=!!el.querySelector("details[open]");el.outerHTML=bancoHtml(S.form);const novo=document.querySelector("#form .banco-palavras"),campo=novo&&novo.querySelector("[data-banco-busca]"),det=novo&&novo.querySelector("details");if(det&&aberto)det.open=true;if(campo&&texto){campo.value=texto;campo.dispatchEvent(new Event("input",{bubbles:true}))}}
-function bancoHtml(f){const c=catBy(f.v.I);if(!c||f.conj)return "";const sub=f.v.J||"",lista=bancoComplementos(f),proprias=[...bancoLista(f.v.I,"") ,...(sub?bancoLista(f.v.I,sub):[])],pk=new Set(proprias.map(semAc)),rapidas=lista.filter(x=>pk.has(semAc(x))).concat(lista.filter(x=>!pk.has(semAc(x))).slice(0,9)),escopo=sub?"subcategoria "+sub:"categoria "+c.nome,edit=bancoLista(c.nome,sub);return `<div class="banco-palavras"><div class="banco-rapido"><span class="hint" title="Com o foco na descrição, Alt+Shift+1 a 9 insere o complemento correspondente. Na categoria, cor ou banho, usa a opção correspondente.">Complementos (Alt+Shift+1–9):</span>${rapidas.map(w=>`<button type="button" class="gi tod" data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="banco-toggle" aria-expanded="${bancoAberto}">${bancoAberto?"Fechar palavras":"Mais palavras"}</button></div>${bancoAberto?`<div class="banco-painel"><label>Buscar palavra <input type="search" data-banco-busca placeholder="Digite para filtrar" aria-label="Buscar palavras"></label><div class="banco-lista">${lista.map(w=>`<button type="button" class="gi tod" data-banco-item data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")||'<span class="hint">Ainda não há sugestões para este contexto.</span>'}</div><details><summary>Editar palavras da ${esc(escopo)}</summary><p class="hint">Apenas esta ${sub?"subcategoria":"categoria"} será alterada. Separe várias palavras por ponto e vírgula.</p><div class="banco-editar">${edit.map(w=>`<span class="banco-edit-item">${esc(w)} <button type="button" data-act="banco-remover" data-w="${esc(w)}" aria-label="Remover ${esc(w)}">×</button></span>`).join("")}</div><label>Nova palavra ou expressão <input data-banco-nova maxlength="200" placeholder="ex.: Ponto de luz; Lisa"></label><button type="button" class="btn sm" data-act="banco-adicionar">Adicionar palavras</button></details></div>`:""}</div>`}
+function bancoHtml(f){const c=catBy(f.v.I);if(!c||f.conj)return "";const sub=f.v.J||"",lista=bancoComplementos(f),proprias=[...bancoLista(f.v.I,"") ,...(sub?bancoLista(f.v.I,sub):[])],pk=new Set(proprias.map(semAc)),rapidas=lista.filter(x=>pk.has(semAc(x))).concat(lista.filter(x=>!pk.has(semAc(x))).slice(0,9)),escopo=sub?"subcategoria "+sub:"categoria "+c.nome,edit=bancoLista(c.nome,sub);return `<div class="banco-palavras"><div class="banco-rapido"><span class="hint" title="Com o foco na descrição, Alt+Shift+1 a 9 insere o complemento correspondente. Na categoria, cor ou banho, usa a opção correspondente.">Complementos (Alt+Shift+1–9):</span>${rapidas.map(w=>`<button type="button" class="gi tod" data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")}<button type="button" class="btn ghost sm" data-act="banco-toggle" aria-expanded="${estadoBase.bancoAberto}">${estadoBase.bancoAberto?"Fechar palavras":"Mais palavras"}</button></div>${estadoBase.bancoAberto?`<div class="banco-painel"><label>Buscar palavra <input type="search" data-banco-busca placeholder="Digite para filtrar" aria-label="Buscar palavras"></label><div class="banco-lista">${lista.map(w=>`<button type="button" class="gi tod" data-banco-item data-act="desc-palavra" data-w="${esc(w)}">${esc(w)}</button>`).join("")||'<span class="hint">Ainda não há sugestões para este contexto.</span>'}</div><details><summary>Editar palavras da ${esc(escopo)}</summary><p class="hint">Apenas esta ${sub?"subcategoria":"categoria"} será alterada. Separe várias palavras por ponto e vírgula.</p><div class="banco-editar">${edit.map(w=>`<span class="banco-edit-item">${esc(w)} <button type="button" data-act="banco-remover" data-w="${esc(w)}" aria-label="Remover ${esc(w)}">×</button></span>`).join("")}</div><label>Nova palavra ou expressão <input data-banco-nova maxlength="200" placeholder="ex.: Ponto de luz; Lisa"></label><button type="button" class="btn sm" data-act="banco-adicionar">Adicionar palavras</button></details></div>`:""}</div>`}
 /* preenche a descrição sozinho com as palavras (só enquanto vazia ou ainda igual ao que foi preenchido antes) */
    /* a descrição é preenchida pelo usuário ou por sugestões escolhidas */
 /* entradas extras da lista de categorias do formulário: apelidos e subcategorias, cada uma com o caminho completo */
@@ -3593,7 +3593,7 @@ async function carregar(){
 
 /* ===== planilha ===== */
 const CW0={A:60,B:70,C:120,D:100,E:118,F:260,G:120,H:110,I:100,J:110,K:80,L:80,M:220,N:66,O:84,P:104,Q:92,R:110,S:110,T:110,U:110,V:96,W:84,X:100,Y:104,Z:110,AA:66,AB:56,AC:70,AD:96,AE:78};
-const estadoPlanilha={colW:{},nfVaz:()=>{},fil:{q:"",cat:"",forn:"",ban:"",sit:""},fv:null,jan:null,janRaf:0,selR:null,arrastando:false,mdTd:null,mdJa:false};
+const estadoPlanilha={colW:{},nfVaz:()=>{},fil:{q:"",cat:"",forn:"",ban:"",sit:""},fv:null,jan:null,janRaf:0,selR:null,arrastando:false,mdTd:null,mdJa:false,w:150};
 try{estadoPlanilha.colW=JSON.parse(prefLer("colw")||"{}")}catch(e){}
 const cw=L=>estadoPlanilha.colW[L]||CW0[L]||90;
 const larguraTabela=()=>252+LET.reduce((s,L)=>s+cw(L),0);
@@ -3684,8 +3684,7 @@ function janGarantir(ri){const J=estadoPlanilha.jan;if(!J)return true;const p=J.
   if(p>=J.a&&p<J.b)return true;const sh=document.getElementById("sheet");sh.scrollTop=Math.max(0,J.head+J.cum[p]-sh.clientHeight/2);janRepintar(true);return true}
 function guiaHTML(){if(abertos.guiaX)return "";return `<span class="ok vaz guia" role="note"><b>Guia rápido:</b> <button type="button" class="gi tod" data-act="ir" data-sec="cat" title="Categorias, subcategorias, tamanhos e cores">1 · Cadastros</button> <button type="button" class="gi tod" data-act="ir" data-sec="lancar">2 · Lançar peça</button> <span class="hint">3 · conferir a tabela</span> <span class="hint">4 · “Exportar para…” e baixar</span> <button type="button" class="x" data-act="guia-fechar" aria-label="Fechar o guia" title="Fechar o guia">×</button></span> `}
 /* apagou (ou voltou) peças da tabela com o romaneio aberto: as linhas dele que já não existem na tabela deixam de ser "já lançada" */
-let romChaveL="",romCriando=false;
-function romResync(){if(romCriando||!ROM||!ROM.rows||(!ROM.rows.length&&!(ROM.removidos||[]).length))return;const k=S.lanc.map(l=>l.id).join(",");if(k===romChaveL)return;romChaveL=k;
+function romResync(){if(estadoRomaneio.romCriando||!ROM||!ROM.rows||(!ROM.rows.length&&!(ROM.removidos||[]).length))return;const k=S.lanc.map(l=>l.id).join(",");if(k===estadoRomaneio.romChaveL)return;estadoRomaneio.romChaveL=k;
   const antes=ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("");romMarcar();if(ROM.rows.map(r=>(r.feito?1:0)+(r.skip?1:0)+(r.refaz?1:0)).join("")!==antes){romSalvarSoon();setTimeout(()=>{if(ROM)renderRom()},0)}}
 function renderTopo(){try{romResync()}catch(e){}
   const g=G=gerar(),sh=document.getElementById("sheet"),st=sh.scrollTop,sl=sh.scrollLeft,cc=cfg().colcfg;
@@ -3695,7 +3694,7 @@ function renderTopo(){try{romResync()}catch(e){}
     ms.innerHTML=opts([...C0.modelos.map(x=>[x.id,x.nome]),...(tem(/bling/i)?[]:[["@bling","＋ Adicionar Bling"]]),...(tem(/jueri/i)?[]:[["@jueri","＋ Adicionar Jueri"]]),["@novo","＋ Outro sistema…"]],C0.modelo)}
     const bxT=(filtroOn()?"Baixar filtro ":"Baixar ")+(modeloAtual().formato==="csv"?".csv":".xlsx");document.querySelectorAll('[data-act="xlsx"]:not(.mbar *)').forEach(bx=>{bx.textContent=bxT});document.querySelectorAll('[data-act="copiar"]').forEach(bc=>{bc.textContent=filtroOn()?"Copiar filtro para o Excel":"Copiar para o Excel"})}
   document.getElementById("seqs").innerHTML=ps.map(p0=>{const p=esc(p0),u=ultimo(p0),m=(g.manualReal||{})[p0]||0,i0=Math.max(u,m),f=g.cont[p0];return `<span class="seq">${p}: última <b>${p}${u}</b>${m>u?` · à mão até <b>${p}${m}</b>`:""}${f&&f>i0?` → lista <b>${p}${i0+1}${f>i0+1?"–"+f:""}</b>`:""}<span class="px">próxima <b>${p}${esc(proxDe(p0))}</b></span></span>`}).join("");
-  document.getElementById("banner").innerHTML=lastExport?`<div class="banner"><p>Planilha gerada com <b class="mono">${esc(lastExport.faixa)}</b>. Gravar como última peça do sistema?</p>
+  document.getElementById("banner").innerHTML=estadoBase.lastExport?`<div class="banner"><p>Planilha gerada com <b class="mono">${esc(estadoBase.lastExport.faixa)}</b>. Gravar como última peça do sistema?</p>
     <button class="btn pri sm" type="button" data-act="exp-limpar">Gravar e limpar a lista</button><button class="btn sm" type="button" data-act="exp-so">Só gravar o número</button><button class="btn ghost sm" type="button" data-act="exp-nao">Agora não</button></div>`:"";
   const ns=[...sel].filter(id=>S.lanc.some(l=>l.id===id)).length,av=avisos(g);
   document.getElementById("tools").innerHTML=(ns?`<div class="bulk"><b style="font-size:12px">${ns} selecionado${ns>1?"s":""}</b>
@@ -3754,11 +3753,10 @@ function abrirCel(ri,L,cursorFim){
   const calc=formulaVazia?calcBanho(row,L,ri+2):null,calcTxt=calc&&typeof calc.v==="number"?r2c(calc.v).toFixed(2).replace(".",","):"";
   const raw=!row?"":formulaVazia?calcTxt:(row.v[L]??"");celEd={ri,L,orig:String(raw),nova:!row,setas:!!cursorFim};
   const ph=formulaVazia?(calc?(calc.f?"="+calc.f:String(calc.v)):"(vazio)"):(!row?"digite ou cole (Ctrl+V)":"");
-  estadoPlanilha.selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};w=td2.offsetWidth;td2.classList.add("ed");
+  estadoPlanilha.selR={ar:ri,ac:LET.indexOf(L),fr:ri,fc:LET.indexOf(L)};estadoPlanilha.w=td2.offsetWidth;td2.classList.add("ed");
   td2.innerHTML=`<input id="celIn" value="${esc(raw)}" list="dl-cel" ${NUM.has(L)?'class="n"':""} placeholder="${esc(ph)}" title="${esc(formulaVazia&&calc&&calc.f?"Calculado: ="+calc.f+" — digite um valor para substituir":"")}" aria-label="${esc(NOME[L])}" autocomplete="off">`;
-  const i=document.getElementById("celIn");i.style.width=w+"px";i.focus({preventScroll:true});try{td2.scrollIntoView({block:"nearest",inline:"nearest"})}catch(x){}if(cursorFim){const n=i.value.length;try{i.setSelectionRange(n,n)}catch(x){}}else i.select();
+  const i=document.getElementById("celIn");i.style.width=estadoPlanilha.w+"px";i.focus({preventScroll:true});try{td2.scrollIntoView({block:"nearest",inline:"nearest"})}catch(x){}if(cursorFim){const n=i.value.length;try{i.setSelectionRange(n,n)}catch(x){}}else i.select();
 }
-let w=150;
 /* linha colada ou digitada direto na tabela: vira uma peça pronta com os valores dados */
 function gravarCel(ri,L,valor){
   const row=G.linhas[ri],l=row&&S.lanc.find(x=>x.id===row.lancId);if(!l)return;
@@ -3980,7 +3978,7 @@ const valores=["Q","Y","AA","AB","AC"].map(L=>c(L,{w:"c"})).join("");
     <div class="gera" id="gera"></div>
     <div id="custos"></div>
     ${editId?"":`<button type="button" class="btn sm fextra-tog" data-act="form-extras" aria-expanded="false">Mais opções de lançamento</button>`}
-    ${editId?`<button class="btn sm" type="button" data-act="cancel">Cancelar <kbd>Esc</kbd></button>`:`<button class="btn sm" type="button" data-act="repetir" title="Copia a última peça lançada para o formulário (nova referência ao adicionar)">Repetir última</button><button class="btn sm" type="button" data-act="q" data-q="multi" title="Colar ou digitar várias peças, uma por linha">Várias linhas</button><button class="btn sm" type="button" data-act="rom-abrir" title="Colar a lista (romaneio) do fornecedor: o sistema lê as peças e você só digita peso e divisão">${estadoArmazenamento.romTem?"Retomar romaneio"+(estadoArmazenamento.romInfo?` (${esc(estadoArmazenamento.romInfo)})`:""):"Colar romaneio"}</button><label class="btn sm" style="cursor:pointer" title="Para quem não usa romaneio: escolha ou arraste o PDF (DANFE) ou o XML da nota fiscal. O sistema lê os itens e você confere antes de lançar.">Importar nota fiscal (PDF/XML)<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" class="vh"></label>${ROMS.length?`<button class="btn sm" type="button" data-act="rom-lista" title="Todos os romaneios já colados, com fotos e quantidades: abra para lançar o que faltou ou corrigir">Romaneios salvos (${ROMS.length})</button>`:""}${relTem?`<button class="btn sm" type="button" data-act="rel-abrir" title="Abre o relatório do último romaneio lançado">Último relatório</button>`:""}<button class="btn sm" type="button" data-act="simular-fator" title="Mostra o varejo, o lucro e a margem de cada fator lado a lado e deixa escolher">Simular fator</button><button class="btn sm" type="button" data-act="limpar" title="Esvazia Descrição, Peso, Custo e quantidades (o que está marcado como “Fica guardado” em Colunas continua)">Limpar campos</button>`}
+    ${editId?`<button class="btn sm" type="button" data-act="cancel">Cancelar <kbd>Esc</kbd></button>`:`<button class="btn sm" type="button" data-act="repetir" title="Copia a última peça lançada para o formulário (nova referência ao adicionar)">Repetir última</button><button class="btn sm" type="button" data-act="q" data-q="multi" title="Colar ou digitar várias peças, uma por linha">Várias linhas</button><button class="btn sm" type="button" data-act="rom-abrir" title="Colar a lista (romaneio) do fornecedor: o sistema lê as peças e você só digita peso e divisão">${estadoArmazenamento.romTem?"Retomar romaneio"+(estadoArmazenamento.romInfo?` (${esc(estadoArmazenamento.romInfo)})`:""):"Colar romaneio"}</button><label class="btn sm" style="cursor:pointer" title="Para quem não usa romaneio: escolha ou arraste o PDF (DANFE) ou o XML da nota fiscal. O sistema lê os itens e você confere antes de lançar.">Importar nota fiscal (PDF/XML)<input type="file" id="nfFile" accept=".pdf,.xml,application/pdf,text/xml,application/xml" class="vh"></label>${ROMS.length?`<button class="btn sm" type="button" data-act="rom-lista" title="Todos os romaneios já colados, com fotos e quantidades: abra para lançar o que faltou ou corrigir">Romaneios salvos (${ROMS.length})</button>`:""}${estadoRomaneio.relTem?`<button class="btn sm" type="button" data-act="rel-abrir" title="Abre o relatório do último romaneio lançado">Último relatório</button>`:""}<button class="btn sm" type="button" data-act="simular-fator" title="Mostra o varejo, o lucro e a margem de cada fator lado a lado e deixa escolher">Simular fator</button><button class="btn sm" type="button" data-act="limpar" title="Esvazia Descrição, Peso, Custo e quantidades (o que está marcado como “Fica guardado” em Colunas continua)">Limpar campos</button>`}
 
     <span class="zm" role="group" aria-label="Tamanho do formulário"><button type="button" class="btn sm" data-act="zoom" data-z="f" data-d="-1" title="Diminuir o formulário" aria-label="Diminuir o formulário">−</button><button type="button" class="btn sm zv" data-act="zoom" data-z="f" data-d="0" id="zvF" title="Voltar ao tamanho normal" aria-label="Tamanho normal do formulário">${Math.round(ZM.f*100)}%</button><button type="button" class="btn sm" data-act="zoom" data-z="f" data-d="1" title="Aumentar o formulário" aria-label="Aumentar o formulário">+</button></span>
     <button type="button" class="tg min" data-act="tg-min"title="${abertos.min?"Mostrar tudo":"Mostrar só o essencial"}">${abertos.min?"▴ Mostrar tudo":"▾ Só o essencial"}</button>
@@ -4174,7 +4172,7 @@ function irPara(id){
 }
 /* ===== configurações ===== */
 /* cadastros em abas na horizontal: o nome de cada um fica sempre à vista e o conteúdo abre embaixo */
-const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null,galvSel:false,drag:null,bnReserva:null,bnReservando:false,bnEmExclusao:false};
+const estadoConfig={secs:[],libtam:"",renBusy:false,faixaBusy:false,resetArm:null,delCat:null,galvSel:false,drag:null,bnReserva:null,bnReservando:false,bnEmExclusao:false,romUI:{ex:false,txt:"",nome:""},impConfigAntes:null,impT:null};
 
 function sec(id,titulo,resumo,corpo){estadoConfig.secs.push({id,titulo,resumo,corpo});return ""}
 function abaCfg(){return estadoConfig.secs.some(s=>s.id===abertos.tab)?abertos.tab:estadoConfig.secs[0].id}
@@ -4385,7 +4383,7 @@ const romT=()=>{const C=cfg();return C.romaneios.find(t=>t.id===(ROM&&ROM.tid))|
 let ROM=null;
 /* Estado da fatia romaneio (antes globais soltos): revSeq (romRevSeq, 21a), t0 (romT0, 21a2), busy (romBusy, 21a6), pdfLib (22),
    rel (REL, 25), impQ/impSt (IMPQ/IMPST, fila e aviso da importacao, 34b). ROM, ROMS, NF e relTem continuam globais (usados fora da fatia). */
-const estadoRomaneio={revSeq:0,t0:null,busy:false,pdfLib:null,rel:null,impQ:[],impSt:null,romf:{q:"",m:"todas"}};
+const estadoRomaneio={revSeq:0,t0:null,busy:false,pdfLib:null,rel:null,impQ:[],impSt:null,romf:{q:"",m:"todas"},romChaveL:"",romCriando:false,relTem:false};
 /* reconhece sozinho o formato da lista: testa o modelo e variações comuns e fica com o que lê mais linhas */
 
 /* lista copiada do Excel (colunas separadas por tabulação): lê por coluna, pelo cabeçalho ou deduzindo a ordem (qtd × unitário = total) */
@@ -4484,7 +4482,7 @@ function romConjVerificar(){const diverg=[],avisos=[];for(const r of ROM.rows){i
 /* ===== tabelas salvas: histórico de tabelas, quem montou e o que cada romaneio fez ===== */
 /* estado da fatia: sugT/sugSeq = temporizador e geração do histórico de sugestões; semVarredura = o app abriu sem varrer fotos (33 liga) */
 const estadoTabelas={sugT:null,sugSeq:0,semVarredura:false};
-function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await bancoLer("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
+function histSugAgendar(){clearTimeout(estadoTabelas.sugT);const seq=++estadoTabelas.sugSeq;estadoTabelas.sugT=setTimeout(async()=>{const itens=[],vistos=new Set();try{for(const t of [...TABS]){const rec=await bancoLer("tabs",t.id);if(seq!==estadoTabelas.sugSeq)return;if(!rec||!Array.isArray(rec.lanc))continue;for(const l of rec.lanc){if(!l||!l.v||!l.id||vistos.has(l.id))continue;vistos.add(l.id);const v={};["F","H","I","J","L","M"].forEach(k=>{if(typeof l.v[k]==="string")v[k]=l.v[k]});itens.push({id:l.id,v})}}if(seq!==estadoTabelas.sugSeq)return;estadoBase.HIST_SUG=itens;renderListas();bancoAtualizar()}catch(e){console.warn("Não foi possível atualizar as sugestões do histórico.",e)}},250)}
 function setAutor(v){definirAutor(String(v||"").trim().slice(0,40));try{prefGravar("autor",estadoArmazenamento.AUTOR)}catch(e){}const ai=document.getElementById("autorIn");if(ai&&ai.value!==estadoArmazenamento.AUTOR)ai.value=estadoArmazenamento.AUTOR}
 function arqRef(){definirArq({});TABS.forEach(t=>(t.ids||[]).forEach(i=>{estadoArmazenamento.ARQ[i]=t.nome}))}
 /* índices (romaneios/tabelas) no armazenamento local (src/store): ao gravar, mescla por id com o que outra aba gravou e respeita o que esta aba apagou */
@@ -4533,7 +4531,7 @@ async function tabSalvar(nome,por,nova,quieto){if(!S.lanc.length){toast("A tabel
   const rec={id:uid(),nome,em:Date.now(),por:por||estadoArmazenamento.AUTOR,lanc:lancSnap,seqs:seqsSnap,linhas,roms};
   const gravou=await exSalvarComLock(async()=>{if(await bancoGravar("tabs",rec.id,rec)===null){toast("NÃO consegui salvar a tabela — memória do navegador cheia. Baixe o backup completo. A tabela atual foi mantida.");setStatus("Tabela NÃO salva (memória cheia)",true);return false}
     if(!tabIndex(rec)){toast("A tabela foi guardada, mas NÃO consegui anotá-la na lista de tabelas salvas (memória do navegador cheia). Por segurança, NÃO limpei a tabela atual nem comecei outra. Baixe o backup completo e libere espaço; a tabela guardada reaparece na lista quando você reabrir o programa.");setStatus("Tabela guardada, mas fora da lista (memória cheia)",true);return false}return true});if(!gravou)return null;histSugAgendar();
-  if(nova){const c=contFinal(g);Object.entries(c).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});let ficou=0;S.lanc=S.lanc.filter(l=>{if(sigT[l.id]!==undefined&&sigT[l.id]===JSON.stringify(l))return false;ficou++;return true});sel.clear();lastExport=null;salvar(true);render();if(ficou)setTimeout(()=>toast(ficou+" peça(s) lançadas ou editadas durante o salvamento ficaram na lista."),50)}
+  if(nova){const c=contFinal(g);Object.entries(c).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});let ficou=0;S.lanc=S.lanc.filter(l=>{if(sigT[l.id]!==undefined&&sigT[l.id]===JSON.stringify(l))return false;ficou++;return true});sel.clear();estadoBase.lastExport=null;salvar(true);render();if(ficou)setTimeout(()=>toast(ficou+" peça(s) lançadas ou editadas durante o salvamento ficaram na lista."),50)}
   if(!quieto)toast(`Tabela “${nome}” salva${nova?" — nova tabela começada, a numeração continua de onde parou":""}.`);
   return rec}
 function tabListaAbrir(){
@@ -4549,7 +4547,7 @@ async function tabSalvarOk(){if(editId){avisoEdicao(()=>tabSalvarOk());return}co
 async function tabRestaurar(id){if(editId){avisoEdicao(()=>tabRestaurar(id));return}const rec=await bancoLer("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
   if(!Array.isArray(rec.lanc)){toast("Esta tabela salva está danificada (sem as peças): não restaurei nada.");return}
   if(S.lanc.length){const bk=await tabSalvar("Antes de restaurar · "+dtbr(Date.now()),estadoArmazenamento.AUTOR,false,true);if(!bk){toast("Não restaurei: não consegui guardar a tabela atual no histórico antes.");return}}
-  S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();lastExport=null;estadoArmazenamento.ftSalvas.clear();ftRSalvas.clear();salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
+  S.lanc=clone(rec.lanc).map(lerLanc);Object.entries(rec.seqs||{}).forEach(([p,s])=>{const a=Math.trunc(num(cfg().seqs[p])||0),b=Math.trunc(num(s)||0);if(b>a||!(p in cfg().seqs))cfg().seqs[p]=s});sel.clear();estadoBase.lastExport=null;estadoArmazenamento.ftSalvas.clear();ftRSalvas.clear();salvar(true);render();document.querySelectorAll(".rep").forEach(x=>x.remove());
   let renum="";try{const nv=gerar().linhas.map(r=>r.v.E),vl=(rec.linhas||[]).map(x=>x&&x.ref);if(vl.some((r,i)=>r&&nv[i]&&nv[i]!==r))renum=" ATENÇÃO: algumas referências mudaram em relação à tabela salva (a numeração é refeita a partir da última peça de hoje): confira antes de exportar."}catch(e){}
   toast(`Tabela “${rec.nome}” restaurada (${S.lanc.length} peças). A tabela que estava aqui foi guardada no histórico. A numeração não voltou atrás: vale o maior número de cada prefixo.${renum}`)}
 async function tabVer(id){const rec=await bancoLer("tabs",id);if(!rec){toast("Não achei essa tabela.");return}
@@ -4768,7 +4766,7 @@ async function aplicarBackupTotalComLock(n,quieto){
   let indicesOk=true;try{for(const r of Object.values(n.roms))if(!romIndex(r))indicesOk=false;for(const r of Object.values(n.tabs))if(!tabIndex(r))indicesOk=false}catch(e){indicesOk=false}
   if(!indicesOk){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;ROMS=ant.roms;TABS=ant.tabs;ROMDEL.clear();ant.romdel.forEach(x=>ROMDEL.add(x));TABDEL.clear();ant.tabdel.forEach(x=>TABDEL.add(x));arqRef();const voltou=await reverter();histIni();render();toast("Backup NÃO restaurado — não consegui atualizar as listas de romaneios e tabelas. "+avisoReversao(voltou));if(!voltou)falhaReversao();return false}arqRef();
   if(await bancoApagar("pontos",BK_JOURNAL)===null){falhaReversao();return}
-  histSugAgendar();if(n.rascunho)estadoArmazenamento.romTem=true;if(n.rel)relTem=true;if(n.autor&&!estadoArmazenamento.AUTOR)setAutor(n.autor);
+  histSugAgendar();if(n.rascunho)estadoArmazenamento.romTem=true;if(n.rel)estadoRomaneio.relTem=true;if(n.autor&&!estadoArmazenamento.AUTOR)setAutor(n.autor);
   render();
   if(!quieto)toast(`Backup restaurado: ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""} Peças e cadastros podem ser desfeitos; romaneios, tabelas e fotos não.`,{t:"Desfazer peças",fn:desfazer});return true}
 /* interface do store (src/store/store-local.js): exportar e importar o backup completo continuam sendo as funcoes de sempre */
@@ -5007,8 +5005,7 @@ function romPlanHTML(){const P=ROM&&ROM.plan;if(!P)return "";
   return `<div class="cpanel"><b>Planilha “${esc(P.nome)}”</b><span class="hint">${P.sistema?"Formato do sistema identificado: cada linha será aberta como peça pronta para editar, preservando os campos reconhecidos. Confira o arquivo antes de criar as peças.":`${P.rows.length} linhas. Confira qual coluna é cada informação (o app já tentou adivinhar):`}</span>${ignoradas.length?`<span class="warn">Colunas não reconhecidas não serão importadas: ${esc(ignoradas.join(", "))}.</span>`:""}<div class="row">${P.sistema?"":ROM_PAPEIS.map(([k,n])=>sel(k,n)).join("")}</div>
     <div class="prevg">${P.rows.slice(0,4).map(r=>`<div><small>${esc(cel(r,"cod")||"sem código")} · ${esc(cel(r,"qtd")||"?")} un · ${esc(cel(r,"preco")||"sem valor")}</small><b>${esc(cel(r,"desc")||"(sem descrição)")}</b></div>`).join("")}</div>
     <div class="row"><button type="button" class="btn pri sm" data-act="rom-plan-ok" ${!P.sistema&&P.map.desc==null?"disabled":""}>${P.sistema?"Abrir para editar":"Usar estas colunas"}</button><button type="button" class="btn ghost sm" data-act="rom-plan-no">Cancelar</button></div></div>`}
-let romUI={ex:false,txt:"",nome:""};
-function romExInfo(){const C=cfg(),tx=String(romUI.txt||"");if(!tx.trim())return {html:`<span class="hint">Cole aqui uma lista de exemplo do cliente (texto de um PDF, e-mail ou planilha copiada). Eu mostro como o app entende cada linha.</span>`,ok:false};
+function romExInfo(){const C=cfg(),tx=String(estadoConfig.romUI.txt||"");if(!tx.trim())return {html:`<span class="hint">Cole aqui uma lista de exemplo do cliente (texto de um PDF, e-mail ou planilha copiada). Eu mostro como o app entende cada linha.</span>`,ok:false};
   const R=lerRomaneioAuto(tx,clone(C.romaneios[0]));if(R.erro||!R.rows.length)return {html:`<span class="warn">Não reconheci nenhuma peça. Confira se copiou a tabela inteira, com código, quantidade e valores. Se for uma planilha, use o botão “Importar planilha” no romaneio, que deixa você escolher as colunas.</span>`,ok:false};
   return {html:`<b>Reconheci ${R.rows.length} peça(s)</b>${R.conf?` <small>· ${esc(R.conf)}</small>`:""}<div class="prevg">${R.rows.slice(0,6).map(r=>`<div><small>${esc(r.cod||"sem código")} · ${esc(String(r.qtd??"?"))} un · ${esc(String(r.precod??r.preco??"sem valor"))}</small><b>${esc(String(r.desc||"").slice(0,70))}</b></div>`).join("")}</div>${R.rows.some(r=>!r.cod)?`<span class="warn">Algumas linhas ficaram sem código — o app só dá “já lançada” e evita repetição quando há código.</span>`:""}`,ok:true,R}}
 function romExAtualiza(){const p=document.getElementById("romExPrev"),b=document.getElementById("romExOk");if(!p)return;const r=romExInfo();p.innerHTML=r.html;if(b)b.disabled=!r.ok}
@@ -5355,14 +5352,13 @@ function simuladorFator(){
   repModal(`<div class="rep-h"><div><b class="rep-t">Simular fator</b><div class="hint">Varejo = custo × fator. Escolha “Usar” para aplicar o fator na peça que está sendo lançada.</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div><div class="rep-b">${custos.map(tab).join("")}</div>`)}
 
 /* ===== aviso de impacto: quando um cadastro muda e as peças já criadas passam a custar outro valor ===== */
-let impConfigAntes=null,impT=null;
 /* Compara a MESMA lista de peças com os cadastros anterior e atual. Uma edição de
    peça ocorrida antes do cadastro não pode ser atribuída à alteração do cadastro. */
 function custoPorLanc(config,pecas){const anterior=S.config;try{S.config=config;const g=gerar(clone(pecas)),m={};g.linhas.forEach(r=>{const q=num(r.v.W);m[r.lancId]=(m[r.lancId]||0)+custoLinhaDe(g,r)*(q==null?1:q)});return m}finally{S.config=anterior}}
 function impactoAgendar(){if(typeof estadoArmazenamento.restaurando!=="undefined"&&estadoArmazenamento.restaurando)return;
-  if(!impT){try{impConfigAntes=estadoArmazenamento.snapC?JSON.parse(estadoArmazenamento.snapC):null}catch(e){impConfigAntes=null}}
-  clearTimeout(impT);impT=setTimeout(impactoConferir,1500)}
-function impactoConferir(){const anterior=impConfigAntes;impConfigAntes=null;impT=null;if(!anterior)return;
+  if(!estadoConfig.impT){try{estadoConfig.impConfigAntes=estadoArmazenamento.snapC?JSON.parse(estadoArmazenamento.snapC):null}catch(e){estadoConfig.impConfigAntes=null}}
+  clearTimeout(estadoConfig.impT);estadoConfig.impT=setTimeout(impactoConferir,1500)}
+function impactoConferir(){const anterior=estadoConfig.impConfigAntes;estadoConfig.impConfigAntes=null;estadoConfig.impT=null;if(!anterior)return;
   let antes,depois;try{const pecas=clone(S.lanc);antes=custoPorLanc(anterior,pecas);depois=custoPorLanc(S.config,pecas)}catch(e){return}
   let n=0,a=0,b=0;Object.keys(depois).forEach(id=>{if(!(id in antes))return;const x=antes[id],y=depois[id];if(Math.abs(x-y)>=0.005){n++;a+=x;b+=y}});
   if(n)toast(`Esta mudança alterou o custo de ${n} peça(s) já criadas: de R$ ${brl(r2c(a))} para R$ ${brl(r2c(b))} (${b>=a?"+":"−"}R$ ${brl(r2c(Math.abs(b-a)))}).`)}
@@ -5545,7 +5541,7 @@ async function romCriar(){const f=S.form;if(editId){avisoEdicao(()=>romCriar());
       if(ne(o.v.N,r.peso))ch.push("peso "+(o.v.N||"—")+" → "+(r.peso||"—"));if(ne(o.v.P,r.custo))ch.push("compra "+(o.v.P||"—")+" → "+(r.custo||"—"));if(ne(o.v.F,r.desc))ch.push("descrição");
       if(ch.length)dif.push((o.v.E||r.desc)+": "+ch.join(", "))});
     if(dif.length&&!confirm("Ao refazer, "+dif.length+" peça(s) já lançada(s) estão diferentes do que o romaneio guarda (você editou depois na peça ou na tabela). Criar agora vai SOBRESCREVER essas edições com os dados do romaneio:"+NL+NL+dif.slice(0,8).join(NL)+(dif.length>8?NL+"…e mais "+(dif.length-8):"")+NL+NL+"OK = sobrescrever com o romaneio"+NL+"Cancelar = manter como está (depois corrija o card ou o romaneio)"))return}
-  romCriando=true;setTimeout(()=>{romCriando=false},0);   /* durante a criação o romaneio não é ressincronizado com a tabela */
+  estadoRomaneio.romCriando=true;setTimeout(()=>{estadoRomaneio.romCriando=false},0);   /* durante a criação o romaneio não é ressincronizado com a tabela */
   const snap=clone(f),feitas=[],ign=[];let sem=0,err=0,un=0,ultErro="";const naLista=ROM.rows.filter(r=>!r.skip).reduce((t,r)=>t+r.qtd,0);
   ROM.rows.forEach(r=>{if(r.skip){if(!(r.feito&&!r.refaz)&&!(r.lote&&romLoteKids(r).length))ign.push({desc:r.desc,cod:r.cod,motivo:r.aviso?String(r.aviso).replace("· ",""):"desmarcada"});return}
     S.form=clone(snap);const {f:f2,q}=romForm(r);if(!q.length){sem++;ign.push({desc:r.desc,cod:r.cod,motivo:"sem quantidade"});return}
@@ -5725,14 +5721,13 @@ window.__nf={parsePdf:nfPdfParse,lerXml:nfLerXml,pdfItens:nfPdfItens,cat:nfCatDe
     bt.addEventListener("click",()=>{mostrar=!mostrar;try{prefGravar(KV,mostrar?"1":"0")}catch(e){}run()});run()}}
 /* nf-fim */
 /* ===== relatório do romaneio lançado ===== */
-let relTem=false;
 function relGerar(feitas,ign,meta,romId){
   const itens=feitas.map(({r,id})=>{let custo=0,vr=0,un=0;
     const linhas=G.linhas.map((x,ri)=>({x,ri})).filter(o=>o.x.lancId===id).map(({x,ri})=>{const cs=celulas(x,ri+2),n=L=>{const c=cs[LET.indexOf(L)];return c&&typeof c.v==="number"?c.v:c&&typeof c.calc==="number"?c.calc:null},q=num(x.v.W)||0,cu=["P","Q","R","S","T","U"].reduce((t,L)=>t+(n(L)||0),0);
       custo+=cu*q;vr+=(n("V")||0)*q;un+=q;return {ref:x.v.E,q,cor:x.v.L||"",cu,v:n("V")}});
     return {cod:r.cod,desc:r.desc,cat:r.cat,sub:r.sub||"",peso:r.peso,compra:r.custo,linhas,un,custo,vr,foto:r.foto||null}});
   estadoRomaneio.rel={em:Date.now(),meta,itens,ign,romId:romId||"",lids:feitas.map(x=>x.id)};try{backupLembrarPosCriar()}catch(e){}
-  try{dadoGravar("cadpecas-rel",JSON.stringify({...estadoRomaneio.rel,itens:itens.map(i=>({...i,foto:null}))}));relTem=true}catch(e){}
+  try{dadoGravar("cadpecas-rel",JSON.stringify({...estadoRomaneio.rel,itens:itens.map(i=>({...i,foto:null}))}));estadoRomaneio.relTem=true}catch(e){}
   relAbrir()}
 async function arqSalvar(nome,txt){const dl=await obterDL();
   try{await dl.save({filename:nome,data:new Blob([txt],{type:"text/csv;charset=utf-8"})})}catch(e){if(!e||e.code!=="declined")toast("Não consegui salvar o arquivo.")}}
@@ -5752,7 +5747,7 @@ function relAbrir(){const R=relLer();if(!R){toast("Ainda não há relatório (ou
     ${R.ign.length?`<div class="rep-ig"><b>Não lançadas (${R.ign.length})</b> ${R.ign.map(g=>`<span>${esc(g.desc)} <span class="hint">(${esc(g.cod||"sem código")}) — ${esc(g.motivo)}</span></span>`).join("")}</div>`:""}</div>`;
   document.body.appendChild(ov)}
 function secRom(C){
-  const exPainel=romUI.ex?`<div class="cpanel"><b>Novo modelo a partir de uma lista de exemplo</b><span class="hint">1) cole a lista do cliente · 2) confira como cada linha foi lida · 3) dê um nome e crie. O modelo já nasce com as palavras das suas categorias.</span><textarea id="romExTx" data-rex aria-label="Lista de exemplo" placeholder="Cole aqui o texto da lista do fornecedor…">${esc(romUI.txt)}</textarea><div id="romExPrev" class="prev" aria-live="polite">${romExInfo().html}</div><div class="row"><label class="fl" style="flex:1 1 200px"><span>Nome do modelo (ex.: nome do fornecedor)</span><input data-rexn value="${esc(romUI.nome)}" maxlength="50"></label><button type="button" class="btn pri sm" id="romExOk" data-act="rom-ex-ok" ${romExInfo().ok?"":"disabled"}>Criar modelo</button><button type="button" class="btn ghost sm" data-act="rom-ex-fechar">Cancelar</button></div></div>`:`<div class="row"><button type="button" class="btn sm pri" data-act="rom-ex-abrir" title="Cole uma lista de um fornecedor novo e veja como o app lê; depois é só dar um nome">＋ Novo modelo a partir de uma lista de exemplo</button><span class="hint">Para planilhas (.xlsx/.csv) use “Importar planilha” no romaneio: você escolhe as colunas.</span></div>`;
+  const exPainel=estadoConfig.romUI.ex?`<div class="cpanel"><b>Novo modelo a partir de uma lista de exemplo</b><span class="hint">1) cole a lista do cliente · 2) confira como cada linha foi lida · 3) dê um nome e crie. O modelo já nasce com as palavras das suas categorias.</span><textarea id="romExTx" data-rex aria-label="Lista de exemplo" placeholder="Cole aqui o texto da lista do fornecedor…">${esc(estadoConfig.romUI.txt)}</textarea><div id="romExPrev" class="prev" aria-live="polite">${romExInfo().html}</div><div class="row"><label class="fl" style="flex:1 1 200px"><span>Nome do modelo (ex.: nome do fornecedor)</span><input data-rexn value="${esc(estadoConfig.romUI.nome)}" maxlength="50"></label><button type="button" class="btn pri sm" id="romExOk" data-act="rom-ex-ok" ${romExInfo().ok?"":"disabled"}>Criar modelo</button><button type="button" class="btn ghost sm" data-act="rom-ex-fechar">Cancelar</button></div></div>`:`<div class="row"><button type="button" class="btn sm pri" data-act="rom-ex-abrir" title="Cole uma lista de um fornecedor novo e veja como o app lê; depois é só dar um nome">＋ Novo modelo a partir de uma lista de exemplo</button><span class="hint">Para planilhas (.xlsx/.csv) use “Importar planilha” no romaneio: você escolhe as colunas.</span></div>`;
   const adv=(t,k,rot,w,tit)=>`<label class="fl" style="${w}"><span>${rot}</span><input data-rf="${k}" value="${esc(t[k]||"")}" ${tit?`title="${esc(tit)}"`:""}></label>`;
   const mapRows=t=>parseMapa(t.mapa).map((m,j)=>{const cat=catBy(m.c);return `<div class="rmr" data-rmj="${j}"><input data-rm="w" value="${esc(m.w)}" placeholder="palavra na lista" aria-label="Palavra na lista"><span class="hint">→</span><select data-rm="c" aria-label="Categoria">${opts(C.categorias.map(c=>c.nome),m.c,"Categoria")}</select><select data-rm="s" aria-label="Subcategoria">${opts(cat?cat.subs:[],m.s,"Subcategoria (opcional)")}</select><button class="x" type="button" data-act="rom-map-del" title="Remover">×</button></div>`}).join("");
   return sec("rom","Romaneios",`${C.romaneios.length} modelo(s) de leitura`,
@@ -6117,7 +6112,7 @@ async function baixar(forcar,ids){
     const blob=csv?new Blob([montarCsv(g,cols,mo,partes[p])],{type:"text/csv;charset=utf-8"}):montarXlsx(cols,mo,partes[p]);
     try{await dl.save({filename:partes.length>1?`${nomeBase} (parte ${p+1} de ${partes.length}).${ext}`:`${nomeBase}.${ext}`,data:blob});feitas++}
     catch(e){toast(e&&e.code==="declined"?"Download cancelado.":e&&e.code==="rate_limited"?`Já há um download esperando confirmação (baixados ${feitas} de ${partes.length} arquivos).`:"Não consegui salvar o arquivo. Use Copiar para o Excel.");break}}
-  if(feitas===partes.length){const msgs=[];if(ids)msgs.push(`Baixei só as ${ids.size} peça(s) selecionada(s): ${g.linhas.length} linha(s).`);if(!GE.fil&&!ids)lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo();if(GE.fil)msgs.push(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
+  if(feitas===partes.length){const msgs=[];if(ids)msgs.push(`Baixei só as ${ids.size} peça(s) selecionada(s): ${g.linhas.length} linha(s).`);if(!GE.fil&&!ids)estadoBase.lastExport={cont:contFinal(g),faixa,ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo();if(GE.fil)msgs.push(GE.peca?`Baixei as peças que o filtro mostra: ${g.linhas.length} linha(s) (de ${GE.g0.linhas.length}), com todas as variações de cada peça (modelo com produto pai).`:`Baixei só as ${g.linhas.length} linha(s) do filtro (de ${GE.g0.linhas.length}).`);
     const lt=lt0,gr=lt>0?partes.filter(p=>p.length>lt).length:0;   /* produto com mais variações que o limite: fica inteiro num arquivo só */
     if(partes.length>1||gr)msgs.push(`${partes.length} arquivo(s) baixado(s)${partes.length>1?` (até ${lt} linhas cada)`:""}.${limAuto&&partes.length>1?` Dividi sozinho porque a lista tem ${sl.length} linhas e o app só reimporta planilhas de até ${MAX_PLANILHA_LINHAS} linhas.`:""}${gr?` Atenção: ${gr} arquivo(s) passaram do limite de ${lt} linhas, porque um produto com suas variações não pode ser separado. Se o outro sistema recusar, reduza as variações desse produto.`:""}`);
     if(avZ)msgs.push(avZ);if(msgs.length)toast(msgs.join(" · "))}
@@ -6145,15 +6140,15 @@ async function copiar(ids,forcar){
     if(x.f){const tf=traduzF(x.f,cols),fl=tf&&fLocal(tf);if(fl)return "="+fl}
     const xv=x.v==null&&typeof x.calc==="number"?{...x,v:x.calc}:x,s=txtSaida(xv,c,LOC.dec).replace(/[\t\r\n]+/g," ");
     return cel(typeof xv.v==="number"?s:protegeTxt(s))}).join(TAB)})].join(NL);   /* texto que começaria com = + - @ não pode virar fórmula no Excel */
-  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`+(avZ?" "+avZ:""));if(!ids&&!GE.fil){lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo()}}
+  try{await navigator.clipboard.writeText(txt);toast(`Copiado (${g.linhas.length} linhas${!ids&&GE.fil?(GE.peca?` das peças do filtro, com todas as variações; de ${g0.linhas.length}`:` do filtro, de ${g0.linhas.length}`):""} + cabeçalho). Cole na célula A1 de uma planilha vazia.`+(avZ?" "+avZ:""));if(!ids&&!GE.fil){estadoBase.lastExport={cont:contFinal(g),faixa:faixaRefs(g),ids:idsExp,sig:sigExp,cfg:cfgExp};renderTopo()}}
   catch(e){document.getElementById("tools").insertAdjacentHTML("beforeend",`<div style="width:100%"><p class="hint">Selecione e copie com Ctrl+C:</p><textarea class="cp" id="cpT" readonly></textarea></div>`);const t=document.getElementById("cpT");t.value=txt;t.select()}
 }
 function gravarExport(limpar){
-  if(!lastExport)return;Object.entries(lastExport.cont).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});
+  if(!estadoBase.lastExport)return;Object.entries(estadoBase.lastExport.cont).forEach(([p,n])=>{if(n>ultimo(p))cfg().seqs[p]=fnum(p,n)});
   S.lanc.forEach(l=>{const o=val(l,"M");if(o&&!cfg().observacoes.includes(o))cfg().observacoes.unshift(o)});cfg().observacoes=cfg().observacoes.slice(0,30);
-  if(limpar&&lastExport.cfg&&lastExport.cfg!==sigCfg()){limpar=false;setTimeout(()=>toast("A configuração mudou depois da planilha (preços, fatores, modelo…): gravei só a numeração e deixei as peças na lista. Exporte de novo antes de limpar."),50)}
-  if(limpar){const fei=new Set(lastExport.ids||S.lanc.map(l=>l.id)),sg=lastExport.sig||{};let alt=0;S.lanc=S.lanc.filter(l=>{if(!fei.has(l.id))return true;if(sg[l.id]!==undefined&&sg[l.id]!==JSON.stringify(l)){alt++;return true}return false});sel.clear();if(alt)setTimeout(()=>toast(alt+" peça(s) foram editadas depois da planilha e ficaram na lista."),50)}   /* só some o que foi exportado: peça lançada depois do download fica */
-  lastExport=null;salvar(true);render();toast("Última peça do sistema atualizada.");
+  if(limpar&&estadoBase.lastExport.cfg&&estadoBase.lastExport.cfg!==sigCfg()){limpar=false;setTimeout(()=>toast("A configuração mudou depois da planilha (preços, fatores, modelo…): gravei só a numeração e deixei as peças na lista. Exporte de novo antes de limpar."),50)}
+  if(limpar){const fei=new Set(estadoBase.lastExport.ids||S.lanc.map(l=>l.id)),sg=estadoBase.lastExport.sig||{};let alt=0;S.lanc=S.lanc.filter(l=>{if(!fei.has(l.id))return true;if(sg[l.id]!==undefined&&sg[l.id]!==JSON.stringify(l)){alt++;return true}return false});sel.clear();if(alt)setTimeout(()=>toast(alt+" peça(s) foram editadas depois da planilha e ficaram na lista."),50)}   /* só some o que foi exportado: peça lançada depois do download fica */
+  estadoBase.lastExport=null;salvar(true);render();toast("Última peça do sistema atualizada.");
 }
 
 /* ===== importar / cópia ===== */
@@ -6336,7 +6331,7 @@ registrarAcoes(ACOES,"exportacao",{
   "copiar":()=>{copiar()},
   "exp-limpar":()=>{gravarExport(true)},
   "exp-so":()=>{gravarExport(false)},
-  "exp-nao":()=>{lastExport=null;renderTopo()},
+  "exp-nao":()=>{estadoBase.lastExport=null;renderTopo()},
   "exp-agrupar":()=>{estadoExportacao.agrupa=!estadoExportacao.agrupa;if(estadoExportacao.ult)mostrarConferencia(estadoExportacao.ult.p,estadoExportacao.ult.podeSeguir);return},
   "imp-ok":()=>{aplicarImp()},
   "backup":()=>{backup()}
@@ -6456,11 +6451,11 @@ registrarAcoes(ACOES,"configuracao",{
   "rom-map-auto":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);let n=0;const add=(w,cat,sub)=>{w=String(w).trim();if(!w||a.some(m=>kSub(m.w)===kSub(w)))return;a.push({w,c:cat,s:sub||""});n++};
       C.categorias.forEach(c=>add(c.nome,c.nome,""));C.categorias.forEach(c=>(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,c.nome,sb)}));
       T.mapa=mapaStr(a);salvar(true,false);renderCfg();toast(n?`${n} palavra(s) criadas a partir das suas categorias.`:"Todas as suas categorias já estão no mapa.",{t:"Desfazer",fn:desfazer});return}},
-  "rom-ex-abrir":()=>{romUI.ex=true;renderCfg();refocar("#romExTx");return;},
-  "rom-ex-fechar":()=>{romUI.ex=false;renderCfg();return;},
-  "rom-ex-ok":({C})=>{{const r=romExInfo();if(!r.ok)return;const tx=String(romUI.txt||"").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"Novo modelo",nome=(String(romUI.nome||"").trim()||tx).slice(0,50),T=({...clone(ROMS0()[0]),id:uid(),nome,forn:"",mapa:""}),a=parseMapa("");
+  "rom-ex-abrir":()=>{estadoConfig.romUI.ex=true;renderCfg();refocar("#romExTx");return;},
+  "rom-ex-fechar":()=>{estadoConfig.romUI.ex=false;renderCfg();return;},
+  "rom-ex-ok":({C})=>{{const r=romExInfo();if(!r.ok)return;const tx=String(estadoConfig.romUI.txt||"").split(/\r?\n/).map(x=>x.trim()).find(Boolean)||"Novo modelo",nome=(String(estadoConfig.romUI.nome||"").trim()||tx).slice(0,50),T=({...clone(ROMS0()[0]),id:uid(),nome,forn:"",mapa:""}),a=parseMapa("");
       C.categorias.forEach(c=>{const add=(w,sub)=>{w=String(w).trim();if(!w||a.some(m=>kSub(m.w)===kSub(w)))return;a.push({w,c:c.nome,s:sub||""})};add(c.nome,"");(c.subs||[]).forEach(sb=>{if(C.categorias.some(x=>kSub(x.nome)===kSub(sb)))return;add(sb,sb)})});
-      T.mapa=mapaStr(a);C.romaneios.push(T);romUI={ex:false,txt:"",nome:""};abertos.tab="rom";guardarAbertos();salvar(true,false);renderCfg();toast(`Modelo “${nome}” criado com ${r.R.rows.length} peça(s) de exemplo reconhecidas. Ajuste fornecedor e palavras abaixo, se quiser.`,{t:"Desfazer",fn:desfazer});return}},
+      T.mapa=mapaStr(a);C.romaneios.push(T);estadoConfig.romUI={ex:false,txt:"",nome:""};abertos.tab="rom";guardarAbertos();salvar(true,false);renderCfg();toast(`Modelo “${nome}” criado com ${r.R.rows.length} peça(s) de exemplo reconhecidas. Ajuste fornecedor e palavras abaixo, se quiser.`,{t:"Desfazer",fn:desfazer});return}},
   "rom-map-add":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom];T.mapa=(T.mapa?T.mapa+"; ":"")+"nova palavra=";salvar(true,false);renderCfg();return}},
   "rom-map-del":({t,C})=>{{const T=C.romaneios[+t.closest("[data-rom]").dataset.rom],a=parseMapa(T.mapa);a.splice(+t.closest(".rmr").dataset.rmj,1);T.mapa=mapaStr(a);salvar(true,false);renderCfg();return}},
   "rom-testar":({t,C})=>{{const card=t.closest("[data-rom]"),T=C.romaneios[+card.dataset.rom],R=lerRomaneioAuto(card.querySelector("[data-rtest]").value,T),o=card.querySelector(".rtres");
@@ -6635,7 +6630,7 @@ registrarAcoes(ACOES,"lancamento",{
   "preset-salvar":({C})=>{{const el=document.querySelector("[data-preset-nome]"),nome=el&&el.value.trim();if(!nome){toast("Digite um nome para a combinação.");return}C.presetsLancamento=Array.isArray(C.presetsLancamento)?C.presetsLancamento:[];if(C.presetsLancamento.some(p=>semAc(p.nome)===semAc(nome))){toast("Já existe uma combinação com esse nome.");return}if(C.presetsLancamento.length>=30){toast("Limite de 30 combinações.");return}C.presetsLancamento.push(presetAtual(nome));salvar(true,false);renderForm();toast("Combinação salva.");return}},
   "preset-usar":acao_preset_usar_preset_excluir,
   "preset-excluir":acao_preset_usar_preset_excluir,
-  "banco-toggle":()=>{bancoAberto=!bancoAberto;renderForm();return;},
+  "banco-toggle":()=>{estadoBase.bancoAberto=!estadoBase.bancoAberto;renderForm();return;},
   "banco-adicionar":()=>{{const f=S.form,c=catBy(f.v.I),el=document.querySelector('[data-banco-nova]');if(!c||!el)return;const palavras=el.value.split(";").map(x=>x.trim().replace(/\s+/g," ")).filter(x=>x&&x.length<=60);if(!palavras.length){toast("Digite uma palavra ou expressão.");return}const chave=f.v.J||"",lista=bancoLista(c.nome,chave).slice();palavras.forEach(w=>{if(!lista.some(x=>semAc(x)===semAc(w)))lista.push(w)});c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[chave]=lista.slice(0,100);salvar(true,false);renderForm();bancoEditarAbrir();toast("Palavras salvas para "+(chave||c.nome)+".");return}},
   "banco-remover":({t})=>{{const f=S.form,c=catBy(f.v.I);if(!c)return;const chave=f.v.J||"";c.bancoPalavras=c.bancoPalavras||{};c.bancoPalavras[chave]=bancoLista(c.nome,chave).filter(x=>semAc(x)!==semAc(t.dataset.w));salvar(true,false);renderForm();bancoEditarAbrir();return}},
   "banco-restaurar":()=>{{const f=S.form,c=catBy(f.v.I);if(!c)return;const chave=f.v.J||"";if(c.bancoPalavras)delete c.bancoPalavras[chave];salvar(true,false);renderForm();bancoEditarAbrir();toast("Sugestões iniciais restauradas.");return}},
@@ -6711,8 +6706,8 @@ function onField(t,isChange){
     salvar(true,false);render();return}
   if(t.dataset&&t.dataset.gusar!==undefined){const c=catBy(S.form.v.I),v=t.value;if(c&&v&&!c.grade){if(v.startsWith("o:")){const og=(cfg().grades||[]).find(x=>x.id===v.slice(2));if(og)c.grade={id:uid(),nome:og.nome,subs:[],usaId:og.id,itens:[]}}else{const src=catBy(v.slice(2));if(src&&src.grade){const o=src.grade.usa?(catBy(src.grade.usa)||src):src;c.grade={id:uid(),nome:o.grade.nome,subs:[],usa:o.nome,itens:[]}}}sincGrade(S.form);salvar(true);render()}return}
   if(t.dataset){
-    if(t.dataset.rex!==undefined){romUI.txt=t.value;romExAtualiza();return}
-    if(t.dataset.rexn!==undefined){romUI.nome=t.value;return}
+    if(t.dataset.rex!==undefined){estadoConfig.romUI.txt=t.value;romExAtualiza();return}
+    if(t.dataset.rexn!==undefined){estadoConfig.romUI.nome=t.value;return}
     if(t.dataset.colar!==undefined){catUI.txt=t.value;atualizaPrevia();return}
     if(t.dataset.ncor!==undefined)return;
     if(t.dataset.subren!==undefined){if(isChange&&!estadoConfig.renBusy){const ce2=t.closest("[data-cat]");if(ce2){const ci2=+ce2.dataset.cat,j2=+t.dataset.subren,c2=cfg().categorias[ci2],velho=c2&&c2.subs[j2],novo=t.value;let feito=false;const go=()=>{if(feito)return;feito=true;document.removeEventListener("click",go,true);setTimeout(()=>{const c3=cfg().categorias[ci2],jj=c3?c3.subs.indexOf(velho):-1;if(jj>=0)subRenomear(ci2,jj,novo)},0)};document.addEventListener("click",go,true);setTimeout(go,700)}}return}
@@ -6962,7 +6957,7 @@ document.addEventListener("keydown",e=>{
 
 /* trava de segurança: no computador a página em si nunca rola (só a planilha e o painel de baixo) */
 document.addEventListener("scroll",()=>{if(!celular()){const se=document.scrollingElement;if(se&&se.scrollTop)se.scrollTop=0;if(document.body.scrollTop)document.body.scrollTop=0}},true);
-try{estadoArmazenamento.romTem=!!dadoLer(ROMKEY);estadoArmazenamento.romInfo=dadoLer("cadpecas-rom-info")||"";relTem=!!dadoLer("cadpecas-rel");ROMS=JSON.parse(dadoLer("cadpecas-roms")||"[]");TABS=JSON.parse(dadoLer("cadpecas-tabs")||"[]");estadoArmazenamento.AUTOR=prefLer("autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
+try{estadoArmazenamento.romTem=!!dadoLer(ROMKEY);estadoArmazenamento.romInfo=dadoLer("cadpecas-rom-info")||"";estadoRomaneio.relTem=!!dadoLer("cadpecas-rel");ROMS=JSON.parse(dadoLer("cadpecas-roms")||"[]");TABS=JSON.parse(dadoLer("cadpecas-tabs")||"[]");estadoArmazenamento.AUTOR=prefLer("autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
 document.addEventListener("dragover",e=>{if(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files"))e.preventDefault()});
 document.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&document.querySelector(".rep [data-novo]")&&/[.](csv|xlsx?)$/i.test(f.name)){e.preventDefault();lerNovo(f);return}if(f&&/pdf|xml/i.test(f.type+f.name)){e.preventDefault();if(editId){avisoEdicao();return}nfRotear(f)}});
 document.addEventListener("keydown",e=>{if(ROM&&ROM.rows.length&&(e.ctrlKey||e.metaKey)&&e.key==="Enter"&&e.target.closest&&e.target.closest("#romWrap")){e.preventDefault();romRevisar();return}},true);

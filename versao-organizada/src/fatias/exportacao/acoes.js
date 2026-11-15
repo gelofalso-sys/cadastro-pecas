@@ -14,7 +14,7 @@ registrarAcoes(ACOES,"exportacao",{
   "copiar":()=>{copiar()},
   "exp-limpar":()=>{gravarExport(true)},
   "exp-so":()=>{gravarExport(false)},
-  "exp-nao":()=>{lastExport=null;renderTopo()},
+  "exp-nao":()=>{estadoBase.lastExport=null;renderTopo()},
   "exp-agrupar":()=>{estadoExportacao.agrupa=!estadoExportacao.agrupa;if(estadoExportacao.ult)mostrarConferencia(estadoExportacao.ult.p,estadoExportacao.ult.podeSeguir);return},
   "imp-ok":()=>{aplicarImp()},
   "backup":()=>{backup()}

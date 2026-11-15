@@ -36,3 +36,6 @@ Testes manuais com PDF real: tests/pdf_real2.py (fora do run_all).
 - AUD-A-007: `sincFormCelula` (15f) descarta o valor nao salvo de outra variacao ao editar a celula de uma peca aberta no formulario.
 - AUD-I-001: foto da linha/cartao e `img[data-act=tab-foto]` sem foco de teclado (15e e `cartoes`); AUD-J-001: `renderTopo` redesenha a tabela inteira (custo com 1.000 pecas).
 - 128 linhas acima de 160 caracteres (HTML em string de `renderTopo`, `cartoes`, `renderFiltros`): nao reformatadas (quebraria a prova de HTML identico); virar funcoes de template so com teste do fluxo.
+
+## Estado agrupado
+Etapa 4.1: a largura `w` virou `estadoPlanilha.w` (15-planilha.js).

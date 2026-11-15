@@ -11,7 +11,7 @@ async function romCriar(){const f=S.form;if(editId){avisoEdicao(()=>romCriar());
       if(ne(o.v.N,r.peso))ch.push("peso "+(o.v.N||"—")+" → "+(r.peso||"—"));if(ne(o.v.P,r.custo))ch.push("compra "+(o.v.P||"—")+" → "+(r.custo||"—"));if(ne(o.v.F,r.desc))ch.push("descrição");
       if(ch.length)dif.push((o.v.E||r.desc)+": "+ch.join(", "))});
     if(dif.length&&!confirm("Ao refazer, "+dif.length+" peça(s) já lançada(s) estão diferentes do que o romaneio guarda (você editou depois na peça ou na tabela). Criar agora vai SOBRESCREVER essas edições com os dados do romaneio:"+NL+NL+dif.slice(0,8).join(NL)+(dif.length>8?NL+"…e mais "+(dif.length-8):"")+NL+NL+"OK = sobrescrever com o romaneio"+NL+"Cancelar = manter como está (depois corrija o card ou o romaneio)"))return}
-  romCriando=true;setTimeout(()=>{romCriando=false},0);   /* durante a criação o romaneio não é ressincronizado com a tabela */
+  estadoRomaneio.romCriando=true;setTimeout(()=>{estadoRomaneio.romCriando=false},0);   /* durante a criação o romaneio não é ressincronizado com a tabela */
   const snap=clone(f),feitas=[],ign=[];let sem=0,err=0,un=0,ultErro="";const naLista=ROM.rows.filter(r=>!r.skip).reduce((t,r)=>t+r.qtd,0);
   ROM.rows.forEach(r=>{if(r.skip){if(!(r.feito&&!r.refaz)&&!(r.lote&&romLoteKids(r).length))ign.push({desc:r.desc,cod:r.cod,motivo:r.aviso?String(r.aviso).replace("· ",""):"desmarcada"});return}
     S.form=clone(snap);const {f:f2,q}=romForm(r);if(!q.length){sem++;ign.push({desc:r.desc,cod:r.cod,motivo:"sem quantidade"});return}

@@ -38,3 +38,6 @@ criar as pecas (`romCriar`), relatorio da criacao (`relGerar`, `relAbrir`, `relL
 - AUD-C-004: CSV com ponto e virgula pode multiplicar preco por 100 e tirar zeros a esquerda (`romPlanilha`, 21a4).
 - AUD-C-002: selo de conferencia da NF pode parecer importacao integral quando ha item com quantidade 0 (`23c-nota-fiscal.js`).
 - 331 linhas acima de 160 caracteres (codigo minificado a mao): nao reformatadas. Usa `planilha`: `renderTopo` (19c, 21, 21a6, 23b), `mostrarNoFim` (23b).
+
+## Estado agrupado
+Etapa 4.1: `romCriando`, `romChaveL` (usados por `src/js/15d`) e `relTem` viraram campos de `estadoRomaneio` (19c-colar-romaneio.js).
