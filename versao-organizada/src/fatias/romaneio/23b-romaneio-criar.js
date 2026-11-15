@@ -25,8 +25,8 @@ async function romCriar(){const f=S.form;if(editId){avisoEdicao(()=>romCriar());
   feitas.forEach(({r,id})=>{const eraRefaz=!!r.refaz,ls=g2.linhas.filter(x=>x.lancId===id);r.corrigida=eraRefaz;r.refs=ls.map(x=>x.v.E).join(", ");r.qLanc=ls.reduce((t,x)=>t+(num(x.v.W)||0),0);r.lancEm=Date.now();r.tipo=romTipo(r);r.bh=romBh(r).id;r.lancIds=[id];r.feito=true;r.refaz=false;r.skip=true;r.aviso="· já lançada";if(r.foto&&!eraRefaz)idbPut("fotos",id,r.foto)});
   if(feitas.length)ROM.log=(ROM.log||[]).concat([{em:Date.now(),por:AUTOR,acao:`Lançou ${feitas.length-corr} peça(s) nova(s)${corr?` e corrigiu ${corr}`:""} · ${un} unidades`}])}
   /* O rascunho com os vínculos fica disponível até o IndexedDB confirmar a gravação. */
-  const lsOk=romSalvar(),gravacao=romGravP,romId=ROM.sid;let rascGravado=null;try{rascGravado=lerPref(ROMKEY)}catch(e){}
+  const lsOk=romSalvar(),gravacao=romGravP,romId=ROM.sid;let rascGravado=null;try{rascGravado=dadoLer(ROMKEY)}catch(e){}
   ROM=null;renderRom();salvar(false);renderTopo();renderForm();if(ids.length)mostrarNoFim(ids[ids.length-1]);
-  Promise.resolve(gravacao).then(ok=>{if(ok&&rascGravado){try{if(lerPref(ROMKEY)===rascGravado)romLimparRascunho()}catch(e){}}else if(!ok&&!lsOk){setStatus("NÃO foi possível guardar o vínculo do romaneio — baixe um backup",true);toast("Não consegui guardar o romaneio nem o rascunho. Não feche a página; baixe um backup completo.")}});
+  Promise.resolve(gravacao).then(ok=>{if(ok&&rascGravado){try{if(dadoLer(ROMKEY)===rascGravado)romLimparRascunho()}catch(e){}}else if(!ok&&!lsOk){setStatus("NÃO foi possível guardar o vínculo do romaneio — baixe um backup",true);toast("Não consegui guardar o romaneio nem o rascunho. Não feche a página; baixe um backup completo.")}});
   toast(`${feitas.length} peça(s) criada(s) · ${un} de ${naLista} unidades${un<naLista?` (${naLista-un} ficaram de fora)`:""}${sem?` · ${sem} sem quantidade`:""}${err?` · ${err} com erro`:""}.`,ids.length?{t:"Desfazer",fn:desfazer}:null);
   if(feitas.length)relGerar(feitas,ign,meta,romId)}

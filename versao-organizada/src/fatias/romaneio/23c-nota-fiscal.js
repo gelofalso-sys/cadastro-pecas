@@ -1,7 +1,7 @@
 /* nf-inicio */
 let NF=null;
-function nfIdx(){try{return JSON.parse(lerPref(NFKEY)||"{}")||{}}catch(e){return {}}}
-function nfIdxSet(ch,o){try{const i=nfIdx();i[ch]=o;gravarPref(NFKEY,JSON.stringify(i))}catch(e){}}
+function nfIdx(){try{return JSON.parse(dadoLer(NFKEY)||"{}")||{}}catch(e){return {}}}
+function nfIdxSet(ch,o){try{const i=nfIdx();i[ch]=o;dadoGravar(NFKEY,JSON.stringify(i))}catch(e){}}
 /* resultado igual para PDF e XML: números arredondados, código sem asterisco final */
 /* PDF (DANFE): lê só o texto, com a posição de cada pedacinho, para separar código, descrição e valores por coluna */
 async function nfPdfItens(f){checaTam(f,MAX_PDF_BYTES,"O PDF");const L=await carregarPdfJs();let doc;

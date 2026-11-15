@@ -23,7 +23,7 @@ async function exMigrarIndicesSemLock(){if(!await tabsMigrar())return false;cons
   for(const k of ks){if(typeof k!=="string"||ROMS.some(x=>x.id===k)||ROMDEL.has(k))continue;const rec=await idbGet("roms",k);if(rec===null)return false;if(!ehObj(rec)||!Array.isArray(rec.rows)||!rec.rows.every(ehObj))continue;
     if(!rec.id)rec.id=k;if(!ehNumLike(rec.em))rec.em=Date.now();if(!romIndex(rec))return false;n++}
   if(n)toast(`Encontrei ${n} romaneio(s) salvo(s) que não apareciam na lista.`);return true}
-async function exAbrirIndices(){const abrir=async()=>{try{const r=JSON.parse(lerPref("cadpecas-roms")||"[]"),t=JSON.parse(lerPref("cadpecas-tabs")||"[]");if(!Array.isArray(r)||!Array.isArray(t))return false;ROMS=r;TABS=t;arqRef()}catch(e){return false}
+async function exAbrirIndices(){const abrir=async()=>{try{const r=JSON.parse(dadoLer("cadpecas-roms")||"[]"),t=JSON.parse(dadoLer("cadpecas-tabs")||"[]");if(!Array.isArray(r)||!Array.isArray(t))return false;ROMS=r;TABS=t;arqRef()}catch(e){return false}
   if(navigator.locks){if(!await exRecuperarSemLock())return false}else{const ks=await idbOp("pontos","readonly",st=>st.getAllKeys());if(!Array.isArray(ks)||ks.some(k=>typeof k==="string"&&k.startsWith(EX_PREFIXO)))return false}
   return exMigrarIndicesSemLock()};const ok=await exSalvarComLock(abrir);if(ok)histSugAgendar();return ok}
 function romRec(){const f=S.form;return {id:ROM.sid,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,ins:ROM.ins||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now(),por:ROM.por||"",criado:ROM.criado||Date.now(),log:ROM.log||[]}}
@@ -57,7 +57,7 @@ function romHistAplicar(snap){
   else if(!ROM){/* preserva também o rascunho retomável, sem sobrescrever outro romaneio em andamento */
     const d=romRascunho();if(!d||d.sid===id){
       if(rec.rows.length){const rasc={...rec,sid:id,rows:rec.rows.map(r=>({...r,foto:null}))};delete rasc.id;
-        try{gravarPref(ROMKEY,JSON.stringify(rasc));romTem=true;romInfo=((rec.form||{}).H||"")+" · "+rec.rows.length+" peças";gravarPref("cadpecas-rom-info",romInfo)}catch(e){avisoIdb("o rascunho desfeito")}
+        try{dadoGravar(ROMKEY,JSON.stringify(rasc));romTem=true;romInfo=((rec.form||{}).H||"")+" · "+rec.rows.length+" peças";dadoGravar("cadpecas-rom-info",romInfo)}catch(e){avisoIdb("o rascunho desfeito")}
         if(db){try{const pr=db.doc("dados/romaneio").set(rasc);if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}
       }else if(d&&d.sid===id)romLimparRascunho();
     }
@@ -103,12 +103,12 @@ function romListaAbrir(){document.querySelectorAll(".rep").forEach(x=>x.remove()
   ${romListaTabela()}</div>`;
   document.body.appendChild(ov)}
 function romBadge(r){const rf=(G&&G.linhas?G.linhas:[]).filter(x=>(r.lancIds||[]).includes(x.lancId)).map(x=>x.v.E);return `<span class="rfeito" title="Mude qualquer campo (ou marque a caixa) para corrigir esta peça: ao criar, ela é substituída na mesma posição e com a mesma referência">✓ já lançada${rf.length?" · "+esc(rf.join(", ")):(r.refs?" · "+esc(r.refs):"")}${r.arq?" · na tabela salva “"+esc(r.arq)+"”":""}${r.refaz?" · será substituída":""}</span>`}
-function bkEstado(){let rel=null;try{rel=JSON.parse(lerPref("cadpecas-rel")||"null")}catch(e){}return {config:S.config,lanc:S.lanc,form:S.form,rascunho:romRascunho(),romAtual:ROM?{...ROM,pdf:null}:null,rel,tabs:TABS,autor:AUTOR}}
+function bkEstado(){let rel=null;try{rel=JSON.parse(dadoLer("cadpecas-rel")||"null")}catch(e){}return {config:S.config,lanc:S.lanc,form:S.form,rascunho:romRascunho(),romAtual:ROM?{...ROM,pdf:null}:null,rel,tabs:TABS,autor:AUTOR}}
 async function bkMontar(){
   const falhas=[];if(romST){clearTimeout(romST);romST=null;romSalvar()}if(romGravP&&await Promise.resolve(romGravP).catch(()=>false)===false)falhas.push("romaneio pendente");
   const conferirAbas=async()=>{if(typeof navigator==="undefined")return;if(!navigator.locks||!navigator.locks.query){falhas.push("concorrência entre abas não verificável");return}try{const q=await navigator.locks.query();if((q.held||[]).filter(x=>x.name==="cadpecas-uso"&&x.mode==="shared").length>1)falhas.push("outra aba aberta")}catch(e){falhas.push("concorrência entre abas não verificável")}};
   await conferirAbas();
-  const chaves=["cadpecas4","cadpecas-rom","cadpecas-rom-info","cadpecas-roms","cadpecas-tabs"],lerChaves=()=>JSON.stringify(chaves.map(k=>lerPref(k)));let localAntes=null;try{localAntes=lerChaves()}catch(e){falhas.push("armazenamento local")}
+  const chaves=["cadpecas4","cadpecas-rom","cadpecas-rom-info","cadpecas-roms","cadpecas-tabs"],lerChaves=()=>JSON.stringify(chaves.map(k=>dadoLer(k)));let localAntes=null;try{localAntes=lerChaves()}catch(e){falhas.push("armazenamento local")}
   if((typeof conflito!=="undefined"&&conflito)||(typeof romConflito!=="undefined"&&romConflito))falhas.push("conflito entre abas");
   const gravacaoRom=romGravP,assinatura=JSON.stringify(bkEstado()),estado=JSON.parse(assinatura),ids=estado.lanc.map(l=>l.id).concat([].concat(...estado.tabs.map(t=>t.ids||[])));
   const dados=typeof navigator!=="undefined"&&navigator.locks?await navigator.locks.request("cadpecas-exclusoes",()=>bkLerBanco(ids)):await bkLerBanco(ids);if(!dados)falhas.push("armazenamento");else if(dados.exclusoesPendentes)falhas.push("exclusão interrompida pendente de recuperação");if(romST||romGravP!==gravacaoRom||JSON.stringify(bkEstado())!==assinatura)falhas.push("dados alterados durante a cópia");
@@ -139,7 +139,7 @@ async function bkUsoParar(){const fim=estadoArmazenamento.bkUsoPedido;if(estadoA
 async function bkReverterJournal(j){
   let ok=true;
   for(const w of j.idb||[]){const r=w.existe?await idbPut(w.s,w.k,w.valor):await idbDel(w.s,w.k);if(r===null)ok=false}
-  for(const [k,v] of Object.entries(j.ls||{})){try{if(v===null)removerPref(k);else gravarPref(k,v)}catch(e){ok=false}}
+  for(const [k,v] of Object.entries(j.ls||{})){try{if(v===null)dadoRemover(k);else dadoGravar(k,v)}catch(e){ok=false}}
   if(!ok)return false;
   return (await idbDel("pontos",BK_JOURNAL))!==null;
 }
@@ -150,7 +150,7 @@ async function bkRecuperarPendenteSemLock(){
 }
 async function bkRecuperarPendente(){if(!navigator.locks){const j=await idbGet("pontos",BK_JOURNAL);return j===undefined}return navigator.locks.request("cadpecas-restauracao",async()=>{const j=await idbGet("pontos",BK_JOURNAL);if(j===undefined)return true;if(j===null)return false;return navigator.locks.request("cadpecas-uso",{mode:"exclusive"},()=>bkRecuperarPendenteSemLock())})}
 async function bkPrepararJournal(n){
-  const ls={};for(const k of ["cadpecas4","cadpecas-rom","cadpecas-rom-info","cadpecas-rel","cadpecas-roms","cadpecas-tabs"])ls[k]=lerPref(k);
+  const ls={};for(const k of ["cadpecas4","cadpecas-rom","cadpecas-rom-info","cadpecas-rel","cadpecas-roms","cadpecas-tabs"])ls[k]=dadoLer(k);
   const idb=[];for(const [s,obj] of [["roms",n.roms],["fotos",n.fotos],["tabs",n.tabs]])for(const k of Object.keys(obj)){
     const v=await idbGet(s,k);if(v===null)throw new Error("não consegui verificar os dados anteriores");idb.push({s,k,existe:v!==undefined,valor:v});
   }
@@ -176,7 +176,7 @@ async function aplicarBackupTotal(n,quieto){
 async function aplicarBackupTotalComLock(n,quieto){
   let journal;try{journal=await bkPrepararJournal(n)}catch(e){toast("Backup NÃO restaurado — "+(e&&e.message?e.message:"não consegui preparar a recuperação segura")+". Nada foi alterado.");return}
   const ant={config:S.config,lanc:S.lanc,form:S.form,roms:clone(ROMS),tabs:clone(TABS),romdel:[...ROMDEL],tabdel:[...TABDEL]};
-  const lsSet=(k,v)=>gravarPref(k,JSON.stringify(v));
+  const lsSet=(k,v)=>dadoGravar(k,JSON.stringify(v));
   const reverter=async()=>bkReverterJournal(journal);
   const avisoReversao=ok=>ok?"As alterações já gravadas foram revertidas.":"ATENÇÃO: não consegui reverter todos os dados gravados. Romaneios, tabelas ou fotos podem ter sido alterados. Não feche o aplicativo; libere espaço e confira seus backups.";
   const falhaReversao=()=>{setStatus("ATENÇÃO: restauração incompleta; não consegui reverter todos os dados.",true);let el=document.getElementById("backupReversaoFalhou");if(!el){el=document.createElement("div");el.id="backupReversaoFalhou";el.setAttribute("role","alert");el.style.cssText="position:fixed;top:0;left:0;right:0;z-index:100000;background:#fff3cd;color:#664d03;border-bottom:2px solid #c9a227;padding:12px;font:14px system-ui,sans-serif";document.body.appendChild(el)}el.textContent=avisoReversao(false)};
@@ -211,13 +211,13 @@ function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 let romConflito=false;
 function romSalvar(){if(!ROM||!ROM.rows.length)return true;if(romConflito)return false;romGravarBig();let lsOk=false;const f=S.form,semFoto=rs=>rs.map(r=>({...r,foto:null}));
   const snap={sid:ROM.sid,por:ROM.por,criado:ROM.criado,log:ROM.log,tid:ROM.tid,texto:ROM.texto,obs:ROM.obs,doc:ROM.doc||"",hash:ROM.hash||"",conf:ROM.conf,bulk:ROM.bulk||null,ins:ROM.ins||null,rows:ROM.rows,form:{H:f.v.H,tipo:f.tipo,banhista:f.banhista,on:f.on,onP:f.onP,mk:f.mk,vz:f.vz,desconto:f.desconto},em:Date.now()};
-  romInfo=`${f.v.H||""} · ${ROM.rows.length} peças`;try{gravarPref("cadpecas-rom-info",romInfo)}catch(e){}
+  romInfo=`${f.v.H||""} · ${ROM.rows.length} peças`;try{dadoGravar("cadpecas-rom-info",romInfo)}catch(e){}
   /* as fotos já ficam no IndexedDB (romGravarBig): o rascunho do armazenamento local vai sem elas, para não serializar dezenas de MB a cada edição */
-  try{gravarPref(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true;lsOk=true}catch(x){}
+  try{dadoGravar(ROMKEY,JSON.stringify({...snap,rows:semFoto(snap.rows)}));romTem=true;lsOk=true}catch(x){}
   if(db){try{const pr=db.doc("dados/romaneio").set({...snap,rows:semFoto(snap.rows),texto:String(ROM.texto||"").slice(0,200000)});if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}return lsOk}
-function romRascunho(){try{const j=lerPref(ROMKEY);return j?JSON.parse(j):null}catch(e){return null}}
-function romLimparRascunho(){romTem=false;romInfo="";try{removerPref("cadpecas-rom-info")}catch(e){}clearTimeout(romST);try{removerPref(ROMKEY)}catch(e){}if(db){try{const pr=db.doc("dados/romaneio").delete();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}
-async function romSync(){if(!db||romTem)return;try{const d=await db.doc("dados/romaneio").get();if(d.exists&&d.data()&&d.data().rows&&d.data().rows.length){gravarPref(ROMKEY,JSON.stringify(d.data()));romTem=true;romInfo=((d.data().form||{}).H||"")+" · "+d.data().rows.length+" peças";renderForm()}}catch(e){}}
+function romRascunho(){try{const j=dadoLer(ROMKEY);return j?JSON.parse(j):null}catch(e){return null}}
+function romLimparRascunho(){romTem=false;romInfo="";try{dadoRemover("cadpecas-rom-info")}catch(e){}clearTimeout(romST);try{dadoRemover(ROMKEY)}catch(e){}if(db){try{const pr=db.doc("dados/romaneio").delete();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}}
+async function romSync(){if(!db||romTem)return;try{const d=await db.doc("dados/romaneio").get();if(d.exists&&d.data()&&d.data().rows&&d.data().rows.length){dadoGravar(ROMKEY,JSON.stringify(d.data()));romTem=true;romInfo=((d.data().form||{}).H||"")+" · "+d.data().rows.length+" peças";renderForm()}}catch(e){}}
 function romRetomar(){const d=romRascunho();if(!d||!d.rows||!d.rows.length)return false;const f=S.form;
   ROM={sid:d.sid,por:d.por,criado:d.criado,log:d.log,tid:d.tid,texto:d.texto||"",obs:d.obs||"",doc:d.doc||"",hash:d.hash||"",conf:d.conf||"",bulk:d.bulk||null,ins:d.ins||null,rows:d.rows,msg:`Romaneio em andamento retomado · ${d.rows.length} peças`,pdf:null};
   if(d.form){f.v.H=d.form.H;f.tipo=d.form.tipo;f.banhista=d.form.banhista;f.on=d.form.on||f.on;if(d.form.onP)f.onP=d.form.onP;f.mk=d.form.mk||{};f.vz=d.form.vz||{};f.desconto=d.form.desconto??f.desconto;salvar(false);renderForm();renderTopo()}romMarcar();romFotosBig();return true}

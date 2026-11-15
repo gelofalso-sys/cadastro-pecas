@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const idb=fs.readFileSync('src/fatias/armazenamento/20-armazenamento-idb.js','utf8'),persist=fs.readFileSync('src/fatias/armazenamento/14-persistencia.js','utf8');
 const slice=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
-const armazLocal=fs.readFileSync('src/store/local.js','utf8')+fs.readFileSync('src/store/prefs.js','utf8');   /* src/store (lerPref/gravarPref): roda em cada contexto sobre o localStorage falso */
+const armazLocal=fs.readFileSync('src/store/local.js','utf8')+fs.readFileSync('src/store/prefs.js','utf8')+fs.readFileSync('src/store/dados.js','utf8');   /* src/store (lerPref/gravarPref): roda em cada contexto sobre o localStorage falso */
 (async()=>{
  let made=0,removed=[],writes=[],store={};
  const c=vm.createContext({Blob,Date,JSON,Promise,Map,Set,console,MAX_BACKUP_BYTES:100,BK_DIAS:7,localStorage:{setItem:(k,v)=>store[k]=v},bkMontar:async()=>({o:{x:'a'},falhas:['foto'],hoje:'2026-11-12'})});

@@ -1,7 +1,7 @@
 /* ===== diagnóstico dos dados guardados no navegador (peças, romaneios salvos, fotos) ===== */
 async function diagnosticoDados(){
   const L=[],t0=Date.now();
-  const tam=k=>{try{const v=lerPref(k);return v==null?null:v.length}catch(e){return -1}};
+  const tam=k=>{try{const v=dadoLer(k);return v==null?null:v.length}catch(e){return -1}};
   repModal(`<div class="rep-h"><div><b class="rep-t">Diagnóstico dos dados</b><div class="hint">Verificando o que está guardado neste navegador…</div></div><div class="rep-ac"><button type="button" class="btn pri sm" data-act="rel-fechar">Fechar</button></div></div><div class="rep-b"><pre id="diagTxt" style="white-space:pre-wrap;font:12px/1.5 ui-monospace,Consolas,monospace">Lendo…</pre></div>`);
   const out=()=>{const el=document.getElementById("diagTxt");if(el)el.textContent=L.join("\n")};
   const ln=s=>{L.push(s);out()};

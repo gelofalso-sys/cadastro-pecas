@@ -132,7 +132,7 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | armazenamento -> legado | 16: `G`, `S`, `catBy`, `cfg`, `editId`, `fixarRefs`, `migrarGrades0`, `migrarJueri`, ... |
 | armazenamento -> planilha | 2: `estadoPlanilha`, `renderTopo` |
 | armazenamento -> romaneio | 4: `ROM`, `impData`, `relTem`, `renderRom` |
-| armazenamento -> store | 15: `AREA_LOCAL_NOME`, `armEmitir`, `bkLerBanco`, `exPreparar`, `exRestaurar`, `gravarPref`, `gravarSessao`, `idbDel`, ... |
+| armazenamento -> store | 15: `AREA_LOCAL_NOME`, `armEmitir`, `bkLerBanco`, `dadoGravar`, `dadoLer`, `dadoRemover`, `exPreparar`, `exRestaurar`, ... |
 | armazenamento -> tabelas | 8: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`, `varrerFotos` |
 | configuracao -> armazenamento | 23: `HIST`, `REDO`, `ROMS`, `TABS`, `bkUsoIniciar`, `bkUsoParar`, `conflito`, `corrompido`, ... |
 | configuracao -> core | 39: `BANHO_COLS`, `DEFAULT_CONFIG`, `EXPL`, `FISC_COLS`, `FISC_PAD`, `FORMULA`, `JUERI_CATS`, `LET`, ... |
@@ -179,13 +179,13 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 | romaneio -> lancamento | 6: `adicionar`, `avisoEdicao`, `campoMsg`, `conjSync`, `limpaUlt`, `renderForm` |
 | romaneio -> legado | 61: `G`, `S`, `abertos`, `aplicarMemForn`, `banhistaBy`, `banhistaDoFornecedor`, `catBy`, `catDaDescricao`, ... |
 | romaneio -> planilha | 2: `mostrarNoFim`, `renderTopo` |
-| romaneio -> store | 5: `gravarPref`, `idbGet`, `idbOp`, `idbPut`, `lerPref` |
+| romaneio -> store | 5: `dadoGravar`, `dadoLer`, `idbGet`, `idbOp`, `idbPut` |
 | tabelas -> armazenamento | 16: `ARQ`, `AUTOR`, `HIST`, `REDO`, `TABS`, `definirArq`, `definirAutor`, `definirTabs`, ... |
 | tabelas -> core | 19: `LET`, `PONTO_IDS`, `TABDEL`, `brl`, `candFoto`, `celulas`, `clone`, `codsDe`, ... |
 | tabelas -> lancamento | 1: `avisoEdicao` |
 | tabelas -> legado | 15: `HIST_SUG`, `S`, `bancoAtualizar`, `cfg`, `editId`, `fnum`, `gerar`, `lastExport`, ... |
 | tabelas -> planilha | 1: `renderListas` |
-| tabelas -> store | 8: `exPreparar`, `gravarPref`, `idbDel`, `idbGet`, `idbOp`, `idbPut`, `lerPref`, `prefGravar` |
+| tabelas -> store | 8: `dadoGravar`, `dadoLer`, `exPreparar`, `idbDel`, `idbGet`, `idbOp`, `idbPut`, `prefGravar` |
 
 ## Globais mutaveis por dono
 

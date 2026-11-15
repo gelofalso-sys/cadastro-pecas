@@ -36,7 +36,7 @@ registrarAcoes(ACOES,"romaneio",{
       if(t.disabled)return;t.disabled=true;const atual=ROM;romSalvar();const d=romRascunho(),sid0=ROM&&ROM.sid,jaFeito=ROM&&ROM.rows.some(r=>r.feito),antes=ROM?JSON.stringify({...ROM,pdf:null}):null;
       (async()=>{try{if(sid0&&!jaFeito&&!(await romExcluirSalvo(sid0))){toast("Não consegui descartar o romaneio salvo. Ele continua aberto; confira o armazenamento.");return}
         if(ROM!==atual)return;if(ROM&&JSON.stringify({...ROM,pdf:null})!==antes){romSalvar();toast("O romaneio mudou durante a exclusão e foi mantido aberto.");return}
-        romLimparRascunho();ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{gravarPref(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null)
+        romLimparRascunho();ROM=null;renderRom();renderForm();toast("Romaneio descartado.",d?{t:"Desfazer",fn:()=>{try{dadoGravar(ROMKEY,JSON.stringify(d));romTem=true}catch(x){}renderForm()}}:null)
       }catch(err){console.error("cadastro-pecas: não foi possível descartar o romaneio",err);toast("Não consegui descartar o romaneio. Ele continua aberto.")}finally{t.disabled=false}})();return}},
   "rom-lote":()=>{romLote();return;},
   "rom-excluir-selecionadas":()=>{romExcluirSelecionadas();return;},

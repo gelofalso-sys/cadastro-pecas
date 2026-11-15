@@ -11,6 +11,7 @@ core/exportacao.js
 store/local.js
 store/idb.js
 store/prefs.js
+store/dados.js
 store/eventos.js
 store/store-local.js
 js/00-adaptadores-nucleo.js

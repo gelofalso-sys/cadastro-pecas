@@ -1,1 +1,1 @@
-try{romTem=!!lerPref(ROMKEY);romInfo=lerPref("cadpecas-rom-info")||"";relTem=!!lerPref("cadpecas-rel");ROMS=JSON.parse(lerPref("cadpecas-roms")||"[]");TABS=JSON.parse(lerPref("cadpecas-tabs")||"[]");AUTOR=prefLer("autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
+try{romTem=!!dadoLer(ROMKEY);romInfo=dadoLer("cadpecas-rom-info")||"";relTem=!!dadoLer("cadpecas-rel");ROMS=JSON.parse(dadoLer("cadpecas-roms")||"[]");TABS=JSON.parse(dadoLer("cadpecas-tabs")||"[]");AUTOR=prefLer("autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}

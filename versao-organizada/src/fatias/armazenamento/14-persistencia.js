@@ -36,7 +36,7 @@ window.addEventListener("beforeunload",flushJa);
 /* só avisa quando há uma célula aberta com texto digitado que ainda não foi confirmado (Enter/Tab) */
 window.addEventListener("beforeunload",e=>{try{const i=document.getElementById("celIn");if((celEd&&i&&i.value!==celEd.orig)||dirty.c||dirty.l||conflito||corrompido){e.preventDefault();e.returnValue="";return ""}   /* dirty só fica ligado quando a gravação falhou (memória cheia, outra aba, dados danificados) */}catch(x){}});
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushJa()});
-/* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do armazenamento local (lerPref/gravarPref) vão sem elas, para não estourar a memória do navegador */
+/* miniaturas (ft) ficam no IndexedDB ("m:"+id); no JSON do armazenamento local (dadoLer/dadoGravar) vão sem elas, para não estourar a memória do navegador */
 function jsonLocal(tudo){const lanc=tudo?S.lanc:S.lanc.map(l=>{let o=l;if(o.ft&&ftSalvas.has(l.id))o={...o,ft:undefined,ftIdb:1};if(o.ftR&&ftRSalvas.has(l.id))o={...o,ftR:undefined,ftRIdb:1};return o});const rasc=editId&&rascunho?(JSON.stringify(rascunho).length>2e5?{...rascunho,ft:undefined}:rascunho):null;   /* o que estava no formulário antes de começar a editar uma peça */
   return JSON.stringify({config:S.config,lanc,form:S.form,edit:editId||null,rasc})}
 async function guardarMinis(){let ok=true;for(const l of S.lanc){if(l.ft&&!ftSalvas.has(l.id)){const v0=l.ft,r=await idbPut("fotos","m:"+l.id,v0);if(r!==null&&l.ft===v0)ftSalvas.add(l.id);else ok=false}
@@ -52,9 +52,9 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
   if(!remoto)return false;
   if(conflito){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;armEmitir("conflito",{texto:"Outra aba alterou os dados — esta aba NÃO está salvando. Recarregue.",erro:true});return false}
   let local=true;
-  try{gravarPref("cadpecas4",jsonLocal(false))}catch(e){
+  try{dadoGravar("cadpecas4",jsonLocal(false))}catch(e){
     local=false;
-    try{if(await guardarMinis()&&!conflito){gravarPref("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
+    try{if(await guardarMinis()&&!conflito){dadoGravar("cadpecas4",jsonLocal(false));local=true}}catch(e2){local=false;console.error("cadastro-pecas: falha ao gravar neste navegador",e2)}}
   if(!local){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
     let avisar=false;if(!db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();avisar=true}
@@ -62,7 +62,7 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
     return false}
   armEmitir("salvo",{texto:db?"Salvo na sua conta":"Salvo neste navegador",erro:false});
   if(candFoto.size)varrerFotos();
-  if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{gravarPref("cadpecas4",jsonLocal(false))}catch(e){}}})}
+  if(S.lanc.some(l=>(l.ft&&!ftSalvas.has(l.id))||(l.ftR&&!ftRSalvas.has(l.id)))){guardarMinis().then(ok=>{if(!conflito&&S.lanc.some(l=>(ftSalvas.has(l.id)&&l.ft)||(ftRSalvas.has(l.id)&&l.ftR))){try{dadoGravar("cadpecas4",jsonLocal(false))}catch(e){}}})}
   return true
 }
 async function pontoSalvar(motivo,snap){try{const t=Date.now(),v={t,motivo:motivo||"automático",n:snap?snap.n:S.lanc.length,json:snap?snap.json:jsonLocal(false)};const r=await idbPut("pontos","p:"+t,v);if(r===null)return false;const ks=((await idbOp("pontos","readonly",st=>st.getAllKeys()))||[]).filter(k=>String(k).startsWith("p:")).sort();for(const k of ks.slice(0,Math.max(0,ks.length-PONTOS_MAX)))await idbDel("pontos",k);await pontosIds();return true}catch(e){return false}}
@@ -130,7 +130,7 @@ function migrarGrades(){const a0=migrarAnel(),a=migrarGrades0()||a0,C=cfg();let 
 function resolverCorrompido(){corrompido=false;estadoArmazenamento.rawCorrompido="";const b=document.getElementById("dadosRuins");if(b)b.remove()}
 function dadosCorrompidos(raw){
   corrompido=true;estadoArmazenamento.rawCorrompido=raw;let guardou=false,baixou=false;
-  try{gravarPref("cadpecas4-corrompido",raw);guardou=true}catch(e){}
+  try{dadoGravar("cadpecas4-corrompido",raw);guardou=true}catch(e){}
   const b=document.createElement("div");b.id="dadosRuins";b.setAttribute("role","alert");
   b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:100000;background:#fdecea;color:#7a1c12;border-bottom:3px solid #c0392b;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:14px system-ui,sans-serif";
   b.innerHTML=`<b>Não consegui ler os dados salvos neste navegador.</b><span>Eles NÃO foram apagados e nada será salvo por cima até você escolher o que fazer. ${guardou?"Uma cópia deles foi guardada à parte no navegador.":"Não coube guardar uma cópia no navegador: baixe uma agora."}</span><button type="button" class="btn sm" id="drBaixar">Baixar cópia dos dados</button><button type="button" class="btn pri sm" id="drRest">Restaurar de um backup…</button><button type="button" class="btn sm danger" id="drVazio" title="Começa do zero. Os dados danificados deixam de ser usados.">Começar vazio</button><input type="file" id="drArq" accept=".json,application/json" class="vh">`;
@@ -143,7 +143,7 @@ function dadosCorrompidos(raw){
 }
 async function carregar(){
   let raw=null;
-  try{raw=lerPref("cadpecas4")||lerPref("cadpecas3");if(raw){const o=JSON.parse(raw);if(!ehObj(o)||(o.lanc!=null&&!Array.isArray(o.lanc)))throw new Error("formato");
+  try{raw=dadoLer("cadpecas4")||dadoLer("cadpecas3");if(raw){const o=JSON.parse(raw);if(!ehObj(o)||(o.lanc!=null&&!Array.isArray(o.lanc)))throw new Error("formato");
     const cf=lerConfig(o.config),la=(o.lanc||[]).map(lerLanc).map((l,i,a)=>(l&&a.findIndex(x=>x&&x.id===l.id)<i)?{...l,id:uid()}:l),   /* id repetido no armazenamento: a repetida ganha id novo */
       fo=lerForm(o.form),rc=o.rasc&&ehObj(o.rasc)&&o.rasc.v?lerForm(o.rasc):null;
     S.config=cf;S.lanc=la;S.form=fo;
