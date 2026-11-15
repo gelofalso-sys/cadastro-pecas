@@ -1,17 +1,16 @@
 /* ===== seleção de células, linhas e colunas (como no Excel) ===== */
-let selR=null,arrastando=false;
-const vis=r=>!FV||!G||r>=G.linhas.length||FV.has(r);
+const vis=r=>!estadoPlanilha.fv||!G||r>=G.linhas.length||estadoPlanilha.fv.has(r);
 function passo(r,d,max){let n=r+d;while(n>=0&&n<=max&&!vis(n))n+=d;return n<0||n>max?r:n}
-function maxRi(){if(JAN)return JAN.lista[JAN.lista.length-1];let m=-1;document.querySelectorAll('#sheet tbody tr[data-ri]').forEach(t=>m=Math.max(m,+t.dataset.ri));return m}
-function selBox(){if(!selR)return null;return {r1:Math.min(selR.ar,selR.fr),r2:Math.max(selR.ar,selR.fr),c1:Math.min(selR.ac,selR.fc),c2:Math.max(selR.ac,selR.fc)}}
-function selecionar(ar,ac,fr,fc){selR={ar,ac,fr:fr??ar,fc:fc??ac};pintarSel();renderSelBar()}
+function maxRi(){if(estadoPlanilha.jan)return estadoPlanilha.jan.lista[estadoPlanilha.jan.lista.length-1];let m=-1;document.querySelectorAll('#sheet tbody tr[data-ri]').forEach(t=>m=Math.max(m,+t.dataset.ri));return m}
+function selBox(){if(!estadoPlanilha.selR)return null;return {r1:Math.min(estadoPlanilha.selR.ar,estadoPlanilha.selR.fr),r2:Math.max(estadoPlanilha.selR.ar,estadoPlanilha.selR.fr),c1:Math.min(estadoPlanilha.selR.ac,estadoPlanilha.selR.fc),c2:Math.max(estadoPlanilha.selR.ac,estadoPlanilha.selR.fc)}}
+function selecionar(ar,ac,fr,fc){estadoPlanilha.selR={ar,ac,fr:fr??ar,fc:fc??ac};pintarSel();renderSelBar()}
 function pintarSel(){
   document.querySelectorAll('#sheet .sl,#sheet .sa').forEach(x=>x.classList.remove('sl','sa'));const b=selBox();if(!b)return;
   for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const tr=document.querySelector(`#sheet tr[data-ri="${r}"]`);if(!tr)continue;for(let c=b.c1;c<=b.c2;c++){const td=tr.querySelector(`td[data-c="${LET[c]}"]`);if(td)td.classList.add('sl')}}
-  const a=document.querySelector(`#sheet tr[data-ri="${selR.fr}"] td[data-c="${LET[selR.fc]}"]`);if(a)a.classList.add('sa');
+  const a=document.querySelector(`#sheet tr[data-ri="${estadoPlanilha.selR.fr}"] td[data-c="${LET[estadoPlanilha.selR.fc]}"]`);if(a)a.classList.add('sa');
   for(let c=b.c1;c<=b.c2;c++){const th=document.querySelector(`#sheet th[data-hc="${LET[c]}"]`);if(th)th.classList.add('sl')}
 }
-function rolarAte(){if(JAN&&selR)janGarantir(selR.fr);const a=document.querySelector('#sheet td.sa');if(a)a.scrollIntoView({block:'nearest',inline:'nearest'})}
+function rolarAte(){if(estadoPlanilha.jan&&estadoPlanilha.selR)janGarantir(estadoPlanilha.selR.fr);const a=document.querySelector('#sheet td.sa');if(a)a.scrollIntoView({block:'nearest',inline:'nearest'})}
 function textoCel(ri,ci){const row=G.linhas[ri];if(!row)return "";const x=celulas(row,ri+2)[ci];if(!x)return "";if(typeof x.v==="number")return (DUAS.has(LET[ci])?r2c(x.v).toFixed(2):String(r4(x.v))).replace(".",",");if(x.v==null)return x.txt||("="+x.f);return String(x.v)}
 function idsDaSel(){const b=selBox();if(!b)return [];const s=new Set();for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const row=G.linhas[r];if(row)s.add(row.lancId)}return [...s]}
 function copiarSel(){const b=selBox();if(!b)return;const lin=[];for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const l=[];for(let c=b.c1;c<=b.c2;c++)l.push(textoCel(r,c));lin.push(l.join("\t"))}
@@ -33,7 +32,7 @@ function renderSelBar(){
   /* a Soma só vale para uma coluna monetária, de peso ou de quantidade — nunca mistura nem soma códigos (NCM, CFOP…) */
   const kd=L=>MONEY.has(L)?"m":L==="W"?"q":L==="N"?"p":"",ks=new Set();for(let c=b.c1;c<=b.c2;c++)ks.add(kd(LET[c]));const somavel=ks.size===1&&!ks.has("");
   for(let r=b.r1;r<=b.r2;r++){if(!vis(r))continue;const row=G.linhas[r];if(!row)continue;const cs=celulas(row,r+2);for(let c=b.c1;c<=b.c2;c++){const x=cs[c];if(x&&typeof x.v==="number"){if(somavel)soma+=x.v;nn++}}}
-  const row=G.linhas[selR.fr],ids=idsDaSel(),det=n===1?detalheCelulaSelecionada(row,LET[b.c1],b.r1):"";
+  const row=G.linhas[estadoPlanilha.selR.fr],ids=idsDaSel(),det=n===1?detalheCelulaSelecionada(row,LET[b.c1],b.r1):"";
   el.innerHTML=`<span class="si"><b class="mono">${LET[b.c1]}${b.r1+2}${n>1?":"+LET[b.c2]+(b.r2+2):""}</b> ${n} célula${n>1?"s":""}${nn>1?` · Soma <b class="mono"${somavel?"":' title="Soma só para colunas de valor, peso ou quantidade (uma por vez)"'}>${somavel?fmt(soma):"—"}</b>`:""}</span>
     ${det?`<span class="sel-calculo">${esc(det)}</span>`:""}
     ${row?`<button class="btn sm" type="button" data-act="s-edit" title="Abre a peça no lançamento para alterar">✎ Editar ${esc(row.v.E)}</button><button class="btn sm" type="button" data-act="s-nova" title="Copia os dados para o lançamento; ao Adicionar sai com nova referência">＋ Nova referência a partir desta</button><button class="btn sm" type="button" data-act="s-dup">⧉ Duplicar linha</button>`:""}

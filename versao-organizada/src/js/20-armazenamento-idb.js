@@ -221,7 +221,7 @@ async function aplicarBackupTotalComLock(n,quieto){
   }catch(e){const voltou=await reverter();toast("Backup NÃO restaurado — "+(e&&e.message?e.message:"erro ao gravar")+". "+avisoReversao(voltou));if(!voltou)falhaReversao();return}
   /* aplicar em bloco */
   try{
-    S.config=n.config;S.lanc=n.lanc;if(n.form)S.form=n.form;editId=null;rascunho=null;sel.clear();selR=null;
+    S.config=n.config;S.lanc=n.lanc;if(n.form)S.form=n.form;editId=null;rascunho=null;sel.clear();estadoPlanilha.selR=null;
     migrarJueri();migrarGrades();sincGrade(S.form);
   }catch(e){S.config=ant.config;S.lanc=ant.lanc;S.form=ant.form;const voltou=await reverter();toast("Backup NÃO restaurado — erro ao aplicar os cadastros. "+avisoReversao(voltou));if(!voltou)falhaReversao();return}
   /* só diz "restaurado" depois de confirmar a gravação dos dados principais (peças e cadastros); se falhar, desfaz tudo */

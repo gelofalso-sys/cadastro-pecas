@@ -50,6 +50,6 @@ function fotoRemover(lid){
   document.addEventListener("paste",e=>{const fl=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(x=>/^image\//.test(x.type));if(!fl.length)return;
     if(e.target&&e.target.id==="celIn")return;e.preventDefault();
     const rcp=e.target&&e.target.closest&&e.target.closest("#romWrap .rc[data-i]:not(.lote)");if(rcp&&ROM){romFotosEscolhidas(+rcp.dataset.i,fl.slice(0,1));return}
-    const row=selR&&G&&G.linhas[selR.fr],lid=editId||(row&&row.lancId);
+    const row=estadoPlanilha.selR&&G&&G.linhas[estadoPlanilha.selR.fr],lid=editId||(row&&row.lancId);
     if(lid){(async()=>{try{await fotoNaPeca(lid,await lerFotoArquivo(fl[0]));salvar(false);renderTopo();if(editId)renderForm();toast("Foto colada na peça.");autoEnviar([lid])}catch(x){toast(x.message)}})()}
     else fotoDoFormulario(fl[0])},true)})();

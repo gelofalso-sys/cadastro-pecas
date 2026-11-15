@@ -1,0 +1,62 @@
+{
+  "nome": "planilha",
+  "descricao": "Tela principal: tabela (planilha) das pecas lancadas com filtros, vistas (planilha/lista/cartoes), janela de linhas, selecao de celulas e linhas, edicao e colagem na grade, acoes em lote, totais e grafico de rosca, gaveta do formulario no celular e pilula de recolher.",
+  "arquivos": [
+    "15-planilha.js",
+    "15c-listas-e-janela.js",
+    "15e-renderizar-planilha.js",
+    "15f-edicao-celula.js",
+    "15g-planilha-colar.js",
+    "16-selecao.js",
+    "19a2-grafico-rosca.js",
+    "24-ui-numeracao-e-colunas.js",
+    "30b-planilha-mouse.js",
+    "31b-planilha-regua-e-destaque.js",
+    "32b-planilha-digitacao-celula.js",
+    "33b-planilha-rolagem-janela.js",
+    "34-filtros-e-pilula.js",
+    "acoes.js"
+  ],
+  "expoe": [
+    "casa",
+    "celular",
+    "estadoPlanilha",
+    "filtroOn",
+    "formAbrir",
+    "guardarFil",
+    "janGarantir",
+    "pilulaAtualiza",
+    "renderListas",
+    "renderTopo",
+    "rolarAte",
+    "selecionar",
+    "vis"
+  ],
+  "usa": [
+    "core"
+  ],
+  "testes": [
+    "^pdf_real2\\.py$",
+    "^perf_5000\\.py$",
+    "^t10\\.py$",
+    "^t108_colagem_salto\\.js$",
+    "^t110_romaneio_preservacao\\.js$",
+    "^t32\\.py$",
+    "^t33\\.py$",
+    "^t34\\.py$",
+    "^t35\\.py$",
+    "^t37\\.py$",
+    "^t39\\.py$",
+    "^t40\\.py$",
+    "^t41\\.py$",
+    "^t44\\.py$",
+    "^t46\\.py$",
+    "^t53\\.py$",
+    "^t63_migracao_legada\\.py$",
+    "^t66_clique_celula\\.py$",
+    "^t74_romaneio_extras\\.py$",
+    "^t85_lote_numerado\\.py$",
+    "^t93_revisao_agil\\.js$"
+  ],
+  "fronteira": "falha"
+}

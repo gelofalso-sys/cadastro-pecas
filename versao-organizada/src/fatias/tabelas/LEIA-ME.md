@@ -33,3 +33,4 @@ O historico de tabelas montadas ("Tabelas salvas") e tudo o que fica em volta de
 - AUD-A-004: `gravarIdx` devolve falso se o localStorage falha e quem salva romaneio ignora o retorno; `tabsMigrar` reconstroi o indice de tabelas, nao o de romaneios.
 - AUD-A-008: exclusao pode seguir sem o ponto de restauracao prometido (14/27, ao apagar peca).
 - Linhas acima de 160 caracteres em quase todo o codigo da fatia (minificado a mao): reformatar antes de mexer a fundo.
+- Usa `planilha`: `renderListas` (19d).

@@ -24,7 +24,7 @@ function excluirLinhas(ris){
     if(por[id].length>=total){del.push({idx:S.lanc.indexOf(l),item:l});return}
     l.excl=[...new Set([...(l.excl||[]),...por[id]])];if(editId===id)S.form.excl=l.excl});
   del.forEach(d=>{S.lanc=S.lanc.filter(x=>x!==d.item);sel.delete(d.item.id);if(d.item.id===editId){editId=null;if(rascunho)S.form=rascunho;rascunho=null;renderForm()}});
-  del.forEach(d=>candFoto.add(d.item.id));undo={tipo:"linhas",antes,del};selR=null;salvar(false);renderTopo();toast(`${n} linha(s) excluída(s).`,{t:"Desfazer",fn:desfazer});
+  del.forEach(d=>candFoto.add(d.item.id));undo={tipo:"linhas",antes,del};estadoPlanilha.selR=null;salvar(false);renderTopo();toast(`${n} linha(s) excluída(s).`,{t:"Desfazer",fn:desfazer});
 }
 function excluir(ids){
   if(ids.length>=3){if(!confirm(`Excluir ${ids.length} peças de uma vez? (Ctrl+Z desfaz; um ponto de restauração é guardado antes)`))return;pontoAviso(pontoAuto("antes de excluir "+ids.length+" peças",true))}

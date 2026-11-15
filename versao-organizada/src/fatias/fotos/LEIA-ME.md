@@ -29,3 +29,4 @@ Usa `romaneio` (`renderRom`, depois de anexar/remover a foto de um item). As fot
 - Handler de `change` do envio automatico (`data-fauto`) segue dentro de 31 (pedaco de handler maior); os de `paste`/`drop` de importacao de PDF/planilha em 32 sao de outras fatias.
 - AUD-I-001 (foto `img[data-act=tab-foto]` sem foco por teclado) e AUD-A-008 (exclusao com falha de IDB) conhecidos, sem correcao aqui.
 - Linhas >160 caracteres (codigo compactado): 41 nos arquivos da fatia; nao reformatadas.
+- Usa `planilha`: `casa`/`filtroOn`, `renderTopo`, `estadoPlanilha.selR` (27).

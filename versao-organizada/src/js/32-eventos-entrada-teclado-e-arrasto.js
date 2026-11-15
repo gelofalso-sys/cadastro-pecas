@@ -51,22 +51,22 @@ document.addEventListener("keydown",e=>{
   if(t.dataset&&t.dataset.rp==="faixa"&&e.key==="Enter"){e.preventDefault();t.dispatchEvent(new Event("change",{bubbles:true}));return}
   if(t.dataset&&t.dataset.rp&&e.key==="Enter"&&t.tagName==="INPUT"&&t.closest(".rc")){e.preventDefault();let nx=t.closest(".rc").nextElementSibling;while(nx&&nx.classList.contains("sk"))nx=nx.nextElementSibling;
     const n2=nx&&nx.querySelector(`[data-rp="${t.dataset.rp}"]${t.dataset.b?`[data-b="${t.dataset.b}"]`:""}`);if(n2){n2.focus();try{n2.select()}catch(x){}}return}
-  if(t.id==="sheet"&&selR&&!celEd){
+  if(t.id==="sheet"&&estadoPlanilha.selR&&!celEd){
     const k=e.key,mod=e.ctrlKey||e.metaKey,mr=Math.max(maxRi(),0);
-    const mover=(dr,dc)=>{const r=dr?passo(selR.fr,dr,mr):selR.fr,c=Math.min(Math.max(selR.fc+dc,0),LET.length-1);if(e.shiftKey&&k!=="Tab")selecionar(selR.ar,selR.ac,r,c);else selecionar(r,c);rolarAte()};
+    const mover=(dr,dc)=>{const r=dr?passo(estadoPlanilha.selR.fr,dr,mr):estadoPlanilha.selR.fr,c=Math.min(Math.max(estadoPlanilha.selR.fc+dc,0),LET.length-1);if(e.shiftKey&&k!=="Tab")selecionar(estadoPlanilha.selR.ar,estadoPlanilha.selR.ac,r,c);else selecionar(r,c);rolarAte()};
     if(k==="ArrowDown"){e.preventDefault();mover(1,0);return}
     if(k==="ArrowUp"){e.preventDefault();mover(-1,0);return}
-    if(k==="Tab"&&!e.shiftKey&&selR.fc>=LET.length-1&&selR.fr>=mr)return;   /* última célula: Tab deixa o foco sair da planilha */
-    if(k==="Tab"&&e.shiftKey&&selR.fc<=0&&selR.fr<=0)return;   /* primeira célula: Shift+Tab também */
+    if(k==="Tab"&&!e.shiftKey&&estadoPlanilha.selR.fc>=LET.length-1&&estadoPlanilha.selR.fr>=mr)return;   /* última célula: Tab deixa o foco sair da planilha */
+    if(k==="Tab"&&e.shiftKey&&estadoPlanilha.selR.fc<=0&&estadoPlanilha.selR.fr<=0)return;   /* primeira célula: Shift+Tab também */
     if(k==="ArrowRight"||(k==="Tab"&&!e.shiftKey)){e.preventDefault();mover(0,1);return}
     if(k==="ArrowLeft"||(k==="Tab"&&e.shiftKey)){e.preventDefault();mover(0,-1);return}
-    if(k==="Enter"||k==="F2"){e.preventDefault();abrirCel(selR.fr,LET[selR.fc]);return}
+    if(k==="Enter"||k==="F2"){e.preventDefault();abrirCel(estadoPlanilha.selR.fr,LET[estadoPlanilha.selR.fc]);return}
     if(k==="Delete"||k==="Backspace"){e.preventDefault();limparSel();return}
     if(mod&&k.toLowerCase()==="c"){e.preventDefault();copiarSel();return}
     if(mod&&k.toLowerCase()==="d"){e.preventDefault();preencherAbaixo();return}
     if(mod&&k.toLowerCase()==="a"){e.preventDefault();selecionar(0,0,Math.max(Math.min(mr,(G?G.linhas.length:1)-1),0),LET.length-1);return}
-    if(k==="Escape"){selR=null;pintarSel();renderSelBar();return}
-    if(!mod&&!e.altKey&&k.length===1){e.preventDefault();abrirCel(selR.fr,LET[selR.fc]);const i=document.getElementById("celIn");if(i)i.value=k;return}
+    if(k==="Escape"){estadoPlanilha.selR=null;pintarSel();renderSelBar();return}
+    if(!mod&&!e.altKey&&k.length===1){e.preventDefault();abrirCel(estadoPlanilha.selR.fr,LET[estadoPlanilha.selR.fc]);const i=document.getElementById("celIn");if(i)i.value=k;return}
   }
   if((e.ctrlKey||e.metaKey)&&!e.altKey&&!/INPUT|TEXTAREA|SELECT/.test(t.tagName)&&!t.isContentEditable){
     const kz=e.key.toLowerCase();
@@ -104,4 +104,3 @@ document.addEventListener("keydown",e=>{if(ROM&&ROM.rows.length&&(e.ctrlKey||e.m
   document.addEventListener("scroll",e=>{const el=e.target;if(el&&el.matches&&el.matches("nav.ir,.ctabs"))at(el)},true);
   let raf=0;new MutationObserver(()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;document.querySelectorAll("nav.ir,.ctabs").forEach(at)})}).observe(document.body,{childList:true,subtree:true});
   window.addEventListener("resize",()=>document.querySelectorAll("nav.ir,.ctabs").forEach(at));document.querySelectorAll("nav.ir,.ctabs").forEach(at)}
-document.addEventListener("input",e=>{if(e.target&&e.target.id==="celIn"&&celEd)celEd.setas=false});   /* digitou: as setas esquerda/direita voltam a mexer no cursor do texto */

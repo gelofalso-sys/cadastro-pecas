@@ -19,7 +19,8 @@
     "estadoExportacao"
   ],
   "usa": [
-    "core"
+    "core",
+    "planilha"
   ],
   "testes": [
     "^t100_xml_precisao\\.py$",

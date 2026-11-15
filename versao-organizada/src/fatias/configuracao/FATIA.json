@@ -4,19 +4,18 @@
   "arquivos": [
     "19-catalogo-rapido.js",
     "19a-secao-categorias.js",
-    "19a2-grafico-rosca.js",
     "19a3-secao-exportar-para.js",
     "21a5-modelo-por-exemplo.js",
     "21b4-fiscal-categorias.js",
     "25a-secao-romaneios.js",
     "25b-cadastros-render.js",
+    "34c-cartoes-categoria.js",
     "36-cadastros-salvar.js",
     "37-moeda.js",
     "acoes.js"
   ],
   "expoe": [
     "renderCfg",
-    "renderGraf",
     "estadoConfig",
     "catUI",
     "atualizaPrevia",
@@ -36,7 +35,8 @@
   "usa": [
     "core",
     "fotos",
-    "romaneio"
+    "romaneio",
+    "planilha"
   ],
   "testes": [
     "^categoria_exclusao_regressao.js$",

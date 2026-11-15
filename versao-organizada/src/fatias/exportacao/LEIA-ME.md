@@ -35,3 +35,4 @@ o seletor de modelo (31) abre o assistente e edita `estadoExportacao.novo`. `ger
 - AUD-D-001: corrida de clipboard em `copiar` (duas copias seguidas / `writeText` assincrono vs. toast e estado). **Nao corrigido.**
 - Cliques e eventos fora de `acoes.js`: o tratamento de `change`/`input` do assistente (31, 32) segue nos arquivos legados.
 - Linhas acima de 160 caracteres em 28/29/19b e `acoes.js` (codigo minificado a mao): reformatar antes de mexer a fundo.
+- Usa `planilha`: `casa`/`filtroOn` (exportar so o filtro), `renderTopo`, `celular`, `selecionar`/`rolarAte`, `estadoPlanilha.fv` (acoes).

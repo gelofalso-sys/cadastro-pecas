@@ -38,7 +38,8 @@
   ],
   "usa": [
     "core",
-    "exportacao"
+    "exportacao",
+    "planilha"
   ],
   "testes": [
     "^auditoria_regressoes.js$",

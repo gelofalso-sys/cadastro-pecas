@@ -1,0 +1,1 @@
+{const shj=document.getElementById("sheet");if(shj)shj.addEventListener("scroll",()=>{if(!estadoPlanilha.jan)return;cancelAnimationFrame(estadoPlanilha.janRaf);estadoPlanilha.janRaf=requestAnimationFrame(()=>janRepintar(false))},{passive:true})}
