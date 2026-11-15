@@ -13,7 +13,7 @@ js/10-limites-e-colunas.js
 js/11-utilidades.js
 fatias/planilha/12-celula-recusada.js
 js/13-modelo-e-variacoes.js
-js/14-persistencia.js
+fatias/armazenamento/14-persistencia.js
 fatias/planilha/15-planilha.js
 js/15b-render-geral.js
 fatias/planilha/15c-listas-e-janela.js
@@ -37,7 +37,7 @@ fatias/romaneio/19c-colar-romaneio.js
 fatias/tabelas/19d-tabelas-indice-e-fotos.js
 js/19d1-modal-rep.js
 fatias/tabelas/19d2-tabelas-salvar-e-ver.js
-js/20-armazenamento-idb.js
+fatias/armazenamento/20-armazenamento-idb.js
 fatias/romaneio/21-edicao-em-lote.js
 fatias/romaneio/21a-revisao-final.js
 fatias/romaneio/21a2-cartoes-romaneio.js
@@ -51,7 +51,8 @@ fatias/romaneio/21b-romaneio-extras.js
 js/21b3-ir-galvanica.js
 fatias/configuracao/21b4-fiscal-categorias.js
 fatias/romaneio/21b5-passos-romaneio.js
-js/21c-diagnostico-dados.js
+fatias/armazenamento/21c-diagnostico-dados.js
+fatias/lancamento/21c2-descricao-cursor.js
 js/21d-novidades.js
 fatias/romaneio/22-importar-pdf-romaneio.js
 fatias/fotos/22b-zoom-foto.js

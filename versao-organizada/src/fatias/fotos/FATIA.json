@@ -20,7 +20,8 @@
     "core",
     "romaneio",
     "planilha",
-    "lancamento"
+    "lancamento",
+    "armazenamento"
   ],
   "testes": [
     "^calculos_precisao_regressao.js$",

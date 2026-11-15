@@ -1,5 +1,5 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
-const idb=fs.readFileSync('src/js/20-armazenamento-idb.js','utf8'),persist=fs.readFileSync('src/js/14-persistencia.js','utf8');
+const idb=fs.readFileSync('src/fatias/armazenamento/20-armazenamento-idb.js','utf8'),persist=fs.readFileSync('src/fatias/armazenamento/14-persistencia.js','utf8');
 const slice=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
 (async()=>{
  let made=0,removed=[],writes=[],store={};

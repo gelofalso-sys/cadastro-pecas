@@ -20,7 +20,8 @@
   ],
   "usa": [
     "core",
-    "planilha"
+    "planilha",
+    "armazenamento"
   ],
   "testes": [
     "^t100_xml_precisao\\.py$",

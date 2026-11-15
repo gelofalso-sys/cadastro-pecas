@@ -37,7 +37,8 @@
   ],
   "usa": [
     "core",
-    "lancamento"
+    "lancamento",
+    "armazenamento"
   ],
   "testes": [
     "^pdf_real2\\.py$",

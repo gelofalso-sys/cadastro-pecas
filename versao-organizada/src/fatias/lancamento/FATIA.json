@@ -9,6 +9,7 @@
     "27b-lancamento-formulario.js",
     "27b3-editar.js",
     "27b5-cancelar.js",
+    "21c2-descricao-cursor.js",
     "29b-exemplo-visual.js",
     "30a-formulario-envio-e-foco.js",
     "30c0-ativar-conjunto.js",
@@ -40,7 +41,8 @@
     "usarModelo"
   ],
   "usa": [
-    "core"
+    "core",
+    "armazenamento"
   ],
   "testes": [
     "^perf_5000.py$",

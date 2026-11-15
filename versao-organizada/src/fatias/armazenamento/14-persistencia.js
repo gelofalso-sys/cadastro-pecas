@@ -2,8 +2,10 @@
 let db=null,dirty={c:false,l:false},sT=null,chain=Promise.resolve();
 const setStatus=(t,bad)=>{const s=document.getElementById("saveStatus");s.textContent=t;s.classList.toggle("bad",!!bad)};
 /* histórico de desfazer/refazer (até 30 passos): cada gravação compara o estado com o anterior e guarda o "antes" */
-let HIST=[],REDO=[],snapL=null,snapC=null,snapF=null,snapE=false,restaurando=false,conflito=false,corrompido=false,rawCorrompido="",ftSalvas=new Set(),avisoMem=0;
-function histIni(){snapL=JSON.stringify(S.lanc);snapC=JSON.stringify(S.config);snapF=JSON.stringify(S.form);snapE=!!editId;undoBtns()}
+let HIST=[],REDO=[],snapL=null,snapC=null,restaurando=false,conflito=false,corrompido=false,ftSalvas=new Set();
+/* estado que so a fatia usa (antes globais soltos): fotografia do formulario no historico, dados danificados, avisos de memoria e bloqueio de uso entre abas */
+const estadoArmazenamento={snapF:null,snapE:false,rawCorrompido:"",avisoMem:0,avisoIdbT:0,bkUsoLiberar:null,bkUsoPedido:null};
+function histIni(){snapL=JSON.stringify(S.lanc);snapC=JSON.stringify(S.config);estadoArmazenamento.snapF=JSON.stringify(S.form);estadoArmazenamento.snapE=!!editId;undoBtns()}
 function undoBtns(){const u=document.getElementById("btnUndo"),r=document.getElementById("btnRedo");if(u){u.disabled=!HIST.length;u.title=HIST.length?`Desfazer a última alteração (Ctrl+Z) — ${HIST.length} passo(s) guardado(s)`:"Nada para desfazer"}if(r){r.disabled=!REDO.length;r.title=REDO.length?`Refazer (Ctrl+Y) — ${REDO.length} passo(s)`:"Nada para refazer"}}
 function histTam(){return HIST.reduce((t,e)=>t+e.L.length+e.C.length+(e.R?JSON.stringify(e.R).length:0),0)}
 let histSep=false;
@@ -14,15 +16,18 @@ function histNota(){
     const soCfg=L===snapL,agora=Date.now(),topo=HIST[HIST.length-1];
     const mesmo=topo&&!topo.R&&agora-topo.t<80,digitando=!histSep&&soCfg&&topo&&topo.soCfg&&agora-topo.t<1500;
     if(mesmo||digitando){   /* mesma ação (várias gravações seguidas) ou digitação num campo de cadastro: um passo só */
-      if(mesmo){topo.soCfg=topo.soCfg&&soCfg;if(F!==snapF&&!topo.F)topo.F=snapF}
+      if(mesmo){topo.soCfg=topo.soCfg&&soCfg;if(F!==estadoArmazenamento.snapF&&!topo.F)topo.F=estadoArmazenamento.snapF}
       topo.t=agora}
     else{
-      HIST.push({L:snapL,C:snapC,F:F!==snapF?snapF:null,E:snapE,soCfg,t:agora});
+      HIST.push({L:snapL,C:snapC,F:F!==estadoArmazenamento.snapF?estadoArmazenamento.snapF:null,E:estadoArmazenamento.snapE,soCfg,t:agora});
       while(HIST.length>60||(HIST.length>1&&histTam()>40e6))HIST.shift()}
     REDO.length=0;snapL=L;snapC=C}
-  snapF=F;snapE=!!editId;undoBtns();
+  estadoArmazenamento.snapF=F;estadoArmazenamento.snapE=!!editId;undoBtns();
 }
 function salvar(c,l){try{fixarRefs()}catch(e){}if(c){dirty.c=true;try{impactoAgendar()}catch(e){}}if(l!==false)dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);setStatus("Salvando…");sT=setTimeout(()=>{sT=null;chain=chain.then(flush)},600)}
+/* para quem grava ja (cadastros, 36): cancela a gravacao agendada e encadeia um flush; devolve a promessa encadeada */
+function salvarCancelarAgendado(){clearTimeout(sT);sT=null}
+function salvarEncadear(){chain=chain.then(flush);return chain}
 /* grava já (ao fechar a aba, trocar de aba ou sair): não deixa a última edição dentro dos 600 ms se perder */
 function flushJa(){if(romST){clearTimeout(romST);romST=null;try{romSalvar()}catch(e){}}   /* romaneio: o salvamento de 800 ms também não pode ficar para trás */
   if(sT){clearTimeout(sT);sT=null}if(dirty.c||dirty.l){try{flush()}catch(e){}}}
@@ -53,7 +58,7 @@ async function flush(){   /* devolve true só quando a gravação foi confirmada
   if(!local){dirty.c=dirty.c||d.c;dirty.l=dirty.l||d.l;
     const m="NÃO salvo — memória do navegador cheia. Baixe o backup (Romaneios > Backup completo).";
     setStatus(db?"Salvo na sua conta, mas NÃO neste navegador (memória cheia)":m,true);
-    if(!db&&Date.now()-avisoMem>20000){avisoMem=Date.now();toast(m)}
+    if(!db&&Date.now()-estadoArmazenamento.avisoMem>20000){estadoArmazenamento.avisoMem=Date.now();toast(m)}
     return false}
   setStatus(db?"Salvo na sua conta":"Salvo neste navegador");
   if(candFoto.size)varrerFotos();
@@ -122,15 +127,15 @@ function migrarGrades(){const a0=migrarAnel(),a=migrarGrades0()||a0,C=cfg();let 
   return m}
 /* aceita lançamentos das versões anteriores */
 /* dados salvos que não dá para ler: NÃO apaga nem sobrescreve nada até a pessoa escolher (baixar cópia, restaurar backup ou começar vazio) */
-function resolverCorrompido(){corrompido=false;rawCorrompido="";const b=document.getElementById("dadosRuins");if(b)b.remove()}
+function resolverCorrompido(){corrompido=false;estadoArmazenamento.rawCorrompido="";const b=document.getElementById("dadosRuins");if(b)b.remove()}
 function dadosCorrompidos(raw){
-  corrompido=true;rawCorrompido=raw;let guardou=false,baixou=false;
+  corrompido=true;estadoArmazenamento.rawCorrompido=raw;let guardou=false,baixou=false;
   try{localStorage.setItem("cadpecas4-corrompido",raw);guardou=true}catch(e){}
   const b=document.createElement("div");b.id="dadosRuins";b.setAttribute("role","alert");
   b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:100000;background:#fdecea;color:#7a1c12;border-bottom:3px solid #c0392b;padding:12px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:14px system-ui,sans-serif";
   b.innerHTML=`<b>Não consegui ler os dados salvos neste navegador.</b><span>Eles NÃO foram apagados e nada será salvo por cima até você escolher o que fazer. ${guardou?"Uma cópia deles foi guardada à parte no navegador.":"Não coube guardar uma cópia no navegador: baixe uma agora."}</span><button type="button" class="btn sm" id="drBaixar">Baixar cópia dos dados</button><button type="button" class="btn pri sm" id="drRest">Restaurar de um backup…</button><button type="button" class="btn sm danger" id="drVazio" title="Começa do zero. Os dados danificados deixam de ser usados.">Começar vazio</button><input type="file" id="drArq" accept=".json,application/json" class="vh">`;
   document.body.appendChild(b);
-  document.getElementById("drBaixar").onclick=()=>{try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rawCorrompido],{type:"application/json"}));a.download="cadastro-pecas-dados-danificados.json";document.body.appendChild(a);a.click();baixou=true;setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}catch(e){toast("Não consegui baixar a cópia.")}};
+  document.getElementById("drBaixar").onclick=()=>{try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([estadoArmazenamento.rawCorrompido],{type:"application/json"}));a.download="cadastro-pecas-dados-danificados.json";document.body.appendChild(a);a.click();baixou=true;setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}catch(e){toast("Não consegui baixar a cópia.")}};
   document.getElementById("drRest").onclick=()=>document.getElementById("drArq").click();
   document.getElementById("drArq").onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(f)restaurarTotal(f)};
   document.getElementById("drVazio").onclick=()=>{if(!guardou&&!baixou&&!confirm("Os dados danificados ainda não foram copiados em lugar nenhum. Começar vazio vai perdê-los de vez. Continuar?"))return;

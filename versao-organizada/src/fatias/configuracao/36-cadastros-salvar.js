@@ -26,12 +26,12 @@ function cadRomAtualizar(){   /* romaneio aberto acompanha o cadastro (valores d
     try{renderRom()}finally{pos.forEach(([e,t])=>{e.scrollTop=t})}},350)}
 async function cadSalvar(){if(!CAD.pend||CAD.salvando)return;
   if(bnReserva){CAD.salvando=true;document.body.inert=true;CAD.pend=false;
-    try{dirty.c=true;dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);sT=null;setStatus("Salvando…");chain=chain.then(flush);if(!await chain){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
+    try{dirty.c=true;dirty.l=true;try{histNota()}catch(e){}salvarCancelarAgendado();setStatus("Salvando…");if(!await salvarEncadear()){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
       CAD.snap=null;cadBarra();render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.");await bnLiberarUso();return
     }catch(e){CAD.pend=true;cadBarra();toast("Não consegui salvar os cadastros. Tente novamente ou descarte as alterações.");return}
     finally{CAD.salvando=false;document.body.inert=false}}
   CAD.pend=false;CAD.snap=null;cadBarra();
-  dirty.c=true;dirty.l=true;try{histNota()}catch(e){}clearTimeout(sT);sT=null;setStatus("Salvando…");chain=chain.then(flush);
+  dirty.c=true;dirty.l=true;try{histNota()}catch(e){}salvarCancelarAgendado();setStatus("Salvando…");salvarEncadear();
   render();if(ROM&&ROM.rows&&ROM.rows.length)renderRom();toast("Cadastros salvos.")}
 function cadDescartar(){const s=CAD.snap;if(!CAD.pend||!s)return;
   const lancAtual=new Map(S.lanc.map(l=>[l.id,l]));

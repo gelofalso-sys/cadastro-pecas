@@ -1,5 +1,9 @@
 /* ===== armazenamento grande (IndexedDB): fotos em alta qualidade e romaneios salvos ===== */
 let ROMS=[],romArm=null,TABS=[],ARQ={},AUTOR="",tabArm=null;
+/* escrita de TABS/ARQ/AUTOR pela fatia tabelas (dona do historico de tabelas; a declaracao segue aqui) */
+function definirTabs(v){TABS=v}
+function definirArq(v){ARQ=v}
+function definirAutor(v){AUTOR=v}
 function idbOp(store,mode,fn){return new Promise(res=>{try{const rq=indexedDB.open("cadpecas-big",3);rq.onupgradeneeded=()=>{const d=rq.result;["fotos","roms","tabs","pontos"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n)})};rq.onerror=()=>res(null);
   rq.onsuccess=()=>{const d=rq.result;try{const tx=d.transaction(store,mode),st=tx.objectStore(store);let out=null;const r=fn(st);if(r)r.onsuccess=()=>{out=r.result};tx.oncomplete=()=>{d.close();res(out)};tx.onerror=tx.onabort=()=>{d.close();res(null)}}catch(e){d.close();res(null)}}}catch(e){res(null)}})}
 const idbPut=(s,k,v)=>idbOp(s,"readwrite",st=>st.put(v,k)),idbGet=(s,k)=>idbOp(s,"readonly",st=>st.get(k)),idbDel=(s,k)=>idbOp(s,"readwrite",st=>st.delete(k));
@@ -85,8 +89,7 @@ function romHistAplicar(snap){
     return true;
   });
 }
-let avisoIdbT=0;
-function avisoIdb(oque){setStatus("NÃO salvo — memória do navegador cheia ("+oque+"). Baixe o backup.",true);if(Date.now()-avisoIdbT>10000){avisoIdbT=Date.now();toast("NÃO consegui guardar "+oque+" — a memória do navegador pode estar cheia. Baixe o backup completo.")}}
+function avisoIdb(oque){setStatus("NÃO salvo — memória do navegador cheia ("+oque+"). Baixe o backup.",true);if(Date.now()-estadoArmazenamento.avisoIdbT>10000){estadoArmazenamento.avisoIdbT=Date.now();toast("NÃO consegui guardar "+oque+" — a memória do navegador pode estar cheia. Baixe o backup completo.")}}
 async function romExcluirConfirmado(id){
   return exComLock(async()=>{const prep=await exPreparar("roms",id);if(!prep){avisoIdb("a proteção e exclusão do romaneio; ele continua na lista");return false}
   const anteriorLista=ROMS,jaApagado=ROMDEL.has(id),nova=ROMS.filter(x=>x.id!==id);ROMDEL.add(id);
@@ -165,9 +168,8 @@ Cancelar = salvar completo mesmo assim (só restauraria por fora do aplicativo).
    durante a própria recuperação deixa o registro para nova tentativa na próxima abertura. */
 /* Cada aba aberta conserva um bloqueio compartilhado. Uma restauração exige o
    bloqueio exclusivo, por isso nunca começa enquanto outra aba usa os dados. */
-let bkUsoLiberar=null,bkUsoPedido=null;
-function bkUsoIniciar(){if(!navigator.locks)return Promise.resolve();return new Promise((resolve,reject)=>{bkUsoPedido=navigator.locks.request("cadpecas-uso",{mode:"shared"},()=>{resolve();return new Promise(r=>{bkUsoLiberar=r})});bkUsoPedido.catch(reject)})}
-async function bkUsoParar(){const fim=bkUsoPedido;if(bkUsoLiberar){const f=bkUsoLiberar;bkUsoLiberar=null;f()}if(fim)await fim;bkUsoPedido=null}
+function bkUsoIniciar(){if(!navigator.locks)return Promise.resolve();return new Promise((resolve,reject)=>{estadoArmazenamento.bkUsoPedido=navigator.locks.request("cadpecas-uso",{mode:"shared"},()=>{resolve();return new Promise(r=>{estadoArmazenamento.bkUsoLiberar=r})});estadoArmazenamento.bkUsoPedido.catch(reject)})}
+async function bkUsoParar(){const fim=estadoArmazenamento.bkUsoPedido;if(estadoArmazenamento.bkUsoLiberar){const f=estadoArmazenamento.bkUsoLiberar;estadoArmazenamento.bkUsoLiberar=null;f()}if(fim)await fim;estadoArmazenamento.bkUsoPedido=null}
 async function bkReverterJournal(j){
   let ok=true;
   for(const w of j.idb||[]){const r=w.existe?await idbPut(w.s,w.k,w.valor):await idbDel(w.s,w.k);if(r===null)ok=false}

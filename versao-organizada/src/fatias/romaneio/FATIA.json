@@ -42,7 +42,8 @@
     "core",
     "exportacao",
     "planilha",
-    "lancamento"
+    "lancamento",
+    "armazenamento"
   ],
   "testes": [
     "^auditoria_regressoes.js$",

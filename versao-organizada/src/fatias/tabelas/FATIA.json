@@ -22,7 +22,8 @@
     "core",
     "romaneio",
     "planilha",
-    "lancamento"
+    "lancamento",
+    "armazenamento"
   ],
   "testes": [
     "^t44\\.py$",

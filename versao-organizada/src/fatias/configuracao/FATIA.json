@@ -38,7 +38,8 @@
     "fotos",
     "romaneio",
     "planilha",
-    "lancamento"
+    "lancamento",
+    "armazenamento"
   ],
   "testes": [
     "^categoria_exclusao_regressao.js$",
