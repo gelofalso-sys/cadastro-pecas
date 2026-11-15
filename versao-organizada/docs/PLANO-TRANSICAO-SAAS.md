@@ -255,3 +255,10 @@ A etapa 6 pode começar em paralelo à 5 depois que 3 e 4 estiverem prontas.
 - `b-copy`, `b-xlsx`, `s-xlsx` ficaram no switch (usam `baixar`/`copiar` da exportação; migrar criaria ciclo).
 - Mover/dividir manteve o HTML idêntico (hash `6500f0e9…`); ações e estado mudaram a ordem/nomes, a prova passou a ser a suíte.
 - Globais mutáveis: 78 -> 68 (`colW`, `nfVazAtualizar`, `FIL`, `FV`, `JAN`, `janRaf`, `selR`, `arrastando`, `mdTd`, `mdJa` viraram `estadoPlanilha`; `w` fica global).
+
+### Fatia `lancamento` — concluída em 14/11/2026 (Tarefa 16, sétima fatia)
+- `src/fatias/lancamento/` com `FATIA.json` (`fronteira: "aponta"`, `usa: ["core"]`), `LEIA-ME.md`, `17`, `18-conjunto.js`, `26-formulario-apoio.js` (antigo `26-acoes.js`), `27b` dividido (`adicionar`; `27b3` editar; `27b5` cancelar), `29b`, `16b-usar-modelo.js` (veio da planilha), pedaços `30a`, `30c0`, `31a`, `31c0`, `31c2` e `acoes.js` (41 ações e `tipoClique` para `[data-tipo]`).
+- Cortes: `desfazer` em `src/js/27b2` e divisória/`rolarPane`/`irPara` em `src/js/18c` (legado); `duplicar`/`excluir` (27d), `onField` (31c) e os keydown de 32 ficam no legado; `marcaRuim` (12) e `mostrarNoFim` foram para `planilha`; `conjExcluirCategoria` para `configuracao`; `romAbrirNovo` para `romaneio`. `13-modelo-e-variacoes.js` (só comentários) ficou no legado; 10/11 sem mudança.
+- `planilha`, `configuracao`, `fotos`, `romaneio` e `tabelas` passaram a listar `lancamento` em `usa`. O caminho inverso (`renderTopo`, `renderListas`, `celular`, `mostrarNoFim`, `renderCfg`, `estadoFotos`, `autoEnviar`, `relTem`, `renderRom`) é ciclo sem corte limpo: fica como 21 violações pendentes (aviso) da fatia `lancamento`, listadas no LEIA-ME.
+- Mover/dividir manteve o HTML idêntico (hash `a47b358c…`); estado e ações mudaram nomes/ordem, a prova passou a ser a suíte.
+- Globais mutáveis: 68 -> 58 (`quick`, `quickB`, `romQRow`, `romQ0`, `quickPre`, `MULTI`, `trabalhoAberto`, `addTrava`, `editSnap`, `foraDaPlanilha` viraram `estadoLancamento`; `editId`/`rascunho`/`erro` seguem em `src/js/10`).

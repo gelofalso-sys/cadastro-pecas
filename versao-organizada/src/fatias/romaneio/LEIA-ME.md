@@ -12,16 +12,16 @@ criar as pecas (`romCriar`) e relatorio da criacao (`relGerar`, `relAbrir`, `rel
   `21a3-lote-e-partes.js`, `21a4-planilha-romaneio.js`, `21a6-campos-e-leitura.js` (`romCampo`, `romLer`, `romAplicaR`): o antigo 21 dividido por assunto.
 - `21b-peca-nova.js`, `21b-romaneio-extras.js` (insumos, lotear), `21b5-passos-romaneio.js` (1 Importar · 2 Pesos · 3 Revisar · 4 Criar).
 - `22-importar-pdf-romaneio.js` (pdf.js, `miniFoto`, `imgCanvas`), `23b-romaneio-criar.js`, `23c-nota-fiscal.js` (NF fica aqui por decisao), `25-relatorio-romaneio.js`,
-  `34b-importacao-romaneio.js` (fila, `#impBar` com arrastar/soltar). `acoes.js`: 62 cliques (`rom-*`, `rev-*`, `rel-*`, `imp-*`, `lote-*`, `rins-*`).
+  `27b4-romaneio-abrir.js` (`romAbrirNovo`, abrir/retomar o romaneio; veio do 27b), `34b-importacao-romaneio.js` (fila, `#impBar` com arrastar/soltar). `acoes.js`: 62 cliques (`rom-*`, `rev-*`, `rel-*`, `imp-*`, `lote-*`, `rins-*`).
 - Ficaram fora: `ROM`/`romT` em `src/js/19c0` e `ROMS`/`romArm`/`romSalvar*`/lista de salvos em `src/js/20` (globais de dominio, irao para `core` com funcoes de acesso);
-  `qIrGalvanica` em `src/js/21b3`; `rom-q`/`q-fechar` (lancamento rapido) em 30; `romFiltro*`/`romCompacto`/`romNav` em 33 (fatia `app`).
+  `qIrGalvanica` em `src/js/21b3`; `rom-q`/`q-fechar` (painel rapido) em `lancamento/acoes.js`; `romFiltro*`/`romCompacto`/`romNav` em 33 (fatia `app`).
   `secRom`, modelo por exemplo e fiscal foram para `configuracao`; fotos dos itens (`romFoto*`) para `fotos`: assim nao ha ciclo (ambas usam `romaneio`).
 
 ## Estado e expoe
 `estadoRomaneio = {revSeq, t0, busy, pdfLib, rel, impQ, impSt}` (antes `romRevSeq`, `romT0`, `romBusy`, `pdfLib`, `REL`, `IMPQ`, `IMPST`; globais 85 para 78).
 `NF` (33 fecha a janela) e `relTem` (17, 20 e 32 leem/gravam) continuam globais. `expoe`: `renderRom` (configuracao, fotos, 15/17/20/27b...), `arqSalvar` (tabelas),
 `NF`/`nfFechar` (33), `nfRotear`, `impAdd`, `romPdf`, `romPlanilha`, `romRevisar`, `relTem` (32), `impData` (21c), `romAtual` (33 embrulha),
-`romAtualSoon`/`romCampo` (31), `romSetForn` (27b). `usa`: `core`, `exportacao` (`baixar`, `obterDL`).
+`romAtualSoon`/`romCampo` (31), `romSetForn` (27b), `romAbrirNovo` (35). `usa`: `core`, `exportacao` (`baixar`, `obterDL`), `planilha`, `lancamento` (`adicionar`, `renderForm`, `avisoEdicao`, `conjSync`).
 
 ## Armadilhas
 - `33` reatribui `renderRom` e `romAtual` (embrulha para filtro/compacto) e `23c` reatribui `romCriar` (trava de concorrencia da NF): chame sempre pelo nome global.
@@ -35,4 +35,4 @@ criar as pecas (`romCriar`) e relatorio da criacao (`relGerar`, `relAbrir`, `rel
 - AUD-C-004: CSV com ponto e virgula pode multiplicar preco por 100 e tirar zeros a esquerda (`romPlanilha`, 21a4).
 - AUD-C-002: selo de conferencia da NF pode parecer importacao integral quando ha item com quantidade 0 (`23c-nota-fiscal.js`).
 - 331 linhas acima de 160 caracteres (codigo minificado a mao, ate ~3000): nao reformatadas.
-- Usa `planilha`: `renderTopo` (19c, 21, 21a6, 23b). `romCriando` (de `src/js/15d`) segue global legado.
+- Usa `planilha`: `renderTopo` (19c, 21, 21a6, 23b), `mostrarNoFim` (23b). `romCriando` (de `src/js/15d`) segue global legado.

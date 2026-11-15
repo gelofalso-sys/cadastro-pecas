@@ -1,25 +1,21 @@
 {
-  "globaisMutaveisTotal": 68,
+  "globaisMutaveisTotal": 58,
   "globaisMutaveisPorArquivo": {
     "js/14-persistencia.js": 17,
     "js/20-armazenamento-idb.js": 14,
     "js/10-limites-e-colunas.js": 10,
-    "js/17-lancamento.js": 6,
     "js/21d-novidades.js": 3,
     "js/30-eventos-mouse-e-clique.js": 3,
     "js/11-utilidades.js": 2,
     "js/15d-romaneio-resync.js": 2,
-    "js/26-acoes.js": 2,
     "fatias/configuracao/21a5-modelo-por-exemplo.js": 1,
     "fatias/planilha/15f-edicao-celula.js": 1,
     "fatias/romaneio/23c-nota-fiscal.js": 1,
     "fatias/romaneio/25-relatorio-romaneio.js": 1,
-    "js/18-conjunto.js": 1,
     "js/19c0-romaneio-global.js": 1,
     "js/21b3-ir-galvanica.js": 1,
-    "js/27b-lancamento-formulario.js": 1,
     "js/33c-janelas-e-paleta-resto.js": 1
   },
   "duplicadas": [],
-  "violacoes": 0
+  "violacoes": 21
 }

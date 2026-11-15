@@ -29,7 +29,7 @@ o seletor de modelo (31) abre o assistente e edita `estadoExportacao.novo`. `ger
 - O nucleo calcula as linhas (`gerar$` em `src/core`); aqui so se monta o arquivo. Texto com quebra de linha: `String.fromCharCode(10)`.
 - Zero a esquerda (EAN, NCM) se perde no Excel/CSV: `avisoZeros`; texto iniciado por `= + - @` e protegido (`protegeTxt`).
 - Em .xlsx sem a biblioteca `lib/` o app cai para CSV com aviso.
-- `abrirExemploVisual` mora em `src/js/29b-exemplo-visual.js` (era do mesmo arquivo, mas nao e exportacao).
+- `abrirExemploVisual` mora em `src/fatias/lancamento/29b-exemplo-visual.js` (era do mesmo arquivo, mas nao e exportacao).
 
 ## Pendencias conhecidas (auditoria)
 - AUD-D-001: corrida de clipboard em `copiar` (duas copias seguidas / `writeText` assincrono vs. toast e estado). **Nao corrigido.**

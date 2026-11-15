@@ -13,7 +13,7 @@ A tela "Cadastros e personalizacao" (`#cfg`) e tudo o que a sustenta:
 - Vindos da Tarefa 14 (romaneio): `25a-secao-romaneios.js` (`secRom`, aba Romaneios = modelos de leitura), `21a5-modelo-por-exemplo.js`
   (`romUI`, `romExInfo`, `romExAtualiza`) e `21b4-fiscal-categorias.js` (`fiscalTodasHTML`, `fiscalCampo`, `fiscalAplicarTodas`); acoes `rom-add/dup/del`,
   `rom-map-*`, `rom-ex-abrir/fechar/ok`, `rom-testar`, `fisc-aplicar`. Assim `romaneio` nao usa nada de `configuracao` (sem ciclo).
-- `36-cadastros-salvar.js` (`CAD`, `cadConferir`, `cadSalvar`, `cadDescartar`, travas) e `37-moeda.js`.
+- `18a-conjunto-excluir-categoria.js` (`conjExcluirCategoria`, chamada por `cat-del-ok`; veio do antigo 18). `36-cadastros-salvar.js` (`CAD`, `cadConferir`, `cadSalvar`, `cadDescartar`, travas) e `37-moeda.js`.
 - `acoes.js`: 77 cliques (`cat-*`, `sub-*`, `bh-*`, `bn-*`, `forn-*`, `mc-*`, `mod-sel/dup/del/av/brancas/bling/jueri`, `cor-*`, `cv-*`, `gr-*`, `gi-del`, `reset`, `ctab`, `ordem`, `graf`...).
 ## Fluxos principais
 1. Clique `data-act` -> listener de `30` calcula `snapCfg` (so para `CFG_UNDO`) e despacha para `ACOES`; depois do despacho, se `S.config` mudou,
@@ -31,10 +31,10 @@ A tela "Cadastros e personalizacao" (`#cfg`) e tudo o que a sustenta:
 - `estadoConfig` guarda o que era global: `secs`, `libtam`, `renBusy`, `faixaBusy`, `resetArm`, `delCat` (antes em `src/js/10`).
 ## Pendencias e acoplamentos a desfazer
 - AUD-A-007 (alteracao nao salva de uma variacao e descartada ao editar outra, `15-planilha.js`): documentado, nao corrigido.
-- Ficaram no switch de `30`: `faixa-salvar`, `cor-on/off`, `cs-padrao/todas`, `gi-todos`, `gr-novo-pmg`, `gi-pmg` (sao do formulario de lancamento),
+- `faixa-salvar`, `cor-on/off`, `cs-padrao/todas`, `gi-todos`, `gr-novo-pmg`, `gi-pmg` foram para `lancamento/acoes.js`. Ficaram no switch de `30c`:
   `bk-*`/`ponto-*` (armazenamento), `abrir-arq` (generico).
 - Handlers de `change`/`input`/`keydown` dos cadastros (`data-cf`, `data-bnf`, `data-ff`, `data-mod`, `data-dup`...) seguem em 31/32/34: sao
   pedacos de listeners maiores que a fatia, nao da para dividir com `dividir_arquivo`.
 - `modPrev`/`secModelo` (19a3) misturam configuracao com exportacao. `qGalvanicaSelecionar` (lido em `bh-add`) vive em `src/js/21b3` (legado).
 - Linhas acima de 160 caracteres em todos os arquivos (codigo minificado a mao, ate ~3000): reformatar antes de mexer a fundo.
-- Usa `planilha`: `renderTopo`, `celular`, `formAbrir` (21b4, 34c, acoes).
+- Usa `planilha`: `renderTopo`, `celular`, `formAbrir` (21b4, 34c, acoes). Usa `lancamento`: `renderForm` (21b4, acoes). `desfazer` segue no legado (src/js/27b2).
