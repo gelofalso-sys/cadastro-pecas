@@ -25,7 +25,7 @@ Persistencia dos dados: salvar/flush (localStorage e conta), historico de desfaz
 - Usa: `core`
 - Usada por: `app`, `configuracao`, `exportacao`, `fotos`, `lancamento`, `legado`, `planilha`, `romaneio`, `tabelas`
 - Testes: `^backup_auditoria_integridade\.js$`, `^backup_exclusao_pendente\.js$`, `^backup_falha_regressao\.js$`, `^exclusao_falha_sincrona\.js$`, `^interrupcao_exclusao\.js$`, `^interrupcao_exclusao_real\.js$`, `^t101_tabela_exclusao\.py$`, `^t102_banho_concorrencia\.py$`, `^t110_romaneio_preservacao\.js$`, `^t121_store_contrato\.py$`, `^t18\.py$`, `^t57_rom_historico\.py$`, `^t58\.py$`, `^t58_backup_integridade\.py$`, `^t59_conflito_quota\.py$`, `^t60_crash_restauracao\.py$`, `^t61_journal_quota\.py$`, `^t62_backup_duas_abas\.py$`, `^t63_migracao_legada\.py$`, `^t67_rom_acesso\.py$`, `^t70_conta_tabela\.py$`, `^t80_abrir_sem_idb\.py$`, `^t94_backup_real\.py$`, `^tabela_exclusao_integridade\.js$`
-- Globais mutaveis: 8
+- Globais mutaveis: 6
 - Fronteira: aponta
 
 ### configuracao
@@ -191,6 +191,6 @@ Tabelas salvas (historico de tabelas montadas, salvar/restaurar/ver/excluir/CSV)
 
 | dono | globais |
 |---|---|
-| armazenamento | 8 |
-| legado | 9 |
+| armazenamento | 6 |
+| legado | 7 |
 | romaneio | 2 |

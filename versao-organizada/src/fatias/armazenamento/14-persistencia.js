@@ -2,7 +2,7 @@
 let db=null,dirty={c:false,l:false};
 const setStatus=(t,bad)=>{const s=document.getElementById("saveStatus");s.textContent=t;s.classList.toggle("bad",!!bad)};
 /* histórico de desfazer/refazer (até 30 passos): cada gravação compara o estado com o anterior e guarda o "antes" */
-let HIST=[],REDO=[],conflito=false;
+const HIST=[],REDO=[];let conflito=false;
 /* estado que so a fatia usa (antes globais soltos): fotografia do formulario no historico, dados danificados, avisos de memoria e bloqueio de uso entre abas */
 const estadoArmazenamento={snapF:null,snapE:false,rawCorrompido:"",avisoMem:0,avisoIdbT:0,bkUsoLiberar:null,bkUsoPedido:null,
   sT:null,chain:Promise.resolve(),snapL:null,snapC:null,restaurando:false,corrompido:false,ftSalvas:new Set(),histSep:false,
