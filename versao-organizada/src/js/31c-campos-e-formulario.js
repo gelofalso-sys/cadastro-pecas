@@ -46,8 +46,8 @@ function onField(t,isChange){
     if(t.dataset.cp==="banho"){delete c.vz;conjSync(f);salvar(false);renderTopo();renderForm();return}
     conjSync(f,true);salvar(false);renderTopo();return}
   const C=cfg(),f=S.form;
-  if(t.dataset&&t.dataset.fauto!==undefined){if(t.checked&&!confirm("Ativar envio automático? As fotos anexadas serão enviadas ao imgbb, um serviço de terceiros, e qualquer pessoa com o link poderá acessá-las.")){t.checked=false;return}try{localStorage.setItem("cadpecas-imgbb-auto",t.checked?"1":"0");localStorage.setItem("cadpecas-imgbb-consent-v1",t.checked?"1":"0")}catch(e){t.checked=false;toast("Não consegui salvar a preferência de envio automático.")}return}
-  if(t.dataset&&t.dataset.fkey!==undefined){try{localStorage.setItem("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
+  if(t.dataset&&t.dataset.fauto!==undefined){if(t.checked&&!confirm("Ativar envio automático? As fotos anexadas serão enviadas ao imgbb, um serviço de terceiros, e qualquer pessoa com o link poderá acessá-las.")){t.checked=false;return}try{gravarPref("cadpecas-imgbb-auto",t.checked?"1":"0");gravarPref("cadpecas-imgbb-consent-v1",t.checked?"1":"0")}catch(e){t.checked=false;toast("Não consegui salvar a preferência de envio automático.")}return}
+  if(t.dataset&&t.dataset.fkey!==undefined){try{gravarPref("cadpecas-imgbb",String(t.value).trim().slice(0,80))}catch(e){}return}
   if(t.hasAttribute&&t.hasAttribute("data-faixa")){if(isChange&&!estadoConfig.faixaBusy){estadoConfig.faixaBusy=true;try{aplicaFaixa(t.value)}finally{estadoConfig.faixaBusy=false}}return}
   if(t.dataset&&t.dataset.nv!==undefined){if(!estadoExportacao.novo)return;
     if(t.dataset.nv==="nome"){estadoExportacao.novo.nome=String(t.value).slice(0,60);return}

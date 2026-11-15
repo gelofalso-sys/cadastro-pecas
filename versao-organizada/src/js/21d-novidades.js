@@ -69,12 +69,12 @@ function historicoAbrir(){
 
 /* ===== lembrete de backup logo depois de criar peças de um romaneio ===== */
 function backupLembrarPosCriar(){
-  try{const u=Math.max(+localStorage.getItem("cadpecas-bk-em")||0,+localStorage.getItem("cadpecas-bk-ult")||0);if(Date.now()-u<20*3600*1000)return;
+  try{const u=Math.max(+lerPref("cadpecas-bk-em")||0,+lerPref("cadpecas-bk-ult")||0);if(Date.now()-u<20*3600*1000)return;
     setTimeout(()=>toast("Peças criadas. Faça um backup agora para não perder este trabalho.",{t:"Baixar backup",fn:()=>backupTotal()}),1800)}catch(e){}}
 
 /* ===== de onde vêm os dados: cada endereço/arquivo guarda os seus, separados ===== */
 function origemAviso(){
-  try{if(localStorage.getItem("cadpecas-origem-ok"))return;
+  try{if(lerPref("cadpecas-origem-ok"))return;
     const web=/^https?:$/.test(location.protocol),txt=web?"Site publicado: os dados daqui ficam só neste navegador e são separados do arquivo local. Para levar peças e cadastros de um para o outro, use Backup completo e Restaurar.":"Arquivo local: os dados ficam só neste navegador e são separados do site publicado. Para levar peças e cadastros entre eles, use Backup completo e Restaurar.";
     const mk=()=>{const d=document.createElement("div");d.className="origem-aviso";d.setAttribute("role","note");d.innerHTML=`<span><b>Nota:</b> ${esc(txt)}</span><button type="button" class="btn sm" data-act="origem-ok">Entendi</button>`;return d};
     /* no menu lateral e no menu do celular: nunca no meio da tela de trabalho, para não deslocar a tabela */

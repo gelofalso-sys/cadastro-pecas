@@ -95,7 +95,7 @@ document.addEventListener("keydown",e=>{
 
 /* trava de segurança: no computador a página em si nunca rola (só a planilha e o painel de baixo) */
 document.addEventListener("scroll",()=>{if(!celular()){const se=document.scrollingElement;if(se&&se.scrollTop)se.scrollTop=0;if(document.body.scrollTop)document.body.scrollTop=0}},true);
-try{romTem=!!localStorage.getItem(ROMKEY);romInfo=localStorage.getItem("cadpecas-rom-info")||"";relTem=!!localStorage.getItem("cadpecas-rel");ROMS=JSON.parse(localStorage.getItem("cadpecas-roms")||"[]");TABS=JSON.parse(localStorage.getItem("cadpecas-tabs")||"[]");AUTOR=localStorage.getItem("cadpecas-autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
+try{romTem=!!lerPref(ROMKEY);romInfo=lerPref("cadpecas-rom-info")||"";relTem=!!lerPref("cadpecas-rel");ROMS=JSON.parse(lerPref("cadpecas-roms")||"[]");TABS=JSON.parse(lerPref("cadpecas-tabs")||"[]");AUTOR=lerPref("cadpecas-autor")||"";arqRef()}catch(e){ROMS=[];TABS=[]}
 document.addEventListener("dragover",e=>{if(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files"))e.preventDefault()});
 document.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&document.querySelector(".rep [data-novo]")&&/[.](csv|xlsx?)$/i.test(f.name)){e.preventDefault();lerNovo(f);return}if(f&&/pdf|xml/i.test(f.type+f.name)){e.preventDefault();if(editId){avisoEdicao();return}nfRotear(f)}});
 document.addEventListener("keydown",e=>{if(ROM&&ROM.rows.length&&(e.ctrlKey||e.metaKey)&&e.key==="Enter"&&e.target.closest&&e.target.closest("#romWrap")){e.preventDefault();romRevisar();return}},true);

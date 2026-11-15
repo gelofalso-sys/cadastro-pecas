@@ -1,11 +1,11 @@
 /* lembrete de backup: os dados ficam só neste navegador; passada uma semana sem backup completo (e com peças lançadas), avisa uma vez por abertura */
-function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!localStorage.getItem(u))localStorage.setItem(u,String(Date.now()));
-  const ult=+localStorage.getItem(k)||+localStorage.getItem(u)||Date.now();
+function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!lerPref(u))gravarPref(u,String(Date.now()));
+  const ult=+lerPref(k)||+lerPref(u)||Date.now();
   if(S.lanc.length>=5&&Date.now()-ult>7*864e5)setTimeout(()=>toast("Faz mais de uma semana que você não baixa um backup completo. Seus dados ficam só neste navegador.",{t:"Fazer backup",fn:backupTotal}),2500)}catch(e){}}
 /* Aguarda eventual recuperação de backup antes de expor os dados para edição. */
 {const tela=document.createElement("div");tela.setAttribute("role","alert");tela.style.cssText="position:fixed;inset:0;z-index:100001;background:#fff;display:grid;place-content:center;padding:24px;font:16px system-ui;text-align:center";tela.textContent="Verificando a recuperação dos dados…";document.documentElement.appendChild(tela);document.body.inert=true;
   let etapa="verificar a recuperação";
-  const abrir=(semVarredura=false)=>{document.body.inert=false;tela.remove();try{if(sessionStorage.getItem("cadpecas-recuperou-backup")){sessionStorage.removeItem("cadpecas-recuperou-backup");toast("Uma restauração interrompida foi revertida para os dados anteriores.")}}catch(e){}lembreteBackup();if(semVarredura){estadoTabelas.semVarredura=true;const aviso=document.createElement("div");aviso.setAttribute("role","status");aviso.style.cssText="padding:10px;background:#fff3cd;color:#664d03;font:14px system-ui";aviso.textContent="Aberto sem verificar o armazenamento de arquivos. Romaneios, tabelas e fotos podem estar incompletos; a limpeza automática de fotos foi desativada. Recarregue quando o armazenamento voltar a funcionar.";document.body.prepend(aviso);return}return varrerTudo()};
+  const abrir=(semVarredura=false)=>{document.body.inert=false;tela.remove();try{if(lerSessao("cadpecas-recuperou-backup")){removerSessao("cadpecas-recuperou-backup");toast("Uma restauração interrompida foi revertida para os dados anteriores.")}}catch(e){}lembreteBackup();if(semVarredura){estadoTabelas.semVarredura=true;const aviso=document.createElement("div");aviso.setAttribute("role","status");aviso.style.cssText="padding:10px;background:#fff3cd;color:#664d03;font:14px system-ui";aviso.textContent="Aberto sem verificar o armazenamento de arquivos. Romaneios, tabelas e fotos podem estar incompletos; a limpeza automática de fotos foi desativada. Recarregue quando o armazenamento voltar a funcionar.";document.body.prepend(aviso);return}return varrerTudo()};
   const falhou=(e,podeForcar)=>{try{console.error("Falha ao abrir os dados (etapa: "+etapa+")",e)}catch(x){}
     tela.textContent="Não foi possível verificar ou recuperar uma restauração interrompida. Seus dados não foram abertos para edição. Libere espaço, feche outras abas e recarregue. Se o problema continuar, guarde uma cópia do backup e procure suporte.";
     const det=document.createElement("p");det.style.cssText="font:12px system-ui;color:#555;max-width:640px;margin:10px auto";det.textContent="Detalhe técnico — etapa: "+etapa+" · "+String((e&&e.message)||e||"o armazenamento do navegador (IndexedDB) não respondeu").slice(0,200);tela.appendChild(det);
@@ -15,7 +15,7 @@ function lembreteBackup(){try{const k="cadpecas-bk-em",u="cadpecas-uso-em";if(!l
   bkRecuperarPendente().then(ok=>{if(!ok)throw new Error("o armazenamento do navegador não respondeu ou há uma restauração pendente");etapa="reservar o uso";return bkUsoIniciar()}).then(()=>{etapa="carregar os dados";return carregar()}).then(()=>{etapa="recuperar exclusões e índices";return exAbrirIndices()}).then(ok=>{if(!ok)throw new Error("não foi possível recuperar exclusões ou conferir os índices salvos");etapa="varrer as peças";return abrir()}).catch(e=>falhou(e,etapa==="verificar a recuperação"||etapa==="reservar o uso"))}
 /* duas abas abertas: se a outra gravou, esta avisa (e para de gravar) em vez de sobrescrever */
 window.addEventListener("storage",e=>{
-  if(e.key!=="cadpecas4"||e.newValue==null||e.storageArea!==localStorage)return;
+  if(e.key!=="cadpecas4"||e.newValue==null||!ehAreaLocal(e.storageArea))return;
   conflito=true;clearTimeout(sT);sT=null;
   if(document.getElementById("outraAba"))return;
   const b=document.createElement("div");b.id="outraAba";b.setAttribute("role","alert");
@@ -28,7 +28,7 @@ window.addEventListener("storage",e=>{
 
 /* o rascunho do romaneio tem chave própria: se outra aba o regravou, esta para de gravar o romaneio em vez de sobrescrever */
 window.addEventListener("storage",e=>{
-  if(e.key!==ROMKEY||e.storageArea!==localStorage||!ROM||!ROM.rows.length||romConflito)return;
+  if(e.key!==ROMKEY||!ehAreaLocal(e.storageArea)||!ROM||!ROM.rows.length||romConflito)return;
   romConflito=true;clearTimeout(romST);romST=null;
   if(document.getElementById("outraAbaRom"))return;
   const b=document.createElement("div");b.id="outraAbaRom";b.setAttribute("role","alert");
