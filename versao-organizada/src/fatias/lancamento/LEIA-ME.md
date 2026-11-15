@@ -14,14 +14,14 @@ conjunto (`conjSync`, `conjPainel`), lancamento continuo e combinacoes (`trabalh
 
 ## Estado
 `estadoLancamento = {quick, quickB, romQRow, romQ0, quickPre, multi, trabalhoAberto, addTrava, editSnap, foraDaPlanilha}` (antes globais; `MULTI` virou `multi`). Globais 68 para 58.
-`editId`, `rascunho`, `erro`, `S`/`S.form`, `undo`, `abertos` seguem na base `src/js/10` (compartilhados: planilha, romaneio, fotos e app leem e gravam).
+`editId`, `rascunho`, `erro`, `undo`, `abertos`, `celEd` e `G` sao campos de `estadoBase` e `S`/`sel` sao `const` em `src/js/10` (Etapa 4; compartilhados: planilha, romaneio, fotos e app leem e gravam).
 
 ## expoe (quem usa de fora)
 `renderForm` (planilha, romaneio, fotos, configuracao, app), `editar`/`dobrarOv`/`formSujo`/`estadoLancamento` (planilha 15f/16/30b, fotos 27, app), `usarModelo`/`focarPrimeiro`/`duplicar*`/`excluir*`
 (acoes da planilha), `adicionar`/`conjSync`/`avisoEdicao` (romaneio cria pecas; tabelas e app avisam edicao), `campoMsg`/`limpaUlt` (romaneio 21a6 e onField), `primeirosIr` (switch de `app/30c`),
 `cancelar`, `fatorDoPreco`, `salvarRapido`, `renderFormSoon`, `atualizarGera`, `aplicaFaixa`, `ativarConjunto`, `numFormMover`, `tipoClique` (app). Quem usa `lancamento`: planilha, configuracao, fotos, romaneio, tabelas, app.
 
-## Fronteira "aponta": ciclo sem corte limpo (27 violacoes pendentes, eram 21)
+## Fronteira "aponta": ciclo sem corte limpo (26 violacoes pendentes pelo checador em 15/11/2026, eram 21)
 O formulario e a tabela se redesenham um ao outro. `lancamento` usa sem declarar: `renderTopo` (10x), `renderListas`, `celular`, `formAbrir`, `estadoPlanilha`, `mostrarNoFim` (planilha),
 `renderCfg` (configuracao), `estadoFotos`, `autoEnviar`, `fotoCopia` (fotos), `relTem`, `renderRom`, `ROM` (romaneio). Declarar criaria ciclo (todas usam `lancamento`). As 6 novas vieram de 27d, 21d3 e de `ROM` agora ser da fatia romaneio.
 A ferramenta NAO ve usos dentro de `registrarAcoes` nem em instrucoes de nivel superior: `renderCfg` (`faixa-salvar`, `cs-padrao`), `mostrarNoFim` (`multi-ok`), `qIrGalvanica` (configuracao) ficam fora da contagem.

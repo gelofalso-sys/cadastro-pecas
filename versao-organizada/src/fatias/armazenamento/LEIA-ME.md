@@ -22,18 +22,18 @@ Funil da Etapa 3 (3.5): `store/dados.js` (`dadoLer`/`dadoGravar`/`dadoRemover`, 
 Ficam fora do store (aceito): `navigator.storage` (persistencia/estimativa), `showDirectoryPicker` (backup em pasta) e os metodos de object store usados dentro dos callbacks de `idbOp`.
 
 ## Estado (globais 58 para 51)
-`estadoArmazenamento = {snapF, snapE, rawCorrompido, avisoMem, avisoIdbT, bkUsoLiberar, bkUsoPedido}`. Seguem globais (outras fatias e a base leem ou gravam): `db`, `dirty`, `sT`, `chain`,
+`estadoArmazenamento = {snapF, snapE, rawCorrompido, avisoMem, avisoIdbT, bkUsoLiberar, bkUsoPedido}`. (Historico: antes da Etapa 4 estes eram globais; veja as secoes 4.1 e 4.2 abaixo: hoje todos sao campos de `estadoArmazenamento` ou `const`.) Eram globais: `db`, `dirty`, `sT`, `chain`,
 `HIST`, `REDO`, `snapL`, `snapC`, `restaurando`, `conflito`, `corrompido`, `ftSalvas`, `ROMS`, `TABS`, `ARQ`, `AUTOR`, `tabArm`, `romArm`, `romTem`, `romST`, `romInfo`, `romConflito`, `romGravP`, `histSep`.
 
 ## Etapa 4.1: estadoArmazenamento agrupa 16 globais
-`sT`, `chain`, `snapL`, `snapC`, `restaurando`, `corrompido`, `ftSalvas`, `histSep`, `romGravP`, `romST`, `romTem`, `romInfo`, `romArm`, `tabArm`, `AUTOR` e `ARQ` viraram campos de `estadoArmazenamento` (14-persistencia.js). Seguem globais: `db`, `dirty`, `conflito`, `HIST`, `REDO`, `ROMS`, `TABS`, `romConflito`. `expoe` trocou esses nomes por `estadoArmazenamento`: outras fatias leem e, em alguns casos, ESCREVEM campos dele (`histSep` na casca; `tabArm`/`romArm` em romaneio e tabelas; `ARQ` em tabelas; `ftSalvas` em fotos e lancamento). Escrita direta de outra fatia e problema conhecido, nao corrigido aqui; o corte e funcao da dona (4.3).
+`sT`, `chain`, `snapL`, `snapC`, `restaurando`, `corrompido`, `ftSalvas`, `histSep`, `romGravP`, `romST`, `romTem`, `romInfo`, `romArm`, `tabArm`, `AUTOR` e `ARQ` viraram campos de `estadoArmazenamento` (14-persistencia.js). (Na 4.2 `db`, `dirty`, `conflito`, `ROMS`, `TABS` e `romConflito` tambem viraram campos; `HIST` e `REDO` viraram `const`.) Seguiam globais: `db`, `dirty`, `conflito`, `HIST`, `REDO`, `ROMS`, `TABS`, `romConflito`. `expoe` trocou esses nomes por `estadoArmazenamento`: outras fatias leem e, em alguns casos, ESCREVEM campos dele (`histSep` na casca; `tabArm`/`romArm` em romaneio e tabelas; `ARQ` em tabelas; `ftSalvas` em fotos e lancamento). Escrita direta de outra fatia e problema conhecido, nao corrigido aqui; o corte e funcao da dona (4.3).
 
 ## expoe (quem usa de fora)
 `salvar` (quase todas), `flush`/`flushJa`/`dirty`/`setStatus`/`histNota`/`histIni`/`salvarCancelarAgendado`/`salvarEncadear` (configuracao grava ja), `definirTabs`/`definirArq`/`definirAutor` (tabelas),
 `exComLock`/`exReverter`/`exSalvarComLock`/`ftSalvas`/`TABS`/`ARQ`/`AUTOR`/`HIST`/`REDO`/`snapL` (tabelas, fotos, app), `rom*`/`ROMS` (romaneio, configuracao, lancamento), `pontoAuto`/`pontoAviso`/`pontosCarregar`,
 `bkUso*`, `restaurando`, `snapC`, `migrarGrades`, `desfazer` (planilha, configuracao, romaneio, lancamento, app), `backupLembrarPosCriar` (romaneio 25), `lembreteBackup` (app; a ferramenta nao ve: chamada em bloco de nivel superior).
 
-## Fronteira "aponta": ciclo sem corte limpo (25 violacoes pendentes, eram 20)
+## Fronteira "aponta": ciclo sem corte limpo (22 violacoes pendentes pelo checador em 15/11/2026; o checador nao ve escrita em campo de `estadoX`, ver `docs/escritas-entre-fatias.md`)
 Todas as fatias usam `salvar`, entao `armazenamento` nao declara nenhuma em `usa`. Usa sem declarar: `arqRef`, `gravarIdx`, `histSugAgendar`, `pontosIds`, `setAutor`, `tabIndex`, `tabsMigrar`,
 `varrerFotos` (tabelas), `renderTopo`, `estadoPlanilha` (planilha), `renderForm`, `avisoEdicao`, `editar` (lancamento), `renderRom`, `relTem` (escreve), `impData`, `ROM` (le e escreve) (romaneio),
 `renderCfg`, `impactoAgendar` (configuracao), `obterDL` (exportacao). Novas: `editar`/`estadoPlanilha` de 27b2, `impactoAgendar` (agora da configuracao) e `ROM` (agora da romaneio). Corte futuro: indices de tabelas para ca e um gancho unico de redesenhar.

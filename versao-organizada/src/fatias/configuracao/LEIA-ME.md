@@ -30,7 +30,7 @@ A tela "Cadastros e personalizacao" (`#cfg`) e tudo o que a sustenta:
 ## Armadilhas
 - `37-moeda.js` so dispara `input`, NUNCA `change` (o `input` ja alimenta o cadastro). Nao troque por `change` sem rodar os testes de cadastro.
 - `estadoConfig` guarda o que era global: `secs`, `libtam`, `renBusy`, `faixaBusy`, `resetArm`, `delCat`, `galvSel`, `drag`, `bnReserva`, `bnReservando`, `bnEmExclusao`.
-  `impConfigAntes`/`impT` (21d2) seguem globais: `tests/impacto_cadastro_regressao.js` recorta o arquivo a partir de `let impConfigAntes=`.
+  `impConfigAntes`/`impT` (21d2) viraram campos de `estadoConfig` (Etapa 4.1); `tests/impacto_cadastro_regressao.js` recorta o arquivo a partir de `function custoPorLanc`.
 ## Pendencias e acoplamentos a desfazer
 - AUD-A-007 (alteracao nao salva de uma variacao e descartada ao editar outra, `15-planilha.js`): documentado, nao corrigido.
 - Handlers de `change`/`input`/`keydown` dos cadastros (`data-cf`, `data-bnf`, `data-ff`, `data-mod`, `data-dup`...) estao em `app/31c-on-field.js` e `app/32-eventos-entrada-e-teclado.js`:

@@ -64,7 +64,7 @@ App de arquivo unico (HTML) montado a partir de `src/`. Responda e comente em po
 - Funcionalidade nova ou refatoracao: use brainstorm -> plano -> execucao por etapas (modelo em `docs/superpowers/specs/` e `docs/superpowers/plans/`), nao edite direto.
 
 ## Pendencias conhecidas (nao "conserte" no meio de outra tarefa)
-- `lancamento` e `armazenamento` ficam em `fronteira: "aponta"` (27 e 25 violacoes listadas nos `LEIA-ME`): o formulario e a tabela se redesenham e quase toda fatia usa `salvar`.
+- `lancamento` e `armazenamento` ficam em `fronteira: "aponta"` (26 e 22 violacoes pelo checador em 15/11/2026, listadas nos `LEIA-ME`; escritas em campos de `estadoX` por outra fatia nao entram na contagem: `docs/escritas-entre-fatias.md`, gerado por `node tools/escritas_entre_fatias.mjs --escrever`): o formulario e a tabela se redesenham e quase toda fatia usa `salvar`.
 - Linhas acima de 160 caracteres (cerca de 1.600): adiado de proposito; reformatar quebra a prova de hash.
 - Auditoria de 09/11: itens por fatia estao nos `LEIA-ME` como problemas conhecidos, nao corrigidos.
 

@@ -21,7 +21,7 @@ criar as pecas (`romCriar`), relatorio da criacao (`relGerar`, `relAbrir`, `relL
 
 ## Estado e expoe
 `estadoRomaneio = {revSeq, t0, busy, pdfLib, rel, impQ, impSt, romf}` (`romf` era o global `ROMF` do filtro; globais 85 para 78, depois -1 na Tarefa 18).
-`ROM`, `NF` e `relTem` continuam globais. `expoe`: `ROM` (lancamento, configuracao, fotos, armazenamento, app), `renderRom` (configuracao, fotos, 15/17/20...), `arqSalvar` (tabelas),
+`ROM`, `NF` e `relTem` sao campos de `estadoRomaneio` desde a Etapa 4 (`estadoRomaneio.ROM`). `expoe`: `estadoRomaneio` (antes `ROM` (lancamento, configuracao, fotos, armazenamento, app), `renderRom` (configuracao, fotos, 15/17/20...), `arqSalvar` (tabelas),
 `NF`/`nfFechar` (janelas de `app/33`), `nfRotear` (soltar arquivo), `impAdd`, `romPdf`, `romPlanilha` (`app/32`), `relTem`, `impData` (21c), `romAtual` (20, onField),
 `romAtualSoon`/`romCampo` (onField), `romAbrirNovo` (menu de `app/35`). `usa`: `core`, `exportacao` (`baixar`, `obterDL`), `planilha`, `lancamento` (`adicionar`, `renderForm`, `avisoEdicao`, `conjSync`, `campoMsg`, `limpaUlt`), `armazenamento`.
 
