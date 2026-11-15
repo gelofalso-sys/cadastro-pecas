@@ -16,6 +16,7 @@ const storeLocal=(()=>{
   const idbOk=async(loja,chave,valor)=>{if(await idbPut(loja,chave,valor)===null)throw new Error("falha ao gravar no IndexedDB: "+loja)};
   const chaveFoto=(id,tipo)=>(tipo==="r"?"r:":"m:")+id;
   const ou=v=>v===undefined?null:v;
+  let ganchos_={};
   return {
     async getConfig(){const o=lerBlob();return o&&o.config!==undefined?o.config:null},
     async saveConfig(config){const o=lerBlob()||{};o.config=config;gravarBlob(o)},
@@ -27,6 +28,10 @@ const storeLocal=(()=>{
     async putRomaneio(rec,indice){await idbOk("roms",rec.id,rec);mesclarIdx(CH_ROMS,indice)},
     async putFoto(id,tipo,dado){await idbOk("fotos",chaveFoto(id,tipo),dado)},
     async getFoto(id,tipo){return ou(await idbGet("fotos",chaveFoto(id,tipo)))},
-    async listTabelas(){return lerIdx(CH_TABS)}
+    async listTabelas(){return lerIdx(CH_TABS)},
+    /* backup: montar e restaurar dependem de estado e regras de armazenamento; o store nao conhece fatia, entao quem conhece liga os ganchos */
+    ligar(ganchos){ganchos_=ganchos||{}},
+    async exportBackup(){if(!ganchos_.exportBackup)throw new Error("backup nao ligado");return ganchos_.exportBackup()},
+    async importBackup(o){if(!ganchos_.importBackup)throw new Error("backup nao ligado");return ganchos_.importBackup(o)}
   }
 })();

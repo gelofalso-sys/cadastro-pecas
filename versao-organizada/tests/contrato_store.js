@@ -55,6 +55,16 @@ async function contrato(store, amb) {
   igual((await store.listTabelas()).map(t => t.id), ["t1"], "listTabelas");
   await amb.plantar("romsIdx", "isto nao e json");
   igual(await store.listRomaneios(), [], "indice corrompido -> lista vazia");
+  /* backup: o adaptador so delega a ganchos ligados por quem conhece o backup */
+  await lanca(() => store.exportBackup(), /backup nao ligado/, "exportBackup sem gancho");
+  await lanca(() => store.importBackup({}), /backup nao ligado/, "importBackup sem gancho");
+  const chamadas = [];
+  store.ligar({ exportBackup: async () => { chamadas.push("exp"); return { o: { app: "x" }, falhas: [], hoje: "h" }; }, importBackup: async o => { chamadas.push("imp:" + o.k); return true; } });
+  igual(await store.exportBackup(), { o: { app: "x" }, falhas: [], hoje: "h" }, "exportBackup devolve o que o gancho devolve");
+  ok((await store.importBackup({ k: 7 })) === true, "importBackup devolve o que o gancho devolve");
+  igual(chamadas, ["exp", "imp:7"], "ganchos chamados uma vez cada");
+  store.ligar({});
+  await lanca(() => store.exportBackup(), /backup nao ligado/, "ligar({}) desliga os ganchos");
   await amb.limpar();
   return falhas;
 }

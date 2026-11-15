@@ -27,15 +27,15 @@ Chaves literais `cadpecas*` em `src/` (inclui `store/prefs.js`). Classe: `dado` 
 | `cadpecas-restauracao` | (nome de lock/banco, nao e chave) | 2 | armazenamento | fatias/armazenamento/20-armazenamento-idb.js |
 | `cadpecas-rom` | dado | 4 | core, armazenamento | core/backup.js, fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js |
 | `cadpecas-rom-info` | dado | 7 | armazenamento | fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js, fatias/armazenamento/32-ler-indices.js |
-| `cadpecas-roms` | dado | 7 | armazenamento | fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js, fatias/armazenamento/32-ler-indices.js |
+| `cadpecas-roms` | dado | 9 | armazenamento, base | fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js, fatias/armazenamento/32-ler-indices.js, store/store-local.js |
 | `cadpecas-split` | tela | 1 | base | store/prefs.js |
-| `cadpecas-tabs` | dado | 8 | armazenamento, tabelas | fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js, fatias/armazenamento/32-ler-indices.js, fatias/tabelas/19d-tabelas-indice-e-fotos.js |
+| `cadpecas-tabs` | dado | 10 | armazenamento, tabelas, base | fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js, fatias/armazenamento/32-ler-indices.js, fatias/tabelas/19d-tabelas-indice-e-fotos.js, store/store-local.js |
 | `cadpecas-uso` | (nome de lock/banco, nao e chave) | 5 | armazenamento, configuracao | fatias/armazenamento/20-armazenamento-idb.js, fatias/configuracao/30-banho-exclusao-segura.js |
 | `cadpecas-uso-em` | controle | 1 | base | store/prefs.js |
 | `cadpecas-vista` | tela | 1 | base | store/prefs.js |
 | `cadpecas-zoom` | tela | 1 | base | store/prefs.js |
 | `cadpecas3` | dado | 1 | armazenamento | fatias/armazenamento/14-persistencia.js |
-| `cadpecas4` | dado | 8 | armazenamento | fatias/armazenamento/14-persistencia.js, fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js, fatias/armazenamento/33c-outra-aba.js |
+| `cadpecas4` | dado | 10 | armazenamento, base | fatias/armazenamento/14-persistencia.js, fatias/armazenamento/20-armazenamento-idb.js, fatias/armazenamento/21c-diagnostico-dados.js, fatias/armazenamento/33c-outra-aba.js, store/store-local.js |
 | `cadpecas4-corrompido` | dado | 1 | armazenamento | fatias/armazenamento/14-persistencia.js |
 
 ## Lojas do IndexedDB `cadpecas-big` v3 (todas `dado`)
@@ -49,7 +49,7 @@ Chaves literais `cadpecas*` em `src/` (inclui `store/prefs.js`). Classe: `dado` 
 
 ## Chaves dinamicas (variavel, nao literal)
 
-`ROMKEY`/`NFKEY` (constantes de `core`, classe dado), `NBK`/`KV` (planilha 24, tela), `key` em tabelas 19d (`cadpecas-autor`, tela), `k`/`u` em armazenamento 20, 21c, 33c (percorrem as chaves de dado e de controle acima).
+`ROMKEY`/`NFKEY` (constantes de `core`, classe dado), `NBK`/`KV` (planilha 24, tela), `key` em tabelas 19d (`gravarIdx`: `cadpecas-roms` e `cadpecas-tabs`, dado), `k`/`u` em armazenamento 20, 21c, 33c (percorrem as chaves de dado e de controle acima).
 
 ## Duvidas de classe
 

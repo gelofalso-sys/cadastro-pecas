@@ -204,6 +204,8 @@ async function aplicarBackupTotalComLock(n,quieto){
   histSugAgendar();if(n.rascunho)romTem=true;if(n.rel)relTem=true;if(n.autor&&!AUTOR)setAutor(n.autor);
   render();
   if(!quieto)toast(`Backup restaurado: ${S.lanc.length} peças, ${Object.keys(n.roms).length} romaneio(s), ${Object.keys(n.tabs).length} tabela(s)${n.descartadas?` · ${n.descartadas} foto(s) inválida(s) descartada(s)`:""}.${n.incompleto&&n.incompleto.length?" ⚠ Este backup estava marcado como INCOMPLETO: confira romaneios, tabelas e fotos.":""}${n.leve?" (backup leve: sem as fotos originais grandes.)":""} Peças e cadastros podem ser desfeitos; romaneios, tabelas e fotos não.`,{t:"Desfazer peças",fn:desfazer});return true}
+/* interface do store (src/store/store-local.js): exportar e importar o backup completo continuam sendo as funcoes de sempre */
+storeLocal.ligar({exportBackup:()=>bkMontar(),importBackup:o=>aplicarBackupTotal(validarBackup(o),true)});
 let romTem=false,romST=null,romInfo="";
 function romSalvarSoon(){clearTimeout(romST);romST=setTimeout(romSalvar,800)}
 let romConflito=false;

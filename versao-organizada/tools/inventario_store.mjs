@@ -67,7 +67,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   L.push("", "## Lojas do IndexedDB `cadpecas-big` v3 (todas `dado`)", "", "| loja | arquivos |", "|---|---|");
   for (const [k, v] of [...lojasIdb()].sort()) L.push(`| \`${k}\` | ${[...v].sort().join(", ")} |`);
   L.push("", "## Chaves dinamicas (variavel, nao literal)", "",
-    "`ROMKEY`/`NFKEY` (constantes de `core`, classe dado), `NBK`/`KV` (planilha 24, tela), `key` em tabelas 19d (`cadpecas-autor`, tela), `k`/`u` em armazenamento 20, 21c, 33c (percorrem as chaves de dado e de controle acima).", "",
+    "`ROMKEY`/`NFKEY` (constantes de `core`, classe dado), `NBK`/`KV` (planilha 24, tela), `key` em tabelas 19d (`gravarIdx`: `cadpecas-roms` e `cadpecas-tabs`, dado), `k`/`u` em armazenamento 20, 21c, 33c (percorrem as chaves de dado e de controle acima).", "",
     "## Duvidas de classe", "", "- `cadpecas-autor`: tela por preferencia do dono do plano, mas e gravada pela fatia tabelas e lida na abertura; tratada como `tela`.",
     "- `cadpecas-rel`: rascunho do relatorio do romaneio; tratada como `dado` (entra no backup).");
   fs.writeFileSync(path.join(raiz, "docs", "inventario-store.md"), L.join("\n") + "\n");
