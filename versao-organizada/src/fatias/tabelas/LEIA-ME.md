@@ -17,14 +17,15 @@ O historico de tabelas montadas ("Tabelas salvas") e tudo o que fica em volta de
 ## Fluxos principais
 1. Salvar: `tab-salvar-abrir` -> `tab-salvar-ok` -> `tabSalvar` (foto consistente do estado, grava em `tabs`, anota no indice; se o indice falha NAO limpa a tabela).
 2. Restaurar: guarda a tabela atual como "Antes de restaurar" e depois repoe as pecas; a numeracao nunca volta atras.
-3. Excluir: `tab-del` arma a tabela (`tabArm`, em `src/js/20`) e na segunda vez chama `tabExcluirSalvo`, que usa o lock e o diario do armazenamento.
+3. Excluir: `tab-del` arma a tabela (`tabArm`, declarado na fatia `armazenamento`) e na segunda vez chama `tabExcluirSalvo`, que usa o lock e o diario do armazenamento.
 
 ## O que a fatia expoe e por que
 `gravarIdx`, `tabIndex`, `tabsMigrar`, `arqRef`, `histSugAgendar`, `setAutor`: o armazenamento (20) e a persistencia (14) os usam.
 `pontosIds`, `varrerFotos`: 14 (persistencia). `varrerTudo`, `estadoTabelas`: 33 (abertura do app liga `estadoTabelas.semVarredura`).
 
 ## Armadilhas
-- `tabArm`, `TABS`, `TABDEL`, `AUTOR`, `ARQ` vivem em `src/js/20` e 10/14 (armazenamento ainda nao e fatia): codigo legado isento.
+- `tabArm`, `TABS`, `AUTOR`, `ARQ` sao declarados na fatia `armazenamento` (20): esta fatia grava `TABS`/`ARQ`/`AUTOR` por `definirTabs`/`definirArq`/`definirAutor`.
+  Armazenamento do navegador so por `src/store` (`lerPref`/`gravarPref`, `idbOp`/`idbGet`/`idbPut`/`idbDel`, `exPreparar`).
 - `tab-csv` grava o arquivo com `arqSalvar`, exposto pela fatia `romaneio` (por isso `usa` lista `romaneio`). `avisoEdicao` vem de `lancamento` (19d2), que tambem esta em `usa`.
 - `estadoTabelas.semVarredura` impede a varredura de fotos (app aberto sem varrer, apos recuperacao de backup).
 - Texto com quebra de linha: `String.fromCharCode(10)`.

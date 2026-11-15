@@ -13,7 +13,7 @@ criar as pecas (`romCriar`) e relatorio da criacao (`relGerar`, `relAbrir`, `rel
 - `21b-peca-nova.js`, `21b-romaneio-extras.js` (insumos, lotear), `21b5-passos-romaneio.js` (1 Importar · 2 Pesos · 3 Revisar · 4 Criar).
 - `22-importar-pdf-romaneio.js` (pdf.js, `miniFoto`, `imgCanvas`), `23b-romaneio-criar.js`, `23c-nota-fiscal.js` (NF fica aqui por decisao), `25-relatorio-romaneio.js`,
   `27b4-romaneio-abrir.js` (`romAbrirNovo`, abrir/retomar o romaneio; veio do 27b), `34b-importacao-romaneio.js` (fila, `#impBar` com arrastar/soltar). `acoes.js`: 62 cliques (`rom-*`, `rev-*`, `rel-*`, `imp-*`, `lote-*`, `rins-*`).
-- Ficaram fora: `ROM`/`romT` em `src/js/19c0` e `ROMS`/`romArm`/`romSalvar*`/lista de salvos em `src/js/20` (globais de dominio, irao para `core` com funcoes de acesso);
+- Ficaram fora: `ROM`/`romT` em `src/js/19c0` e `ROMS`/`romArm`/`romSalvar*`/lista de salvos na fatia `armazenamento` (20) (globais de dominio, irao para `core` com funcoes de acesso);
   `qIrGalvanica` em `src/js/21b3`; `rom-q`/`q-fechar` (painel rapido) em `lancamento/acoes.js`; `romFiltro*`/`romCompacto`/`romNav` em 33 (fatia `app`).
   `secRom`, modelo por exemplo e fiscal foram para `configuracao`; fotos dos itens (`romFoto*`) para `fotos`: assim nao ha ciclo (ambas usam `romaneio`).
 

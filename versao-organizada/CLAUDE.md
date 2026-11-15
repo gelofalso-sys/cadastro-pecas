@@ -18,6 +18,11 @@ App de arquivo unico (HTML) montado a partir de `src/`. Responda e comente em po
 - `docs/ARQUITETURA.md`: mapa das fatias e do nucleo.
 - `docs/superpowers/specs/2026-11-14-organizacao-para-ia-design.md`: desenho da reorganizacao.
 - `src/_ordem.txt`: ordem de carga unica (caminhos relativos a `src/`). Arquivo novo entra aqui.
+- `src/store/`: UNICO lugar que toca `localStorage`, `sessionStorage` e IndexedDB (scripts simples, carregados logo depois de `src/core`).
+  Use `lerPref`/`gravarPref`/`removerPref`, `lerSessao`/`gravarSessao`/`removerSessao`, `ehAreaLocal`, `idbOp`/`idbGet`/`idbPut`/`idbDel`.
+  Funcoes finas: lancam como o navegador, o try/catch fica em quem chama. Nao crie chave nem formato novo sem pedido.
+  `tests/unit/store_unico.test.mjs` falha se esses nomes aparecerem em outro `.js` de `src/` (inclusive comentario).
+  Nas ferramentas (`tools/acoplamento.mjs`), `store/` e dono proprio, publico como o nucleo e nunca alvo de violacao.
 - Acoes de clique: `ACOES` em `src/js/30-eventos-mouse-e-clique.js`; `registrarAcoes` em `src/core/acoes.js`.
   Ao migrar um `case`: `break` vira `return`; `return` que pulava o pos-switch vira `return false`.
 
