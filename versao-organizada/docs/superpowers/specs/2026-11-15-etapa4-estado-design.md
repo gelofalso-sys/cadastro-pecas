@@ -26,3 +26,9 @@ Grandes: `S` 967, `ROM` 492, `G` 151, `editId` 120, `abertos` 101, `sel` 88, `ra
 
 ## Fica ao construtor
 Nome exato dos campos, ordem de migração dentro de cada dona, forma do codemod, ajuste dos testes `vm` que recortam fontes e leem esses nomes (renomear stubs, como na Etapa 3).
+
+## 4.2 (decidida em 15/11/2026, delegada pelo dono: "siga apos")
+Medição das 19 variáveis restantes (escritas fora da declaração): `S`, `sel`, `HIST`, `REDO` nunca são reatribuídas (só o conteúdo muda); as outras têm de 1 a 19 reatribuições (`erro` 19, `editId` 13, `rascunho` 13, `undo` 12, `ROM` 12, `ROMS` 7, `TABS` 5, `G`/`celEd`/`db`/`dirty`/`romConflito` 3, `conflito`/`NF` 2, `abertos` 1).
+- `S`, `sel`, `HIST`, `REDO` viram `const` (zero mudança de comportamento).
+- As outras 15 vão para campos de objetos de estado, pelo mesmo codemod por escopo: `estadoBase` (`editId`, `rascunho`, `undo`, `erro`, `celEd`, `G`, `abertos`), `estadoArmazenamento` (`dirty`, `conflito`, `db`, `TABS`, `ROMS`, `romConflito`), `estadoRomaneio` (`ROM`, `NF`). Resultado esperado: 0 globais mutáveis (`let`) de nível superior.
+- Não objetivo: `despachar`, desfazer por ações (4.3), renomear campos, mudar o modelo de `S`. Escrita de uma fatia em campo de outra segue problema conhecido.
